@@ -1,0 +1,18 @@
+{
+  "baseCommit": "75313dc6",
+  "workingTreeChanges": [
+    "js/hud.js",
+    "js/soundsheet.js",
+    "css/style.css",
+    "sw.js"
+  ],
+  "runtime": "Node24.19.0; Playwright1.56.1; Chromium1194",
+  "fingerprints": {
+    "js/hud.js": "a0ff2241822f94c338708ff1a4b0a8fd5f60ad351c56bd6015f1bbc48cbc2846",
+    "js/soundsheet.js": "45b064a263a97923a98591a3cd34466c25e7f77bcfb82af4c4e4e835921dfc9c",
+    "css/style.css": "7914a257294123269307ecad3f1a30192064f18458fa0c49164382cdfb192a0a",
+    "sw.js": "9cae98f850b76439951bc6229459bfb25eedd0fd3ae4baf127e3428ce700940e"
+  },
+  "scope": "Synthetic profiles and APIs, seven emulated layouts, browser captures; not physical devices",
+  "matchingCodeCommit": "f47546d596230245bf3b96f8f10b1e06137df79b"
+}

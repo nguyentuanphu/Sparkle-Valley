@@ -410,6 +410,8 @@ export async function jobProgress(G, kind, n = 1, hero) {
     const p = (hero || G.heroes[0]).profile, left = G.STICKERS.filter(s => !p.stickers.includes(s));
     const st = left.length ? pick(left) : null; if (st) { p.stickers.push(st); saveProfiles(); }
     await wait(900);
+    // (a game finished and the next one already opened: the reward waits until no activity covers the screen, never on its buttons)
+    while (document.querySelector('.gl:not(.out), .theatre:not(.out)')) await wait(400);
     await reward(st || '⭐', T('Job done!', 'Xong việc rồi!'), T(`${jobText(j)} · +${fmt(5)}${st ? ' and a sticker!' : ''}`, `${jobText(j)} · +${fmt(5)}${st ? ' và một hình dán!' : ''}`));
   }
 }

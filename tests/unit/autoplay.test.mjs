@@ -2,7 +2,7 @@
 // is put back (js/keepcopy.js), and Studio's choice of what goes back.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { apAllowed, keepRewards, revertOf, KEEP_FIELDS, AP_SPEEDS, AP_RIGHT, AP_GROUPS } from '../../js/content/autoplay.js';
+import { apGameSeconds, apAllowed, keepRewards, revertOf, KEEP_FIELDS, AP_SPEEDS, AP_RIGHT, AP_GROUPS } from '../../js/content/autoplay.js';
 
 test('the window shows only where Studio allows it', () => {
   assert.equal(apAllowed(false, { devices: [] }, 'abc'), false);
@@ -27,4 +27,24 @@ test('both speeds move like a child; answers are mostly right; quests come first
   for (const s of Object.values(AP_SPEEDS)) { assert.ok(s.fly >= 40, 'short trips are walked'); assert.ok(s.think[0] > .2 && s.think[1] >= s.think[0], 'a pause before each tap'); }
   assert.ok(AP_RIGHT > .5 && AP_RIGHT < 1, 'mostly right, some wrong');
   assert.equal(AP_GROUPS[0].key, 'quests');
+});
+
+
+test('each device can keep progress or choose a different restore policy', () => {
+  const rule = { revert: 'progress', policies: { one: { revert: 'keep' }, two: { revert: 'autoplay' } } };
+  assert.equal(revertOf(rule, 'one'), 'keep'); assert.equal(revertOf(rule, 'two'), 'autoplay'); assert.equal(revertOf(rule, 'other'), 'progress');
+  for (const rate of [1,2,3,5]) { const s = AP_SPEEDS['x'+rate]; assert.equal(s.rate,rate); assert.equal(s.game,AP_SPEEDS.watch.game, 'fast checking keeps the game timeout'); assert.equal(s.idle,AP_SPEEDS.watch.idle,'fast checking must not invent stuck failures'); }
+});
+
+test('legal-plan allowance follows child speed and is bounded without extending random play', () => {
+  assert.equal(apGameSeconds(AP_SPEEDS.x1),90);
+  assert.equal(apGameSeconds(AP_SPEEDS.x1,0,3),270);
+  assert.equal(apGameSeconds(AP_SPEEDS.x1,NaN),90);
+  assert.equal(apGameSeconds(AP_SPEEDS.x1,Infinity),90);
+  assert.equal(apGameSeconds(AP_SPEEDS.x1,-5),90);
+  // Two simple6x6/7x7 mazes have at most35+48 legal shortest-path steps.
+  assert.ok(apGameSeconds(AP_SPEEDS.x1,83)>=83*(2.2+.65+.05)+12);
+  assert.ok(apGameSeconds(AP_SPEEDS.x1,83)>apGameSeconds(AP_SPEEDS.x2,83));
+  assert.equal(apGameSeconds(AP_SPEEDS.x5,83),90);
+  assert.equal(apGameSeconds(AP_SPEEDS.x1,1e9),600);
 });

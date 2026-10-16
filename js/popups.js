@@ -37,7 +37,7 @@ const floatWatch = new MutationObserver(list => { const seen = new Set(); for (c
 floatWatch.observe(document.documentElement, { childList: true, subtree: true });
 export function modal(cls, html) {
   const m = el('div', 'modal ' + (cls || ''), `<div class="card">${html}</div>`);
-  document.body.appendChild(m); requestAnimationFrame(() => floatEnds(m.querySelector('.card')));
+  dispatchEvent(new Event('sv-hide-caption')); document.body.appendChild(m); requestAnimationFrame(() => floatEnds(m.querySelector('.card')));
   m.close = () => { m.classList.add('out'); setTimeout(() => m.remove(), 200); };
   return m;
 }

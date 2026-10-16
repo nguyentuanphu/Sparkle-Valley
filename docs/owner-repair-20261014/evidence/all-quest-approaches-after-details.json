@@ -1,0 +1,3673 @@
+{
+  "rows": [
+    {
+      "kind": "chapter-little",
+      "id": "p_owl",
+      "night": false,
+      "x": 7,
+      "z": -84,
+      "reach": 3,
+      "approach": {
+        "x": 8.05,
+        "z": -84,
+        "d": 1.0499999999999998
+      }
+    },
+    {
+      "kind": "chapter-little",
+      "id": "c1_village",
+      "night": false,
+      "x": 180.58905312370692,
+      "z": -38.134693876573856,
+      "reach": 3,
+      "approach": {
+        "x": 180.58905312370692,
+        "z": -38.134693876573856,
+        "d": 0
+      }
+    },
+    {
+      "kind": "story-interaction-little",
+      "id": "story_ribbon0",
+      "night": false,
+      "x": 180.58905312370692,
+      "z": -38.134693876573856,
+      "reach": 2.2,
+      "approach": {
+        "x": 180.58905312370692,
+        "z": -38.134693876573856,
+        "d": 0
+      }
+    },
+    {
+      "kind": "story-interaction-little",
+      "id": "story_ribbon1",
+      "night": false,
+      "x": 171.45638505860128,
+      "z": -34.23111570016014,
+      "reach": 2.2,
+      "approach": {
+        "x": 171.45638505860128,
+        "z": -34.23111570016014,
+        "d": 0
+      }
+    },
+    {
+      "kind": "story-interaction-little",
+      "id": "story_ribbon2",
+      "night": false,
+      "x": 169.6266093225709,
+      "z": -53.33048504137665,
+      "reach": 2.2,
+      "approach": {
+        "x": 169.6266093225709,
+        "z": -53.33048504137665,
+        "d": 0
+      }
+    },
+    {
+      "kind": "chapter-little",
+      "id": "c1_nam",
+      "night": false,
+      "x": 208.1,
+      "z": -32.4,
+      "reach": 3,
+      "approach": {
+        "x": 209.15,
+        "z": -32.4,
+        "d": 1.0499999999999998
+      }
+    },
+    {
+      "kind": "story-interaction-little",
+      "id": "story_c1_nam",
+      "night": false,
+      "x": 208.9,
+      "z": -31.599999999999998,
+      "reach": 3,
+      "approach": {
+        "x": 208.9,
+        "z": -31.599999999999998,
+        "d": 0
+      }
+    },
+    {
+      "kind": "chapter-little",
+      "id": "c1_well",
+      "night": false,
+      "x": 191.6,
+      "z": -47.4,
+      "reach": 3,
+      "approach": {
+        "x": 191.84748737341528,
+        "z": -47.15251262658471,
+        "d": 0.35
+      }
+    },
+    {
+      "kind": "chapter-little",
+      "id": "c1_teo",
+      "night": false,
+      "x": 220,
+      "z": -22.4,
+      "reach": 3,
+      "approach": {
+        "x": 221.05,
+        "z": -22.4,
+        "d": 1.0499999999999998
+      }
+    },
+    {
+      "kind": "chapter-little",
+      "id": "c1_tale",
+      "night": false,
+      "x": 208.1,
+      "z": -32.4,
+      "reach": 3,
+      "approach": {
+        "x": 209.15,
+        "z": -32.4,
+        "d": 1.0499999999999998
+      }
+    },
+    {
+      "kind": "story-interaction-little",
+      "id": "story_c1_tale",
+      "night": false,
+      "x": 208.9,
+      "z": -31.599999999999998,
+      "reach": 3,
+      "approach": {
+        "x": 208.9,
+        "z": -31.599999999999998,
+        "d": 0
+      }
+    },
+    {
+      "kind": "chapter-little",
+      "id": "c1_find",
+      "night": false,
+      "x": 190.21365421550107,
+      "z": -31.525929750133447,
+      "reach": 3,
+      "approach": {
+        "x": 190.73865421550107,
+        "z": -30.616603076159787,
+        "d": 1.0499999999999998
+      }
+    },
+    {
+      "kind": "story-interaction-little",
+      "id": "story_leaf0",
+      "night": false,
+      "x": 192.11365421550107,
+      "z": -31.525929750133447,
+      "reach": 1.6,
+      "approach": {
+        "x": 192.11365421550107,
+        "z": -31.525929750133447,
+        "d": 0
+      }
+    },
+    {
+      "kind": "story-interaction-little",
+      "id": "story_leaf1",
+      "night": false,
+      "x": 190.80078650481346,
+      "z": -29.718922369172656,
+      "reach": 1.6,
+      "approach": {
+        "x": 190.80078650481346,
+        "z": -29.718922369172656,
+        "d": 0
+      }
+    },
+    {
+      "kind": "story-interaction-little",
+      "id": "story_leaf2",
+      "night": false,
+      "x": 188.67652192618866,
+      "z": -30.409137770777747,
+      "reach": 1.6,
+      "approach": {
+        "x": 189.37652192618864,
+        "z": -30.409137770777747,
+        "d": 0.7
+      }
+    },
+    {
+      "kind": "story-interaction-little",
+      "id": "story_leaf3",
+      "night": false,
+      "x": 188.67652192618866,
+      "z": -32.642721729489146,
+      "reach": 1.6,
+      "approach": {
+        "x": 189.37652192618864,
+        "z": -32.642721729489146,
+        "d": 0.7
+      }
+    },
+    {
+      "kind": "story-interaction-little",
+      "id": "story_leaf4",
+      "night": false,
+      "x": 190.80078650481346,
+      "z": -33.33293713109424,
+      "reach": 1.9,
+      "approach": {
+        "x": 190.98195983638522,
+        "z": -32.65678905269189,
+        "d": 0.7
+      }
+    },
+    {
+      "kind": "chapter-little",
+      "id": "c1_hang",
+      "night": false,
+      "x": 190.51364923966074,
+      "z": -67.94409264493744,
+      "reach": 3,
+      "approach": {
+        "x": 190.51364923966074,
+        "z": -67.94409264493744,
+        "d": 0
+      }
+    },
+    {
+      "kind": "story-interaction-little",
+      "id": "story_c1_hang",
+      "night": false,
+      "x": 190.51364923966074,
+      "z": -67.94409264493744,
+      "reach": 3.4,
+      "approach": {
+        "x": 190.51364923966074,
+        "z": -67.94409264493744,
+        "d": 0
+      }
+    },
+    {
+      "kind": "chapter-little",
+      "id": "c2_fly",
+      "night": false,
+      "x": 144.58905312370692,
+      "z": -131.13469387657386,
+      "reach": 3,
+      "approach": {
+        "x": 144.58905312370692,
+        "z": -131.13469387657386,
+        "d": 0
+      }
+    },
+    {
+      "kind": "story-interaction-little",
+      "id": "story_light0",
+      "night": false,
+      "x": 144.58905312370692,
+      "z": -131.13469387657386,
+      "reach": 2.2,
+      "approach": {
+        "x": 144.58905312370692,
+        "z": -131.13469387657386,
+        "d": 0
+      }
+    },
+    {
+      "kind": "story-interaction-little",
+      "id": "story_light1",
+      "night": false,
+      "x": 135.45638505860128,
+      "z": -127.23111570016013,
+      "reach": 2.2,
+      "approach": {
+        "x": 135.45638505860128,
+        "z": -127.23111570016013,
+        "d": 0
+      }
+    },
+    {
+      "kind": "story-interaction-little",
+      "id": "story_light2",
+      "night": false,
+      "x": 133.6266093225709,
+      "z": -146.33048504137665,
+      "reach": 2.2,
+      "approach": {
+        "x": 133.6266093225709,
+        "z": -146.33048504137665,
+        "d": 0
+      }
+    },
+    {
+      "kind": "chapter-little",
+      "id": "c2_teo",
+      "night": false,
+      "x": 146.1360178832677,
+      "z": -133.14159995271552,
+      "reach": 3,
+      "approach": {
+        "x": 146.1360178832677,
+        "z": -133.14159995271552,
+        "d": 0
+      }
+    },
+    {
+      "kind": "story-interaction-little",
+      "id": "story_c2_teo",
+      "night": false,
+      "x": 146.9360178832677,
+      "z": -132.3415999527155,
+      "reach": 3,
+      "approach": {
+        "x": 146.9360178832677,
+        "z": -132.3415999527155,
+        "d": 0
+      }
+    },
+    {
+      "kind": "chapter-little",
+      "id": "c2_vanmieu",
+      "night": false,
+      "x": 139.74576993726973,
+      "z": -137.77267758883187,
+      "reach": 3,
+      "approach": {
+        "x": 139.74576993726973,
+        "z": -137.77267758883187,
+        "d": 0
+      }
+    },
+    {
+      "kind": "story-interaction-little",
+      "id": "story_c2_vanmieu",
+      "night": false,
+      "x": 140.54576993726974,
+      "z": -136.97267758883186,
+      "reach": 3,
+      "approach": {
+        "x": 140.54576993726974,
+        "z": -136.97267758883186,
+        "d": 0
+      }
+    },
+    {
+      "kind": "chapter-little",
+      "id": "c2_tale",
+      "night": false,
+      "x": 127.1,
+      "z": -139,
+      "reach": 3,
+      "approach": {
+        "x": 127.1,
+        "z": -139,
+        "d": 0
+      }
+    },
+    {
+      "kind": "story-interaction-little",
+      "id": "story_c2_tale",
+      "night": false,
+      "x": 127.89999999999999,
+      "z": -138.2,
+      "reach": 3,
+      "approach": {
+        "x": 127.89999999999999,
+        "z": -138.2,
+        "d": 0
+      }
+    },
+    {
+      "kind": "chapter-little",
+      "id": "c2_find",
+      "night": false,
+      "x": 117.59357048266484,
+      "z": -116.2445482324,
+      "reach": 3,
+      "approach": {
+        "x": 117.59357048266484,
+        "z": -116.2445482324,
+        "d": 0
+      }
+    },
+    {
+      "kind": "story-interaction-little",
+      "id": "story_clue0",
+      "night": false,
+      "x": 117.59357048266484,
+      "z": -116.2445482324,
+      "reach": 2.2,
+      "approach": {
+        "x": 117.59357048266484,
+        "z": -116.2445482324,
+        "d": 0
+      }
+    },
+    {
+      "kind": "story-interaction-little",
+      "id": "story_clue1",
+      "night": false,
+      "x": 115.73545991797089,
+      "z": -140.4374662727253,
+      "reach": 2.2,
+      "approach": {
+        "x": 115.73545991797089,
+        "z": -140.4374662727253,
+        "d": 0
+      }
+    },
+    {
+      "kind": "story-interaction-little",
+      "id": "story_clue2",
+      "night": false,
+      "x": 123.18106992608759,
+      "z": -145.62028731106997,
+      "reach": 2.2,
+      "approach": {
+        "x": 123.18106992608759,
+        "z": -145.62028731106997,
+        "d": 0
+      }
+    },
+    {
+      "kind": "chapter-little",
+      "id": "c2_hang",
+      "night": false,
+      "x": 127.1,
+      "z": -125,
+      "reach": 3,
+      "approach": {
+        "x": 127.1,
+        "z": -125,
+        "d": 0
+      }
+    },
+    {
+      "kind": "story-interaction-little",
+      "id": "story_c2_hang",
+      "night": false,
+      "x": 127.1,
+      "z": -125,
+      "reach": 3.4,
+      "approach": {
+        "x": 127.1,
+        "z": -125,
+        "d": 0
+      }
+    },
+    {
+      "kind": "chapter-little",
+      "id": "c3_fly",
+      "night": false,
+      "x": -119,
+      "z": -17,
+      "reach": 3,
+      "approach": {
+        "x": -119,
+        "z": -17,
+        "d": 0
+      }
+    },
+    {
+      "kind": "story-interaction-little",
+      "id": "story_light_c3_fly_0",
+      "night": false,
+      "x": -119,
+      "z": -17,
+      "reach": 2.2,
+      "approach": {
+        "x": -119,
+        "z": -17,
+        "d": 0
+      }
+    },
+    {
+      "kind": "story-interaction-little",
+      "id": "story_light_c3_fly_1",
+      "night": false,
+      "x": -113.1420777008565,
+      "z": -25.837732930212503,
+      "reach": 2.2,
+      "approach": {
+        "x": -113.1420777008565,
+        "z": -25.837732930212503,
+        "d": 0
+      }
+    },
+    {
+      "kind": "story-interaction-little",
+      "id": "story_light_c3_fly_2",
+      "night": false,
+      "x": -108.00226181786536,
+      "z": -16.730977592250404,
+      "reach": 2.2,
+      "approach": {
+        "x": -108.00226181786536,
+        "z": -16.730977592250404,
+        "d": 0
+      }
+    },
+    {
+      "kind": "chapter-little",
+      "id": "c3_words",
+      "night": false,
+      "x": -127.02220538513916,
+      "z": -3.6512009571940287,
+      "reach": 3,
+      "approach": {
+        "x": -127.02220538513916,
+        "z": -3.6512009571940287,
+        "d": 0
+      }
+    },
+    {
+      "kind": "story-interaction-little",
+      "id": "story_c3_words",
+      "night": false,
+      "x": -126.22220538513916,
+      "z": -2.8512009571940284,
+      "reach": 3,
+      "approach": {
+        "x": -126.56027942434034,
+        "z": -2.760614291408146,
+        "d": 0.35
+      }
+    },
+    {
+      "kind": "chapter-little",
+      "id": "c3_jack",
+      "night": false,
+      "x": -126.79779304926417,
+      "z": 4.967979789069249,
+      "reach": 3,
+      "approach": {
+        "x": -126.79779304926417,
+        "z": 4.967979789069249,
+        "d": 0
+      }
+    },
+    {
+      "kind": "story-interaction-little",
+      "id": "story_c3_jack",
+      "night": false,
+      "x": -125.99779304926417,
+      "z": 5.767979789069249,
+      "reach": 3,
+      "approach": {
+        "x": -125.99779304926417,
+        "z": 5.767979789069249,
+        "d": 0
+      }
+    },
+    {
+      "kind": "chapter-little",
+      "id": "c3_tale",
+      "night": false,
+      "x": -85.94843155819575,
+      "z": 9.69604901271812,
+      "reach": 3,
+      "approach": {
+        "x": -85.94843155819575,
+        "z": 9.69604901271812,
+        "d": 0
+      }
+    },
+    {
+      "kind": "story-interaction-little",
+      "id": "story_c3_tale",
+      "night": false,
+      "x": -85.14843155819575,
+      "z": 10.496049012718121,
+      "reach": 3,
+      "approach": {
+        "x": -85.14843155819575,
+        "z": 10.496049012718121,
+        "d": 0
+      }
+    },
+    {
+      "kind": "chapter-little",
+      "id": "c3_find",
+      "night": false,
+      "x": -82.97071744985382,
+      "z": 25.488229771781743,
+      "reach": 3,
+      "approach": {
+        "x": -82.97071744985382,
+        "z": 25.488229771781743,
+        "d": 0
+      }
+    },
+    {
+      "kind": "story-interaction-little",
+      "id": "story_clue3_0",
+      "night": false,
+      "x": -82.97071744985382,
+      "z": 25.488229771781743,
+      "reach": 2.4,
+      "approach": {
+        "x": -82.97071744985382,
+        "z": 25.488229771781743,
+        "d": 0
+      }
+    },
+    {
+      "kind": "story-interaction-little",
+      "id": "story_clue3_1",
+      "night": false,
+      "x": -104.68344277772431,
+      "z": 7.132148872601734,
+      "reach": 2.4,
+      "approach": {
+        "x": -104.68344277772431,
+        "z": 7.132148872601734,
+        "d": 0
+      }
+    },
+    {
+      "kind": "story-interaction-little",
+      "id": "story_clue3_2",
+      "night": false,
+      "x": -116.70959897402498,
+      "z": 16.690784650228487,
+      "reach": 2.4,
+      "approach": {
+        "x": -116.70959897402498,
+        "z": 16.690784650228487,
+        "d": 0
+      }
+    },
+    {
+      "kind": "chapter-little",
+      "id": "c3_hang",
+      "night": false,
+      "x": -86.29966283887,
+      "z": 13.698445152417547,
+      "reach": 3,
+      "approach": {
+        "x": -85.39033616489634,
+        "z": 14.223445152417547,
+        "d": 1.0499999999999998
+      }
+    },
+    {
+      "kind": "story-interaction-little",
+      "id": "story_c3_hang",
+      "night": false,
+      "x": -86.29966283887,
+      "z": 13.698445152417547,
+      "reach": 3.4,
+      "approach": {
+        "x": -85.39033616489634,
+        "z": 14.223445152417547,
+        "d": 1.0499999999999998
+      }
+    },
+    {
+      "kind": "chapter-big",
+      "id": "p_owl",
+      "night": false,
+      "x": 7,
+      "z": -84,
+      "reach": 3,
+      "approach": {
+        "x": 8.05,
+        "z": -84,
+        "d": 1.0499999999999998
+      }
+    },
+    {
+      "kind": "chapter-big",
+      "id": "c1_village",
+      "night": false,
+      "x": 180.58905312370692,
+      "z": -38.134693876573856,
+      "reach": 3,
+      "approach": {
+        "x": 180.58905312370692,
+        "z": -38.134693876573856,
+        "d": 0
+      }
+    },
+    {
+      "kind": "story-interaction-big",
+      "id": "story_ribbon0",
+      "night": false,
+      "x": 180.58905312370692,
+      "z": -38.134693876573856,
+      "reach": 2.2,
+      "approach": {
+        "x": 180.58905312370692,
+        "z": -38.134693876573856,
+        "d": 0
+      }
+    },
+    {
+      "kind": "story-interaction-big",
+      "id": "story_ribbon1",
+      "night": false,
+      "x": 171.45638505860128,
+      "z": -34.23111570016014,
+      "reach": 2.2,
+      "approach": {
+        "x": 171.45638505860128,
+        "z": -34.23111570016014,
+        "d": 0
+      }
+    },
+    {
+      "kind": "story-interaction-big",
+      "id": "story_ribbon2",
+      "night": false,
+      "x": 169.6266093225709,
+      "z": -53.33048504137665,
+      "reach": 2.2,
+      "approach": {
+        "x": 169.6266093225709,
+        "z": -53.33048504137665,
+        "d": 0
+      }
+    },
+    {
+      "kind": "chapter-big",
+      "id": "c1_nam",
+      "night": false,
+      "x": 208.1,
+      "z": -32.4,
+      "reach": 3,
+      "approach": {
+        "x": 209.15,
+        "z": -32.4,
+        "d": 1.0499999999999998
+      }
+    },
+    {
+      "kind": "story-interaction-big",
+      "id": "story_c1_nam",
+      "night": false,
+      "x": 208.9,
+      "z": -31.599999999999998,
+      "reach": 3,
+      "approach": {
+        "x": 208.9,
+        "z": -31.599999999999998,
+        "d": 0
+      }
+    },
+    {
+      "kind": "chapter-big",
+      "id": "c1_well",
+      "night": false,
+      "x": 191.6,
+      "z": -47.4,
+      "reach": 3,
+      "approach": {
+        "x": 191.84748737341528,
+        "z": -47.15251262658471,
+        "d": 0.35
+      }
+    },
+    {
+      "kind": "chapter-big",
+      "id": "c1_teo",
+      "night": false,
+      "x": 220,
+      "z": -22.4,
+      "reach": 3,
+      "approach": {
+        "x": 221.05,
+        "z": -22.4,
+        "d": 1.0499999999999998
+      }
+    },
+    {
+      "kind": "chapter-big",
+      "id": "c1_tale",
+      "night": false,
+      "x": 208.1,
+      "z": -32.4,
+      "reach": 3,
+      "approach": {
+        "x": 209.15,
+        "z": -32.4,
+        "d": 1.0499999999999998
+      }
+    },
+    {
+      "kind": "story-interaction-big",
+      "id": "story_c1_tale",
+      "night": false,
+      "x": 208.9,
+      "z": -31.599999999999998,
+      "reach": 3,
+      "approach": {
+        "x": 208.9,
+        "z": -31.599999999999998,
+        "d": 0
+      }
+    },
+    {
+      "kind": "chapter-big",
+      "id": "c1_find",
+      "night": false,
+      "x": 190.21365421550107,
+      "z": -31.525929750133447,
+      "reach": 3,
+      "approach": {
+        "x": 190.73865421550107,
+        "z": -30.616603076159787,
+        "d": 1.0499999999999998
+      }
+    },
+    {
+      "kind": "story-interaction-big",
+      "id": "story_leaf0",
+      "night": false,
+      "x": 192.11365421550107,
+      "z": -31.525929750133447,
+      "reach": 1.6,
+      "approach": {
+        "x": 192.11365421550107,
+        "z": -31.525929750133447,
+        "d": 0
+      }
+    },
+    {
+      "kind": "story-interaction-big",
+      "id": "story_leaf1",
+      "night": false,
+      "x": 190.80078650481346,
+      "z": -29.718922369172656,
+      "reach": 1.6,
+      "approach": {
+        "x": 190.80078650481346,
+        "z": -29.718922369172656,
+        "d": 0
+      }
+    },
+    {
+      "kind": "story-interaction-big",
+      "id": "story_leaf2",
+      "night": false,
+      "x": 188.67652192618866,
+      "z": -30.409137770777747,
+      "reach": 1.6,
+      "approach": {
+        "x": 189.37652192618864,
+        "z": -30.409137770777747,
+        "d": 0.7
+      }
+    },
+    {
+      "kind": "story-interaction-big",
+      "id": "story_leaf3",
+      "night": false,
+      "x": 188.67652192618866,
+      "z": -32.642721729489146,
+      "reach": 1.6,
+      "approach": {
+        "x": 189.37652192618864,
+        "z": -32.642721729489146,
+        "d": 0.7
+      }
+    },
+    {
+      "kind": "story-interaction-big",
+      "id": "story_leaf4",
+      "night": false,
+      "x": 190.80078650481346,
+      "z": -33.33293713109424,
+      "reach": 1.9,
+      "approach": {
+        "x": 190.98195983638522,
+        "z": -32.65678905269189,
+        "d": 0.7
+      }
+    },
+    {
+      "kind": "chapter-big",
+      "id": "c1_hang",
+      "night": false,
+      "x": 190.51364923966074,
+      "z": -67.94409264493744,
+      "reach": 3,
+      "approach": {
+        "x": 190.51364923966074,
+        "z": -67.94409264493744,
+        "d": 0
+      }
+    },
+    {
+      "kind": "story-interaction-big",
+      "id": "story_c1_hang",
+      "night": false,
+      "x": 190.51364923966074,
+      "z": -67.94409264493744,
+      "reach": 3.4,
+      "approach": {
+        "x": 190.51364923966074,
+        "z": -67.94409264493744,
+        "d": 0
+      }
+    },
+    {
+      "kind": "chapter-big",
+      "id": "c2_fly",
+      "night": false,
+      "x": 144.58905312370692,
+      "z": -131.13469387657386,
+      "reach": 3,
+      "approach": {
+        "x": 144.58905312370692,
+        "z": -131.13469387657386,
+        "d": 0
+      }
+    },
+    {
+      "kind": "story-interaction-big",
+      "id": "story_light0",
+      "night": false,
+      "x": 144.58905312370692,
+      "z": -131.13469387657386,
+      "reach": 2.2,
+      "approach": {
+        "x": 144.58905312370692,
+        "z": -131.13469387657386,
+        "d": 0
+      }
+    },
+    {
+      "kind": "story-interaction-big",
+      "id": "story_light1",
+      "night": false,
+      "x": 135.45638505860128,
+      "z": -127.23111570016013,
+      "reach": 2.2,
+      "approach": {
+        "x": 135.45638505860128,
+        "z": -127.23111570016013,
+        "d": 0
+      }
+    },
+    {
+      "kind": "story-interaction-big",
+      "id": "story_light2",
+      "night": false,
+      "x": 133.6266093225709,
+      "z": -146.33048504137665,
+      "reach": 2.2,
+      "approach": {
+        "x": 133.6266093225709,
+        "z": -146.33048504137665,
+        "d": 0
+      }
+    },
+    {
+      "kind": "chapter-big",
+      "id": "c2_tam",
+      "night": false,
+      "x": 139.74576993726973,
+      "z": -137.77267758883187,
+      "reach": 3,
+      "approach": {
+        "x": 139.74576993726973,
+        "z": -137.77267758883187,
+        "d": 0
+      }
+    },
+    {
+      "kind": "story-interaction-big",
+      "id": "story_c2_tam",
+      "night": false,
+      "x": 140.54576993726974,
+      "z": -136.97267758883186,
+      "reach": 3,
+      "approach": {
+        "x": 140.54576993726974,
+        "z": -136.97267758883186,
+        "d": 0
+      }
+    },
+    {
+      "kind": "chapter-big",
+      "id": "c2_teo",
+      "night": false,
+      "x": 146.1360178832677,
+      "z": -133.14159995271552,
+      "reach": 3,
+      "approach": {
+        "x": 146.1360178832677,
+        "z": -133.14159995271552,
+        "d": 0
+      }
+    },
+    {
+      "kind": "story-interaction-big",
+      "id": "story_c2_teo",
+      "night": false,
+      "x": 146.9360178832677,
+      "z": -132.3415999527155,
+      "reach": 3,
+      "approach": {
+        "x": 146.9360178832677,
+        "z": -132.3415999527155,
+        "d": 0
+      }
+    },
+    {
+      "kind": "chapter-big",
+      "id": "c2_job",
+      "night": false,
+      "x": 146.42178345935505,
+      "z": -126.40423440775497,
+      "reach": 3,
+      "approach": {
+        "x": 146.42178345935505,
+        "z": -126.40423440775497,
+        "d": 0
+      }
+    },
+    {
+      "kind": "story-interaction-big",
+      "id": "story_c2_job",
+      "night": false,
+      "x": 146.42178345935505,
+      "z": -126.40423440775497,
+      "reach": 3,
+      "approach": {
+        "x": 146.42178345935505,
+        "z": -126.40423440775497,
+        "d": 0
+      }
+    },
+    {
+      "kind": "chapter-big",
+      "id": "c2_vanmieu",
+      "night": false,
+      "x": 139.74576993726973,
+      "z": -137.77267758883187,
+      "reach": 3,
+      "approach": {
+        "x": 139.74576993726973,
+        "z": -137.77267758883187,
+        "d": 0
+      }
+    },
+    {
+      "kind": "story-interaction-big",
+      "id": "story_c2_vanmieu",
+      "night": false,
+      "x": 140.54576993726974,
+      "z": -136.97267758883186,
+      "reach": 3,
+      "approach": {
+        "x": 140.54576993726974,
+        "z": -136.97267758883186,
+        "d": 0
+      }
+    },
+    {
+      "kind": "chapter-big",
+      "id": "c2_tale",
+      "night": false,
+      "x": 127.1,
+      "z": -139,
+      "reach": 3,
+      "approach": {
+        "x": 127.1,
+        "z": -139,
+        "d": 0
+      }
+    },
+    {
+      "kind": "story-interaction-big",
+      "id": "story_c2_tale",
+      "night": false,
+      "x": 127.89999999999999,
+      "z": -138.2,
+      "reach": 3,
+      "approach": {
+        "x": 127.89999999999999,
+        "z": -138.2,
+        "d": 0
+      }
+    },
+    {
+      "kind": "chapter-big",
+      "id": "c2_find",
+      "night": false,
+      "x": 117.59357048266484,
+      "z": -116.2445482324,
+      "reach": 3,
+      "approach": {
+        "x": 117.59357048266484,
+        "z": -116.2445482324,
+        "d": 0
+      }
+    },
+    {
+      "kind": "story-interaction-big",
+      "id": "story_clue0",
+      "night": false,
+      "x": 117.59357048266484,
+      "z": -116.2445482324,
+      "reach": 2.2,
+      "approach": {
+        "x": 117.59357048266484,
+        "z": -116.2445482324,
+        "d": 0
+      }
+    },
+    {
+      "kind": "story-interaction-big",
+      "id": "story_clue1",
+      "night": false,
+      "x": 115.73545991797089,
+      "z": -140.4374662727253,
+      "reach": 2.2,
+      "approach": {
+        "x": 115.73545991797089,
+        "z": -140.4374662727253,
+        "d": 0
+      }
+    },
+    {
+      "kind": "story-interaction-big",
+      "id": "story_clue2",
+      "night": false,
+      "x": 123.18106992608759,
+      "z": -145.62028731106997,
+      "reach": 2.2,
+      "approach": {
+        "x": 123.18106992608759,
+        "z": -145.62028731106997,
+        "d": 0
+      }
+    },
+    {
+      "kind": "chapter-big",
+      "id": "c2_hang",
+      "night": false,
+      "x": 127.1,
+      "z": -125,
+      "reach": 3,
+      "approach": {
+        "x": 127.1,
+        "z": -125,
+        "d": 0
+      }
+    },
+    {
+      "kind": "story-interaction-big",
+      "id": "story_c2_hang",
+      "night": false,
+      "x": 127.1,
+      "z": -125,
+      "reach": 3.4,
+      "approach": {
+        "x": 127.1,
+        "z": -125,
+        "d": 0
+      }
+    },
+    {
+      "kind": "chapter-big",
+      "id": "c3_fly",
+      "night": false,
+      "x": -119,
+      "z": -17,
+      "reach": 3,
+      "approach": {
+        "x": -119,
+        "z": -17,
+        "d": 0
+      }
+    },
+    {
+      "kind": "story-interaction-big",
+      "id": "story_light_c3_fly_0",
+      "night": false,
+      "x": -119,
+      "z": -17,
+      "reach": 2.2,
+      "approach": {
+        "x": -119,
+        "z": -17,
+        "d": 0
+      }
+    },
+    {
+      "kind": "story-interaction-big",
+      "id": "story_light_c3_fly_1",
+      "night": false,
+      "x": -113.1420777008565,
+      "z": -25.837732930212503,
+      "reach": 2.2,
+      "approach": {
+        "x": -113.1420777008565,
+        "z": -25.837732930212503,
+        "d": 0
+      }
+    },
+    {
+      "kind": "story-interaction-big",
+      "id": "story_light_c3_fly_2",
+      "night": false,
+      "x": -108.00226181786536,
+      "z": -16.730977592250404,
+      "reach": 2.2,
+      "approach": {
+        "x": -108.00226181786536,
+        "z": -16.730977592250404,
+        "d": 0
+      }
+    },
+    {
+      "kind": "chapter-big",
+      "id": "c3_chi",
+      "night": false,
+      "x": -127.02220538513916,
+      "z": -3.6512009571940287,
+      "reach": 3,
+      "approach": {
+        "x": -127.02220538513916,
+        "z": -3.6512009571940287,
+        "d": 0
+      }
+    },
+    {
+      "kind": "story-interaction-big",
+      "id": "story_c3_chi",
+      "night": false,
+      "x": -126.22220538513916,
+      "z": -2.8512009571940284,
+      "reach": 3,
+      "approach": {
+        "x": -126.56027942434034,
+        "z": -2.760614291408146,
+        "d": 0.35
+      }
+    },
+    {
+      "kind": "chapter-big",
+      "id": "c3_words",
+      "night": false,
+      "x": -127.02220538513916,
+      "z": -3.6512009571940287,
+      "reach": 3,
+      "approach": {
+        "x": -127.02220538513916,
+        "z": -3.6512009571940287,
+        "d": 0
+      }
+    },
+    {
+      "kind": "story-interaction-big",
+      "id": "story_c3_words",
+      "night": false,
+      "x": -126.22220538513916,
+      "z": -2.8512009571940284,
+      "reach": 3,
+      "approach": {
+        "x": -126.56027942434034,
+        "z": -2.760614291408146,
+        "d": 0.35
+      }
+    },
+    {
+      "kind": "chapter-big",
+      "id": "c3_ferry",
+      "night": false,
+      "x": -129.4,
+      "z": -5.5,
+      "reach": 3,
+      "approach": {
+        "x": -129.4,
+        "z": -5.5,
+        "d": 0
+      }
+    },
+    {
+      "kind": "chapter-big",
+      "id": "c3_jack",
+      "night": false,
+      "x": -126.79779304926417,
+      "z": 4.967979789069249,
+      "reach": 3,
+      "approach": {
+        "x": -126.79779304926417,
+        "z": 4.967979789069249,
+        "d": 0
+      }
+    },
+    {
+      "kind": "story-interaction-big",
+      "id": "story_c3_jack",
+      "night": false,
+      "x": -125.99779304926417,
+      "z": 5.767979789069249,
+      "reach": 3,
+      "approach": {
+        "x": -125.99779304926417,
+        "z": 5.767979789069249,
+        "d": 0
+      }
+    },
+    {
+      "kind": "chapter-big",
+      "id": "c3_tale",
+      "night": false,
+      "x": -85.94843155819575,
+      "z": 9.69604901271812,
+      "reach": 3,
+      "approach": {
+        "x": -85.94843155819575,
+        "z": 9.69604901271812,
+        "d": 0
+      }
+    },
+    {
+      "kind": "story-interaction-big",
+      "id": "story_c3_tale",
+      "night": false,
+      "x": -85.14843155819575,
+      "z": 10.496049012718121,
+      "reach": 3,
+      "approach": {
+        "x": -85.14843155819575,
+        "z": 10.496049012718121,
+        "d": 0
+      }
+    },
+    {
+      "kind": "chapter-big",
+      "id": "c3_find",
+      "night": false,
+      "x": -86.29966283887,
+      "z": 13.698445152417547,
+      "reach": 3,
+      "approach": {
+        "x": -85.39033616489634,
+        "z": 14.223445152417547,
+        "d": 1.0499999999999998
+      }
+    },
+    {
+      "kind": "story-interaction-big",
+      "id": "story_clue3_0",
+      "night": false,
+      "x": -82.97071744985382,
+      "z": 25.488229771781743,
+      "reach": 2.4,
+      "approach": {
+        "x": -82.97071744985382,
+        "z": 25.488229771781743,
+        "d": 0
+      }
+    },
+    {
+      "kind": "story-interaction-big",
+      "id": "story_clue3_1",
+      "night": false,
+      "x": -104.68344277772431,
+      "z": 7.132148872601734,
+      "reach": 2.4,
+      "approach": {
+        "x": -104.68344277772431,
+        "z": 7.132148872601734,
+        "d": 0
+      }
+    },
+    {
+      "kind": "story-interaction-big",
+      "id": "story_clue3_2",
+      "night": false,
+      "x": -116.70959897402498,
+      "z": 16.690784650228487,
+      "reach": 2.4,
+      "approach": {
+        "x": -116.70959897402498,
+        "z": 16.690784650228487,
+        "d": 0
+      }
+    },
+    {
+      "kind": "chapter-big",
+      "id": "c3_hang",
+      "night": false,
+      "x": -86.29966283887,
+      "z": 13.698445152417547,
+      "reach": 3,
+      "approach": {
+        "x": -85.39033616489634,
+        "z": 14.223445152417547,
+        "d": 1.0499999999999998
+      }
+    },
+    {
+      "kind": "story-interaction-big",
+      "id": "story_c3_hang",
+      "night": false,
+      "x": -86.29966283887,
+      "z": 13.698445152417547,
+      "reach": 3.4,
+      "approach": {
+        "x": -85.39033616489634,
+        "z": 14.223445152417547,
+        "d": 1.0499999999999998
+      }
+    },
+    {
+      "kind": "yard-interaction",
+      "id": "yard_start",
+      "night": false,
+      "x": -8.700000000000001,
+      "z": -32.199999999999996,
+      "reach": 2.4,
+      "approach": {
+        "x": -8.700000000000001,
+        "z": -32.199999999999996,
+        "d": 0
+      }
+    },
+    {
+      "kind": "yard-interaction",
+      "id": "yard_coach",
+      "night": false,
+      "x": 35.8,
+      "z": -44.64,
+      "reach": 3,
+      "approach": {
+        "x": 35.8,
+        "z": -44.64,
+        "d": 0
+      }
+    },
+    {
+      "kind": "yard-goal",
+      "id": "Y_y_coach",
+      "night": false,
+      "x": 35.8,
+      "z": -44.64,
+      "reach": 3,
+      "approach": {
+        "x": 35.8,
+        "z": -44.64,
+        "d": 0
+      }
+    },
+    {
+      "kind": "yard-interaction",
+      "id": "yard_job_rel_driver",
+      "night": false,
+      "x": 34,
+      "z": -44.76,
+      "reach": 2.2,
+      "approach": {
+        "x": 34,
+        "z": -44.76,
+        "d": 0
+      }
+    },
+    {
+      "kind": "yard-interaction",
+      "id": "yard_job_rel_builder",
+      "night": false,
+      "x": 35.04,
+      "z": -44.76,
+      "reach": 2.2,
+      "approach": {
+        "x": 35.04,
+        "z": -44.76,
+        "d": 0
+      }
+    },
+    {
+      "kind": "yard-interaction",
+      "id": "yard_job_rel_digger",
+      "night": false,
+      "x": 36.08,
+      "z": -44.76,
+      "reach": 2.2,
+      "approach": {
+        "x": 36.08,
+        "z": -44.76,
+        "d": 0
+      }
+    },
+    {
+      "kind": "yard-goal",
+      "id": "Y_y_jobs",
+      "night": false,
+      "x": 36.2,
+      "z": -48.8,
+      "reach": 3,
+      "approach": {
+        "x": 36.2,
+        "z": -48.8,
+        "d": 0
+      }
+    },
+    {
+      "kind": "yard-interaction",
+      "id": "yard_truck",
+      "night": false,
+      "x": 32.6,
+      "z": -48,
+      "reach": 3,
+      "approach": {
+        "x": 32.6,
+        "z": -48,
+        "d": 0
+      }
+    },
+    {
+      "kind": "yard-goal",
+      "id": "Y_y_truck",
+      "night": false,
+      "x": 32.6,
+      "z": -48,
+      "reach": 3,
+      "approach": {
+        "x": 32.6,
+        "z": -48,
+        "d": 0
+      }
+    },
+    {
+      "kind": "yard-interaction",
+      "id": "yard_dig",
+      "night": false,
+      "x": 41.8,
+      "z": -53.6,
+      "reach": 3,
+      "approach": {
+        "x": 41.8,
+        "z": -53.6,
+        "d": 0
+      }
+    },
+    {
+      "kind": "yard-goal",
+      "id": "Y_y_dig",
+      "night": false,
+      "x": 41.8,
+      "z": -53.6,
+      "reach": 3,
+      "approach": {
+        "x": 41.8,
+        "z": -53.6,
+        "d": 0
+      }
+    },
+    {
+      "kind": "yard-interaction",
+      "id": "yard_build",
+      "night": false,
+      "x": 39.4,
+      "z": -48.4,
+      "reach": 3,
+      "approach": {
+        "x": 39.4,
+        "z": -48.4,
+        "d": 0
+      }
+    },
+    {
+      "kind": "yard-goal",
+      "id": "Y_y_build",
+      "night": false,
+      "x": 39.4,
+      "z": -48.4,
+      "reach": 3,
+      "approach": {
+        "x": 39.4,
+        "z": -48.4,
+        "d": 0
+      }
+    },
+    {
+      "kind": "yard-interaction",
+      "id": "yard_party",
+      "night": false,
+      "x": -8.700000000000001,
+      "z": -32.199999999999996,
+      "reach": 2.4,
+      "approach": {
+        "x": -8.700000000000001,
+        "z": -32.199999999999996,
+        "d": 0
+      }
+    },
+    {
+      "kind": "yard-goal",
+      "id": "Y_y_party",
+      "night": false,
+      "x": -9.9,
+      "z": -33.8,
+      "reach": 3,
+      "approach": {
+        "x": -9.9,
+        "z": -33.8,
+        "d": 0
+      }
+    },
+    {
+      "kind": "classic",
+      "id": "owl",
+      "night": false,
+      "x": 7,
+      "z": -84,
+      "reach": 3,
+      "approach": {
+        "x": 8.05,
+        "z": -84,
+        "d": 1.0499999999999998
+      }
+    },
+    {
+      "kind": "classic",
+      "id": "tower1",
+      "night": false,
+      "x": 10,
+      "z": -66,
+      "reach": 5.5,
+      "approach": {
+        "x": 10,
+        "z": -66,
+        "d": 0
+      }
+    },
+    {
+      "kind": "classic",
+      "id": "plateau",
+      "night": false,
+      "x": -7,
+      "z": -84,
+      "reach": 4.9,
+      "approach": {
+        "x": -3.6658021954299107,
+        "z": -82.075,
+        "d": 3.8500000000000005
+      }
+    },
+    {
+      "kind": "classic",
+      "id": "glider",
+      "night": false,
+      "x": 7,
+      "z": -84,
+      "reach": 3,
+      "approach": {
+        "x": 8.05,
+        "z": -84,
+        "d": 1.0499999999999998
+      }
+    },
+    {
+      "kind": "classic",
+      "id": "village",
+      "night": false,
+      "x": 172,
+      "z": -42,
+      "reach": 3.4,
+      "approach": {
+        "x": 172,
+        "z": -42,
+        "d": 0
+      }
+    },
+    {
+      "kind": "classic",
+      "id": "market",
+      "night": false,
+      "x": 206,
+      "z": -53.6,
+      "reach": 3,
+      "approach": {
+        "x": 205.25753787975412,
+        "z": -54.34246212024588,
+        "d": 1.0499999999999998
+      }
+    },
+    {
+      "kind": "classic",
+      "id": "cook",
+      "night": false,
+      "x": 5,
+      "z": -68,
+      "reach": 2.8,
+      "approach": {
+        "x": 6.515544456622768,
+        "z": -67.125,
+        "d": 1.75
+      }
+    },
+    {
+      "kind": "classic",
+      "id": "folk",
+      "night": false,
+      "x": 220,
+      "z": -22.4,
+      "reach": 3,
+      "approach": {
+        "x": 221.05,
+        "z": -22.4,
+        "d": 1.0499999999999998
+      }
+    },
+    {
+      "kind": "classic",
+      "id": "playground",
+      "night": false,
+      "x": 2,
+      "z": -16,
+      "reach": 3,
+      "approach": {
+        "x": 3.05,
+        "z": -16,
+        "d": 1.0499999999999998
+      }
+    },
+    {
+      "kind": "classic",
+      "id": "market3",
+      "night": false,
+      "x": 175,
+      "z": 114,
+      "reach": 3.4,
+      "approach": {
+        "x": 175,
+        "z": 114,
+        "d": 0
+      }
+    },
+    {
+      "kind": "classic",
+      "id": "aussie",
+      "night": false,
+      "x": -104,
+      "z": -65,
+      "reach": 3.4,
+      "approach": {
+        "x": -104,
+        "z": -65,
+        "d": 0
+      }
+    },
+    {
+      "kind": "classic",
+      "id": "buffalo",
+      "night": false,
+      "x": 177.08733339250958,
+      "z": -21.867101956217347,
+      "reach": 3,
+      "approach": {
+        "x": 177.08733339250958,
+        "z": -21.867101956217347,
+        "d": 0
+      }
+    },
+    {
+      "kind": "classic",
+      "id": "leafies",
+      "night": false,
+      "x": -12,
+      "z": -90,
+      "reach": 2.6,
+      "approach": {
+        "x": -10.95,
+        "z": -90,
+        "d": 1.0499999999999998
+      }
+    },
+    {
+      "kind": "classic",
+      "id": "statue",
+      "night": false,
+      "x": 222,
+      "z": -44,
+      "reach": 3.9,
+      "approach": {
+        "x": 222.72469332628705,
+        "z": -41.29540768639061,
+        "d": 2.8000000000000003
+      }
+    },
+    {
+      "kind": "classic",
+      "id": "postcards",
+      "night": false,
+      "x": 55,
+      "z": -55.5,
+      "reach": 3.4,
+      "approach": {
+        "x": 55,
+        "z": -55.5,
+        "d": 0
+      }
+    },
+    {
+      "kind": "classic",
+      "id": "towers",
+      "night": false,
+      "x": 10,
+      "z": -66,
+      "reach": 5.5,
+      "approach": {
+        "x": 10,
+        "z": -66,
+        "d": 0
+      }
+    },
+    {
+      "kind": "classic",
+      "id": "shrines",
+      "night": false,
+      "x": -7,
+      "z": -84,
+      "reach": 4.9,
+      "approach": {
+        "x": -3.6658021954299107,
+        "z": -82.075,
+        "d": 3.8500000000000005
+      }
+    },
+    {
+      "kind": "chapter-little",
+      "id": "p_owl",
+      "night": true,
+      "x": 7,
+      "z": -84,
+      "reach": 3,
+      "approach": {
+        "x": 8.05,
+        "z": -84,
+        "d": 1.0499999999999998
+      }
+    },
+    {
+      "kind": "chapter-little",
+      "id": "c1_village",
+      "night": true,
+      "x": 180.58905312370692,
+      "z": -38.134693876573856,
+      "reach": 3,
+      "approach": {
+        "x": 180.58905312370692,
+        "z": -38.134693876573856,
+        "d": 0
+      }
+    },
+    {
+      "kind": "story-interaction-little",
+      "id": "story_ribbon0",
+      "night": true,
+      "x": 180.58905312370692,
+      "z": -38.134693876573856,
+      "reach": 2.2,
+      "approach": {
+        "x": 180.58905312370692,
+        "z": -38.134693876573856,
+        "d": 0
+      }
+    },
+    {
+      "kind": "story-interaction-little",
+      "id": "story_ribbon1",
+      "night": true,
+      "x": 171.45638505860128,
+      "z": -34.23111570016014,
+      "reach": 2.2,
+      "approach": {
+        "x": 171.45638505860128,
+        "z": -34.23111570016014,
+        "d": 0
+      }
+    },
+    {
+      "kind": "story-interaction-little",
+      "id": "story_ribbon2",
+      "night": true,
+      "x": 169.6266093225709,
+      "z": -53.33048504137665,
+      "reach": 2.2,
+      "approach": {
+        "x": 169.6266093225709,
+        "z": -53.33048504137665,
+        "d": 0
+      }
+    },
+    {
+      "kind": "chapter-little",
+      "id": "c1_nam",
+      "night": true,
+      "x": 208.1,
+      "z": -32.4,
+      "reach": 3,
+      "approach": {
+        "x": 209.15,
+        "z": -32.4,
+        "d": 1.0499999999999998
+      }
+    },
+    {
+      "kind": "story-interaction-little",
+      "id": "story_c1_nam",
+      "night": true,
+      "x": 208.9,
+      "z": -31.599999999999998,
+      "reach": 3,
+      "approach": {
+        "x": 208.9,
+        "z": -31.599999999999998,
+        "d": 0
+      }
+    },
+    {
+      "kind": "chapter-little",
+      "id": "c1_well",
+      "night": true,
+      "x": 191.6,
+      "z": -47.4,
+      "reach": 3,
+      "approach": {
+        "x": 191.84748737341528,
+        "z": -47.15251262658471,
+        "d": 0.35
+      }
+    },
+    {
+      "kind": "chapter-little",
+      "id": "c1_teo",
+      "night": true,
+      "x": 220,
+      "z": -22.4,
+      "reach": 3,
+      "approach": {
+        "x": 221.05,
+        "z": -22.4,
+        "d": 1.0499999999999998
+      }
+    },
+    {
+      "kind": "chapter-little",
+      "id": "c1_tale",
+      "night": true,
+      "x": 208.1,
+      "z": -32.4,
+      "reach": 3,
+      "approach": {
+        "x": 209.15,
+        "z": -32.4,
+        "d": 1.0499999999999998
+      }
+    },
+    {
+      "kind": "story-interaction-little",
+      "id": "story_c1_tale",
+      "night": true,
+      "x": 208.9,
+      "z": -31.599999999999998,
+      "reach": 3,
+      "approach": {
+        "x": 208.9,
+        "z": -31.599999999999998,
+        "d": 0
+      }
+    },
+    {
+      "kind": "chapter-little",
+      "id": "c1_find",
+      "night": true,
+      "x": 190.21365421550107,
+      "z": -31.525929750133447,
+      "reach": 3,
+      "approach": {
+        "x": 190.73865421550107,
+        "z": -30.616603076159787,
+        "d": 1.0499999999999998
+      }
+    },
+    {
+      "kind": "story-interaction-little",
+      "id": "story_leaf0",
+      "night": true,
+      "x": 192.11365421550107,
+      "z": -31.525929750133447,
+      "reach": 1.6,
+      "approach": {
+        "x": 192.11365421550107,
+        "z": -31.525929750133447,
+        "d": 0
+      }
+    },
+    {
+      "kind": "story-interaction-little",
+      "id": "story_leaf1",
+      "night": true,
+      "x": 190.80078650481346,
+      "z": -29.718922369172656,
+      "reach": 1.6,
+      "approach": {
+        "x": 190.80078650481346,
+        "z": -29.718922369172656,
+        "d": 0
+      }
+    },
+    {
+      "kind": "story-interaction-little",
+      "id": "story_leaf2",
+      "night": true,
+      "x": 188.67652192618866,
+      "z": -30.409137770777747,
+      "reach": 1.6,
+      "approach": {
+        "x": 189.37652192618864,
+        "z": -30.409137770777747,
+        "d": 0.7
+      }
+    },
+    {
+      "kind": "story-interaction-little",
+      "id": "story_leaf3",
+      "night": true,
+      "x": 188.67652192618866,
+      "z": -32.642721729489146,
+      "reach": 1.6,
+      "approach": {
+        "x": 189.37652192618864,
+        "z": -32.642721729489146,
+        "d": 0.7
+      }
+    },
+    {
+      "kind": "story-interaction-little",
+      "id": "story_leaf4",
+      "night": true,
+      "x": 190.80078650481346,
+      "z": -33.33293713109424,
+      "reach": 1.9,
+      "approach": {
+        "x": 190.98195983638522,
+        "z": -32.65678905269189,
+        "d": 0.7
+      }
+    },
+    {
+      "kind": "chapter-little",
+      "id": "c1_hang",
+      "night": true,
+      "x": 190.51364923966074,
+      "z": -67.94409264493744,
+      "reach": 3,
+      "approach": {
+        "x": 190.51364923966074,
+        "z": -67.94409264493744,
+        "d": 0
+      }
+    },
+    {
+      "kind": "story-interaction-little",
+      "id": "story_c1_hang",
+      "night": true,
+      "x": 190.51364923966074,
+      "z": -67.94409264493744,
+      "reach": 3.4,
+      "approach": {
+        "x": 190.51364923966074,
+        "z": -67.94409264493744,
+        "d": 0
+      }
+    },
+    {
+      "kind": "chapter-little",
+      "id": "c2_fly",
+      "night": true,
+      "x": 144.58905312370692,
+      "z": -131.13469387657386,
+      "reach": 3,
+      "approach": {
+        "x": 144.58905312370692,
+        "z": -131.13469387657386,
+        "d": 0
+      }
+    },
+    {
+      "kind": "story-interaction-little",
+      "id": "story_light0",
+      "night": true,
+      "x": 144.58905312370692,
+      "z": -131.13469387657386,
+      "reach": 2.2,
+      "approach": {
+        "x": 144.58905312370692,
+        "z": -131.13469387657386,
+        "d": 0
+      }
+    },
+    {
+      "kind": "story-interaction-little",
+      "id": "story_light1",
+      "night": true,
+      "x": 135.45638505860128,
+      "z": -127.23111570016013,
+      "reach": 2.2,
+      "approach": {
+        "x": 135.45638505860128,
+        "z": -127.23111570016013,
+        "d": 0
+      }
+    },
+    {
+      "kind": "story-interaction-little",
+      "id": "story_light2",
+      "night": true,
+      "x": 133.6266093225709,
+      "z": -146.33048504137665,
+      "reach": 2.2,
+      "approach": {
+        "x": 133.6266093225709,
+        "z": -146.33048504137665,
+        "d": 0
+      }
+    },
+    {
+      "kind": "chapter-little",
+      "id": "c2_teo",
+      "night": true,
+      "x": 146.1360178832677,
+      "z": -133.14159995271552,
+      "reach": 3,
+      "approach": {
+        "x": 146.1360178832677,
+        "z": -133.14159995271552,
+        "d": 0
+      }
+    },
+    {
+      "kind": "story-interaction-little",
+      "id": "story_c2_teo",
+      "night": true,
+      "x": 146.9360178832677,
+      "z": -132.3415999527155,
+      "reach": 3,
+      "approach": {
+        "x": 146.9360178832677,
+        "z": -132.3415999527155,
+        "d": 0
+      }
+    },
+    {
+      "kind": "chapter-little",
+      "id": "c2_vanmieu",
+      "night": true,
+      "x": 139.74576993726973,
+      "z": -137.77267758883187,
+      "reach": 3,
+      "approach": {
+        "x": 139.74576993726973,
+        "z": -137.77267758883187,
+        "d": 0
+      }
+    },
+    {
+      "kind": "story-interaction-little",
+      "id": "story_c2_vanmieu",
+      "night": true,
+      "x": 140.54576993726974,
+      "z": -136.97267758883186,
+      "reach": 3,
+      "approach": {
+        "x": 140.54576993726974,
+        "z": -136.97267758883186,
+        "d": 0
+      }
+    },
+    {
+      "kind": "chapter-little",
+      "id": "c2_tale",
+      "night": true,
+      "x": 127.1,
+      "z": -139,
+      "reach": 3,
+      "approach": {
+        "x": 127.1,
+        "z": -139,
+        "d": 0
+      }
+    },
+    {
+      "kind": "story-interaction-little",
+      "id": "story_c2_tale",
+      "night": true,
+      "x": 127.89999999999999,
+      "z": -138.2,
+      "reach": 3,
+      "approach": {
+        "x": 127.89999999999999,
+        "z": -138.2,
+        "d": 0
+      }
+    },
+    {
+      "kind": "chapter-little",
+      "id": "c2_find",
+      "night": true,
+      "x": 117.59357048266484,
+      "z": -116.2445482324,
+      "reach": 3,
+      "approach": {
+        "x": 117.59357048266484,
+        "z": -116.2445482324,
+        "d": 0
+      }
+    },
+    {
+      "kind": "story-interaction-little",
+      "id": "story_clue0",
+      "night": true,
+      "x": 117.59357048266484,
+      "z": -116.2445482324,
+      "reach": 2.2,
+      "approach": {
+        "x": 117.59357048266484,
+        "z": -116.2445482324,
+        "d": 0
+      }
+    },
+    {
+      "kind": "story-interaction-little",
+      "id": "story_clue1",
+      "night": true,
+      "x": 115.73545991797089,
+      "z": -140.4374662727253,
+      "reach": 2.2,
+      "approach": {
+        "x": 115.73545991797089,
+        "z": -140.4374662727253,
+        "d": 0
+      }
+    },
+    {
+      "kind": "story-interaction-little",
+      "id": "story_clue2",
+      "night": true,
+      "x": 123.18106992608759,
+      "z": -145.62028731106997,
+      "reach": 2.2,
+      "approach": {
+        "x": 123.18106992608759,
+        "z": -145.62028731106997,
+        "d": 0
+      }
+    },
+    {
+      "kind": "chapter-little",
+      "id": "c2_hang",
+      "night": true,
+      "x": 127.1,
+      "z": -125,
+      "reach": 3,
+      "approach": {
+        "x": 127.1,
+        "z": -125,
+        "d": 0
+      }
+    },
+    {
+      "kind": "story-interaction-little",
+      "id": "story_c2_hang",
+      "night": true,
+      "x": 127.1,
+      "z": -125,
+      "reach": 3.4,
+      "approach": {
+        "x": 127.1,
+        "z": -125,
+        "d": 0
+      }
+    },
+    {
+      "kind": "chapter-little",
+      "id": "c3_fly",
+      "night": true,
+      "x": -119,
+      "z": -17,
+      "reach": 3,
+      "approach": {
+        "x": -119,
+        "z": -17,
+        "d": 0
+      }
+    },
+    {
+      "kind": "story-interaction-little",
+      "id": "story_light_c3_fly_0",
+      "night": true,
+      "x": -119,
+      "z": -17,
+      "reach": 2.2,
+      "approach": {
+        "x": -119,
+        "z": -17,
+        "d": 0
+      }
+    },
+    {
+      "kind": "story-interaction-little",
+      "id": "story_light_c3_fly_1",
+      "night": true,
+      "x": -113.1420777008565,
+      "z": -25.837732930212503,
+      "reach": 2.2,
+      "approach": {
+        "x": -113.1420777008565,
+        "z": -25.837732930212503,
+        "d": 0
+      }
+    },
+    {
+      "kind": "story-interaction-little",
+      "id": "story_light_c3_fly_2",
+      "night": true,
+      "x": -108.00226181786536,
+      "z": -16.730977592250404,
+      "reach": 2.2,
+      "approach": {
+        "x": -108.00226181786536,
+        "z": -16.730977592250404,
+        "d": 0
+      }
+    },
+    {
+      "kind": "chapter-little",
+      "id": "c3_words",
+      "night": true,
+      "x": -127.02220538513916,
+      "z": -3.6512009571940287,
+      "reach": 3,
+      "approach": {
+        "x": -127.02220538513916,
+        "z": -3.6512009571940287,
+        "d": 0
+      }
+    },
+    {
+      "kind": "story-interaction-little",
+      "id": "story_c3_words",
+      "night": true,
+      "x": -126.22220538513916,
+      "z": -2.8512009571940284,
+      "reach": 3,
+      "approach": {
+        "x": -126.56027942434034,
+        "z": -2.760614291408146,
+        "d": 0.35
+      }
+    },
+    {
+      "kind": "chapter-little",
+      "id": "c3_jack",
+      "night": true,
+      "x": -126.79779304926417,
+      "z": 4.967979789069249,
+      "reach": 3,
+      "approach": {
+        "x": -126.79779304926417,
+        "z": 4.967979789069249,
+        "d": 0
+      }
+    },
+    {
+      "kind": "story-interaction-little",
+      "id": "story_c3_jack",
+      "night": true,
+      "x": -125.99779304926417,
+      "z": 5.767979789069249,
+      "reach": 3,
+      "approach": {
+        "x": -125.99779304926417,
+        "z": 5.767979789069249,
+        "d": 0
+      }
+    },
+    {
+      "kind": "chapter-little",
+      "id": "c3_tale",
+      "night": true,
+      "x": -85.94843155819575,
+      "z": 9.69604901271812,
+      "reach": 3,
+      "approach": {
+        "x": -85.94843155819575,
+        "z": 9.69604901271812,
+        "d": 0
+      }
+    },
+    {
+      "kind": "story-interaction-little",
+      "id": "story_c3_tale",
+      "night": true,
+      "x": -85.14843155819575,
+      "z": 10.496049012718121,
+      "reach": 3,
+      "approach": {
+        "x": -85.14843155819575,
+        "z": 10.496049012718121,
+        "d": 0
+      }
+    },
+    {
+      "kind": "chapter-little",
+      "id": "c3_find",
+      "night": true,
+      "x": -82.97071744985382,
+      "z": 25.488229771781743,
+      "reach": 3,
+      "approach": {
+        "x": -82.97071744985382,
+        "z": 25.488229771781743,
+        "d": 0
+      }
+    },
+    {
+      "kind": "story-interaction-little",
+      "id": "story_clue3_0",
+      "night": true,
+      "x": -82.97071744985382,
+      "z": 25.488229771781743,
+      "reach": 2.4,
+      "approach": {
+        "x": -82.97071744985382,
+        "z": 25.488229771781743,
+        "d": 0
+      }
+    },
+    {
+      "kind": "story-interaction-little",
+      "id": "story_clue3_1",
+      "night": true,
+      "x": -104.68344277772431,
+      "z": 7.132148872601734,
+      "reach": 2.4,
+      "approach": {
+        "x": -104.68344277772431,
+        "z": 7.132148872601734,
+        "d": 0
+      }
+    },
+    {
+      "kind": "story-interaction-little",
+      "id": "story_clue3_2",
+      "night": true,
+      "x": -116.70959897402498,
+      "z": 16.690784650228487,
+      "reach": 2.4,
+      "approach": {
+        "x": -116.70959897402498,
+        "z": 16.690784650228487,
+        "d": 0
+      }
+    },
+    {
+      "kind": "chapter-little",
+      "id": "c3_hang",
+      "night": true,
+      "x": -86.29966283887,
+      "z": 13.698445152417547,
+      "reach": 3,
+      "approach": {
+        "x": -85.39033616489634,
+        "z": 14.223445152417547,
+        "d": 1.0499999999999998
+      }
+    },
+    {
+      "kind": "story-interaction-little",
+      "id": "story_c3_hang",
+      "night": true,
+      "x": -86.29966283887,
+      "z": 13.698445152417547,
+      "reach": 3.4,
+      "approach": {
+        "x": -85.39033616489634,
+        "z": 14.223445152417547,
+        "d": 1.0499999999999998
+      }
+    },
+    {
+      "kind": "chapter-big",
+      "id": "p_owl",
+      "night": true,
+      "x": 7,
+      "z": -84,
+      "reach": 3,
+      "approach": {
+        "x": 8.05,
+        "z": -84,
+        "d": 1.0499999999999998
+      }
+    },
+    {
+      "kind": "chapter-big",
+      "id": "c1_village",
+      "night": true,
+      "x": 180.58905312370692,
+      "z": -38.134693876573856,
+      "reach": 3,
+      "approach": {
+        "x": 180.58905312370692,
+        "z": -38.134693876573856,
+        "d": 0
+      }
+    },
+    {
+      "kind": "story-interaction-big",
+      "id": "story_ribbon0",
+      "night": true,
+      "x": 180.58905312370692,
+      "z": -38.134693876573856,
+      "reach": 2.2,
+      "approach": {
+        "x": 180.58905312370692,
+        "z": -38.134693876573856,
+        "d": 0
+      }
+    },
+    {
+      "kind": "story-interaction-big",
+      "id": "story_ribbon1",
+      "night": true,
+      "x": 171.45638505860128,
+      "z": -34.23111570016014,
+      "reach": 2.2,
+      "approach": {
+        "x": 171.45638505860128,
+        "z": -34.23111570016014,
+        "d": 0
+      }
+    },
+    {
+      "kind": "story-interaction-big",
+      "id": "story_ribbon2",
+      "night": true,
+      "x": 169.6266093225709,
+      "z": -53.33048504137665,
+      "reach": 2.2,
+      "approach": {
+        "x": 169.6266093225709,
+        "z": -53.33048504137665,
+        "d": 0
+      }
+    },
+    {
+      "kind": "chapter-big",
+      "id": "c1_nam",
+      "night": true,
+      "x": 208.1,
+      "z": -32.4,
+      "reach": 3,
+      "approach": {
+        "x": 209.15,
+        "z": -32.4,
+        "d": 1.0499999999999998
+      }
+    },
+    {
+      "kind": "story-interaction-big",
+      "id": "story_c1_nam",
+      "night": true,
+      "x": 208.9,
+      "z": -31.599999999999998,
+      "reach": 3,
+      "approach": {
+        "x": 208.9,
+        "z": -31.599999999999998,
+        "d": 0
+      }
+    },
+    {
+      "kind": "chapter-big",
+      "id": "c1_well",
+      "night": true,
+      "x": 191.6,
+      "z": -47.4,
+      "reach": 3,
+      "approach": {
+        "x": 191.84748737341528,
+        "z": -47.15251262658471,
+        "d": 0.35
+      }
+    },
+    {
+      "kind": "chapter-big",
+      "id": "c1_teo",
+      "night": true,
+      "x": 220,
+      "z": -22.4,
+      "reach": 3,
+      "approach": {
+        "x": 221.05,
+        "z": -22.4,
+        "d": 1.0499999999999998
+      }
+    },
+    {
+      "kind": "chapter-big",
+      "id": "c1_tale",
+      "night": true,
+      "x": 208.1,
+      "z": -32.4,
+      "reach": 3,
+      "approach": {
+        "x": 209.15,
+        "z": -32.4,
+        "d": 1.0499999999999998
+      }
+    },
+    {
+      "kind": "story-interaction-big",
+      "id": "story_c1_tale",
+      "night": true,
+      "x": 208.9,
+      "z": -31.599999999999998,
+      "reach": 3,
+      "approach": {
+        "x": 208.9,
+        "z": -31.599999999999998,
+        "d": 0
+      }
+    },
+    {
+      "kind": "chapter-big",
+      "id": "c1_find",
+      "night": true,
+      "x": 190.21365421550107,
+      "z": -31.525929750133447,
+      "reach": 3,
+      "approach": {
+        "x": 190.73865421550107,
+        "z": -30.616603076159787,
+        "d": 1.0499999999999998
+      }
+    },
+    {
+      "kind": "story-interaction-big",
+      "id": "story_leaf0",
+      "night": true,
+      "x": 192.11365421550107,
+      "z": -31.525929750133447,
+      "reach": 1.6,
+      "approach": {
+        "x": 192.11365421550107,
+        "z": -31.525929750133447,
+        "d": 0
+      }
+    },
+    {
+      "kind": "story-interaction-big",
+      "id": "story_leaf1",
+      "night": true,
+      "x": 190.80078650481346,
+      "z": -29.718922369172656,
+      "reach": 1.6,
+      "approach": {
+        "x": 190.80078650481346,
+        "z": -29.718922369172656,
+        "d": 0
+      }
+    },
+    {
+      "kind": "story-interaction-big",
+      "id": "story_leaf2",
+      "night": true,
+      "x": 188.67652192618866,
+      "z": -30.409137770777747,
+      "reach": 1.6,
+      "approach": {
+        "x": 189.37652192618864,
+        "z": -30.409137770777747,
+        "d": 0.7
+      }
+    },
+    {
+      "kind": "story-interaction-big",
+      "id": "story_leaf3",
+      "night": true,
+      "x": 188.67652192618866,
+      "z": -32.642721729489146,
+      "reach": 1.6,
+      "approach": {
+        "x": 189.37652192618864,
+        "z": -32.642721729489146,
+        "d": 0.7
+      }
+    },
+    {
+      "kind": "story-interaction-big",
+      "id": "story_leaf4",
+      "night": true,
+      "x": 190.80078650481346,
+      "z": -33.33293713109424,
+      "reach": 1.9,
+      "approach": {
+        "x": 190.98195983638522,
+        "z": -32.65678905269189,
+        "d": 0.7
+      }
+    },
+    {
+      "kind": "chapter-big",
+      "id": "c1_hang",
+      "night": true,
+      "x": 190.51364923966074,
+      "z": -67.94409264493744,
+      "reach": 3,
+      "approach": {
+        "x": 190.51364923966074,
+        "z": -67.94409264493744,
+        "d": 0
+      }
+    },
+    {
+      "kind": "story-interaction-big",
+      "id": "story_c1_hang",
+      "night": true,
+      "x": 190.51364923966074,
+      "z": -67.94409264493744,
+      "reach": 3.4,
+      "approach": {
+        "x": 190.51364923966074,
+        "z": -67.94409264493744,
+        "d": 0
+      }
+    },
+    {
+      "kind": "chapter-big",
+      "id": "c2_fly",
+      "night": true,
+      "x": 144.58905312370692,
+      "z": -131.13469387657386,
+      "reach": 3,
+      "approach": {
+        "x": 144.58905312370692,
+        "z": -131.13469387657386,
+        "d": 0
+      }
+    },
+    {
+      "kind": "story-interaction-big",
+      "id": "story_light0",
+      "night": true,
+      "x": 144.58905312370692,
+      "z": -131.13469387657386,
+      "reach": 2.2,
+      "approach": {
+        "x": 144.58905312370692,
+        "z": -131.13469387657386,
+        "d": 0
+      }
+    },
+    {
+      "kind": "story-interaction-big",
+      "id": "story_light1",
+      "night": true,
+      "x": 135.45638505860128,
+      "z": -127.23111570016013,
+      "reach": 2.2,
+      "approach": {
+        "x": 135.45638505860128,
+        "z": -127.23111570016013,
+        "d": 0
+      }
+    },
+    {
+      "kind": "story-interaction-big",
+      "id": "story_light2",
+      "night": true,
+      "x": 133.6266093225709,
+      "z": -146.33048504137665,
+      "reach": 2.2,
+      "approach": {
+        "x": 133.6266093225709,
+        "z": -146.33048504137665,
+        "d": 0
+      }
+    },
+    {
+      "kind": "chapter-big",
+      "id": "c2_tam",
+      "night": true,
+      "x": 139.74576993726973,
+      "z": -137.77267758883187,
+      "reach": 3,
+      "approach": {
+        "x": 139.74576993726973,
+        "z": -137.77267758883187,
+        "d": 0
+      }
+    },
+    {
+      "kind": "story-interaction-big",
+      "id": "story_c2_tam",
+      "night": true,
+      "x": 140.54576993726974,
+      "z": -136.97267758883186,
+      "reach": 3,
+      "approach": {
+        "x": 140.54576993726974,
+        "z": -136.97267758883186,
+        "d": 0
+      }
+    },
+    {
+      "kind": "chapter-big",
+      "id": "c2_teo",
+      "night": true,
+      "x": 146.1360178832677,
+      "z": -133.14159995271552,
+      "reach": 3,
+      "approach": {
+        "x": 146.1360178832677,
+        "z": -133.14159995271552,
+        "d": 0
+      }
+    },
+    {
+      "kind": "story-interaction-big",
+      "id": "story_c2_teo",
+      "night": true,
+      "x": 146.9360178832677,
+      "z": -132.3415999527155,
+      "reach": 3,
+      "approach": {
+        "x": 146.9360178832677,
+        "z": -132.3415999527155,
+        "d": 0
+      }
+    },
+    {
+      "kind": "chapter-big",
+      "id": "c2_job",
+      "night": true,
+      "x": 146.42178345935505,
+      "z": -126.40423440775497,
+      "reach": 3,
+      "approach": {
+        "x": 146.42178345935505,
+        "z": -126.40423440775497,
+        "d": 0
+      }
+    },
+    {
+      "kind": "story-interaction-big",
+      "id": "story_c2_job",
+      "night": true,
+      "x": 146.42178345935505,
+      "z": -126.40423440775497,
+      "reach": 3,
+      "approach": {
+        "x": 146.42178345935505,
+        "z": -126.40423440775497,
+        "d": 0
+      }
+    },
+    {
+      "kind": "chapter-big",
+      "id": "c2_vanmieu",
+      "night": true,
+      "x": 139.74576993726973,
+      "z": -137.77267758883187,
+      "reach": 3,
+      "approach": {
+        "x": 139.74576993726973,
+        "z": -137.77267758883187,
+        "d": 0
+      }
+    },
+    {
+      "kind": "story-interaction-big",
+      "id": "story_c2_vanmieu",
+      "night": true,
+      "x": 140.54576993726974,
+      "z": -136.97267758883186,
+      "reach": 3,
+      "approach": {
+        "x": 140.54576993726974,
+        "z": -136.97267758883186,
+        "d": 0
+      }
+    },
+    {
+      "kind": "chapter-big",
+      "id": "c2_tale",
+      "night": true,
+      "x": 127.1,
+      "z": -139,
+      "reach": 3,
+      "approach": {
+        "x": 127.1,
+        "z": -139,
+        "d": 0
+      }
+    },
+    {
+      "kind": "story-interaction-big",
+      "id": "story_c2_tale",
+      "night": true,
+      "x": 127.89999999999999,
+      "z": -138.2,
+      "reach": 3,
+      "approach": {
+        "x": 127.89999999999999,
+        "z": -138.2,
+        "d": 0
+      }
+    },
+    {
+      "kind": "chapter-big",
+      "id": "c2_find",
+      "night": true,
+      "x": 117.59357048266484,
+      "z": -116.2445482324,
+      "reach": 3,
+      "approach": {
+        "x": 117.59357048266484,
+        "z": -116.2445482324,
+        "d": 0
+      }
+    },
+    {
+      "kind": "story-interaction-big",
+      "id": "story_clue0",
+      "night": true,
+      "x": 117.59357048266484,
+      "z": -116.2445482324,
+      "reach": 2.2,
+      "approach": {
+        "x": 117.59357048266484,
+        "z": -116.2445482324,
+        "d": 0
+      }
+    },
+    {
+      "kind": "story-interaction-big",
+      "id": "story_clue1",
+      "night": true,
+      "x": 115.73545991797089,
+      "z": -140.4374662727253,
+      "reach": 2.2,
+      "approach": {
+        "x": 115.73545991797089,
+        "z": -140.4374662727253,
+        "d": 0
+      }
+    },
+    {
+      "kind": "story-interaction-big",
+      "id": "story_clue2",
+      "night": true,
+      "x": 123.18106992608759,
+      "z": -145.62028731106997,
+      "reach": 2.2,
+      "approach": {
+        "x": 123.18106992608759,
+        "z": -145.62028731106997,
+        "d": 0
+      }
+    },
+    {
+      "kind": "chapter-big",
+      "id": "c2_hang",
+      "night": true,
+      "x": 127.1,
+      "z": -125,
+      "reach": 3,
+      "approach": {
+        "x": 127.1,
+        "z": -125,
+        "d": 0
+      }
+    },
+    {
+      "kind": "story-interaction-big",
+      "id": "story_c2_hang",
+      "night": true,
+      "x": 127.1,
+      "z": -125,
+      "reach": 3.4,
+      "approach": {
+        "x": 127.1,
+        "z": -125,
+        "d": 0
+      }
+    },
+    {
+      "kind": "chapter-big",
+      "id": "c3_fly",
+      "night": true,
+      "x": -119,
+      "z": -17,
+      "reach": 3,
+      "approach": {
+        "x": -119,
+        "z": -17,
+        "d": 0
+      }
+    },
+    {
+      "kind": "story-interaction-big",
+      "id": "story_light_c3_fly_0",
+      "night": true,
+      "x": -119,
+      "z": -17,
+      "reach": 2.2,
+      "approach": {
+        "x": -119,
+        "z": -17,
+        "d": 0
+      }
+    },
+    {
+      "kind": "story-interaction-big",
+      "id": "story_light_c3_fly_1",
+      "night": true,
+      "x": -113.1420777008565,
+      "z": -25.837732930212503,
+      "reach": 2.2,
+      "approach": {
+        "x": -113.1420777008565,
+        "z": -25.837732930212503,
+        "d": 0
+      }
+    },
+    {
+      "kind": "story-interaction-big",
+      "id": "story_light_c3_fly_2",
+      "night": true,
+      "x": -108.00226181786536,
+      "z": -16.730977592250404,
+      "reach": 2.2,
+      "approach": {
+        "x": -108.00226181786536,
+        "z": -16.730977592250404,
+        "d": 0
+      }
+    },
+    {
+      "kind": "chapter-big",
+      "id": "c3_chi",
+      "night": true,
+      "x": -127.02220538513916,
+      "z": -3.6512009571940287,
+      "reach": 3,
+      "approach": {
+        "x": -127.02220538513916,
+        "z": -3.6512009571940287,
+        "d": 0
+      }
+    },
+    {
+      "kind": "story-interaction-big",
+      "id": "story_c3_chi",
+      "night": true,
+      "x": -126.22220538513916,
+      "z": -2.8512009571940284,
+      "reach": 3,
+      "approach": {
+        "x": -126.56027942434034,
+        "z": -2.760614291408146,
+        "d": 0.35
+      }
+    },
+    {
+      "kind": "chapter-big",
+      "id": "c3_words",
+      "night": true,
+      "x": -127.02220538513916,
+      "z": -3.6512009571940287,
+      "reach": 3,
+      "approach": {
+        "x": -127.02220538513916,
+        "z": -3.6512009571940287,
+        "d": 0
+      }
+    },
+    {
+      "kind": "story-interaction-big",
+      "id": "story_c3_words",
+      "night": true,
+      "x": -126.22220538513916,
+      "z": -2.8512009571940284,
+      "reach": 3,
+      "approach": {
+        "x": -126.56027942434034,
+        "z": -2.760614291408146,
+        "d": 0.35
+      }
+    },
+    {
+      "kind": "chapter-big",
+      "id": "c3_ferry",
+      "night": true,
+      "x": -129.4,
+      "z": -5.5,
+      "reach": 3,
+      "approach": {
+        "x": -129.4,
+        "z": -5.5,
+        "d": 0
+      }
+    },
+    {
+      "kind": "chapter-big",
+      "id": "c3_jack",
+      "night": true,
+      "x": -126.79779304926417,
+      "z": 4.967979789069249,
+      "reach": 3,
+      "approach": {
+        "x": -126.79779304926417,
+        "z": 4.967979789069249,
+        "d": 0
+      }
+    },
+    {
+      "kind": "story-interaction-big",
+      "id": "story_c3_jack",
+      "night": true,
+      "x": -125.99779304926417,
+      "z": 5.767979789069249,
+      "reach": 3,
+      "approach": {
+        "x": -125.99779304926417,
+        "z": 5.767979789069249,
+        "d": 0
+      }
+    },
+    {
+      "kind": "chapter-big",
+      "id": "c3_tale",
+      "night": true,
+      "x": -85.94843155819575,
+      "z": 9.69604901271812,
+      "reach": 3,
+      "approach": {
+        "x": -85.94843155819575,
+        "z": 9.69604901271812,
+        "d": 0
+      }
+    },
+    {
+      "kind": "story-interaction-big",
+      "id": "story_c3_tale",
+      "night": true,
+      "x": -85.14843155819575,
+      "z": 10.496049012718121,
+      "reach": 3,
+      "approach": {
+        "x": -85.14843155819575,
+        "z": 10.496049012718121,
+        "d": 0
+      }
+    },
+    {
+      "kind": "chapter-big",
+      "id": "c3_find",
+      "night": true,
+      "x": -86.29966283887,
+      "z": 13.698445152417547,
+      "reach": 3,
+      "approach": {
+        "x": -85.39033616489634,
+        "z": 14.223445152417547,
+        "d": 1.0499999999999998
+      }
+    },
+    {
+      "kind": "story-interaction-big",
+      "id": "story_clue3_0",
+      "night": true,
+      "x": -82.97071744985382,
+      "z": 25.488229771781743,
+      "reach": 2.4,
+      "approach": {
+        "x": -82.97071744985382,
+        "z": 25.488229771781743,
+        "d": 0
+      }
+    },
+    {
+      "kind": "story-interaction-big",
+      "id": "story_clue3_1",
+      "night": true,
+      "x": -104.68344277772431,
+      "z": 7.132148872601734,
+      "reach": 2.4,
+      "approach": {
+        "x": -104.68344277772431,
+        "z": 7.132148872601734,
+        "d": 0
+      }
+    },
+    {
+      "kind": "story-interaction-big",
+      "id": "story_clue3_2",
+      "night": true,
+      "x": -116.70959897402498,
+      "z": 16.690784650228487,
+      "reach": 2.4,
+      "approach": {
+        "x": -116.70959897402498,
+        "z": 16.690784650228487,
+        "d": 0
+      }
+    },
+    {
+      "kind": "chapter-big",
+      "id": "c3_hang",
+      "night": true,
+      "x": -86.29966283887,
+      "z": 13.698445152417547,
+      "reach": 3,
+      "approach": {
+        "x": -85.39033616489634,
+        "z": 14.223445152417547,
+        "d": 1.0499999999999998
+      }
+    },
+    {
+      "kind": "story-interaction-big",
+      "id": "story_c3_hang",
+      "night": true,
+      "x": -86.29966283887,
+      "z": 13.698445152417547,
+      "reach": 3.4,
+      "approach": {
+        "x": -85.39033616489634,
+        "z": 14.223445152417547,
+        "d": 1.0499999999999998
+      }
+    },
+    {
+      "kind": "yard-interaction",
+      "id": "yard_start",
+      "night": true,
+      "x": -8.700000000000001,
+      "z": -32.199999999999996,
+      "reach": 2.4,
+      "approach": {
+        "x": -8.700000000000001,
+        "z": -32.199999999999996,
+        "d": 0
+      }
+    },
+    {
+      "kind": "yard-interaction",
+      "id": "yard_coach",
+      "night": true,
+      "x": 35.8,
+      "z": -44.64,
+      "reach": 3,
+      "approach": {
+        "x": 35.8,
+        "z": -44.64,
+        "d": 0
+      }
+    },
+    {
+      "kind": "yard-goal",
+      "id": "Y_y_coach",
+      "night": true,
+      "x": 35.8,
+      "z": -44.64,
+      "reach": 3,
+      "approach": {
+        "x": 35.8,
+        "z": -44.64,
+        "d": 0
+      }
+    },
+    {
+      "kind": "yard-interaction",
+      "id": "yard_job_rel_driver",
+      "night": true,
+      "x": 34,
+      "z": -44.76,
+      "reach": 2.2,
+      "approach": {
+        "x": 34,
+        "z": -44.76,
+        "d": 0
+      }
+    },
+    {
+      "kind": "yard-interaction",
+      "id": "yard_job_rel_builder",
+      "night": true,
+      "x": 35.04,
+      "z": -44.76,
+      "reach": 2.2,
+      "approach": {
+        "x": 35.04,
+        "z": -44.76,
+        "d": 0
+      }
+    },
+    {
+      "kind": "yard-interaction",
+      "id": "yard_job_rel_digger",
+      "night": true,
+      "x": 36.08,
+      "z": -44.76,
+      "reach": 2.2,
+      "approach": {
+        "x": 36.08,
+        "z": -44.76,
+        "d": 0
+      }
+    },
+    {
+      "kind": "yard-goal",
+      "id": "Y_y_jobs",
+      "night": true,
+      "x": 36.2,
+      "z": -48.8,
+      "reach": 3,
+      "approach": {
+        "x": 36.2,
+        "z": -48.8,
+        "d": 0
+      }
+    },
+    {
+      "kind": "yard-interaction",
+      "id": "yard_truck",
+      "night": true,
+      "x": 32.6,
+      "z": -48,
+      "reach": 3,
+      "approach": {
+        "x": 32.6,
+        "z": -48,
+        "d": 0
+      }
+    },
+    {
+      "kind": "yard-goal",
+      "id": "Y_y_truck",
+      "night": true,
+      "x": 32.6,
+      "z": -48,
+      "reach": 3,
+      "approach": {
+        "x": 32.6,
+        "z": -48,
+        "d": 0
+      }
+    },
+    {
+      "kind": "yard-interaction",
+      "id": "yard_dig",
+      "night": true,
+      "x": 41.8,
+      "z": -53.6,
+      "reach": 3,
+      "approach": {
+        "x": 41.8,
+        "z": -53.6,
+        "d": 0
+      }
+    },
+    {
+      "kind": "yard-goal",
+      "id": "Y_y_dig",
+      "night": true,
+      "x": 41.8,
+      "z": -53.6,
+      "reach": 3,
+      "approach": {
+        "x": 41.8,
+        "z": -53.6,
+        "d": 0
+      }
+    },
+    {
+      "kind": "yard-interaction",
+      "id": "yard_build",
+      "night": true,
+      "x": 39.4,
+      "z": -48.4,
+      "reach": 3,
+      "approach": {
+        "x": 39.4,
+        "z": -48.4,
+        "d": 0
+      }
+    },
+    {
+      "kind": "yard-goal",
+      "id": "Y_y_build",
+      "night": true,
+      "x": 39.4,
+      "z": -48.4,
+      "reach": 3,
+      "approach": {
+        "x": 39.4,
+        "z": -48.4,
+        "d": 0
+      }
+    },
+    {
+      "kind": "yard-interaction",
+      "id": "yard_party",
+      "night": true,
+      "x": -8.700000000000001,
+      "z": -32.199999999999996,
+      "reach": 2.4,
+      "approach": {
+        "x": -8.700000000000001,
+        "z": -32.199999999999996,
+        "d": 0
+      }
+    },
+    {
+      "kind": "yard-goal",
+      "id": "Y_y_party",
+      "night": true,
+      "x": -9.9,
+      "z": -33.8,
+      "reach": 3,
+      "approach": {
+        "x": -9.9,
+        "z": -33.8,
+        "d": 0
+      }
+    },
+    {
+      "kind": "classic",
+      "id": "owl",
+      "night": true,
+      "x": 7,
+      "z": -84,
+      "reach": 3,
+      "approach": {
+        "x": 8.05,
+        "z": -84,
+        "d": 1.0499999999999998
+      }
+    },
+    {
+      "kind": "classic",
+      "id": "tower1",
+      "night": true,
+      "x": 10,
+      "z": -66,
+      "reach": 5.5,
+      "approach": {
+        "x": 10,
+        "z": -66,
+        "d": 0
+      }
+    },
+    {
+      "kind": "classic",
+      "id": "plateau",
+      "night": true,
+      "x": -7,
+      "z": -84,
+      "reach": 4.9,
+      "approach": {
+        "x": -3.6658021954299107,
+        "z": -82.075,
+        "d": 3.8500000000000005
+      }
+    },
+    {
+      "kind": "classic",
+      "id": "glider",
+      "night": true,
+      "x": 7,
+      "z": -84,
+      "reach": 3,
+      "approach": {
+        "x": 8.05,
+        "z": -84,
+        "d": 1.0499999999999998
+      }
+    },
+    {
+      "kind": "classic",
+      "id": "village",
+      "night": true,
+      "x": 172,
+      "z": -42,
+      "reach": 3.4,
+      "approach": {
+        "x": 172,
+        "z": -42,
+        "d": 0
+      }
+    },
+    {
+      "kind": "classic",
+      "id": "market",
+      "night": true,
+      "x": 206,
+      "z": -53.6,
+      "reach": 3,
+      "approach": {
+        "x": 205.25753787975412,
+        "z": -54.34246212024588,
+        "d": 1.0499999999999998
+      }
+    },
+    {
+      "kind": "classic",
+      "id": "cook",
+      "night": true,
+      "x": 5,
+      "z": -68,
+      "reach": 2.8,
+      "approach": {
+        "x": 6.515544456622768,
+        "z": -67.125,
+        "d": 1.75
+      }
+    },
+    {
+      "kind": "classic",
+      "id": "folk",
+      "night": true,
+      "x": 220,
+      "z": -22.4,
+      "reach": 3,
+      "approach": {
+        "x": 221.05,
+        "z": -22.4,
+        "d": 1.0499999999999998
+      }
+    },
+    {
+      "kind": "classic",
+      "id": "playground",
+      "night": true,
+      "x": 2,
+      "z": -16,
+      "reach": 3,
+      "approach": {
+        "x": 3.05,
+        "z": -16,
+        "d": 1.0499999999999998
+      }
+    },
+    {
+      "kind": "classic",
+      "id": "market3",
+      "night": true,
+      "x": 175,
+      "z": 114,
+      "reach": 3.4,
+      "approach": {
+        "x": 175,
+        "z": 114,
+        "d": 0
+      }
+    },
+    {
+      "kind": "classic",
+      "id": "aussie",
+      "night": true,
+      "x": -104,
+      "z": -65,
+      "reach": 3.4,
+      "approach": {
+        "x": -104,
+        "z": -65,
+        "d": 0
+      }
+    },
+    {
+      "kind": "classic",
+      "id": "buffalo",
+      "night": true,
+      "x": 177.08733339250958,
+      "z": -21.867101956217347,
+      "reach": 3,
+      "approach": {
+        "x": 177.08733339250958,
+        "z": -21.867101956217347,
+        "d": 0
+      }
+    },
+    {
+      "kind": "classic",
+      "id": "leafies",
+      "night": true,
+      "x": -12,
+      "z": -90,
+      "reach": 2.6,
+      "approach": {
+        "x": -10.95,
+        "z": -90,
+        "d": 1.0499999999999998
+      }
+    },
+    {
+      "kind": "classic",
+      "id": "statue",
+      "night": true,
+      "x": 222,
+      "z": -44,
+      "reach": 3.9,
+      "approach": {
+        "x": 222.72469332628705,
+        "z": -41.29540768639061,
+        "d": 2.8000000000000003
+      }
+    },
+    {
+      "kind": "classic",
+      "id": "postcards",
+      "night": true,
+      "x": 55,
+      "z": -55.5,
+      "reach": 3.4,
+      "approach": {
+        "x": 55,
+        "z": -55.5,
+        "d": 0
+      }
+    },
+    {
+      "kind": "classic",
+      "id": "towers",
+      "night": true,
+      "x": 10,
+      "z": -66,
+      "reach": 5.5,
+      "approach": {
+        "x": 10,
+        "z": -66,
+        "d": 0
+      }
+    },
+    {
+      "kind": "classic",
+      "id": "shrines",
+      "night": true,
+      "x": -7,
+      "z": -84,
+      "reach": 4.9,
+      "approach": {
+        "x": -3.6658021954299107,
+        "z": -82.075,
+        "d": 3.8500000000000005
+      }
+    }
+  ],
+  "blocked": [],
+  "missing": [],
+  "duplicates": []
+}

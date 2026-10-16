@@ -43,25 +43,25 @@ const SHARED = ['js/state.js', 'js/custom.js', 'js/world.js', 'js/games/frame.js
 const out = path.join(dir, 'bundle');
 fs.rmSync(out, { recursive: true, force: true });
 const res = await esbuild.build({
-  entryPoints: { main: path.join(dir, 'js/main.js'), ...Object.fromEntries(SHARED.map(f => [f.replace(/^js\//, '').replace(/\.js$/, '').replace(/\//g, '-'), path.join(dir, f)])) }, bundle: true, splitting: true, format: 'esm', target: 'es2022',
+  entryPoints: { main: path.join(dir, 'js/launch.js'), ...Object.fromEntries(SHARED.map(f => [f.replace(/^js\//, '').replace(/\.js$/, '').replace(/\//g, '-'), path.join(dir, f)])) }, bundle: true, splitting: true, format: 'esm', target: 'es2022',
   // (11 Oct, #36) keepNames off: nothing reads a function's or class's own name; saves about 13 KB
   minify: true, keepNames: false, legalComments: 'none', charset: 'utf8', outdir: out, chunkNames: 'c-[hash]', entryNames: '[name]-[hash]',
   metafile: true, logLevel: 'error', preserveSymlinks: true // (a copy with linked folders, as the checks build it, keeps its own paths)
 });
 const rel = f => path.relative(dir, path.resolve(f)).split(path.sep).join('/');
 const outputs = res.metafile.outputs, files = Object.keys(outputs).map(rel).filter(f => f.endsWith('.js')).sort();
-const entry = Object.keys(outputs).find(k => outputs[k].entryPoint && rel(outputs[k].entryPoint) === 'js/main.js' && k.endsWith('.js'));
-if (!entry) throw new Error('bundle: no output for js/main.js');
+const entry = Object.keys(outputs).find(k => outputs[k].entryPoint && rel(outputs[k].entryPoint) === 'js/launch.js' && k.endsWith('.js'));
+if (!entry) throw new Error('bundle: no output for js/launch.js');
 // the chunks the start needs (static imports from the entry, all the way down)
 const start = new Set(), walk = k => { for (const i of outputs[k].imports || []) if (i.kind === 'import-statement' && !start.has(i.path)) { start.add(i.path); walk(i.path); } };
 walk(entry);
 // index.html: start the bundle, preload its start-up chunks
 const idx = path.join(dir, 'index.html'); let html = fs.readFileSync(idx, 'utf8');
 const pre = '<!-- preload:start (tools/bundle.mjs) -->\n' + [...start].map(f => `<link rel="modulepreload" href="${rel(f)}">`).join('\n') + '\n<!-- preload:end -->';
-if (!/<!-- preload:start[\s\S]*?<!-- preload:end -->/.test(html) || !html.includes('src="js/main.js"')) throw new Error('index.html: no preload block or js/main.js script');
+if (!/<!-- preload:start[\s\S]*?<!-- preload:end -->/.test(html) || !html.includes('src="js/launch.js"')) throw new Error('index.html: no preload block or js/launch.js script');
 const imap = {}; for (const [k, o] of Object.entries(outputs)) if (o.entryPoint && SHARED.includes(rel(o.entryPoint))) imap['/' + rel(o.entryPoint)] = './' + rel(k);
 const mapTag = `<script type="importmap">${JSON.stringify({ imports: imap })}</script>`;
-html = html.replace(/<!-- preload:start[\s\S]*?<!-- preload:end -->/, mapTag + '\n' + pre).replace('src="js/main.js"', `src="${rel(entry)}"`);
+html = html.replace(/<!-- preload:start[\s\S]*?<!-- preload:end -->/, mapTag + '\n' + pre).replace('src="js/launch.js"', `src="${rel(entry)}"`);
 fs.writeFileSync(idx, html);
 // sw.js: the offline list without the bundled files, with bundle/ (every chunk, so stories and games that load later
 // also play offline)

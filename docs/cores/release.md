@@ -152,3 +152,31 @@ All of them once per release (`node suite.mjs`), plus `node suite.mjs --changed`
 - **14 Oct AEDT, owner: "Release" for the verified r74 round.** PR #138 marked ready and merged at the exact verified head `96b3ad9b`, merge commit `1ce11b29d71a94225cf870c68173f62b624fdfed`. PR #139 remains separate; no approval to bypass its failed review was inferred. The five metadata files (HANDOFF, board, release notes, check map and timings) are being committed without game-code changes. Netlify deployment verification follows.
 
 - **14 Oct, 7:03 am AEDT: r74 live, verified on both sparklevalley.au and sparklevalley.netlify.app.** BUILD r74, service worker `sv-2026-10-14-r74`, index, packed entry `bundle/main-OQD3YYUY.js` and release definitions all return HTTP 200. Verification metadata retained at `7a567899`; this completion note changes docs only. PR #139 remains open and excluded.
+
+
+### Combined owner round resumed — 14 Oct 2026, 11:56 am AEDT
+
+Owner authorized every discussed item as one batch; this is implementation/verification, not deployment approval. Branch: `work/owner-round-20261014`; remote checkpoint `08ada87abc53c9ef06d935476272c5ff9b443aa6`.
+
+Latest browser evidence: `tests/owner-family-smoke.mjs` passes two isolated browser devices against the real family action handler: approve before photos, upload and transfer with postcard, metadata-only localStorage, cached viewing and backup offline, and revocation clearing private cache. Family/report unit subset: 13 passed. Prior interaction smoke: four viewports/languages and five new games passed; later UI changes require another visual pass. Studio page help now uses page-specific descriptions and survives access-role redraw; compass requires explicit current Studio enable, including for devices with old on values.
+
+Regression run underway. `emoji` initially failed because sparse checkout lacked videos/README.txt; restored unchanged from HEAD for rerun. Release gates still open: GitHub full suite, current screenshots, packed cold/warm/offline/update and local speed checks, voices, collected errors and manual iPhone review. Azure credential is not present locally; the branch-only owner-round-voices workflow uses the existing GitHub secret and returns recordings as an artifact for integration. Do not claim zero bugs or release readiness from smoke passes.
+
+
+### Combined owner round checkpoint — 14 Oct 2026, 12:34 pm AEDT
+
+Draft PR #195 (remote `daf2e3efaa99f1ec073a73c92b04cb53f1c336ba`) is open. Candidate r75 now includes the voice job's 112 MP3 recordings and rebuilt manifest/areas. Owner-round voice artifact: run 38493845287, artifact 11862739191; successful Azure recording and coverage check. New UI text since that recording requires the next recording pass.
+
+Regression: first run 9/13; failures were missing sparse-checkout videos/README.txt, synthetic pointer capture during autoplay, findings queued during an active report send, and offline saving starting only after world build. Restored the unchanged README and marked it present; untrusted synthetic pointers no longer request native capture; reporting drains new arrivals and awaits legacy autoplay recovery; service-worker registration now starts in launch.js while the world builds. Rerun: autoplay pass (243 s), testerreport pass (64 s), offline pass (36 s: saved 4.2 s, offline 3.4 s into valley, dead connection 6.5 s). Emoji failed again because the branch fetch removed the sparse-only fixture; restoring it and unsetting skip-worktree gave a subsequent pass. This was checkout repair, not weakening a test.
+
+Expanded owner screen/game smoke: 13 cases pass (phone EN/VI, tablet, desktop, landscape EN/VI, fixed portrait/landscape Who panels, five games). Two-device family smoke passed again. Source/UI suite: emoji, noemoji, names, bilingual, preload, arch, rules, types and nostudio — 9/9. Local speed suite 3/3: perf 88 s, battery 91 s, startup 92 s. Packed startup at calibrated tablet speed: first 887 KB, title 2.0 s, valley 30.6 s; second download 0 KB. Initial light Welcome is earlier than the measured game title.
+
+Visual review caught text passing beneath the floating settings button despite previous bounds checks. Grown-ups now has a separate scrolling body and reserved Save footer; body/footer non-overlap is an explicit ownerround assertion. Wardrobe Done is text-labelled. These latest changes and r75 are being checked again with ownerround, ownerfamily, ownercapture, phone, contract and Studio. Owner regressions are registered in tests/suite.mjs/run.mjs for future full-suite runs.
+
+GitHub Quick checks pass on the earlier checkpoint; Full suite remains in progress. AI review is **not passed**: commit status is error, logs report is_error:true and VERDICT:none despite the workflow wrapper being green. Physical iPhone and deployment-host verification remain open; no deployment approved.
+
+## Owner decisions and repair progress · 15 October 2026 AEDT
+
+Latest Henry preference supersedes earlier radio answer: core/nearby voices first, automatic full selected-language pack on Wi-Fi; bilingual opt-in includes both, mobile-data permission preserved. Desktop Audio/Mic beneath navigation; target-shaped companion hat goal explains on tap and needs explicit Buy. These extend all existing authorized work; no main merge/deploy/release.
+
+Local network5/5 and Audio/festival8/8 passed. New bounded Wi-Fi language-switch regression passed44s before environment restart; six-check run incomplete because ownerfamily stopped. Source583915e9 plus checked new edits await durable isolated checkpoint. Older dd91f33b full suite38601628166 is140/143, family failure unresolved; Checks/Quick/voices/mirror independently succeeded. See canonical STATUS and evidence restrictions; no whole-round completion or substantive AI-review verdict.

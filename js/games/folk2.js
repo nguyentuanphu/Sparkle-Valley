@@ -61,7 +61,7 @@ register({
     const addStar = () => stars.push({ x: rand(30, w - 30), y: rand(20, h * .55), t: 0 });
     for (let k = 0; k < 3; k++) addStar();
     const pt = e => { const q = local(c, e); fx = q.x * w / q.r.width; };
-    c.onpointerdown = e => { hold = true; pt(e); c.setPointerCapture(e.pointerId); api.sfx.tap(); };
+    c.onpointerdown = e => { hold = true; pt(e); if (e.isTrusted) c.setPointerCapture(e.pointerId); api.sfx.tap(); };
     c.onpointermove = e => { if (hold) pt(e); };
     c.onpointerup = c.onpointercancel = () => { hold = false; };
     const tick = now => {

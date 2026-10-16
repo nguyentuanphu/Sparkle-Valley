@@ -18,7 +18,8 @@ import { settings } from './state.js';
 import { BUILD } from './build.js';
 import { pic } from './art.js';
 import { takeCopy, putCopyBack, hasCopy } from './keepcopy.js';
-import { AP_GROUPS, apSpeed, AP_SPEEDS, AP_OPEN_WAIT, AP_RIGHT, AP_STUCK, AP_PATH, AP_TRAIL, AP_QUESTS, apGroupOf, revertOf } from './content/autoplay.js';
+import { sendAutoplayReport, reportDelivery, reportingState, retryReports } from './tester.js';
+import { AP_GROUPS, apSpeed, apGameSeconds, AP_SPEEDS, AP_OPEN_WAIT, AP_RIGHT, AP_STUCK, AP_PATH, AP_TRAIL, AP_QUESTS, apGroupOf, revertOf } from './content/autoplay.js';
 
 const REPORT = 'sv2_autoplay_report', UI = 'sv2_autoplay_ui', RUNCOPY = 'sv2_autoplay_copy', OLD_BACKUP = 'sv2_autoplay_backup';
 const wait = ms => new Promise(r => setTimeout(r, ms));
@@ -26,7 +27,7 @@ const get = (k, d) => { try { const v = localStorage.getItem(k); return v == nul
 const put = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { } };
 const STOP = new Error('stop'), SKIP = new Error('skip');
 const rnd = (a, b) => a + Math.random() * (b - a), any = list => list[Math.floor(Math.random() * list.length)];
-let G = null, root = null, run = null, ui = null, errSink = null, finger = null, trail = [], btnTimer = 0;
+let G = null, root = null, run = null, ui = null, errSink = null, finger = null, trail = [], btnTimer = 0, hostClose = null;
 
 export function mountAutoplay(game) {
   if (root) return;
@@ -34,21 +35,25 @@ export function mountAutoplay(game) {
   if (localStorage.getItem(OLD_BACKUP)) { oldPutBack(); return; } // (a check from before 13 Oct that never finished)
   if (hasCopy(RUNCOPY)) putCopyBack(RUNCOPY, G); // a run that never ended (the page was closed): its progress goes back
   ui = Object.assign({ open: false, groups: AP_GROUPS.filter(g => g.key !== 'quests').map(g => g.key), speed: 'fast', x: null, y: null, q: '' }, get(UI, {}));
-  if (!AP_SPEEDS[ui.speed]) ui.speed = 'fast';
+  const devicePolicy = liveRule('tester')?.policies?.[localStorage.getItem('sv2_playerid') || '']; if (devicePolicy?.speed && AP_SPEEDS[devicePolicy.speed]) ui.speed = devicePolicy.speed;
+  if (!AP_SPEEDS[ui.speed]) ui.speed = 'x1';
   root = el('div', 'apbox'); root.setAttribute('role', 'dialog'); root.setAttribute('aria-label', T('Auto play check', 'Tự chơi để kiểm tra'));
-  style(); document.body.appendChild(root); draw();
+  style(); document.body.appendChild(root); addEventListener('sv-report-delivery', () => { if (root && !run && ui.open) draw(); }); draw();
   finger = el('div', 'apfinger'); finger.setAttribute('aria-hidden', 'true'); finger.hidden = true; document.body.appendChild(finger);
   addEventListener('error', e => errSink && errSink.push(String(e.message || e.error || 'error')));
   addEventListener('unhandledrejection', e => errSink && errSink.push(String((e.reason && e.reason.message) || e.reason || 'error')));
   const ce = console.error; console.error = (...a) => { if (errSink) errSink.push(a.map(String).join(' ').slice(0, 200)); ce.apply(console, a); };
   btnTimer = setInterval(buttons, 1000); buttons();
   G.autoplay = { unmount, running: () => !!run, trail: () => trail.slice(),
-    walkTo: (x, z, speed) => walkTo(x, z, speed), open: () => { ui.open = true; put(UI, ui); draw(); }, // (the checks: one trip, as a run would make it)
+    walkTo: (x, z, speed) => walkTo(x, z, speed),
+    open: () => { if (G.tester?.openPanel) return G.tester.openPanel(0, 'autoplay'); ui.open = true; put(UI, ui); draw(); },
+    attach: (host, close) => { hostClose = close; host.appendChild(root); ui.open = true; put(UI, ui); draw(); },
+    detach: () => { hostClose = null; document.body.appendChild(root); ui.open = false; put(UI, ui); draw(); },
     stop: () => { if (run) run.stop = true; }, start: (keys, speed) => { if (speed) ui.speed = AP_SPEEDS[speed] ? speed : 'fast'; return start(keys); } };
 }
 export function unmount() {
   if (run) run.stop = true; clearInterval(btnTimer);
-  if (root) root.remove(); if (finger) finger.remove(); root = finger = null;
+  if (root) root.remove(); if (finger) finger.remove(); root = finger = null; hostClose = null;
   document.querySelectorAll('.zoomer .z-ap').forEach(b => b.remove());
   if (G) delete G.autoplay;
 }
@@ -65,9 +70,10 @@ function oldPutBack() {
 function buttons() {
   for (const hud of G.huds || []) {
     const z = hud.q && hud.q('.zoomer'); if (!z) continue;
+    if (z.querySelector('.z-lb')) { z.querySelector('.z-ap')?.remove(); continue; }
     let b = z.querySelector('.z-ap');
     if (!b) {
-      b = el('button', 'z-ap', `${pic('🤖')}<i class="ap-n" hidden></i>`); b.setAttribute('aria-label', T('Auto play', 'Tự chơi'));
+      b = el('button', 'z-ap', `${pic('🐞')}<i class="ap-n" hidden></i>`); b.setAttribute('aria-label', T('Auto play', 'Tự chơi'));
       b.addEventListener('pointerdown', e => e.stopPropagation());
       b.onclick = e => { e.stopPropagation(); ui.open = !ui.open; put(UI, ui); draw(); };
       const lb = z.querySelector('.z-lb'); if (lb) lb.after(b); else z.appendChild(b);
@@ -149,10 +155,10 @@ function onScreen(x, y, z) {
 // ---------- moving like a child ----------
 // a path round water, walls, houses and trees (G.goodSpot), on a grid; null when there is none on foot
 async function findPath(x0, z0, x1, z1, near) {
-  const c = AP_PATH.cell, m = AP_PATH.margin, minX = Math.min(x0, x1) - m, minZ = Math.min(z0, z1) - m, nx = Math.ceil((Math.max(x0, x1) + m - minX) / c), nz = Math.ceil((Math.max(z0, z1) + m - minZ) / c);
+  const c = Math.min(AP_PATH.cell, Math.max(.35, near / 2)), m = AP_PATH.margin, minX = Math.min(x0, x1) - m, minZ = Math.min(z0, z1) - m, nx = Math.ceil((Math.max(x0, x1) + m - minX) / c), nz = Math.ceil((Math.max(z0, z1) + m - minZ) / c);
   const ix = x => Math.round((x - minX) / c), iz = z => Math.round((z - minZ) / c), key = (i, j) => i * 100000 + j, wx = i => minX + i * c, wz = j => minZ + j * c;
   const good = new Map(), ok = (i, j) => { if (i < 0 || j < 0 || i > nx || j > nz) return false; const k = key(i, j); if (!good.has(k)) good.set(k, !!G.goodSpot(wx(i), wz(j)) || Math.hypot(wx(i) - x0, wz(j) - z0) < 2.2); return good.get(k); }; // (the first steps away from a wall or a villager the child stands by)
-  const si = ix(x0), sj = iz(z0), reach = Math.max(near + 1, 3.5);
+  const si = ix(x0), sj = iz(z0), reach = Math.max(.1, near - .1);
   const open = [[0, si, sj]], from = new Map([[key(si, sj), null]]), cost = new Map([[key(si, sj), 0]]); let n = 0, end = null;
   const H = (i, j) => Math.hypot(wx(i) - x1, wz(j) - z1);
   while (open.length && n < AP_PATH.max) {
@@ -173,19 +179,21 @@ async function findPath(x0, z0, x1, z1, near) {
   const clear = (a, b) => { const d = Math.hypot(b.x - a.x, b.z - a.z), s = Math.ceil(d / .7); for (let k = 1; k < s; k++) if (!G.goodSpot(a.x + (b.x - a.x) * k / s, a.z + (b.z - a.z) * k / s)) return false; return true; };
   const out = []; let at = { x: x0, z: z0 }, k = 0;
   while (k < pts.length) { let far = k; for (let q = pts.length - 1; q > k; q--) if (clear(at, pts[q])) { far = q; break; } at = pts[far]; out.push(at); k = far + 1; }
-  if (Math.hypot(x1 - at.x, z1 - at.z) > .5 && clear(at, { x: x1, z: z1 })) out.push({ x: x1, z: z1 });
   return out;
 }
 // walk along the points like a tap-to-walk; false: stuck (a jump was tried first)
 async function walk(path, x, z, near) {
   const h = hero(); let jumped = false;
   for (let k = 0; k < path.length; k++) {
-    const p = path[k], last = k === path.length - 1, to = last ? Math.max(.8, near - .3) : 1.1;
+    const p = path[k], last = k === path.length - 1, to = last ? Math.max(.1, Math.min(.8, near - Math.hypot(p.x - x, p.z - z) - .05)) : 1.1;
     let mark = { x: h.pos.x, z: h.pos.z, t: Date.now() };
     while (Math.hypot(h.pos.x - p.x, h.pos.z - p.z) > to) {
       if (Math.hypot(h.pos.x - x, h.pos.z - z) <= near) { h.goal = null; return true; }
       if (topOpen()) { h.goal = null; await settle(40); await closeAll(); mark = { x: h.pos.x, z: h.pos.z, t: Date.now() }; }
-      G.paused = false; h.goal = { x: p.x, z: p.z }; h.goalT = 0; h.autoRun = sp().run;
+      // Tap-to-walk stops .7m before its goal. For a tiny approach, aim just beyond the waypoint
+      // and stop on actual arrival; ordinary movement/collision still decides whether it can be reached.
+      const d = Math.hypot(p.x - h.pos.x, p.z - h.pos.z), beyond = last && to < .75 && d > .001 ? .75 / d : 0;
+      G.paused = false; h.goal = { x: p.x + (p.x - h.pos.x) * beyond, z: p.z + (p.z - h.pos.z) * beyond }; h.goalT = 0; h.autoRun = sp().run;
       await hold(.1);
       if (Date.now() - mark.t > AP_STUCK.secs * 1000) {
         if (Math.hypot(h.pos.x - mark.x, h.pos.z - mark.z) < AP_STUCK.moved) {
@@ -196,22 +204,31 @@ async function walk(path, x, z, near) {
       }
     }
   }
-  h.goal = null; h.autoRun = false; return true;
+  h.goal = null; h.autoRun = false; return Math.hypot(h.pos.x - x, h.pos.z - z) <= near;
 }
 async function go(x, z, near = 1.8, note) {
-  const h = hero(); if (!h || !Number.isFinite(x) || !Number.isFinite(z)) return;
-  const far = () => Math.hypot(h.pos.x - x, h.pos.z - z); if (far() <= near) return;
+  const h = hero(); if (!h || !Number.isFinite(x) || !Number.isFinite(z)) { note?.(T('no way on foot', 'không có đường đi bộ')); return false; }
+  const far = () => Math.hypot(h.pos.x - x, h.pos.z - z);
   if (topOpen()) { await settle(40, note); await closeAll(); }
   G.paused = false; if (h.riding && h.dismount) h.dismount();
-  if (far() > sp().fly) { step_('fly', `${Math.round(x)},${Math.round(z)}`); await G.travel(h, x - 1.5, z + 2); await hold(.4); }
+  // Public riders must use the same get-off input as a child before setting a walking goal.
+  if (h.carry && (h.carryVehicle || G.traffic?.slots.some(s => s.passenger === h))) {
+    step_('jump', T('Get off', 'Xuống xe')); G.pads[0]._jump = true;
+    if (!await until(() => !h.carry, 2)) { await stuck(note); return false; }
+  }
+  if (far() <= near) return true;
+  // (reports #251/#256) a long trip lands on clear ground beside the target, like a child's Go button (G.landBy), never inside what stands there
+  if (far() > sp().fly) { step_('fly', `${Math.round(x)},${Math.round(z)}`); await G.landBy(h, x, z); await hold(.4); }
   for (let tries = 0; tries < 3 && far() > near; tries++) {
     const path = await findPath(h.pos.x, h.pos.z, x, z, near);
-    if (!path) { step_('fly', T('no way on foot', 'không có đường đi bộ')); await G.landBy(h, x, z); await hold(.4); if (far() <= near + 6) return; continue; }
+    if (!path) { step_('fly', T('no way on foot', 'không có đường đi bộ')); await G.landBy(h, x, z); await hold(.4); if (far() <= near) return true; continue; }
     step_('walk', `${Math.round(x)},${Math.round(z)} (${path.length})`);
-    if (await walk(path, x, z, near)) return;
+    if (await walk(path, x, z, near)) return true;
     if (tries === 0) await stuck(note); // (reported once a jump has not helped; then it tries another way)
   }
   if (far() > near + 3) { step_('fly', T('still stuck', 'vẫn bị kẹt')); await G.landBy(h, x, z); await hold(.4); }
+  if (far() <= near) return true;
+  note?.(T('still stuck', 'vẫn bị kẹt')); return false;
 }
 // stuck: a problem, with the spot and a picture; also sent to Studio straight away
 async function stuck(note) {
@@ -272,9 +289,9 @@ async function playGame(note) {
   let last = Date.now();
   playWatch.on = k => { last = Date.now(); if (k === 'right') r.rights++; if (k === 'wrong') r.wrongs++; if (k === 'win') r.won = true; };
   const mo = new MutationObserver(() => { last = Date.now(); }); mo.observe(stage, { childList: true, subtree: true, attributes: true, characterData: true });
-  const end = Date.now() + s.game * (run.quest ? 3 : 1) * 1000; // (a quest's game is played longer: the quest needs it done)
+  const started = Date.now(); // A legal plan's bound includes normal thinking/finger time, not faster play.
   try {
-    while ((Date.now() < end || gl.querySelector('.gl-win')) && gl.isConnected && !gl.classList.contains('out')) {
+    while ((Date.now() < started + apGameSeconds(s, playWatch.maxActions, run.quest ? 3 : 1) * 1000 || gl.querySelector('.gl-win')) && gl.isConnected && !gl.classList.contains('out')) {
       await hold(think()); if (!gl.isConnected) break;
       const win = gl.querySelector('.gl-win');
       if (win) { if (win.classList.contains('ask')) { const t = [win.querySelector('.gl-tapout'), win.querySelector('p'), win].find(shown); if (!t || !await tap(t, note)) await until(() => !gl.isConnected, 1); } continue; }
@@ -287,6 +304,12 @@ async function playGame(note) {
       if (ask && ask.els.some(shown)) {
         const right = ask.els.find(e => shown(e) && ask.check(e)), wrong = ask.els.filter(e => shown(e) && !ask.check(e) && !tried.has(e));
         pick = right && (Math.random() < AP_RIGHT || !wrong.length) ? right : any(wrong);
+      } else if (playWatch.plan) {
+        pick = playWatch.plan();
+        if (!pick || !shown(pick) || pick.disabled) {
+          if (Date.now() - last > s.idle * 1000) { r.cant = true; break; }
+          continue; // wait for the next legal turn; never tap an occupied board at random
+        }
       } else {
         const all = targets(stage), fresh = all.filter(e => !tried.has(e));
         if (all.length && !fresh.length) tried.clear();
@@ -302,6 +325,7 @@ async function playGame(note) {
       if (Date.now() - last > s.idle * 1000) { r.cant = true; break; }
     }
   } finally { playWatch.on = null; mo.disconnect(); }
+  if (!r.won && gl.isConnected && !gl.classList.contains('out')) r.cant = true;
   return r;
 }
 
@@ -322,11 +346,11 @@ async function readTale(note) {
 // ---------- each kind of step ----------
 const closer = sel => async note => { const x = document.querySelector(sel); if (x && shown(x)) await tap(x, note); else if (x) x.click(); };
 async function doGame(id, note) {
-  const spot = G.gameSpot && G.gameSpot(id); if (spot) { await go(spot.x, spot.z, Math.max(1.8, (spot.r || 2) * .7), note); const s = onScreen(spot.x, 1, spot.z); if (s) await fingerTo(s.x, s.y); }
+  const spot = G.gameSpot && G.gameSpot(id); if (spot) { if (!await go(spot.x, spot.z, Math.max(.35, (spot.r || 2) * .95), note)) return; const s = onScreen(spot.x, 1, spot.z); if (s) await fingerTo(s.x, s.y); }
   await closeAll(); G.playGame(0, id, 'replay');
   if (!await until(() => document.querySelector('.gl'), AP_OPEN_WAIT)) { note(T('did not open', 'không mở được')); return; }
   const r = await playGame(note);
-  if (r.cant) note(T('help: auto play could not work out how to play it', 'cần giúp: tự chơi chưa biết chơi trò này'), true);
+  if (r.cant) note(T('help: auto play could not work out how to play it', 'cần giúp: tự chơi chưa biết chơi trò này'));
   await until(() => !document.querySelector('.gl:not(.out)'), 1.5);
   if (document.querySelector('.gl:not(.out)')) { await closer('.gl .gl-x')(note); if (!await until(() => !document.querySelector('.gl'), 2)) note(T('did not close', 'không đóng được')); }
   return `${r.won ? T('won', 'thắng') : T('played', 'đã chơi')}: ${r.rights} ✓, ${r.wrongs} ✗, ${r.taps} ${T('taps', 'lần chạm')}`;
@@ -336,25 +360,25 @@ async function doFestival(F, note) {
   CUSTOM.releases = { ...(CUSTOM.releases || {}), ['fest_' + F.id]: { on: true, start: ymd, days: 1 } }; // (this device, until the step ends)
   try {
     G.festivals.rebuild(); await wait(300);
-    for (const key of F.where || []) { const s = (G.festivals.streetSpots(key) || [])[0]; if (s) { await go(s.x, s.z, 3, note); await hold(sp().stay); } }
+    for (const key of F.where || []) { const s = (G.festivals.streetSpots(key) || [])[0]; if (s) { if (!await go(s.x, s.z, 3, note)) return; await hold(sp().stay); } }
     const it = (G.interactables || []).find(i => i.id === 'festival_' + F.id);
     if (!it) { note(T('no festival table', 'không có bàn lễ hội')); return; }
     await doTap(it, note);
   } finally { delete CUSTOM.releases['fest_' + F.id]; G.festivals.rebuild(); }
 }
 async function doTale(t, note) {
-  if (G.storyteller) await go(G.storyteller.x, G.storyteller.z, 3, note);
+  if (G.storyteller && !await go(G.storyteller.x, G.storyteller.z, 3, note)) return;
   await closeAll(); G.readTale(0, t.id);
   if (!await until(() => document.querySelector('.theatre'), AP_OPEN_WAIT + 2.5)) { note(T('did not open', 'không mở được')); return; }
   await readTale(note);
   await until(() => !document.querySelector('.theatre:not(.out)'), 1);
   if (document.querySelector('.theatre:not(.out)')) { await closer('.th-x')(note); if (!await until(() => !document.querySelector('.theatre'), 2)) note(T('did not close', 'không đóng được')); }
 }
-async function doPlace(p, note) { await go(p.x, p.z, 4, note); await hold(sp().stay); }
+async function doPlace(p, note) { if (!await go(p.x, p.z, 4, note)) return; await hold(sp().stay); }
 // go up to a thing or a person, tap it, and do what opens (talk through, play, read)
 async function doTap(it, note) {
   await closeAll(); const h = hero();
-  await go(it.x, it.z, Math.max(1.6, Math.min(it.r || 2, 3) * .8), note);
+  if (!await go(it.x, it.z, Math.max(.35, (it.r || 2) * .9), note)) return;
   const s = onScreen(it.x, 1.2, it.z); if (s) await fingerTo(s.x, s.y);
   step_('tap', (typeof it.label === 'function' ? it.label() : it.id) || it.id); G.goAndDo(h, it);
   await hold(.6); await until(() => !h.goal, 6); await hold(.4);
@@ -379,7 +403,7 @@ async function questLoop(h, out) {
   let lastId = null, tries = 0;
   for (let n = 0; n < AP_QUESTS.max; n++) {
     const q = G.currentQuest && G.currentQuest(h.profile); if (!q) { step_('quest', T('every quest done', 'xong mọi nhiệm vụ')); break; }
-    if (q.id === lastId) { if (++tries >= AP_QUESTS.tries) { out.at(-1).notes.push(T('help: auto play could not finish this quest', 'cần giúp: tự chơi chưa làm xong nhiệm vụ này')); break; } }
+    if (q.id === lastId) { if (++tries >= AP_QUESTS.tries) { out.at(-1).problems.push(T('help: auto play could not finish this quest', 'cần giúp: tự chơi chưa làm xong nhiệm vụ này')); out.at(-1).ok = false; break; } }
     else { lastId = q.id; tries = 0; }
     const r = await one({ g: 'quests', key: 'quest:' + q.id, name: () => q.title(), fn: nt => questOnce(q, nt) });
     if (tries) { const l = out.at(-1); l.secs += r.secs; l.problems.push(...r.problems); l.ok = l.ok && r.ok; if (r.said) l.said = r.said; } else out.push(r);
@@ -393,7 +417,7 @@ async function questOnce(q, note) {
   if (!tg) { if (G.sayObjective) G.sayObjective(0); await hold(sp().talk); return; }
   const it = (G.interactables || []).filter(x => !x.auto && (!x.visible || x.visible(h)) && x.act).sort((a, b) => Math.hypot(a.x - tg.x, a.z - tg.z) - Math.hypot(b.x - tg.x, b.z - tg.z))[0];
   if (it && Math.hypot(it.x - tg.x, it.z - tg.z) < 2.5) await doTap(it, note);
-  else { await go(tg.x, tg.z, 1.2, note); await hold(sp().stay); await settle(60, note); }
+  else { if (!await go(tg.x, tg.z, 1.2, note)) return; await hold(sp().stay); await settle(60, note); }
   await hold(1.2); await settle(30, note);
   const now = G.currentQuest(h.profile); return !now || now.id !== q.id ? T('done', 'xong') : '';
 }
@@ -410,7 +434,7 @@ async function one(s) {
   const secs = (performance.now() - t0) / 1000, fps = secs > .5 ? Math.round(frames / secs) : null;
   for (const e of [...new Set(errs)].slice(0, 3)) note(T('error: ', 'lỗi: ') + e);
   for (const m of voiceMisses()) if (!miss0.has(m[0] + '|' + m[1])) note(T('no recording: ', 'chưa thu âm: ') + String(m[0]).slice(0, 80));
-  if (fps != null && fps < 20) note(T(`slow: ${fps} frames a second`, `chậm: ${fps} khung hình mỗi giây`));
+  if ((!sp().rate || sp().rate === 1) && fps != null && fps < 20) note(T(`slow: ${fps} frames a second`, `chậm: ${fps} khung hình mỗi giây`));
   for (const p of problems) if (!/^(stuck|bị kẹt)/.test(p)) send(s.g, `${nm}: ${p}`); // (being stuck was sent when it happened)
   return { g: s.g, key: s.key, name: nm, ok: !problems.length && !skipped, skipped, problems, notes, said, secs: Math.round(secs * 10) / 10, fps };
 }
@@ -428,11 +452,11 @@ const tester = () => { const a = get('sv2_tester', null); return !!(a && a.at &&
 async function start(only) {
   const h = hero(); if (!h || run) return;
   const list = only ? steps(true).filter(s => only.includes(s.key)) : steps(); if (!list.length) return;
-  const perRun = !tester() || revertOf(liveRule('tester')) === 'autoplay';
+  const perRun = !tester() || revertOf(liveRule('tester'), localStorage.getItem('sv2_playerid') || '') === 'autoplay';
   if (perRun) takeCopy(RUNCOPY);
   const counted = settings.countPlayers; settings.countPlayers = false; // (not counted in the players report)
   run = { speed: ui.speed, list, i: 0, done: [], paused: false, skip: false, stop: false, started: Date.now(), perRun };
-  trail = []; ui.open = false; put(UI, ui); // (the window folds away so the game can be watched; the button shows how far it is)
+  trail = []; if (hostClose) hostClose(); ui.open = false; put(UI, ui); // close the shared shell; the run continues
   const keep = setInterval(neverTired, 200); draw(); buttons();
   try {
     for (; run.i < list.length; run.i++) {
@@ -447,8 +471,10 @@ async function start(only) {
   if (finger) finger.hidden = true;
   settings.countPlayers = counted;
   if (perRun) putCopyBack(RUNCOPY, G);
-  put(REPORT, Object.assign(report(), { sent: true })); // (each problem was already sent; tester.js does not send it again)
-  run = null; ui.open = true; put(UI, ui); draw(); buttons(); // the child plays on from here; the window shows the report
+  const finalReport = report(); const result = await sendAutoplayReport(finalReport);
+  put(REPORT, { ...finalReport, reportIds: result.ids, reportState: result.state });
+  run = null; ui.open = false; put(UI, ui); draw(); buttons();
+  G.autoplay?.open(); // results return to the same ladybird tab on tester devices
 }
 const report = () => ({ at: new Date().toISOString(), build: BUILD, speed: run.speed, total: run.list.length, done: run.done, perRun: run.perRun });
 
@@ -456,7 +482,7 @@ const report = () => ({ at: new Date().toISOString(), build: BUILD, speed: run.s
 function style() {
   if (document.getElementById('apstyle')) return;
   const s = el('style'); s.id = 'apstyle';
-  s.textContent = `.apbox{position:fixed;z-index:99999;right:84px;top:84px;width:min(380px,calc(100vw - 24px));max-height:min(calc(100vh - 120px),640px);overflow:auto;background:#fffdf7;color:#2b2233;border-radius:16px;box-shadow:0 6px 24px #0004;font:14px/1.35 system-ui,sans-serif;touch-action:manipulation}
+  s.textContent = `.apbox{position:fixed;z-index:99999;right:84px;top:84px;width:min(380px,calc(100vw - 24px));max-height:min(calc(100vh - 120px),640px);overflow:auto;background:var(--panel2);color:var(--text);border-radius:var(--r);box-shadow:var(--shadow);font:600 16px/1.35 var(--font);touch-action:manipulation}
 .apbox[hidden]{display:none}
 @media (max-width:520px){.apbox{right:12px;left:12px;width:auto;top:70px}}
 .apbox .aph{display:flex;align-items:center;gap:8px;padding:8px 10px;background:#6b4fd8;color:#fff;border-radius:16px 16px 0 0;cursor:move;user-select:none;position:sticky;top:0;z-index:1}
@@ -481,26 +507,26 @@ function style() {
 @media (prefers-reduced-motion:reduce){.zoomer .z-ap.on{animation:none}.apfinger{transition-duration:0s!important}}`;
   document.head.appendChild(s);
 }
-function place() {
-  if (ui.x != null && ui.y != null) { root.style.left = Math.max(0, Math.min(innerWidth - 60, ui.x)) + 'px'; root.style.top = Math.max(0, Math.min(innerHeight - 60, ui.y)) + 'px'; root.style.right = 'auto'; }
-}
+function place() { /* fixed shell: legacy drag coordinates are deliberately ignored */ }
 function drag(handle) {
   handle.onpointerdown = e => {
     if (e.target.closest('button')) return;
-    const r = root.getBoundingClientRect(), dx = e.clientX - r.left, dy = e.clientY - r.top; handle.setPointerCapture(e.pointerId);
+    const r = root.getBoundingClientRect(), dx = e.clientX - r.left, dy = e.clientY - r.top; if (e.isTrusted) handle.setPointerCapture(e.pointerId);
     handle.onpointermove = m => { ui.x = m.clientX - dx; ui.y = m.clientY - dy; place(); };
     handle.onpointerup = () => { handle.onpointermove = null; put(UI, ui); };
   };
 }
-const speedRow = () => `<div class="row">${Object.entries(AP_SPEEDS).map(([k, s]) => `<button data-sp="${k}" class="${(run ? run.speed : ui.speed) === k ? 'on' : ''}">${esc(T(s.en, s.vi))}</button>`).join('')}</div>`;
-const backNote = () => (run ? run.perRun : !tester() || revertOf(liveRule('tester')) === 'autoplay')
+const speedRow = () => `<div class="row">${Object.entries(AP_SPEEDS).filter(([key]) => /^x[1235]$/.test(key)).map(([k, s]) => `<button data-sp="${k}" class="${(run ? run.speed : ui.speed) === k ? 'on' : ''}">${esc(T(s.en, s.vi))}</button>`).join('')}</div>`;
+const backNote = () => tester() && revertOf(liveRule('tester'), localStorage.getItem('sv2_playerid') || '') === 'keep'
+  ? T('This device keeps progress after testing.', 'Máy này giữ tiến bộ sau khi thử nghiệm.')
+  : (run ? run.perRun : !tester() || revertOf(liveRule('tester'), localStorage.getItem('sv2_playerid') || '') === 'autoplay')
   ? T('When it stops, the game goes on from there; what auto play earned goes back, badges and stickers stay.', 'Khi dừng, game tiếp tục từ đó; phần tự chơi kiếm được được trả lại, huy hiệu và nhãn dán vẫn giữ.')
   : T('When it stops, the game goes on from there. Progress goes back when you stop being a tester; badges and stickers stay.', 'Khi dừng, game tiếp tục từ đó. Tiến bộ được trả lại khi thôi làm người thử; huy hiệu và nhãn dán vẫn giữ.');
 function draw() {
   if (!root) return;
   place(); root.hidden = !ui.open;
   if (!ui.open) { root.innerHTML = ''; return; }
-  root.className = 'apbox';
+  root.className = 'apbox' + (hostClose ? ' embedded' : '');
   const head = `<div class="aph"><b>${pic('🤖')} ${T('Auto play', 'Tự chơi')}</b><button data-a="min" aria-label="${T('Close', 'Đóng')}">✕</button></div>`;
   if (run) {
     const s = run.list[run.i], g = s && AP_GROUPS.find(x => x.key === s.g), bad = run.done.filter(r => !r.ok && !r.skipped).length;
@@ -528,24 +554,35 @@ function draw() {
     const qi = root.querySelector('[data-a="q"]'); qi.onchange = () => { ui.q = qi.value; put(UI, ui); draw(); };
     root.querySelector('[data-a="start"]').onclick = () => start();
     root.querySelectorAll('[data-again]').forEach(b => b.onclick = () => start([b.dataset.again]));
+    const send = root.querySelector('[data-a="send"]'); if (send) send.onclick = async () => { send.disabled = true; const result = await sendAutoplayReport(rep); put(REPORT, { ...rep, reportIds: result.ids, reportState: result.state }); retryReports(); draw(); };
     const sv = root.querySelector('[data-a="save"]'); if (sv) sv.onclick = () => saveReport(rep);
     const cp = root.querySelector('[data-a="copy"]'); if (cp) cp.onclick = () => { try { navigator.clipboard.writeText(text(rep)); cp.textContent = T('Copied', 'Đã chép'); } catch (e) { } };
     const cl = root.querySelector('[data-a="clear"]'); if (cl) cl.onclick = () => { try { localStorage.removeItem(REPORT); } catch (e) { } draw(); };
   }
   root.querySelectorAll('[data-sp]').forEach(b => b.onclick = () => { ui.speed = b.dataset.sp; if (run) run.speed = ui.speed; put(UI, ui); draw(); });
   const a = k => root.querySelector(`[data-a="${k}"]`);
-  a('min').onclick = () => { ui.open = false; put(UI, ui); draw(); };
+  a('min').onclick = () => { if (hostClose) return hostClose(); ui.open = false; put(UI, ui); draw(); };
   if (run) { a('pause').onclick = () => { run.paused = !run.paused; draw(); buttons(); }; a('skip').onclick = () => { run.skip = true; }; a('stop').onclick = () => { run.stop = true; }; }
-  drag(root.querySelector('.aph'));
+  // Panels stay fixed; draggable windows are not part of the game's UI contract.
 }
 const row = r => `<div><span class="dot ${r.skipped ? 'skip' : r.ok ? (r.notes && r.notes.length ? 'help' : '') : 'bad'}"></span>${esc(r.name)}${r.said ? `<small class="said">${esc(r.said)}</small>` : ''}${r.problems.map(p => `<small>${esc(p)}</small>`).join('')}${(r.notes || []).map(p => `<small class="help">${esc(p)}</small>`).join('')}</div>`;
+function deliveryText(rep) {
+  if (!reportingState().enabled) return T('Reporting is off on this device. Enable testing and accept the tester agreement in Settings.', 'Báo cáo đang tắt trên máy này. Bật thử nghiệm và đồng ý tham gia trong Cài đặt.');
+  if (!(rep.done || []).some(x => x.problems?.length)) return T('No problems found in this check.', 'Chưa tìm thấy lỗi trong lần kiểm tra này.');
+  if(rep.reportState==='storage-failed')return T('Could not save every report. Make space on this device and retry.', 'Chưa lưu được mọi báo cáo. Giải phóng chỗ trên máy rồi thử lại.');
+  const states = (rep.reportIds || []).map(reportDelivery);
+  if (states.length && states.every(x => x.state === 'sent')) return T('Sent: received by the website.', 'Đã gửi: trang web đã nhận.');
+  if (states.some(x => x.state === 'retry')) return T('Not sent yet. Kept here; retry when connected.', 'Chưa gửi được. Đã giữ trên máy; gửi lại khi có mạng.');
+  return states.some(x => x.state === 'sending') ? T('Sending…', 'Đang gửi…') : T('Queued on this device.', 'Đang chờ gửi trên máy này.');
+}
 function lastReport(rep) {
   const bad = rep.done.filter(r => !r.ok && !r.skipped), help = rep.done.filter(r => r.ok && r.notes && r.notes.length);
   return `<h4>${T('Last check', 'Lần kiểm tra trước')}: ${new Date(rep.at).toLocaleString()}</h4>
     <div>${T(`${rep.done.length} checked: ${rep.done.length - bad.length} fine, ${bad.length} with problems`, `Đã kiểm ${rep.done.length}: ${rep.done.length - bad.length} ổn, ${bad.length} có lỗi`)}</div>
     <div class="res">${bad.slice(0, 40).map(r => `<div><span class="dot bad"></span>${esc(r.name)} <button data-again="${esc(r.key)}">${T('Again', 'Lại')}</button>${r.problems.map(p => `<small>${esc(p)}</small>`).join('')}</div>`).join('')}
     ${help.slice(0, 20).map(row).join('')}</div>
-    <div class="row"><button data-a="save">${T('Save report', 'Lưu báo cáo')}</button><button data-a="copy">${T('Copy', 'Chép')}</button><button data-a="clear">${T('Clear', 'Xóa')}</button></div>`;
+    <p class="note" role="status">${deliveryText(rep)}</p>
+    <div class="row"><button data-a="send">${T('Send / retry report', 'Gửi / gửi lại báo cáo')}</button></div><details><summary>${T('Export options', 'Tùy chọn xuất bản sao')}</summary><div class="row"><button data-a="save">${T('Export a copy', 'Xuất bản sao')}</button><button data-a="copy">${T('Copy', 'Chép')}</button><button data-a="clear">${T('Clear', 'Xóa')}</button></div></details>`;
 }
 const text = rep => [`Sparkle Valley ${rep.build || ''} auto play check, ${rep.at}, speed ${rep.speed}`, `${rep.done.length} checked`, '']
   .concat(rep.done.map(r => `${r.skipped ? 'SKIPPED' : r.ok ? 'OK     ' : 'PROBLEM'}  [${r.g}] ${r.name}${r.said ? ` (${r.said})` : ''}${r.fps ? ` (${r.fps} fps, ${r.secs} s)` : ''}${r.problems.map(p => '\n           ' + p).join('')}${(r.notes || []).map(p => '\n           ' + p).join('')}`)).join('\n');

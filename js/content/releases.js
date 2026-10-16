@@ -53,7 +53,7 @@ RELEASE_GROUPS.trial = ['Trials', 'Thử nghiệm'];
 RELEASES.push(
   { id: 'rideAny', en: 'Ride any vehicle: drive the parked cars and motorbikes', vi: 'Đi mọi loại xe: lái xe hơi và xe máy đang đậu', group: 'world', def: true },
   { id: 'busFares', en: 'Buses, trams and taxis take a passenger for a fare; bus stops with a picture timetable', vi: 'Xe buýt, tàu điện và taxi chở khách có trả tiền vé; trạm xe buýt có bảng giờ bằng hình', group: 'world', def: true },
-  { id: 'wayfind', en: '"Where is...?" sparkles that show the way', vi: '"Ở đâu?": đường lấp lánh chỉ lối', group: 'valley', def: true },
+  { id: 'wayfind', en: 'Find a place: compass guidance (hidden until enabled)', vi: 'Tìm một nơi: la bàn chỉ đường (ẩn đến khi bật)', group: 'valley', def: false },
   { id: 'jobs', en: 'Village job boards: helping jobs for coins and a sticker', vi: 'Bảng việc làng: việc giúp đỡ được tiền và hình dán', group: 'valley', def: true },
   { id: 'villagerTalk', en: 'Every villager talks: a fact or a saying of their place', vi: 'Mọi người trong làng đều nói chuyện: kể điều hay hoặc câu nói của quê mình', group: 'valley', def: true },
   { id: 'dayPlan', en: 'Villagers\' day plan: they walk home at night, umbrellas in the rain', vi: 'Một ngày của dân làng: tối đi về nhà, trời mưa che ô', group: 'valley', def: true },
@@ -61,8 +61,8 @@ RELEASES.push(
   { id: 'singers', en: 'Village singers on their little stages', vi: 'Ca sĩ làng trên sân khấu nhỏ', group: 'valley', def: true },
   { id: 'priceTags', en: 'Price pictures over the food stalls, and counting the change', vi: 'Bảng giá bằng hình trên các quầy ăn, và đếm tiền thối', group: 'valley', def: true },
   { id: 'sellersRemember', en: 'Sellers remember you and your favourite food', vi: 'Người bán hàng nhớ con và món con thích', group: 'valley', def: true },
-  { id: 'houseGuide', en: 'House guide: how to earn, buy, place and upgrade', vi: 'Hướng dẫn ngôi nhà: kiếm tiền, mua, đặt đồ và nâng cấp', group: 'valley', def: true },
-  { id: 'owlGuide', en: 'Ông Cú as guide: one new thing explained each visit', vi: 'Ông Cú chỉ đường: mỗi lần ghé ông giải thích một điều mới', group: 'valley', def: true },
+  { id: 'houseGuide', en: 'House guide: how to earn, buy, place and upgrade. Off: the guide no longer opens at the house and the ❓ spot is gone', vi: 'Hướng dẫn ngôi nhà: kiếm tiền, mua, đặt đồ và nâng cấp. Tắt: hướng dẫn không tự mở ở nhà và điểm ❓ biến mất', group: 'explain', def: true },
+  { id: 'owlGuide', en: 'Ông Cú as guide: one new thing explained each visit. Off: visiting Ông Cú no longer opens a lesson page', vi: 'Ông Cú chỉ đường: mỗi lần ghé ông giải thích một điều mới. Tắt: ghé Ông Cú không còn mở trang bài học', group: 'explain', def: true },
   { id: 'festHunt', en: 'Festival hunt: five festival things hidden in the last week and on the day', vi: 'Truy tìm lễ hội: năm món đồ lễ hội giấu trong tuần cuối và ngày lễ', group: 'festivals', def: true },
   { id: 'festDecoBig', en: 'Big festival decorations (5x) over the whole valley (off: as before, unless a festival sets its own)', vi: 'Trang trí lễ hội lớn (gấp 5) khắp thung lũng (tắt: như trước, trừ khi lễ hội tự chọn)', group: 'festivals', def: true },
   ...[['heodat', 'Piggy Bank', 'Heo Đất'], ['coinnote', 'Coin or Note?', 'Xu hay Tiền Giấy?'], ['needwant', 'Need or Want?', 'Cần hay Muốn?'],
@@ -72,3 +72,20 @@ RELEASES.push(
 );
 RELEASE_GROUPS.valley = ['The living valley', 'Thung lũng sống động'];
 RELEASE_GROUPS.money = ['Money games', 'Trò chơi tiền'];
+
+// (owner, 16 Oct AEDT: "all options to switch on/off one by one, each telling what will be switched off in the game";
+// "short line and short voice, both in Vietnamese and English, both selectable in Studio") js/explain.js
+RELEASE_GROUPS.explain = ['Explanations and tips', 'Lời giải thích và mẹo'];
+RELEASES.push(
+  { id: 'explain_hearts_note', en: 'Hearts: a short note when a child taps the hearts. Off: no note on screen (the spoken line is its own switch)', vi: 'Trái tim: một dòng ghi chú ngắn khi bé chạm vào trái tim. Tắt: không có ghi chú trên màn hình (lời nói có công tắc riêng)', group: 'explain', def: true },
+  { id: 'explain_hearts_voice', en: 'Hearts: a short spoken line when a child taps the hearts. Off: tapping the hearts is silent (the note is its own switch)', vi: 'Trái tim: một câu nói ngắn khi bé chạm vào trái tim. Tắt: chạm vào trái tim không có tiếng (ghi chú có công tắc riêng)', group: 'explain', def: true },
+  { id: 'explain_gift_note', en: 'Daily gift: a short note saying where today\'s gift is. Off: no note on screen; the gift is still there', vi: 'Quà mỗi ngày: một dòng ghi chú ngắn cho biết quà hôm nay ở đâu. Tắt: không có ghi chú; quà vẫn còn đó', group: 'explain', def: true },
+  { id: 'explain_gift_voice', en: 'Daily gift: a short spoken line that a gift is waiting. Off: no spoken line; the gift is still there', vi: 'Quà mỗi ngày: một câu nói ngắn rằng có quà đang chờ. Tắt: không có lời nói; quà vẫn còn đó', group: 'explain', def: true },
+  { id: 'explain_gameLine', en: 'Games: the question line at the top of a game (for example "How many can you count?"). Off: the line is hidden; the game still says it aloud', vi: 'Trò chơi: dòng câu hỏi ở đầu trò chơi (ví dụ "Có bao nhiêu nhỉ?"). Tắt: dòng chữ bị ẩn; trò chơi vẫn nói câu đó', group: 'explain', def: true },
+  { id: 'explain_updateNotice', en: 'Update notice: a small note that a new version is ready, with an Update button. Off: no note; the new version starts the next time the game is opened', vi: 'Thông báo cập nhật: một ghi chú nhỏ khi có bản mới, có nút Cập nhật. Tắt: không có ghi chú; bản mới chạy ở lần mở trò chơi sau', group: 'explain', def: true },
+  { id: 'explain_voiceAsk', en: 'Voice download question: on mobile data, asks a grown-up before downloading the rest of the voices. Off: no question; the rest of the voices download on Wi-Fi only', vi: 'Câu hỏi tải giọng đọc: khi dùng dữ liệu di động, hỏi người lớn trước khi tải phần giọng còn lại. Tắt: không hỏi; phần giọng còn lại chỉ tải khi có Wi-Fi', group: 'explain', def: true }
+);
+
+// (owner, 16 Oct AEDT: "show me and I will decide") the new family devices and photo sharing (owner points 39-45) is a
+// trial, off until the owner switches it on
+RELEASES.push({ id: 'familyDevices', en: 'Family devices and photo sharing (trial): connect the family\'s devices with a one-use code, and family photos on villagers reach every connected device. Off: the section is not shown in Grown-ups and no device contacts the family service, except tester devices, so it can be tried first', vi: 'Thiết bị gia đình và chia sẻ ảnh (thử nghiệm): kết nối các thiết bị trong nhà bằng mã dùng một lần, ảnh gia đình trên dân làng tới mọi thiết bị đã kết nối. Tắt: phần này không hiện trong mục Người lớn và không thiết bị nào liên lạc với dịch vụ gia đình, trừ thiết bị thử nghiệm để thử trước', group: 'trial', def: false });

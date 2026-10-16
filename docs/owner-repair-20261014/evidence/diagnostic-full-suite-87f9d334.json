@@ -1,0 +1,18 @@
+{
+  "sourceCommit": "87f9d334acada63341403234f9d6f45d4f4c367b",
+  "runId": 38613891343,
+  "url": "https://github.com/nguyentuanphu/Sparkle-Valley/actions/runs/38613891343",
+  "conclusion": "failure",
+  "passed": 147,
+  "total": 149,
+  "failed": [
+    "contract",
+    "emoji"
+  ],
+  "passedOnlyOnSecondTry": [
+    "autoplay"
+  ],
+  "autoplayFirstFailure": "place:farm stuck at8,45; tap:npc_owl stuck at10,-81",
+  "checkMapArtifact": 11921830212,
+  "scope": "Exact older diagnostic candidate. Local documentation/snapshot repairs and later hat/Wi-Fi/shrine edits do not change this failed run. Speed checks excluded; substantive review pending."
+}

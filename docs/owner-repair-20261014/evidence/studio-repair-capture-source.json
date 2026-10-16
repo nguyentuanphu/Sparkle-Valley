@@ -1,0 +1,13 @@
+{
+  "capturedAt": "2026-10-15T00:12:40.717Z",
+  "fixture": "Synthetic authenticated Studio with in-memory GitHub/live store; HTTP503 device lookup and held Analytics response",
+  "viewport": {
+    "width": 1180,
+    "height": 800
+  },
+  "sourceFingerprints": {
+    "studio/ui/app.js": "cf42861e50d904be81c446914eafbd126bd086124eb3ada3dbe5309338ee9acd",
+    "studio/ui/style.css": "34dd0913128d15ee341efe7c4777346ef894fd68583c1df6dae67ad90c70c6b0"
+  },
+  "matchingCodeCommit": "f47546d596230245bf3b96f8f10b1e06137df79b"
+}

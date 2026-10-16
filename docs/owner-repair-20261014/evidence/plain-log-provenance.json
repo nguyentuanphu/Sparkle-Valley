@@ -1,0 +1,12 @@
+[
+  {
+    "file": "voice-family-interrupted-node22.txt",
+    "originalSha256": "9737116fa08b2c1d08867e3d25d38dd073e2114bde4a08a149a1b77bb32747ee",
+    "normalization": "Status glyphs rendered as plain PASS/FAIL; original raw log retained locally, assertions/results unchanged."
+  },
+  {
+    "file": "family-node22-after-restart.txt",
+    "originalSha256": "32d4563702aa99841332878b7e1a8635e76771a8f43f23ef415bffb1854388e1",
+    "normalization": "Status glyphs rendered as plain PASS/FAIL; original raw log retained locally, assertions/results unchanged."
+  }
+]

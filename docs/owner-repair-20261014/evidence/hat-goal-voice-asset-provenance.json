@@ -1,0 +1,30 @@
+{
+  "artifactId": 11920325342,
+  "runId": 38615218026,
+  "recordedSource": "220f51847d2bc8ff8009a4acbf86e142b9cf2f1e",
+  "files": [
+    "voices/en/f/965dc7c7-1cf2bd82.mp3",
+    "voices/en/m/965dc7c7-1cf2bd82.mp3",
+    "voices/vi/f/08d18fc9-7edca914.mp3",
+    "voices/vi/m/08d18fc9-7edca914.mp3"
+  ],
+  "newHashes": [
+    "08d18fc9-7edca914",
+    "965dc7c7-1cf2bd82"
+  ],
+  "olderHashesPreservedAgainstRegeneratedIndex": 6,
+  "areaPolicy": "Preserve every existing hash assignment and size; add only previously unassigned hashes and exact new MP3 bytes.",
+  "addedGroups": {
+    "core": [
+      "965dc7c7-1cf2bd82",
+      "08d18fc9-7edca914"
+    ]
+  },
+  "scope": "Static asset/coverage evidence; physical playback and complete release verification pending.",
+  "decodedDurationsSeconds": {
+    "voices/en/f/965dc7c7-1cf2bd82.mp3": 5.688,
+    "voices/en/m/965dc7c7-1cf2bd82.mp3": 4.644,
+    "voices/vi/f/08d18fc9-7edca914.mp3": 5.724,
+    "voices/vi/m/08d18fc9-7edca914.mp3": 5.652
+  }
+}

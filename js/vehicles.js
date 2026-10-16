@@ -302,7 +302,7 @@ function car({ color, L = 3.9, Wd = 1.62, R = .3, body, glass, roof, extra = [],
     ...plate([0, .5, L / 2 + .02]), ...plate([0, .55, -L / 2 - .02]), box(Wd - .3, .1, .05, '#3a3d40', [0, .42, L / 2 + .01]), ...extra];
   g.add(solid(p, .012));
   const dx = lhd ? .38 : -.38;
-  return { o: g, wheels, wr: R, seat: [dx, .62, -.1], grips: [[dx + .17, .95, .42], [dx - .17, .95, .42]], feet: [[dx + .1, .3, .9], [dx - .1, .3, .9]], wheelAt: [dx, .95, .45] };
+  return { o: g, cabin: { width: Wd, length: L, bottom: Math.min(...glass.map(p => p[1])), top: Math.max(...glass.map(p => p[1])), color }, wheels, wr: R, seat: [dx, .62, -.1], grips: [[dx + .17, .95, .42], [dx - .17, .95, .42]], feet: [[dx + .1, .3, .9], [dx - .1, .3, .9]], wheelAt: [dx, .95, .45] };
 }
 // a family sedan
 export function sedan(color = '#c8d4dc', lhd = true) {
@@ -339,7 +339,7 @@ export function bus(vn = true) {
     box(1.6, .26, .05, '#1d1f22', [0, 2.72, L / 2 + .06]), box(1.3, .14, .06, '#ffb43a', [0, 2.72, L / 2 + .07]),
     ...[-1, 1].flatMap(sd => [box(.3, .14, .04, '#fff6c8', [sd * .9, .75, L / 2 + .04]), box(.3, .14, .04, '#d8322a', [sd * .9, .8, -L / 2 - .02])]),
     box(.06, 1.9, .9, '#2b2e31', [1.22, 1.3, L / 2 - 1.0]), box(.06, 1.9, .9, '#2b2e31', [1.22, 1.3, .2])], .015));
-  return { o: g, wheels, wr: R, seat: [vn ? .7 : -.7, 1.1, L / 2 - .9], grips: null, feet: null, name: [vn ? 'City bus (Vietnam)' : 'City bus (Australia)', 'Xe buýt'] };
+  return { o: g, cabin: { width: 2.4, length: L, bottom: 1.3, top: 2.55, color: c1 }, wheels, wr: R, seat: [vn ? .7 : -.7, 1.1, L / 2 - .9], grips: null, feet: null, name: [vn ? 'City bus (Vietnam)' : 'City bus (Australia)', 'Xe buýt'] };
 }
 // ---------- the Huệ Nghi yard (round R story: bà Huệ and ông Nghi's transport and building yard) ----------
 // a long-distance coach (xe khách) like the ones from Hà Tĩnh: cream with red and blue bands, a luggage rack on the roof
@@ -355,7 +355,7 @@ export function coach() {
     box(1.8, .26, .05, '#1d1f22', [0, 2.85, L / 2 + .02]), box(1.4, .14, .06, '#ffb43a', [0, 2.85, L / 2 + .03]),
     ...[-1, 1].flatMap(sd => [box(.32, .16, .04, '#fff6c8', [sd * .9, .8, L / 2 + .06]), box(.3, .16, .04, '#d8322a', [sd * .95, .85, -L / 2 - .02])]),
     box(.06, 2.0, .95, '#2b2e31', [1.24, 1.35, L / 2 - 1.1])], .015));
-  return { o: g, wheels, wr: R, seat: [.7, 1.2, L / 2 - 1], grips: null, feet: null, door: [1.5, 0, L / 2 - 1.1], name: ['Coach', 'Xe khách'] };
+  return { o: g, cabin: { width: 2.45, length: L, bottom: 1.55, top: 2.75, color: '#f2ead6' }, wheels, wr: R, seat: [.7, 1.2, L / 2 - 1], grips: null, feet: null, door: [1.5, 0, L / 2 - 1.1], name: ['Coach', 'Xe khách'] };
 }
 // a dump truck (xe ben): a blue cab and a steel tipper bed that tips up (userData.bed pivots on its back edge)
 export function dumpTruck() {
@@ -402,7 +402,7 @@ export function tram(kind = 'w') {
   if (w) p.push(rod([0, 3.15, -1.5], [0, 5.4, -4.6], .03, '#2b2e31'), ball(.06, '#2b2e31', [0, 5.42, -4.62]));
   else p.push(side([[1.2, 3.15], [.9, 3.6], [-.9, 3.6], [-1.2, 3.15]], .1, '#2b2e31', 0, .03, .12), rod([-.6, 3.6, 0], [.6, 3.6, 0], .02, '#2b2e31'), ...[-5.4, 5.4].map(zz => box(2.3, .5, .1, '#2b2e31', [0, 1.6, zz * .48])));
   g.add(solid(p, .015));
-  return { o: g, wheels, wr: R, seat: [0, 1.1, L / 2 - .7], grips: null, feet: null, name: [w ? 'Melbourne W-class tram' : 'Modern tram', w ? 'Tàu điện cổ Melbourne' : 'Tàu điện hiện đại'] };
+  return { o: g, cabin: { width: 2.4, length: L, bottom: 1.55, top: 2.55, color: c1 }, wheels, wr: R, seat: [0, 1.1, L / 2 - .7], grips: null, feet: null, name: [w ? 'Melbourne W-class tram' : 'Modern tram', w ? 'Tàu điện cổ Melbourne' : 'Tàu điện hiện đại'] };
 }
 // Hà Nội's electric tourist cart round Hồ Gươm: open sides, four rows of benches, a white canopy
 export function touristCart() {

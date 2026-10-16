@@ -10,6 +10,8 @@ import { GAME_INFO } from '../content/activities.js';
 const S = (pic, en, vi) => ({ pic, en, vi });
 const game = def => register({ ...def, async run(api) { const m = await import('./reading.js'); return m.play(def.id, api); } });
 
+game({ id: 'rd_listentouch', icon: '👂', name: () => T('Listen and Touch', 'Nghe và Chạm') });
+game({ id: 'rd_storychoice', icon: '📖', name: () => T('Story Choices', 'Chọn Trong Truyện') });
 game({ id: 'rd_trace', icon: '🏮', name: () => T('Lantern Letters', 'Đèn Lồng Chữ Cái') });
 game({ id: 'rd_sounds', icon: '🐟', name: () => T('Sound Pond', 'Ao Âm Thanh') });
 game({ id: 'rd_build', icon: '🧩', name: () => T('Word Builder', 'Ghép Chữ') });
@@ -24,12 +26,15 @@ game({ id: 'rd_readalong', icon: '📖', name: () => T('Read With Me', 'Cùng Đ
 // their place in the one activity list (UI-005): [area, youngest age, how hard]; Word Balloons, Word and Picture and
 // Sentence Train are for 5 to 8 only (A11Y-006)
 Object.assign(GAME_INFO, {
+  rd_listentouch: ['reading', 2, 1], rd_storychoice: ['reading', 3, 1],
   rd_trace: ['reading', 2, 1], rd_sounds: ['reading', 3, 1], rd_build: ['reading', 4, 2], rd_rhyme: ['reading', 4, 2], rd_sight: ['reading', 5, 2],
   rd_tones: ['reading', 4, 2], rd_syllable: ['reading', 3, 1], rd_match: ['reading', 5, 2], rd_sentence: ['reading', 5, 3], rd_readalong: ['reading', 3, 1]
 });
 
 // the how-to cards (ACT-002), read aloud in the child's language
 Object.assign(HOWTO, {
+  rd_listentouch: { steps: [S('👂', 'Listen to a word.', 'Nghe một tiếng.'), S('👆', 'Touch its picture; tap the ear to listen again.', 'Chạm tranh của tiếng đó; chạm tai để nghe lại.')] },
+  rd_storychoice: { steps: [S('📖', 'Listen to the short story.', 'Nghe truyện ngắn.'), S('👆', 'Choose the picture that helps.', 'Chọn tranh giúp được nhân vật.')] },
   rd_trace: { steps: [S('👀 🏮', 'Look at the big letter on the lantern.', 'Nhìn chữ cái to trên đèn lồng.'), S('👆 ✨', 'Trace it with your finger along the glowing dots.', 'Dùng ngón tay tô theo các chấm sáng.'), S('🏮 🎉', 'The lantern lights up and says the letter and its sound!', 'Đèn lồng sáng lên và đọc chữ cái cùng âm của nó!')] },
   rd_sounds: { steps: [S('👂 🐟', 'Listen to the sound.', 'Nghe âm.'), S('👆 🐟', 'Catch the fish that carries that letter.', 'Bắt chú cá mang chữ cái đó.'), S('🐟 🎉', 'Catch them all to win!', 'Bắt hết cá là thắng!')] },
   rd_build: { steps: [S('👀 🐱', 'Look at the picture.', 'Nhìn tranh.'), S('👆 🧩', 'Put the letters on the picture to make its word. Each letter says its sound.', 'Đặt các chữ lên tranh để ghép thành tiếng. Mỗi chữ đọc âm của nó.'), S('👂 🎉', 'Then hear the sounds blend into the word!', 'Rồi nghe các âm ghép lại thành tiếng!')] },

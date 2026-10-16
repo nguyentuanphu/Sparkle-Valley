@@ -1,0 +1,36 @@
+[
+  {
+    "label": "phone",
+    "album": "How this section worksFamily photos that become postcards in the children's albums when they walk into the place you choose; none by default. Photos are private (see Family code). Save puts your chang"
+  },
+  {
+    "label": "phone",
+    "performance": "Performance: loading, frames and batteryLoading is time to a built valley. Frames measure smoothness during play; frame time is milliseconds to draw a picture. Battery is measured only where the browser reports it, while not charging. The loading column shows measured readiness and the slowest start"
+  },
+  {
+    "label": "phone",
+    "lab": {
+      "policies": 2,
+      "devices": 6,
+      "page": "#lab",
+      "found": "How this section worksTester and automatic checks apply to the selected devices; none selected means every device while enabled. Each device keeps its own progress policy. Save applies these rules onl"
+    }
+  },
+  {
+    "label": "desktop",
+    "album": "How this section worksFamily photos that become postcards in the children's albums when they walk into the place you choose; none by default. Photos are private (see Family code). Save puts your chang"
+  },
+  {
+    "label": "desktop",
+    "performance": "Performance: loading, frames and batteryLoading is time to a built valley. Frames measure smoothness during play; frame time is milliseconds to draw a picture. Battery is measured only where the browser reports it, while not charging. The loading column shows measured readiness and the slowest start"
+  },
+  {
+    "label": "desktop",
+    "lab": {
+      "policies": 2,
+      "devices": 6,
+      "page": "#lab",
+      "found": "How this section worksTester and automatic checks apply to the selected devices; none selected means every device while enabled. Each device keeps its own progress policy. Save applies these rules onl"
+    }
+  }
+]

@@ -1,0 +1,19 @@
+{
+ "source": "ab4773c4 (code identical to its parent run 5203ae86+post spacing; run on working tree before commit)",
+ "run": "node suite.mjs --jobs 1 --only ownerdecoroverlap,ownerdecorworld,festivals,festhunt,ownerfestplacement,unit,arch,types,preload,names",
+ "date": "2026-10-15 AEDT",
+ "environment": "Node 22.22.0, Playwright 1.56.1, Chromium 141 build1194 headless shell; TypeScript 6.0.2 locally (pinned 5.9.3 unavailable: npm registry blocked)",
+ "result": "10/10 passed",
+ "rows": [
+  "✅ festivals (45s) midautumn out of season: told the days, not started by a child; on when an admin schedules it, and a tap on its day only tells (nobody travels), off again after; 11 places decorated along their streets (week 1 → day: village 37→107, hanoi 41→82, saigon 46→91, market 26→66, hoian 31→86, vungtau 50→100, town 44→129, aussie 28→68, sydney 40→79, melbourne 32→64, brisbane 34→67), none on a road or street",
+  "✅ festhunt (72s) 52 festival places at 5x by default (as before at 1x, more at 7x), none on a road; build-up 70 → 105 → 140 → 140 in Lotus Village for Tết; Tết on: 446 patches, 224 outside its places, 187 spots by the valley's roads, the nearest drawn within the budget; 24 festivals hide 5 things each; Tết's five found: keepsake for the house and the Passport badge",
+  "✅ preload (0s) up to date: 137 scripts",
+  "✅ arch (0s) 234 files, 1072 imports; 0 circle groups (0 files in them); allowed: 0 groups, 0 files",
+  "✅ unit (10s) 107 unit tests passed",
+  "✅ names (11s) 234 game files: every name is defined or imported",
+  "✅ ownerfestplacement (39s) 130 planned town decorations respect the actual shifted town-road bounds, independent of their own mask",
+  "✅ types (3s) 11 explicit files type-checked; detector/outbox/family-backup modules additionally strict-checked; no errors",
+  "✅ ownerdecoroverlap (45s) [{\"key\":\"village\",\"firstAmount\":5,\"secondAmount\":5,\"stages\":[4,4],\"amounts\":[{\"planned\":140,\"drawn\":140},{\"planned\":140,\"drawn\":140}],\"counts\":[129,140],\"overlap\":[],\"onSupport\":[]},{\"key\":\"village\",\"firstAmount\":5,\"secondAmount\":5,\"stages\":[4,1],\"amounts\":[{\"planned\":140,\"drawn\":140},{\"planned\":70,\"drawn\":70}],\"counts\":[129,70],\"overlap\":[],\"onSupport\":[]},{\"key\":\"village\",\"firstAmount\":5,\"secondAmount\":1,\"stages\":[4,4],\"amounts\":[{\"planned\":140,\"drawn\":140},{\"planned\":28,\"drawn\":28}],\"counts\":[129,28],\"overlap\":[],\"onSupport\":[]},{\"key\":\"village\",\"firstAmount\":3,\"secondAmount\":7,\"stages\":[4,4],\"amounts\":[{\"planned\":84,\"drawn\":84},{\"planned\":196,\"drawn\":196}],\"counts\":[73,195],\"overlap\":[],\"onSupport\":[]}]",
+  "✅ ownerdecorworld (43s) tet: string 129, piece 961, table 1, road 150; 0 shared ground; 13 street plans all placed (312 relocated); China Town ring 79 pieces/11 strings | tet+ramthang1: string 129, piece 1211, table 2, road 146; 0 shared ground; 15 street plans all placed (562 relocated); China Town ring 79 pieces/11 strings"
+ ]
+}

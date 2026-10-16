@@ -1,0 +1,832 @@
+[
+  {
+    "w": 390,
+    "h": 844,
+    "lang": "en",
+    "crossing": "town",
+    "side": -1,
+    "approach": {
+      "x": 9.2,
+      "z": -31.900000000000002
+    },
+    "target": {
+      "x": 195,
+      "y": 260.94950661269405,
+      "boardY": 6.8999999999999995,
+      "hits": [
+        {
+          "id": "crossing_town_north",
+          "d": 6.336056852153654,
+          "type": "Mesh"
+        },
+        {
+          "id": "crossing_town_north",
+          "d": 6.396061763845297,
+          "type": "Mesh"
+        }
+      ],
+      "front": true,
+      "inViewport": true,
+      "canvas": true,
+      "hit": "CANVAS"
+    },
+    "dialog": {
+      "text": "Stop, look and listenStop at the kerb. Look and listen both ways. Cross with a grown-up when the road is clear. Keep looking as you cross.▼",
+      "button": {
+        "w": 366,
+        "h": 162.375
+      },
+      "extraButtons": 0,
+      "reachable": true
+    }
+  },
+  {
+    "w": 390,
+    "h": 844,
+    "lang": "en",
+    "crossing": "town",
+    "side": 1,
+    "approach": {
+      "x": 0.7999999999999998,
+      "z": -24.099999999999998
+    },
+    "target": {
+      "x": 194.99999999999997,
+      "y": 261.86673405655785,
+      "boardY": 6.8999999999999995,
+      "hits": [
+        {
+          "id": "crossing_town_south",
+          "d": 6.336298077081993,
+          "type": "Mesh"
+        },
+        {
+          "id": "crossing_town_south",
+          "d": 6.396325553431271,
+          "type": "Mesh"
+        }
+      ],
+      "front": true,
+      "inViewport": true,
+      "canvas": true,
+      "hit": "CANVAS"
+    },
+    "dialog": {
+      "text": "Stop, look and listenStop at the kerb. Look and listen both ways. Cross with a grown-up when the road is clear. Keep looking as you cross.▼",
+      "button": {
+        "w": 366,
+        "h": 162.375
+      },
+      "extraButtons": 0,
+      "reachable": true
+    }
+  },
+  {
+    "w": 390,
+    "h": 844,
+    "lang": "en",
+    "crossing": "aussie",
+    "side": -1,
+    "approach": {
+      "x": -112.2,
+      "z": -68.7
+    },
+    "target": {
+      "x": 192.78347918902244,
+      "y": 264.07065079282063,
+      "boardY": 6.3,
+      "hits": [
+        {
+          "id": "crossing_aussie_north",
+          "d": 6.952029027682061,
+          "type": "Mesh"
+        },
+        {
+          "id": "crossing_aussie_north",
+          "d": 7.012109196118502,
+          "type": "Mesh"
+        }
+      ],
+      "front": true,
+      "inViewport": true,
+      "canvas": true,
+      "hit": "CANVAS"
+    },
+    "dialog": {
+      "text": "Stop, look and listenStop at the kerb. Look and listen both ways. Cross with a grown-up when the road is clear. Keep looking as you cross.▼",
+      "button": {
+        "w": 366,
+        "h": 162.375
+      },
+      "extraButtons": 0,
+      "reachable": true
+    }
+  },
+  {
+    "w": 390,
+    "h": 844,
+    "lang": "en",
+    "crossing": "aussie",
+    "side": 1,
+    "approach": {
+      "x": -105.8,
+      "z": -61.1
+    },
+    "target": {
+      "x": 195,
+      "y": 261.86673405655785,
+      "boardY": 6.3,
+      "hits": [
+        {
+          "id": "crossing_aussie_south",
+          "d": 6.336298077081996,
+          "type": "Mesh"
+        },
+        {
+          "id": "crossing_aussie_south",
+          "d": 6.396325553431278,
+          "type": "Mesh"
+        },
+        {
+          "id": "hoilang3",
+          "d": 23.271815262420184,
+          "type": "Sprite"
+        }
+      ],
+      "front": true,
+      "inViewport": true,
+      "canvas": true,
+      "hit": "CANVAS"
+    },
+    "dialog": {
+      "text": "Stop, look and listenStop at the kerb. Look and listen both ways. Cross with a grown-up when the road is clear. Keep looking as you cross.▼",
+      "button": {
+        "w": 366,
+        "h": 162.375
+      },
+      "extraButtons": 0,
+      "reachable": true
+    }
+  },
+  {
+    "w": 320,
+    "h": 640,
+    "lang": "vi",
+    "crossing": "town",
+    "side": -1,
+    "approach": {
+      "x": 9.2,
+      "z": -31.900000000000002
+    },
+    "target": {
+      "x": 160,
+      "y": 197.87640311863058,
+      "boardY": 6.8999999999999995,
+      "hits": [
+        {
+          "id": "crossing_town_north",
+          "d": 6.336056852153654,
+          "type": "Mesh"
+        },
+        {
+          "id": "crossing_town_north",
+          "d": 6.396061763845297,
+          "type": "Mesh"
+        }
+      ],
+      "front": true,
+      "inViewport": true,
+      "canvas": true,
+      "hit": "CANVAS"
+    },
+    "dialog": {
+      "text": "Dừng, nhìn và ngheDừng ở mép đường. Nhìn và lắng nghe cả hai phía. Đi cùng người lớn khi đường đã vắng xe. Tiếp tục quan sát khi sang đường.▼",
+      "button": {
+        "w": 296,
+        "h": 188.96875
+      },
+      "extraButtons": 0,
+      "reachable": true
+    }
+  },
+  {
+    "w": 320,
+    "h": 640,
+    "lang": "vi",
+    "crossing": "town",
+    "side": 1,
+    "approach": {
+      "x": 0.7999999999999998,
+      "z": -24.099999999999998
+    },
+    "target": {
+      "x": 159.99999999999997,
+      "y": 198.57193103814814,
+      "boardY": 6.8999999999999995,
+      "hits": [
+        {
+          "id": "crossing_town_south",
+          "d": 6.336298077081993,
+          "type": "Mesh"
+        },
+        {
+          "id": "crossing_town_south",
+          "d": 6.396325553431271,
+          "type": "Mesh"
+        }
+      ],
+      "front": true,
+      "inViewport": true,
+      "canvas": true,
+      "hit": "CANVAS"
+    },
+    "dialog": {
+      "text": "Dừng, nhìn và ngheDừng ở mép đường. Nhìn và lắng nghe cả hai phía. Đi cùng người lớn khi đường đã vắng xe. Tiếp tục quan sát khi sang đường.▼",
+      "button": {
+        "w": 296,
+        "h": 188.96875
+      },
+      "extraButtons": 0,
+      "reachable": true
+    }
+  },
+  {
+    "w": 320,
+    "h": 640,
+    "lang": "vi",
+    "crossing": "aussie",
+    "side": -1,
+    "approach": {
+      "x": -112.2,
+      "z": -68.7
+    },
+    "target": {
+      "x": 158.3376411012498,
+      "y": 201.9854649259706,
+      "boardY": 6.3,
+      "hits": [
+        {
+          "id": "crossing_aussie_north",
+          "d": 6.954664319041984,
+          "type": "Mesh"
+        },
+        {
+          "id": "crossing_aussie_north",
+          "d": 7.014780709209756,
+          "type": "Mesh"
+        }
+      ],
+      "front": true,
+      "inViewport": true,
+      "canvas": true,
+      "hit": "CANVAS"
+    },
+    "dialog": {
+      "text": "Dừng, nhìn và ngheDừng ở mép đường. Nhìn và lắng nghe cả hai phía. Đi cùng người lớn khi đường đã vắng xe. Tiếp tục quan sát khi sang đường.▼",
+      "button": {
+        "w": 296,
+        "h": 188.96875
+      },
+      "extraButtons": 0,
+      "reachable": true
+    }
+  },
+  {
+    "w": 320,
+    "h": 640,
+    "lang": "vi",
+    "crossing": "aussie",
+    "side": 1,
+    "approach": {
+      "x": -105.8,
+      "z": -61.1
+    },
+    "target": {
+      "x": 159.9999999999986,
+      "y": 198.86129798795338,
+      "boardY": 6.3,
+      "hits": [
+        {
+          "id": "crossing_aussie_south",
+          "d": 6.336902319648848,
+          "type": "Mesh"
+        },
+        {
+          "id": "crossing_aussie_south",
+          "d": 6.396943293960323,
+          "type": "Mesh"
+        },
+        {
+          "id": "hoilang3",
+          "d": 23.29523738536547,
+          "type": "Sprite"
+        }
+      ],
+      "front": true,
+      "inViewport": true,
+      "canvas": true,
+      "hit": "CANVAS"
+    },
+    "dialog": {
+      "text": "Dừng, nhìn và ngheDừng ở mép đường. Nhìn và lắng nghe cả hai phía. Đi cùng người lớn khi đường đã vắng xe. Tiếp tục quan sát khi sang đường.▼",
+      "button": {
+        "w": 296,
+        "h": 188.96875
+      },
+      "extraButtons": 0,
+      "reachable": true
+    }
+  },
+  {
+    "w": 820,
+    "h": 1180,
+    "lang": "en",
+    "crossing": "town",
+    "side": -1,
+    "approach": {
+      "x": 9.2,
+      "z": -31.900000000000002
+    },
+    "target": {
+      "x": 410,
+      "y": 363.2898197605869,
+      "boardY": 6.8999999999999995,
+      "hits": [
+        {
+          "id": "crossing_town_north",
+          "d": 6.339030181055968,
+          "type": "Mesh"
+        },
+        {
+          "id": "crossing_town_north",
+          "d": 6.399034483510972,
+          "type": "Mesh"
+        }
+      ],
+      "front": true,
+      "inViewport": true,
+      "canvas": true,
+      "hit": "CANVAS"
+    },
+    "dialog": {
+      "text": "Stop, look and listenStop at the kerb. Look and listen both ways. Cross with a grown-up when the road is clear. Keep looking as you cross.▼",
+      "button": {
+        "w": 760,
+        "h": 123.1875
+      },
+      "extraButtons": 0,
+      "reachable": true
+    }
+  },
+  {
+    "w": 820,
+    "h": 1180,
+    "lang": "en",
+    "crossing": "town",
+    "side": 1,
+    "approach": {
+      "x": 0.7999999999999998,
+      "z": -24.099999999999998
+    },
+    "target": {
+      "x": 410,
+      "y": 364.0895473744243,
+      "boardY": 6.8999999999999995,
+      "hits": [
+        {
+          "id": "crossing_town_south",
+          "d": 6.336931370268895,
+          "type": "Mesh"
+        },
+        {
+          "id": "crossing_town_south",
+          "d": 6.396931436395849,
+          "type": "Mesh"
+        }
+      ],
+      "front": true,
+      "inViewport": true,
+      "canvas": true,
+      "hit": "CANVAS"
+    },
+    "dialog": {
+      "text": "Stop, look and listenStop at the kerb. Look and listen both ways. Cross with a grown-up when the road is clear. Keep looking as you cross.▼",
+      "button": {
+        "w": 760,
+        "h": 123.1875
+      },
+      "extraButtons": 0,
+      "reachable": true
+    }
+  },
+  {
+    "w": 820,
+    "h": 1180,
+    "lang": "en",
+    "crossing": "aussie",
+    "side": -1,
+    "approach": {
+      "x": -112.2,
+      "z": -68.7
+    },
+    "target": {
+      "x": 406.82015327646184,
+      "y": 361.8569916131437,
+      "boardY": 6.3,
+      "hits": [
+        {
+          "id": "crossing_aussie_north",
+          "d": 6.952714043381527,
+          "type": "Mesh"
+        },
+        {
+          "id": "crossing_aussie_north",
+          "d": 7.012766791243269,
+          "type": "Mesh"
+        }
+      ],
+      "front": true,
+      "inViewport": true,
+      "canvas": true,
+      "hit": "CANVAS"
+    },
+    "dialog": {
+      "text": "Stop, look and listenStop at the kerb. Look and listen both ways. Cross with a grown-up when the road is clear. Keep looking as you cross.▼",
+      "button": {
+        "w": 760,
+        "h": 123.1875
+      },
+      "extraButtons": 0,
+      "reachable": true
+    }
+  },
+  {
+    "w": 820,
+    "h": 1180,
+    "lang": "en",
+    "crossing": "aussie",
+    "side": 1,
+    "approach": {
+      "x": -105.8,
+      "z": -61.1
+    },
+    "target": {
+      "x": 410,
+      "y": 362.4617468475802,
+      "boardY": 6.3,
+      "hits": [
+        {
+          "id": "crossing_aussie_south",
+          "d": 6.343028822177657,
+          "type": "Mesh"
+        },
+        {
+          "id": "crossing_aussie_south",
+          "d": 6.403052347875644,
+          "type": "Mesh"
+        }
+      ],
+      "front": true,
+      "inViewport": true,
+      "canvas": true,
+      "hit": "CANVAS"
+    },
+    "dialog": {
+      "text": "Stop, look and listenStop at the kerb. Look and listen both ways. Cross with a grown-up when the road is clear. Keep looking as you cross.▼",
+      "button": {
+        "w": 760,
+        "h": 123.1875
+      },
+      "extraButtons": 0,
+      "reachable": true
+    }
+  },
+  {
+    "w": 1280,
+    "h": 800,
+    "lang": "en",
+    "crossing": "town",
+    "side": -1,
+    "approach": {
+      "x": 9.2,
+      "z": -31.900000000000002
+    },
+    "target": {
+      "x": 640,
+      "y": 246.29818288853352,
+      "boardY": 6.8999999999999995,
+      "hits": [
+        {
+          "id": "crossing_town_north",
+          "d": 6.339030181055968,
+          "type": "Mesh"
+        },
+        {
+          "id": "crossing_town_north",
+          "d": 6.399034483510972,
+          "type": "Mesh"
+        }
+      ],
+      "front": true,
+      "inViewport": true,
+      "canvas": true,
+      "hit": "CANVAS"
+    },
+    "dialog": {
+      "text": "Stop, look and listenStop at the kerb. Look and listen both ways. Cross with a grown-up when the road is clear. Keep looking as you cross.▼",
+      "button": {
+        "w": 760,
+        "h": 123.1875
+      },
+      "extraButtons": 0,
+      "reachable": true
+    }
+  },
+  {
+    "w": 1280,
+    "h": 800,
+    "lang": "en",
+    "crossing": "town",
+    "side": 1,
+    "approach": {
+      "x": 0.7999999999999998,
+      "z": -24.099999999999998
+    },
+    "target": {
+      "x": 640,
+      "y": 246.29818288853338,
+      "boardY": 6.8999999999999995,
+      "hits": [
+        {
+          "id": "crossing_town_south",
+          "d": 6.339030181055971,
+          "type": "Mesh"
+        },
+        {
+          "id": "crossing_town_south",
+          "d": 6.399034483510972,
+          "type": "Mesh"
+        }
+      ],
+      "front": true,
+      "inViewport": true,
+      "canvas": true,
+      "hit": "CANVAS"
+    },
+    "dialog": {
+      "text": "Stop, look and listenStop at the kerb. Look and listen both ways. Cross with a grown-up when the road is clear. Keep looking as you cross.▼",
+      "button": {
+        "w": 760,
+        "h": 123.1875
+      },
+      "extraButtons": 0,
+      "reachable": true
+    }
+  },
+  {
+    "w": 1280,
+    "h": 800,
+    "lang": "en",
+    "crossing": "aussie",
+    "side": -1,
+    "approach": {
+      "x": -112.2,
+      "z": -68.7
+    },
+    "target": {
+      "x": 637.8441717128554,
+      "y": 245.32677397501269,
+      "boardY": 6.3,
+      "hits": [
+        {
+          "id": "crossing_aussie_north",
+          "d": 6.952714043381527,
+          "type": "Mesh"
+        },
+        {
+          "id": "crossing_aussie_north",
+          "d": 7.012766791243269,
+          "type": "Mesh"
+        }
+      ],
+      "front": true,
+      "inViewport": true,
+      "canvas": true,
+      "hit": "CANVAS"
+    },
+    "dialog": {
+      "text": "Stop, look and listenStop at the kerb. Look and listen both ways. Cross with a grown-up when the road is clear. Keep looking as you cross.▼",
+      "button": {
+        "w": 760,
+        "h": 123.1875
+      },
+      "extraButtons": 0,
+      "reachable": true
+    }
+  },
+  {
+    "w": 1280,
+    "h": 800,
+    "lang": "en",
+    "crossing": "aussie",
+    "side": 1,
+    "approach": {
+      "x": -105.8,
+      "z": -61.1
+    },
+    "target": {
+      "x": 639.9999999999982,
+      "y": 244.7011072444866,
+      "boardY": 6.3,
+      "hits": [
+        {
+          "id": "crossing_aussie_south",
+          "d": 6.361118113188758,
+          "type": "Mesh"
+        },
+        {
+          "id": "crossing_aussie_south",
+          "d": 6.421264109096583,
+          "type": "Mesh"
+        }
+      ],
+      "front": true,
+      "inViewport": true,
+      "canvas": true,
+      "hit": "CANVAS"
+    },
+    "dialog": {
+      "text": "Stop, look and listenStop at the kerb. Look and listen both ways. Cross with a grown-up when the road is clear. Keep looking as you cross.▼",
+      "button": {
+        "w": 760,
+        "h": 123.1875
+      },
+      "extraButtons": 0,
+      "reachable": true
+    }
+  },
+  {
+    "w": 844,
+    "h": 390,
+    "lang": "vi",
+    "crossing": "town",
+    "side": -1,
+    "approach": {
+      "x": 9.2,
+      "z": -31.900000000000002
+    },
+    "target": {
+      "x": 422,
+      "y": 119.21729651495849,
+      "boardY": 6.8999999999999995,
+      "hits": [
+        {
+          "id": "crossing_town_north",
+          "d": 6.12058206554614,
+          "type": "Mesh"
+        },
+        {
+          "id": "crossing_town_north",
+          "d": 6.180733170309616,
+          "type": "Mesh"
+        }
+      ],
+      "front": true,
+      "inViewport": true,
+      "canvas": true,
+      "hit": "CANVAS"
+    },
+    "dialog": {
+      "text": "Dừng, nhìn và ngheDừng ở mép đường. Nhìn và lắng nghe cả hai phía. Đi cùng người lớn khi đường đã vắng xe. Tiếp tục quan sát khi sang đường.▼",
+      "button": {
+        "w": 760,
+        "h": 123.1875
+      },
+      "extraButtons": 0,
+      "reachable": true
+    }
+  },
+  {
+    "w": 844,
+    "h": 390,
+    "lang": "vi",
+    "crossing": "town",
+    "side": 1,
+    "approach": {
+      "x": 0.7999999999999998,
+      "z": -24.099999999999998
+    },
+    "target": {
+      "x": 422,
+      "y": 117.1386452591525,
+      "boardY": 6.8999999999999995,
+      "hits": [
+        {
+          "id": "crossing_town_south",
+          "d": 5.90877235040631,
+          "type": "Mesh"
+        },
+        {
+          "id": "crossing_town_south",
+          "d": 5.96908593136784,
+          "type": "Mesh"
+        }
+      ],
+      "front": true,
+      "inViewport": true,
+      "canvas": true,
+      "hit": "CANVAS"
+    },
+    "dialog": {
+      "text": "Dừng, nhìn và ngheDừng ở mép đường. Nhìn và lắng nghe cả hai phía. Đi cùng người lớn khi đường đã vắng xe. Tiếp tục quan sát khi sang đường.▼",
+      "button": {
+        "w": 760,
+        "h": 123.1875
+      },
+      "extraButtons": 0,
+      "reachable": true
+    }
+  },
+  {
+    "w": 844,
+    "h": 390,
+    "lang": "vi",
+    "crossing": "aussie",
+    "side": -1,
+    "approach": {
+      "x": -112.2,
+      "z": -68.7
+    },
+    "target": {
+      "x": 420.87924306139325,
+      "y": 123.88932144041215,
+      "boardY": 6.3,
+      "hits": [
+        {
+          "id": "crossing_aussie_north",
+          "d": 6.481981534450059,
+          "type": "Mesh"
+        },
+        {
+          "id": "crossing_aussie_north",
+          "d": 6.5426035117902375,
+          "type": "Mesh"
+        }
+      ],
+      "front": true,
+      "inViewport": true,
+      "canvas": true,
+      "hit": "CANVAS"
+    },
+    "dialog": {
+      "text": "Dừng, nhìn và ngheDừng ở mép đường. Nhìn và lắng nghe cả hai phía. Đi cùng người lớn khi đường đã vắng xe. Tiếp tục quan sát khi sang đường.▼",
+      "button": {
+        "w": 760,
+        "h": 123.1875
+      },
+      "extraButtons": 0,
+      "reachable": true
+    }
+  },
+  {
+    "w": 844,
+    "h": 390,
+    "lang": "vi",
+    "crossing": "aussie",
+    "side": 1,
+    "approach": {
+      "x": -105.8,
+      "z": -61.1
+    },
+    "target": {
+      "x": 422.0000000000009,
+      "y": 117.65243944516956,
+      "boardY": 6.3,
+      "hits": [
+        {
+          "id": "crossing_aussie_south",
+          "d": 5.882109240432921,
+          "type": "Mesh"
+        },
+        {
+          "id": "crossing_aussie_south",
+          "d": 5.9426090340117605,
+          "type": "Mesh"
+        }
+      ],
+      "front": true,
+      "inViewport": true,
+      "canvas": true,
+      "hit": "CANVAS"
+    },
+    "dialog": {
+      "text": "Dừng, nhìn và ngheDừng ở mép đường. Nhìn và lắng nghe cả hai phía. Đi cùng người lớn khi đường đã vắng xe. Tiếp tục quan sát khi sang đường.▼",
+      "button": {
+        "w": 760,
+        "h": 123.1875
+      },
+      "extraButtons": 0,
+      "reachable": true
+    }
+  }
+]

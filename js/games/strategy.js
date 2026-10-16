@@ -37,11 +37,12 @@ register({
       }
       return null;
     }
+    api.plan(() => { const m = bestMove(); return m ? rodEls[held == null ? m[0] : m[1]] : null; });
     tools.querySelector('.hint').onclick = () => { const m = bestMove(); if (m) { held = null; draw(m); api.say('Move a disc from the glowing pole to the other glowing pole.', 'Chuyển một đĩa từ cột sáng này sang cột sáng kia nhé.'); } };
     api.say(`Move all the discs to the flag. A big disc can never sit on a small one!`, `Chuyển hết đĩa sang cột có cờ. Đĩa to không được đặt lên đĩa nhỏ nhé!`);
     draw();
     for (;;) {
-      const r = await tapOne(rodEls); if (api.closed) return;
+      const r = await tapOne(rodEls, api); if (api.closed) return;
       const i = r._v;
       if (held == null) { if (rods[i].length) { held = i; api.sfx.tap(); } else api.wrong(r, 'That pole is empty.', 'Cột này trống rồi.'); }
       else if (held === i) { held = null; }
@@ -61,6 +62,20 @@ register({
 
 // ---------- Robot planner: build the whole plan first, then press Go ----------
 const DIRS = { up: [0, -1, '⬆️'], down: [0, 1, '⬇️'], left: [-1, 0, '⬅️'], right: [1, 0, '➡️'] };
+// A legal path becomes ordinary arrow-button taps; it never moves the character or awards a win itself.
+function routeTo(N, start, target, canStep) {
+  const queue = [[start, []]], seen = new Set([start.join()]);
+  for (let at = 0; at < queue.length; at++) {
+    const [p, steps] = queue[at];
+    if (p[0] === target[0] && p[1] === target[1]) return steps;
+    for (const [key, [dx, dy]] of Object.entries(DIRS)) {
+      const x = p[0] + dx, y = p[1] + dy, id = x + ',' + y;
+      if (x < 0 || y < 0 || x >= N || y >= N || seen.has(id) || !canStep(p, key, x, y)) continue;
+      seen.add(id); queue.push([[x, y], steps.concat(key)]);
+    }
+  }
+  return null;
+}
 function bfs(N, rocks, s, t) {
   const q = [[s, 0]], seen = new Set([s.join()]);
   while (q.length) { const [[x, y], d] = q.shift(); if (x === t[0] && y === t[1]) return d;
@@ -93,9 +108,16 @@ register({
       drawPlan();
       api.say(r === 0 ? 'Help the robot reach the star! Make a plan with the arrows, then press Go.' : 'Plan the path to the star!', r === 0 ? 'Giúp rô-bốt đến ngôi sao! Chọn các mũi tên để lập kế hoạch, rồi bấm Đi.' : 'Lập kế hoạch đường đến ngôi sao nào!');
       const done = await new Promise(res => {
-        ['left', 'up', 'down', 'right'].forEach(k => { const b = el('button', 'pill arrow', DIRS[k][2]); b.onclick = () => { if (plan.length < 12) { plan.push(k); api.sfx.tap(); drawPlan(); } }; pad.appendChild(b); });
+        const arrows = {}, solution = routeTo(N, s, t, (p, key, x, y) => !rocks.has(x + ',' + y));
+        ['left', 'up', 'down', 'right'].forEach(k => { const b = el('button', 'pill arrow', DIRS[k][2]); b.onclick = () => { if (plan.length < 12) { plan.push(k); api.sfx.tap(); drawPlan(); } }; arrows[k] = b; pad.appendChild(b); });
         const del = el('button', 'pill', '⌫'); del.onclick = () => { plan.pop(); drawPlan(); }; pad.appendChild(del);
         const go = el('button', 'pill go', '▶ ' + T('Go', 'Đi')); pad.appendChild(go);
+        api.plan(() => {
+          if (api.closed || pad.classList.contains('busy') || !solution) return null;
+          if (plan.length > solution.length || plan.some((key, i) => key !== solution[i])) return del;
+          return plan.length < solution.length ? arrows[solution[plan.length]] : go;
+        });
+        api.onCleanup(() => res(false));
         go.onclick = async () => {
           if (!plan.length) return; pad.classList.add('busy');
           let p = s.slice(), ok = true;
@@ -135,7 +157,7 @@ function makeMaze(W, H) {
 register({
   id: 'maze', icon: '🌀', name: () => T('Mountain Maze', 'Mê Cung Trên Núi'),
   async run(api) {
-    const rounds = 2;
+    const rounds = 2, maxActions = Array.from({length: rounds}, (_, r) => Math.min(8, 3 + api.level + r) ** 2 - 1).reduce((sum, n) => sum + n, 0);
     for (let r = 0; r < rounds; r++) {
       api.dots(rounds, r); api.stage.innerHTML = '';
       const N = Math.min(8, 3 + api.level + r), walls = makeMaze(N, N);
@@ -155,11 +177,17 @@ register({
           p = [p[0] + d[1], p[1] + d[2]]; place(); api.sfx.step();
           if (p[0] === N - 1 && p[1] === N - 1) { cleanup(); res(); }
         };
-        ['left', 'up', 'down', 'right'].forEach(k => { const b = el('button', 'pill arrow', DIRS[k][2]); b.onclick = () => move(k); pad.appendChild(b); });
+        const arrows = {}, wallOf = { up: 'n', down: 's', left: 'w', right: 'e' };
+        ['left', 'up', 'down', 'right'].forEach(k => { const b = el('button', 'pill arrow', DIRS[k][2]); b.onclick = () => move(k); arrows[k] = b; pad.appendChild(b); });
+        api.plan(() => {
+          if (api.closed) return null;
+          const route = routeTo(N, p, [N - 1, N - 1], (from, key) => !walls[from[1] * N + from[0]][wallOf[key]]);
+          return route?.length ? arrows[route[0]] : null;
+        }, { maxActions });
         // Tap a neighbouring square or swipe to move too.
         cells.forEach((c, i) => c.onclick = () => { const x = i % N, y = Math.floor(i / N), dx = x - p[0], dy = y - p[1]; if (Math.abs(dx) + Math.abs(dy) === 1) move(dx === 1 ? 'right' : dx === -1 ? 'left' : dy === 1 ? 'down' : 'up'); });
         const key = e => { const k = { ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right' }[e.key]; if (k) { e.preventDefault(); move(k); } };
-        window.addEventListener('keydown', key); const cleanup = () => window.removeEventListener('keydown', key); api.onCleanup(cleanup);
+        window.addEventListener('keydown', key); const cleanup = () => window.removeEventListener('keydown', key); api.onCleanup(() => { cleanup(); res(); });
       });
       if (api.closed) return;
       api.sfx.chime(); api.praise(); await wait(1300);

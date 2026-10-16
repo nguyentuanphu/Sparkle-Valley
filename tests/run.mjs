@@ -8,6 +8,7 @@ import os from 'os';
 import { launch, open, clear, start, URL, seedPlayers, takeCoverage } from './harness.mjs';
 import { groundAudit } from './world-audit.mjs';
 import { studioCheck } from './studio-check.mjs';
+import { studioRepairCheck } from './studio-repair-check.mjs';
 // (round R privacy) friends save each other's device key when they first play together (＋👫); two test devices that are
 // already friends by code get each other's key here, the way that first game would have given it
 // the text of an element with each swapped drawing read back as its emoji (js/emojiswap.js keeps it in data-e)
@@ -26,10 +27,14 @@ const SEED = Number(process.env.SV_SEED) || Math.floor(Date.now() / 36e5);
 const only = process.argv.slice(2).filter(a => !a.startsWith('--'));
 const want = k => !only.length || only.includes(k);
 const results = [];
+// (repair round, 15 Oct AEDT) a check that never finishes is a failure, not a stalled machine: on GitHub one check that
+// hung after its browser stopped answering held its whole share for two hours, so none of the share's checks reported
+const CHECK_LIMIT = (Number(process.env.SV_CHECK_MIN) || 45) * 60000, pause = ms => new Promise(r => setTimeout(r, ms));
 const check = async (name, fn) => {
   if (!want(name)) return;
-  const t0 = Date.now();
-  try { const note = await fn(); results.push([name, true, note || '']); console.log(`✅ ${name} (${((Date.now() - t0) / 1000).toFixed(0)}s) ${note || ''}`); }
+  const t0 = Date.now(); let timer;
+  const limit = new Promise((_, no) => { timer = setTimeout(() => no(new Error(`did not finish within ${CHECK_LIMIT / 60000} min (stopped so the later checks still run)`)), CHECK_LIMIT); });
+  try { const running = fn(); running.catch(() => { }); const note = await Promise.race([running, limit]); results.push([name, true, note || '']); console.log(`✅ ${name} (${((Date.now() - t0) / 1000).toFixed(0)}s) ${note || ''}`); }
   catch (e) {
     results.push([name, false, e.message]); console.log(`❌ ${name}: ${e.message}`);
     // a picture of what was on screen when it failed (out/fail-<check>.png)
@@ -38,7 +43,10 @@ const check = async (name, fn) => {
   // (round R) close every window the check left open, passed or failed: a failed check's window kept drawing the valley
   // and slowed every later check until they timed out
   finally {
-    for (const c of b.contexts()) await c.close().catch(() => { });
+    clearTimeout(timer);
+    // a browser that no longer answers is replaced, so one stuck check cannot stop the rest
+    const closed = await Promise.race([Promise.all(b.contexts().map(c => c.close().catch(() => { }))).then(() => true), pause(30000).then(() => false)]);
+    if (!closed) { console.log(`   (${name}: the browser stopped answering; starting a fresh one)`); await Promise.race([b.close().catch(() => { }), pause(10000)]); b = await launch(); }
     // (owner, 13 Oct: "changed-files checks") with SV_COVER=1 each check writes which game code it ran (tests/suite.mjs
     // turns that into tests/check-map.json); a check that opened no game page writes nothing and always runs
     if (process.env.SV_COVER === '1') { const cov = takeCoverage(); fs.mkdirSync('out/cover', { recursive: true }); fs.writeFileSync(`out/cover/${name}.json`, JSON.stringify(cov)); }
@@ -75,7 +83,7 @@ async function serveFolder(root, { gzip = false } = {}) {
   await new Promise(res => srv.listen(0, '127.0.0.2', res));
   return Object.assign(S, { url: `http://127.0.0.2:${srv.address().port}/`, close: () => { srv.closeAllConnections(); srv.close(); } });
 }
-const b = await launch();
+let b = await launch();
 
 await check('boot', async () => {
   for (const [w, h, touch] of [[390, 844, true], [1024, 768, true], [1280, 800, false]]) {
@@ -306,7 +314,7 @@ await check('multiplayer', async () => {
   const up = await fetch('http://127.0.0.1:9000/myapp/').then(r => r.ok).catch(() => false);
   if (!up) return 'skipped (no local PeerJS server on 127.0.0.1:9000)';
   // direct link through a local PeerJS server; the cloud relay runs alongside (local broker, or none)
-  const peer = () => { window.SV_PEER = { host: '127.0.0.1', port: 9000, path: '/myapp', secure: false }; window.SV_MQTT = ['ws://127.0.0.1:9001/']; };
+  const peer = () => { window.SV_PEER = { host: '127.0.0.1', port: 9000, path: '/myapp', secure: false }; window.SV_MQTT = ['ws://127.0.0.1:9001/']; window.__micRequests = 0; const md = navigator.mediaDevices, request = md.getUserMedia.bind(md); md.getUserMedia = options => { window.__micRequests++; return request(options); }; };
   const A = await open(b, { pre: peer, w: 900, h: 640, lang: 'en' }), B = await open(b, { pre: peer, w: 390, h: 760, lang: 'vi', touch: true });
   for (const P of [A, B]) { await clear(P.page); await P.page.evaluate(async () => { window.__Net = (await import('/js/net.js')).Net; }); }
   const code = await A.page.evaluate(async () => __Net.host(__sv.sendHello()));
@@ -318,7 +326,14 @@ await check('multiplayer', async () => {
   await A.page.evaluate(() => document.querySelector('.knockpop [data-in]').click());
   await B.page.waitForFunction(() => Object.keys(__sv.partners).length > 0, null, { timeout: 60000 });
   const inside = await B.page.evaluate(() => ({ knocking: __Net.knocking, mic: __Net.mic ? __Net.mic.getAudioTracks().some(t => t.enabled) : 'none' }));
-  ok(door.knocking && !door.partners && door.mic === false && !inside.knocking && inside.mic === true, 'knock ' + JSON.stringify({ door, inside }));
+  // r63 / Round V: admission does not turn on the microphone; only the child's explicit tap may do that.
+  const requests = await B.page.evaluate(() => window.__micRequests);
+  ok(door.knocking && !door.partners && door.mic === 'none' && !inside.knocking && inside.mic === 'none' && requests === 0, 'knock privacy ' + JSON.stringify({ door, inside, requests }));
+  await B.page.locator('.dk.call').click();
+  await B.page.waitForFunction(() => __Net.micLive && !__Net.muted && __Net.mic.getAudioTracks()[0].enabled, null, { timeout: 15000 });
+  ok(await B.page.evaluate(() => window.__micRequests === 1), 'Mic tap must make exactly one permission request');
+  await B.page.locator('.dk.call').click();
+  ok(await B.page.evaluate(() => __Net.muted && !__Net.mic.getAudioTracks()[0].enabled && window.__micRequests === 1), 'Mic off must silence the live track without another permission request');
   await A.page.evaluate(async () => { const PG = (await import('/js/world.js')).PLAYGROUND; __sv.heroes[0].place(PG.x, PG.z - 2); }); await B.page.evaluate(async () => { const [x, z] = (await import('/js/world.js')).CITIES.find(c => c.id === 'brisbane').gates[0]; __sv.heroes[0].place(x, z); }); await A.page.waitForTimeout(2500);
   const chip = await B.page.evaluate(() => document.querySelector('.fc-txt').textContent);
   await A.page.evaluate(() => __sv.askFriendToCome(__sv.heroes[0], Object.keys(__sv.partners)[0]));
@@ -513,7 +528,11 @@ await check('solid', async () => {
       for (let r = 0; r < (it.r || 2.5) - .2 && !found; r += .4) for (let s = 0; s < 16 && !found; s++) { const an = s / 16 * Math.PI * 2, p = { x: it.x + Math.cos(an) * r, z: it.z + Math.sin(an) * r }; p.y = W.groundAt(p.x, p.z); const q = { ...p }; W.collide(q, .45); if (Math.hypot(q.x - p.x, q.z - p.z) < .05) found = true; }
       if (!found) { lost++; lostAt.push(it.id); }
     }
-    return { st, tried, bad, lost, lostAt: lostAt.slice(0, 8) };
+    // (Full run 37, 16 Oct) the daily gift moves to another landmark each day: every day's spot, not only today's
+    const reach = (x, z, R) => { for (let r = 0; r < R - .2; r += .4) for (let s = 0; s < 16; s++) { const an = s / 16 * Math.PI * 2, p = { x: x + Math.cos(an) * r, z: z + Math.sin(an) * r }; p.y = W.groundAt(p.x, p.z); const q = { ...p }; W.collide(q, .45); if (Math.hypot(q.x - p.x, q.z - p.z) < .05) return true; } return false; };
+    const giftDays = []; if (G.giftSpotFor) for (let d = 0; d < 120; d++) { const g = G.giftSpotFor(d); if (g && !reach(g.x, g.z, 2.4)) giftDays.push(`${g.L.id || g.L.name || d}`); }
+    if (giftDays.length) { lost += giftDays.length; lostAt.push(...[...new Set(giftDays)].map(n => 'gift_today at ' + n)); }
+    return { st, tried, bad, lost, lostAt: lostAt.slice(0, 8), giftChecked: !!G.giftSpotFor };
   });
   const rd = await audit(D); console.log('  solid: desktop', JSON.stringify(rd.st)); const rm = await audit(M); console.log('  solid: phone', JSON.stringify(rm.st)); // one after the other: two software-drawn worlds at once are very slow
   await M.page.reload(); await start(M.page); await clear(M.page); console.log('  solid: phone restarted'); const again = await M.page.evaluate(async () => (await __sv.solidsReady).cached);
@@ -523,6 +542,7 @@ await check('solid', async () => {
     ok(r.tried >= 200, `${tag}: only ${r.tried} spots tried`);
     ok(!r.bad.length, `${tag}: ${r.bad.slice(0, 8).join('; ')} (${r.bad.length}/${r.tried})`);
     ok(!r.lost, `${tag}: ${r.lost} things you tap have no open ground near them: ${r.lostAt.join(', ')}`);
+    ok(r.giftChecked, `${tag}: the daily gift's spots for every day were not checked`);
   }
   ok(rd.st.cells === rm.st.cells, `desktop and phone maps differ (${rd.st.cells} vs ${rm.st.cells})`);
   ok(again, 'the saved map was not used on the second start');
@@ -592,6 +612,110 @@ await check('voicepack', async () => {
   return `first open downloads with a small bar (${first.map(x => '"' + x + '"').slice(0, 2).join(' → ')} … "${first[first.length - 1]}"), the next open shows and downloads nothing, and files the phone lost are fetched again`;
 });
 
+await check('ownerwificard', async () => {
+  const P=await open(b,{w:390,h:844,touch:true,settings:{autoPack:false,lang:'en',bilingual:false},pre:()=>{
+    const c=new EventTarget();c.type='cellular';c.saveData=false;
+    Object.defineProperty(navigator,'connection',{get:()=>c,configurable:true});
+    window.__ownerWifi=()=>{c.type='wifi';c.dispatchEvent(new Event('change'));};
+  },route:async ctx=>{
+    await ctx.route('**/voices/areas.json',r=>r.fulfill({json:{groups:{core:'en_core_wifi',world:'en_world_wifi'},size:{core:{en:1024},world:{en:2048}}}}));
+    await ctx.route('**/voices/en/f/*_wifi.mp3',r=>r.fulfill({contentType:'audio/mpeg',body:Buffer.from([0xff,0xfb,0x90,0])}));
+  }});
+  try {
+    await clear(P.page);
+    await P.page.evaluate(async()=>{
+      const S=await import('/js/state.js'),V=await import('/js/voicepack.js');S.settings.autoPack=true;S.settings.packCell=false;delete S.settings.packAskAt;
+      V.startPack({lines:{en_core_wifi:'f',en_world_wifi:'f'},langOf:{en_core_wifi:'en',en_world_wifi:'en'},areas:true,version:999,made:'owner-wifi-card'},e=>{if(e.state==='ask')V.askCard(e.mb);},()=>null);
+    });
+    await P.page.waitForSelector('.packask',{timeout:20000});
+    // Switching network during a grown-up hold must cancel that pending mobile consent.
+    await P.page.locator('.packask button').first().dispatchEvent('pointerdown');
+    await P.page.waitForTimeout(200);
+    await P.page.evaluate(()=>window.__ownerWifi());
+    await P.page.waitForTimeout(1400);
+    await P.page.waitForFunction(()=>!document.querySelector('.packask') && JSON.parse(localStorage.getItem('sv2_settings')||'{}').packLangs==='en',null,{timeout:12000});
+    const s=await P.page.evaluate(()=>JSON.parse(localStorage.getItem('sv2_settings')));
+    ok(s.packCell===false,'Wi-Fi continuation must not grant mobile-data permission');
+    await P.page.evaluate(async()=>{(await import('/js/voicepack.js')).askCard(139);});
+    ok(!(await P.page.locator('.packask').count()),'a delayed mobile prompt must not reopen on Wi-Fi');
+    ok(!P.errors.length,P.errors.join(' | '));
+  } finally {await P.ctx.close();}
+  // (owner, 16 Oct: each explanation can be switched off in Studio) with explain_voiceAsk off, the same phone on mobile
+  // data never asks and never fetches past the core voices: the rest waits for Wi-Fi
+  let rest=0;
+  const Q=await open(b,{w:390,h:844,touch:true,settings:{autoPack:false,lang:'en',bilingual:false},pre:()=>{
+    const c=new EventTarget();c.type='cellular';c.saveData=false;Object.defineProperty(navigator,'connection',{get:()=>c,configurable:true});
+  },route:async ctx=>{
+    await ctx.route('**/content/custom.json*',async r=>{let j={};try{j=await(await r.fetch()).json();}catch(e){}j.features={...(j.features||{}),explain_voiceAsk:false};await r.fulfill({contentType:'application/json',body:JSON.stringify(j)});});
+    await ctx.route('**/voices/areas.json',r=>r.fulfill({json:{groups:{core:'en_core_wifi',world:'en_world_wifi'},size:{core:{en:1024},world:{en:2048}}}}));
+    await ctx.route('**/voices/en/f/*_wifi.mp3',r=>{if(/world/.test(r.request().url()))rest++;r.fulfill({contentType:'audio/mpeg',body:Buffer.from([0xff,0xfb,0x90,0])});});
+  }});
+  try {
+    await clear(Q.page);
+    await Q.page.evaluate(async()=>{
+      const S=await import('/js/state.js'),V=await import('/js/voicepack.js');S.settings.autoPack=true;S.settings.packCell=false;delete S.settings.packAskAt;
+      const ev=window.__packEv=[];V.startPack({lines:{en_core_wifi:'f',en_world_wifi:'f'},langOf:{en_core_wifi:'en',en_world_wifi:'en'},areas:true,version:998,made:'owner-wifi-card-off'},e=>{ev.push(e.state);if(e.state==='ask')V.askCard(e.mb);},()=>null);
+    });
+    // (the pack waits for the valley to be built first) the core is in, then a few seconds for a question that must not come
+    await Q.page.waitForFunction(()=>window.__packEv.includes('ready'),null,{timeout:90000}).catch(()=>{});
+    await Q.page.waitForTimeout(3000);
+    const asked=await Q.page.evaluate(()=>window.__packEv);
+    ok(asked.includes('ready')&&!asked.includes('ask')&&!(await Q.page.locator('.packask').count()),'switched off, the phone still asked: '+asked.join(','));
+    ok(!rest,`switched off, ${rest} voice files past the core came over mobile data`);
+    ok(!Q.errors.length,Q.errors.join(' | '));
+  } finally {await Q.ctx.close();}
+  return 'Bounded two-file fixture: Wi-Fi automatically completes remaining voices, dismisses the old mobile permission card and rejects delayed prompts without granting mobile consent; with Studio\'s explain_voiceAsk off, no question and nothing past the core on mobile data';
+});
+
+await check('ownervoicewifi', async () => {
+  // A tiny real downloader run exercises full Wi-Fi completion and a language change
+  // while an area request is in flight, without downloading a 139 MiB fixture.
+  const langs = ['en', 'vi'], groups = ['core', 'nearby', 'games'], lines = {}, langOf = {}, hashes = {};
+  for (const g of groups) for (const L of langs) {
+    const h = L + '_' + g; lines[h] = ['f']; langOf[h] = L; (hashes[g] ||= []).push(h);
+  }
+  let releaseNear, nearStarted;
+  const started = new Promise(resolve => { nearStarted = resolve; });
+  const held = new Promise(resolve => { releaseNear = resolve; });
+  const got = [];
+  const P = await open(b, {w:390,h:844,touch:true,pre:`Object.defineProperty(navigator,'connection',{get:()=>({type:'wifi',saveData:false}),configurable:true});`,settings:{lang:'en',bilingual:false,autoPack:false},route:async ctx => {
+    await ctx.route('**/voices/areas.json', r => r.fulfill({json:{groups:Object.fromEntries(Object.entries(hashes).map(([g,hs])=>[g,hs.join(' ')])),size:{}}}));
+    await ctx.route('**/voices/*/f/*_*.mp3', async r => {
+      const file = new globalThis.URL(r.request().url()).pathname;
+      got.push(file);
+      if (file.endsWith('/en_nearby.mp3')) { nearStarted(); await held; }
+      await r.fulfill({status:200,contentType:'audio/mpeg',body:Buffer.from([0xff,0xfb,0x90,0])});
+    });
+  }});
+  try {
+    await clear(P.page);
+    await P.page.evaluate(async pack => {
+      const S=await import('/js/state.js'), V=await import('/js/voicepack.js');
+      S.settings.autoPack=true; S.settings.packCell=false;
+      window.__ownerPackProgress=[];
+      V.startPack(pack,e=>window.__ownerPackProgress.push(e),()=> 'nearby');
+    },{lines,langOf,areas:true,version:999,made:'owner-wifi-language-switch'});
+    let timer;
+    try { await Promise.race([started,new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error('Wi-Fi did not automatically start the nearby area after core')),20000);})]); }
+    finally {clearTimeout(timer);}
+    ok(got[0].endsWith('/en_core.mp3') && !got.some(u=>u.includes('/vi/')),'selected English core comes first: '+JSON.stringify(got));
+    await P.page.evaluate(async()=>{const S=await import('/js/state.js'),{events}=await import('/js/core/events.js');S.settings.lang='vi';events.emit('LanguageChanged');});
+    await P.page.waitForTimeout(1900); // the debounced recheck happens during the held request
+    releaseNear();
+    await P.page.waitForFunction(()=>{
+      const s=JSON.parse(localStorage.getItem('sv2_settings')||'{}');
+      return s.packLangs==='vi' && window.__ownerPackProgress.some(e=>e.state==='ready' && !e.core);
+    },null,{timeout:20000});
+    const urls=await P.page.evaluate(async()=> (await (await caches.open('sv-voices')).keys()).map(r=>r.url));
+    ok(groups.every(g=>urls.some(u=>u.endsWith('/vi_'+g+'.mp3'))),'full selected Vietnamese pack automatically completed on Wi-Fi: '+JSON.stringify(got));
+    ok(!got.some(u=>u.endsWith('/en_games.mp3')),'old-language remaining areas should stop after the in-flight batch');
+    const progress=await P.page.evaluate(()=>window.__ownerPackProgress);
+    ok(progress.every(e=>e.state!=='loading'||e.done<=e.total),'bounded progress after language change');
+    ok(!P.errors.length,P.errors.join(' | '));
+    return 'Bounded six-file fixture: Wi-Fi automatically starts core then nearby; changing language during a held area request completes every selected-language file, stops remaining old-language areas, preserves cache and bounded progress (not full asset/audio/device proof)';
+  } finally {releaseNear();await P.ctx.close();}
+});
+
 await check('voicecover', async () => {
   // (round R item 12) the coverage check: every line the game can speak has its recordings (both voices), is in the
   // pack's list and in an area; lines with changing words are templates whose fixed pieces, gap words and numbers are
@@ -630,6 +754,11 @@ await check('voicearea', async () => {
   const areas = JSON.parse(fs.readFileSync('../voices/areas.json', 'utf8')), groupOf = new Map();
   for (const [g, hs] of Object.entries(areas.groups)) for (const h of String(hs).split(' ')) groupOf.set(h, g);
   const mb = n => n / 1048576, core = areas.size.core;
+  // (16 Oct: a Vietnamese line added without its language was looked for under voices/en/, so the core pack never
+  // finished and the grown-ups' question never came) every line of the pack is a file where the game looks for it
+  { const man = JSON.parse(fs.readFileSync('../voices/manifest.json', 'utf8')), other = new Map(); for (const [L, hs] of Object.entries(man.other || {})) for (const h of String(hs).split(' ')) if (h) other.set(h, L);
+    const gone = []; for (const [h, slots] of Object.entries(man.lines)) for (const sl of slots) { const f = `../voices/${other.get(h) || 'en'}/${sl}/${h}.mp3`; if (!fs.existsSync(f)) gone.push(f.slice(3)); }
+    ok(!gone.length, `${gone.length} voice files are not where the game looks for them: ${gone.slice(0, 4).join(', ')}`); }
   ok(mb(core.en) >= 5 && mb(core.en) <= 8 && mb(core.vi) >= 5 && mb(core.vi) <= 8, `the core pack is not 5–8 MB per language: en ${mb(core.en).toFixed(1)}, vi ${mb(core.vi).toFixed(1)}`);
   const place = ['hanoi', 'village', 'town', 'market'].find(g => areas.groups[g] && g !== 'core') || Object.keys(areas.groups).find(g => !['core', 'games', 'stories', 'festivals', 'world'].includes(g));
   // a pretend connection the check can switch: navigator.connection.type 'cellular' or 'wifi'
@@ -719,6 +848,8 @@ await check('studio', async () => {
   ok(build === studio, `studio/version.json says ${studio} but the game is ${build}: bump them together (and rebuild SparkleStudio.exe)`);
   return await studioCheck(b);
 });
+
+await check('ownerstudiofailures', async () => studioRepairCheck(b));
 
 await check('ground', async () => {
   // every building on dry, level ground (not over the river or the lake), no road floating, buried or in water,
@@ -1094,7 +1225,7 @@ await check('autoplay', async () => {
   ok(mid.on && mid.folded && mid.busy && full, 'the run did not start, fold its window, light its button, or keep the child going: ' + JSON.stringify(mid) + ' ' + full);
   ok(end.mark === 1, 'the game restarted after the run');
   ok(fingerSeen, 'no finger on the screen while it played');
-  const rep = end.rep; ok(rep && rep.done.length === keys.length && rep.sent, 'no full report: ' + JSON.stringify(rep && rep.done.map(r => r.key)));
+  const rep = end.rep; ok(rep && rep.done.length === keys.length && rep.reportState === 'disabled' && !rep.sent, 'no full report: ' + JSON.stringify(rep && rep.done.map(r => r.key)));
   const bad = rep.done.filter(r => r.problems.some(p => !/^slow:/.test(p)));
   ok(!bad.length, 'the check found: ' + JSON.stringify(bad.map(r => [r.key, r.problems])));
   const played = rep.done.filter(r => /^game:/.test(r.key)); ok(played.every(r => /(won|played): \d+ ✓, \d+ ✗, [1-9]/.test(r.said)), 'the games were not played: ' + JSON.stringify(played.map(r => [r.key, r.said])));
@@ -1123,7 +1254,7 @@ await check('autoplay', async () => {
 // by the Releases rule, the website's /api/tester pretended (what it was sent, and what it answers)
 const testerPre = (rule, extra = '') => `try { localStorage.setItem('sv2_playerid', 'tester000001'); localStorage.setItem('sv2_live', JSON.stringify({ releases: { tester: ${JSON.stringify(rule)} }, festivals: {} })); ${extra} } catch (e) { }`;
 const testerSite = async (ctx, status) => { const got = []; await ctx.route('**/api/tester**', async rt => { const q = rt.request();
-  if (q.method() === 'POST') { let b = null; try { b = JSON.parse(q.postData() || 'null'); } catch (e) { } got.push(b); return rt.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ok: true, k: '0123456789abcdef', status: 'new' }) }); }
+  if (q.method() === 'POST') { let b = null; try { b = JSON.parse(q.postData() || 'null'); } catch (e) { } got.push(b); return rt.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ok: true, k: '0123456789abcdef', rid: 'fedcba9876543210', status: 'new' }) }); }
   return rt.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(status()) }); }); return got; };
 const ACCEPTED = `localStorage.setItem('sv2_tester', JSON.stringify({ at: 1, b: 'r1' }));`;
 
@@ -1151,7 +1282,8 @@ await check('tester', async () => {
     if (!got.some(x => x && x.accepted === true)) out.push(lang + ': the acceptance was not told');
     // Settings → Stop being a tester
     // (owner, 13 Oct AEDT) "Stop being a tester" is held down: a quick tap does nothing
-    await clear(P.page); await P.page.click('.hud .pcard'); await P.page.waitForSelector('.qs-tester [data-hold="stop"]', { timeout: 8000 });
+    // (owner, 16 Oct, point 50) the hearts in the card's middle explain themselves; the card's picture opens Settings
+    await clear(P.page); await P.page.click('.hud .pav'); await P.page.waitForSelector('.qs-tester [data-hold="stop"]', { timeout: 8000 });
     await P.page.click('.qs-tester [data-hold="stop"]'); await P.page.waitForTimeout(500);
     ok(await P.page.evaluate(() => document.querySelectorAll('.z-lb').length > 0), 'a quick tap stopped being a tester');
     await P.page.hover('.qs-tester [data-hold="stop"]'); await P.page.mouse.down(); await P.page.waitForTimeout(1900); await P.page.mouse.up(); await P.page.waitForTimeout(800);
@@ -1184,7 +1316,10 @@ await check('testerreport', async () => {
   if (!await wait(x => x && x.auto === 'noopen' && /no-such-game/.test(x.detail), 9000)) out.push('a game that did not open was not reported');
   await P.page.waitForFunction(() => performance.now() > 0, null); await P.page.waitForTimeout(Math.max(0, 16000 - await P.page.evaluate(() => performance.now())));
   await P.page.evaluate(() => new Promise(r => requestAnimationFrame(() => { const t = performance.now(); while (performance.now() - t < 2600) { } r(); })));
-  if (!await wait(x => x && x.auto === 'freeze', 6000)) out.push('a frozen screen was not reported');
+  { const fz = await wait(x => x && x.auto === 'freeze', 6000); if (!fz) out.push('a frozen screen was not reported');
+    // (#261) the report says the game's own code ran long (this freeze is a 2.6 s script), not only that frames stopped
+    else { const why = JSON.stringify(fz.log || []).match(/longest script (\d+) ms/); // (the browser may measure the 2.6 s script a little shorter: GitHub saw 1912 ms; over a second is the script)
+      if (!why || +why[1] < 1000) out.push('the freeze report does not say a long script caused it: ' + (why ? why[0] : 'no note')); } }
   // the ladybird: tap
   await clear(P.page); const n0 = got.length;
   await P.page.locator('.hud .z-lb').first().dispatchEvent('pointerdown'); await P.page.locator('.hud .z-lb').first().dispatchEvent('pointerup');
@@ -2076,6 +2211,43 @@ await check('yard', async () => {
   if (out.length) throw new Error(out.join('; '));
   return `the yard ${info.far.toFixed(0)} m from the shop, ${info.room.toFixed(0)} m of room; a side story (goal bar stays on the lantern story until Follow); coach, jobs (a wrong one turned down), dump truck (load, hold the pedal, pull the lever), excavator (drag the arm), bricks and roof by hand, and the meal played through; free play after`;
 });
+await check('ownerkidgoal', async () => {
+  for (const lang of ['en','vi']) {
+    const P=await open(b,{w:390,h:844,touch:true,lang});
+    const tapGoal=async()=>{
+      const box=await P.page.locator('.c-goal:visible').boundingBox();ok(box,'goal button visible');
+      const x=box.x+box.width/2,y=box.y+box.height/2;
+      ok(await P.page.evaluate(({x,y})=>!!document.elementFromPoint(x,y)?.closest('.c-goal'),{x,y}),'goal button receives the tap');
+      await P.page.mouse.click(x,y); // the existing ready chip pulses continuously; its centre remains tappable
+    };
+    try {
+      await clear(P.page);
+      await P.page.evaluate(async()=>{
+        const G=__sv,h=G.heroes[0],S=await import('/js/state.js');
+        h.profile.lanterns={companion:'firefly',done:{p_owl:true},chapters:{}};
+        G.lanterns.companions.sync();G.addCoins(100-S.farm.coins);G.kidplay.refresh();
+      });
+      await tapGoal();await P.page.waitForTimeout(250);
+      const read=()=>P.page.evaluate(async()=>({coins:(await import('/js/state.js')).farm.coins,hat:__sv.heroes[0].profile.lanterns.pet?.hat||null}));
+      const first=await read();ok(first.coins===100&&!first.hat,'explaining the goal must not spend coins: '+JSON.stringify({lang,first}));
+      await P.page.waitForSelector('.dialog .dchoices button');
+      const text=await P.page.locator('.dialog .dtext').innerText();
+      ok((lang==='en'?/hat.*companion|companion.*hat/i:/mũ.*bạn đồng hành|bạn đồng hành.*mũ/i).test(text),'goal purpose missing: '+text);
+      await P.page.locator('.dialog .dchoices button').last().click();await P.page.waitForTimeout(300);
+      ok((await read()).coins===100,'cancel keeps all coins');
+      await tapGoal();await P.page.locator('.dialog .dchoices button').first().click();await P.page.waitForTimeout(600);
+      const bought=await read();ok(bought.coins===70&&bought.hat==='party','explicit first-hat purchase only: '+JSON.stringify(bought));
+      await tapGoal();
+      // Another action can change the shared coins while help is open: never overdraw.
+      await P.page.evaluate(async()=>{const S=await import('/js/state.js');__sv.addCoins(0-S.farm.coins);});
+      await P.page.locator('.dialog .dchoices button').first().click();await P.page.waitForTimeout(400);
+      const raced=await read();ok(raced.coins===0&&raced.hat==='party','purchase rechecks the balance');
+      ok(!P.errors.length,P.errors.join(' | '));
+    } finally {await P.ctx.close();}
+  }
+  return 'EN/VI phone: target tap explains companion hat saving without spending; Cancel keeps coins; explicit Buy spends exactly30; stale balance cannot overdraw';
+});
+
 await check('kidplay', async () => {
   // (round R, owner 9 Oct: "add these in and add to the studio so we can switch on/off") the companion is fed once a day
   // and grows (a trick from size 3), a coin goal buys it a hat, a gift waits by a landmark each day, the story's films
@@ -2095,7 +2267,7 @@ await check('kidplay', async () => {
     G.kidplay.feed(h); await w(100); out.trick = !!G.lanterns.companions.of(h).trick;
     // the coin goal: a hat
     const c0 = S.farm.coins; G.addCoins(100 - c0); await w(700); out.goalReady = chip('c-goal').classList.contains('ready');
-    chip('c-goal').click(); await w(400); out.hat = pet.hat; out.coinsAfter = S.farm.coins; out.hatOn = !!G.lanterns.companions.of(h).hat;
+    chip('c-goal').click(); await w(250); out.helpKeepsCoins = S.farm.coins === 100 && !pet.hat; document.querySelector('.dialog .dchoices button')?.click(); await w(400); out.hat = pet.hat; out.coinsAfter = S.farm.coins; out.hatOn = !!G.lanterns.companions.of(h).hat;
     // the daily gift
     const gift = G.interactables.find(i => i.id === 'gift_today'); out.giftSeen = gift.visible(h); const cg = S.farm.coins; gift.act(h); out.giftCoins = S.farm.coins - cg; out.giftAfter = gift.visible(h);
     // the Skip button on a story film
@@ -2119,7 +2291,7 @@ await check('kidplay', async () => {
   if (r.fed1 !== 1 || r.fedAgain !== 1) bad.push(`feeding is not once a day (${r.fed1}, ${r.fedAgain})`);
   if (!(r.level >= 3) || !(r.scale > 1.2)) bad.push(`the companion did not grow (level ${r.level}, size ${r.scale})`);
   if (!r.trick) bad.push('no trick at size 3');
-  if (!r.goalReady || r.hat !== 'party' || r.coinsAfter !== 70 || !r.hatOn) bad.push('the coin goal did not buy the hat ' + JSON.stringify(r));
+  if (!r.helpKeepsCoins || !r.goalReady || r.hat !== 'party' || r.coinsAfter !== 70 || !r.hatOn) bad.push('the coin goal did not buy the hat ' + JSON.stringify(r));
   if (!r.giftSeen || r.giftCoins !== 15 || r.giftAfter) bad.push('the daily gift ' + JSON.stringify({ seen: r.giftSeen, coins: r.giftCoins, after: r.giftAfter }));
   if (!r.skip || !r.skipClosed) bad.push('no Skip button on the story film');
   if (!r.offChips || !r.offGift || r.offLevel !== 1 || r.offSimple || !r.offSkip) bad.push('a Studio switch did not turn its part off ' + JSON.stringify(r));
@@ -2149,7 +2321,7 @@ await check('shop', async () => {
     out.bagOpens = !!document.querySelector('.modal.pad') && !document.querySelector('.modal.shopk') && tabsK.indexOf('shop') === tabsK.indexOf('bag') + 1 && !G.huds[0].root.querySelector('.dk.shop');
     out.bagShopBtn = sb ? (() => { const q = sb.getBoundingClientRect(); return q.width >= 44 && q.height >= 44; })() : false;
     sb && sb.click(); await w(700);
-    out.there = Math.hypot(h.pos.x - pos0.x, h.pos.z - pos0.z) < 1 && !document.querySelector('.modal.pad'); const card = document.querySelector('.modal.shopk .card');
+    out.there = Math.hypot(h.pos.x - pos0.x, h.pos.z - pos0.z) < 1 && !!document.querySelector('.modal.pad'); const card = document.querySelector('.pad .shop-content');
     out.opened = !!card; out.tabs = card ? card.querySelectorAll('.ktab').length : 0; out.noBagTab = card ? !card.querySelector('[data-go="bag"]') : false;
     // (nothing to read: each thing is a drawing and a number; the words inside a drawing, like the coin's "$", are part
     // of the picture, so the text is read with the drawings taken out)
@@ -2165,7 +2337,7 @@ await check('shop', async () => {
     // not enough coins: nothing is bought
     G.addCoins(-S.farm.coins); card.querySelector('[data-tab="back"]').click(); await w(150); const bkB = await item('dragon'), bkId = bkB.dataset.id; bkB.click(); await w(150); card.querySelector('.kyes').click(); await w(300);
     out.poorKept = !SH.owns(p, bkId) && S.farm.coins === 0;
-    card.querySelector('.x').click(); await w(400); out.closed = !document.querySelector('.modal.shopk') && !G.paused;
+    document.querySelector('.pad-head .x').click(); await w(400); out.closed = !document.querySelector('.modal.pad') && !G.paused;
     // under-5s: every button at least 64 px
     p.age = 'little'; G.shop.openShop(0); await w(400);
     out.little = [...document.querySelectorAll('.modal.shopk.little .ktab, .modal.shopk.little .kitem')].filter(b => { const q = b.getBoundingClientRect(); return q.width < 64 || q.height < 64; }).length;
@@ -2310,7 +2482,7 @@ await check('hoilang', async () => {
     // too late: told when the next one is
     at('2026-10-10T09:20'); G.hoilang.openFest(h, F); await w(500); out.next = /16:00/.test(txt()); document.querySelectorAll('.dialog').forEach(e => e.remove()); G.paused = false;
     // the Backpack: carry the prize or put it away, like the kite
-    G.openPad(0, 'bag'); await w(600); const slot = document.querySelector('.pad [data-hlcarry]'); out.bag = !!slot; slot?.click(); await w(300); out.putAway = p.hoilang.carryOn === false;
+    G.openPad(0, 'bag'); await w(600); const slot = document.querySelector('.pad [data-hlcarry]'); out.bag = !!slot; const carried = p.hoilang.carryOn; slot?.click(); await w(300); out.helpOnly = !!document.querySelector('.pad .bag-help') && p.hoilang.carryOn === carried; document.querySelector('.pad .bag-help .bh-close')?.click(); out.cancelKeeps = p.hoilang.carryOn === carried; slot?.click(); await w(100); document.querySelector('.pad .bag-help .bh-act')?.click(); await w(300); out.putAway = p.hoilang.carryOn === false;
     document.querySelectorAll('.modal').forEach(m => m.remove()); G.paused = false;
     // the Studio switch
     at('2026-10-10T09:02'); C.features.hoilang = false; await w(1500);
@@ -2326,7 +2498,7 @@ await check('hoilang', async () => {
   if (r.bigPrizes !== 1) bad.push('a big kid got a prize without winning');
   if (r.bigAt1740 || !r.littleAt1740) bad.push('the evening festival is not 17:30 for under-5s and 19:00 for big kids');
   if (!r.next) bad.push('a late child was not told the next time');
-  if (!r.bag || !r.putAway) bad.push('the prize is not in the Backpack to carry or put away');
+  if (!r.bag || !r.helpOnly || !r.cancelKeeps || !r.putAway) bad.push('the prize is not in the Backpack to carry or put away');
   if (!r.offPole || !r.offParade) bad.push('the Studio switch does not turn it off');
   if (errs.length) bad.push(...errs.slice(0, 2));
   if (bad.length) throw new Error(bad.join('; '));
@@ -3363,7 +3535,7 @@ await check('a11y', async () => {
 await check('unit', async () => {
   // Node unit tests (architecture §10): the L0 core (ids, events, seeded random, geometry), node --test tests/unit
   const { execFileSync } = await import('child_process');
-  let out = ''; try { out = execFileSync(process.execPath, ['--test', ...fs.readdirSync('unit').filter(f => f.endsWith('.test.mjs')).map(f => 'unit/' + f)], { encoding: 'utf8' }); } catch (e) { ok(false, ((e.stdout || '') + '').split('\n').filter(l => /^not ok|Error/.test(l)).slice(0, 6).join(' | ')); }
+  let out = ''; try { out = execFileSync(process.execPath, ['--test', '--test-reporter=tap', ...fs.readdirSync('unit').filter(f => f.endsWith('.test.mjs')).map(f => 'unit/' + f)], { encoding: 'utf8' }); } catch (e) { ok(false, ((e.stdout || '') + '').split('\n').filter(l => /^not ok|Error/.test(l)).slice(0, 6).join(' | ')); }
   const pass = (out.match(/^# pass (\d+)/m) || [])[1], fail = (out.match(/^# fail (\d+)/m) || [])[1];
   ok(+fail === 0 && +pass > 0, out.slice(-400));
   return `${pass} unit tests passed`;
@@ -3583,6 +3755,7 @@ await check('wayfind', async () => {
   // the sparkles go; every place in the valley can be reached along the roads from home
   const P = await open(b, { w: 1280, h: 800 });
   const r = await P.page.evaluate(async () => {
+    const C = await import('/js/custom.js'); C.CUSTOM.releases = { ...(C.CUSTOM.releases || {}), wayfind: { on:true, controlVersion:1 } };
     const G = __sv, h = G.heroes[0], W = await import('/js/world.js'), F = await import('/js/wayfind.js'), wait = ms => new Promise(r => setTimeout(r, ms));
     for (let k = 0; k < 50 && !G.wayfind; k++) await wait(100);
     // (owner, 13 Oct AEDT) Where is sits in the View tray: open the tray first, as a child does
@@ -3699,7 +3872,7 @@ await check('soundsw', async () => {
     const s2 = await flip('music'); if (s2.music === s1.music || s2.voice !== s1.voice) out.push('music switch: ' + JSON.stringify([s1, s2]));
     const s3 = await flip('sound'); if (s3.sound === s2.sound || s3.voice !== s2.voice) out.push('sound switch: ' + JSON.stringify([s2, s3]));
     const n = await page.evaluate(() => document.querySelectorAll('.soundsheet .ss-sw').length); if (n !== 3) out.push(n + ' switches');
-    await page.click('.soundsheet .ss-done'); await page.waitForTimeout(300);
+    await page.keyboard.press('Escape'); await page.waitForTimeout(300);
   }
   // the valley: the dock's Sound button (computer size, where the dock shows it)
   const Q = await open(b, { w: 1280, h: 800 }); await clear(Q.page);
@@ -3793,6 +3966,62 @@ await check('joins', async () => {
   return `${r.n} steps along every road and into every junction and bridge: no step over 6 cm (ROAD-017)`;
 });
 
+await check('ownertransportpov', async () => {
+  const P = await open(b, { w: 900, h: 640 }); await clear(P.page);
+  const rows = [];
+  for (const age of ['little', 'big']) for (const kind of ['bus', 'busAU', 'tramModern']) {
+    await P.page.evaluate(({age,kind}) => {
+      const G=__sv,h=G.heroes[0]; h.profile.age=age;
+      const i=G.interactables.find(i=>/^ride_/.test(i.id)&&G.traffic.slots[+i.id.slice(5)].id===kind);
+      if(!i) throw Error('No actual public transport '+kind);
+      h.place(i.x+2,i.z); window.__povBoard=i.act(h,G);
+    }, {age,kind});
+    await P.page.locator('.dialog .dchoices button').first().click();
+    await P.page.locator('.stoppick [data-next]').click();
+    await P.page.evaluate(async()=>{await window.__povBoard; const G=__sv,h=G.heroes[0]; const sl=G.traffic.slots.find(s=>s.passenger===h); if(!sl)throw Error('Boarding failed'); sl.mover.wait=100; for(let k=0;k<90;k++)h.update(1/60,{cdx:0,cdy:0,mx:0,mz:0,jump:()=>false},k/60,G);});
+    // Synthetic targets prove the actual rendered sightline, not just camera coordinates.
+    const r=await P.page.evaluate(async({age,kind})=>{
+      const G=__sv,h=G.heroes[0],sl=G.traffic.slots.find(s=>s.passenger===h),{THREE}=await import('/js/gfx.js');
+      const bounds=new THREE.Box3().setFromObject(sl.v.o),forward=new THREE.Vector3(Math.sin(h.yaw),0,Math.cos(h.yaw));
+      const target=new THREE.Mesh(new THREE.PlaneGeometry(3,2),new THREE.MeshBasicMaterial({color:'#ff00ff',side:THREE.DoubleSide}));
+      const span=bounds.getSize(new THREE.Vector3()).length()/2+1;
+      target.position.copy(sl.v.o.position).addScaledVector(forward,span); target.position.y=h.cam.position.y; target.rotation.y=h.yaw; h.scene.add(target);
+      try {
+        const image=new Image();image.src=G.snapshot(0,900,1);await image.decode();const c=document.createElement('canvas');c.width=image.width;c.height=image.height;const ctx=c.getContext('2d');ctx.drawImage(image,0,0);const data=ctx.getImageData(0,0,c.width,c.height).data;let seen=0;
+        for(let i=0;i<data.length;i+=4)if(data[i]>180&&data[i+1]<90&&data[i+2]>180)seen++;
+        const before=sl.v.o.children.map(child=>[child,child.visible]),own=h.av.root.visible;
+        const {withRideView}=await import('/js/rideview.js');let raised=false;
+        try{withRideView(h,()=>{throw Error('render failure fixture');});}catch(e){raised=e.message==='render failure fixture';}
+        const restored=raised&&h.av.root.visible===own&&before.every(([child,visible])=>child.visible===visible);
+        return {age,kind,seen,pov:h._pov,restored};
+      }finally{h.scene.remove(target);target.geometry.dispose();target.material.dispose();}
+    },{age,kind}); rows.push(r);
+    await P.page.evaluate(()=>{const G=__sv,h=G.heroes[0];h.update(1/60,{cdx:0,cdy:0,mx:0,mz:0,jump:()=>true},0,G);});
+  }
+  await P.ctx.close(); ok(rows.every(r=>r.pov&&r.seen>200&&r.restored),JSON.stringify(rows));
+  return JSON.stringify(rows);
+});
+
+await check('ownerautoplaytransport', async () => {
+  const P=await open(b,{w:900,h:640}); await clear(P.page);
+  await P.page.evaluate(()=>{const G=__sv,h=G.heroes[0],i=G.interactables.find(i=>/^ride_/.test(i.id)&&G.traffic.slots[+i.id.slice(5)].id==='bus');h.place(i.x+2,i.z);window.__board=i.act(h,G).then(()=>{G.paused=true;});});
+  await P.page.locator('.dialog .dchoices button').first().click(); await P.page.locator('.stoppick [data-next]').click();
+  const r=await P.page.evaluate(async()=>{
+    await window.__board; const G=__sv,h=G.heroes[0],slot=G.traffic.slots.find(s=>s.passenger===h);slot.mover.wait=100;
+    await new Promise(resolve=>setTimeout(resolve,200));
+    const o=slot.v.o,exit={x:o.position.x+Math.cos(o.rotation.y)*2.6,z:o.position.z-Math.sin(o.rotation.y)*2.6};
+    let target=null;
+    for(let k=0;k<64&&!target;k++){const a=k/64*Math.PI*2,x=exit.x+Math.cos(a)*12,z=exit.z+Math.sin(a)*12;
+      if(!G.goodSpot(x,z))continue;let clear=true;for(let t=0;t<=20;t++)if(!G.goodSpot(exit.x+(x-exit.x)*t/20,exit.z+(z-exit.z)*t/20))clear=false;if(clear)target={x,z};}
+    if(!target)throw Error('No clear walking target from actual bus exit');
+    const {mountAutoplay}=await import('/js/autoplay.js');mountAutoplay(G);
+    const result=await Promise.race([G.autoplay.walkTo(target.x,target.z,'fast'),new Promise(resolve=>setTimeout(()=>resolve({timeout:true}),30000))]);
+    const out={result,carried:!!h.carry,passenger:slot.passenger===h,left:Math.hypot(h.pos.x-target.x,h.pos.z-target.z)};G.autoplay.stop();return out;
+  });
+  const errors=P.errors;await P.ctx.close();ok(!r.result?.timeout&&!r.carried&&!r.passenger&&r.left<=2.1&&!r.result.trail.some(t=>/^fly/.test(t))&&!errors.length,JSON.stringify({r,errors}));
+  return 'Actual bus passenger exits through normal Jump before purposeful on-foot navigation; arrives within2m without flying';
+});
+
 await check('ride', async () => {
   // (Round U, owner 11 Oct: "all vehicles can be ridden, public transport can get in with fares") every parked car and
   // motorbike can be driven (Jump gets off); a bus takes a big kid for its fare and an under-5 for free, to the next stop;
@@ -3874,20 +4103,25 @@ await check('wearbag', async () => {
     for (let k = 0; k < 20 && !document.querySelector('.pad [data-wear]'); k++) { if (!document.querySelector('.pad')) { G.paused = false; G.openPad(0, 'bag'); } await w(300); }
     const ids = () => [...document.querySelectorAll('.pad [data-wear]')].map(b => b.dataset.wear), worn = () => [...document.querySelectorAll('.pad [data-unwear]')].map(b => b.dataset.unwear);
     out.before = ids(); document.querySelector(`.pad [data-wear="${top.id}"]`)?.click(); await w(300);
+    out.helpFirst=!!document.querySelector('.bag-help')&&p.look.top!==top.id;
+    document.querySelector('.bag-help .bh-close')?.click();await w(100);out.cancelKept=p.look.top!==top.id&&ids().includes(top.id);
+    document.querySelector(`.pad [data-wear="${top.id}"]`)?.click();await w(100);document.querySelector('.bag-help .bh-act')?.click();await w(300);
     out.after = ids(); out.worn = worn(); out.look = p.look.top === top.id;
-    document.querySelector('.pad [data-unwear="top"]')?.click(); await w(300); out.back = ids().includes(top.id);
+    document.querySelector('.pad [data-unwear="top"]')?.click(); await w(100);out.removeHelp=p.look.top===top.id;document.querySelector('.bag-help .bh-act')?.click();await w(300);out.back=ids().includes(top.id);
     document.querySelectorAll('.modal').forEach(m => m.remove()); G.paused = false;
     // (Round V, owner 13 Oct) the shop: a girl sees no boys-only thing, and there is no More (the other set comes as a friend's gift)
     if (G.shop && G.shop.on()) { G.shop.openShop(0); await w(400); const boys = new Set(S.CLOTHES.filter(it => it.for === 'b').map(it => it.id));
       const seen = () => [...document.querySelectorAll('.shopk .kitem')].map(b => b.dataset.id);
       let any = false; for (const tab of document.querySelectorAll('.shopk [data-tab]')) { tab.click(); await w(150); if (seen().some(id => boys.has(id) && !S.owns(p, id))) any = true; }
       out.boysFirst = any; const more = document.querySelector('.shopk .kmore'); if (more) { more.click(); await w(200); } out.more = !!more;
+      document.querySelector('.shopk [data-set="g"]')?.click();await w(100);document.querySelector('.shopk [data-tab="top"]')?.click();await w(100);out.ladiesCorrect=seen().length>0&&seen().every(id=>S.ITEM[id].for!=='b');
+      document.querySelector('.shopk [data-set="b"]')?.click();await w(100);out.menCorrect=seen().length>0&&seen().every(id=>S.ITEM[id].for!=='g');
       document.querySelectorAll('.modal').forEach(m => m.remove()); G.paused = false; } else out.noShop = true;
     return { ...out, top: top.id, feet: feet.id };
   });
   const errs = P.errors; await P.ctx.close();
-  ok(r.before.includes(r.top) && r.before.includes(r.feet) && !r.after.includes(r.top) && r.worn.includes('top') && r.look && r.back && (r.noShop || (!r.boysFirst && !r.more)) && !errs.length, JSON.stringify(Object.assign(r, { errs })));
-  return `bought clothes wait in the Backpack (tap to wear, tap to take off); the shop sells a girl only her set${r.noShop ? ' (shop off here)' : ' (no More: the other set comes as a gift from a friend)'}`;
+  ok(r.before.includes(r.top) && r.before.includes(r.feet) && r.helpFirst && r.cancelKept && r.removeHelp && !r.after.includes(r.top) && r.worn.includes('top') && r.look && r.back && (r.noShop || (!r.boysFirst && !r.more && r.ladiesCorrect && r.menCorrect)) && !errs.length, JSON.stringify(Object.assign(r, { errs })));
+  return 'Bag help never wears an item; explicit confirmation wears/removes it; cancellation preserves it; both collection filters match their items';
 });
 
 await check('talk', async () => {
@@ -3965,6 +4199,16 @@ await check('rollout', async () => {
     };
     const res = {};
     for (const [id, probe] of Object.entries(probes)) {
+      if (id === 'wayfind') {
+        const previous = C.CUSTOM.releases?.wayfind; C.CUSTOM.releases = C.CUSTOM.releases || {};
+        delete C.CUSTOM.releases.wayfind; delete p.tried; F.wayfind = true; const defaultHidden = !(await probe());
+        C.markTried(p,id); const legacyHidden = !(await probe());
+        C.CUSTOM.releases.wayfind = {on:true}; const oldRuleHidden = !(await probe());
+        C.CUSTOM.releases.wayfind = {on:true,controlVersion:1}; const explicitOn = !!(await probe());
+        C.CUSTOM.releases.wayfind = {on:false,controlVersion:1}; const explicitOff = !(await probe());
+        if(previous) C.CUSTOM.releases.wayfind=previous; else delete C.CUSTOM.releases.wayfind;
+        res[id]={hidden:defaultHidden && legacyHidden && oldRuleHidden && explicitOff,kept:explicitOff,back:explicitOn};continue;
+      }
       delete p.tried; F[id] = false; const hidden = !(await probe());
       C.markTried(p, id); const kept = !!(await probe());
       delete p.tried; F[id] = true; const back = !!(await probe());
@@ -3973,7 +4217,7 @@ await check('rollout', async () => {
     for (const [id, probe] of Object.entries(scenery)) { F[id] = false; const hidden = !(await probe()); F[id] = true; const back = !!(await probe()); res[id] = { hidden, kept: true, back }; }
     // every new switch is in Studio's list, starts on, and says what it is in both languages
     const { RELEASES } = await import('/js/content/releases.js');
-    const missing = Object.keys(probes).concat(Object.keys(scenery)).filter(id => { const x = RELEASES.find(r => r.id === id); return !x || x.def !== true || !x.en || !x.vi || x.en === x.vi; });
+    const missing = Object.keys(probes).concat(Object.keys(scenery)).filter(id => { const x = RELEASES.find(r => r.id === id); return !x || x.def !== (id !== 'wayfind') || !x.en || !x.vi || x.en === x.vi; });
     // an old save already shows what a child used: kept without a new tap
     const q = { jobsDone: { lotus: 1 }, owlLessons: ['money'], levels: { heodat: 2 } }; C.triedFromSave(q);
     const fromSave = ['jobs', 'owlGuide', 'money_heodat'].every(id => C.hasTried(q, id)) && !C.hasTried(q, 'wayfind');
@@ -4074,10 +4318,10 @@ await check('bagitems', async () => {
       p.inv.rice = 2; p.inv.mango = 1; p.dishes.pho = 2; G.openPad(0, 'bag'); await wait(600);
       const cards = [...document.querySelectorAll('.modal.pad .bag-top .chip')].map(c => c.getBoundingClientRect()), row = cards.length === 3 && cards.every(c => Math.abs(c.top - cards[0].top) < 2 && c.height >= 44), even = cards.length === 3 && Math.max(...cards.map(c => c.width)) - Math.min(...cards.map(c => c.width)) < 3;
       const titled = [...document.querySelectorAll('.modal.pad .slots .slot')].every(s => (s.getAttribute('title') || '').length > 3 || s.querySelector('.sw'));
-      const ing = document.querySelector('.modal.pad [data-ing="rice"]'); ing.click(); await wait(300); const tip = (document.querySelector('#toast') || {}).textContent || '';
+      const ing = document.querySelector('.modal.pad [data-ing="rice"]'); ing.click(); await wait(300); const tip = (document.querySelector('.bag-help') || {}).textContent || '';
       const eat = () => document.querySelector('.modal.pad [data-eat="pho"]');
-      eat().click(); await wait(500); let ch = [...document.querySelectorAll('.dialog .dch')], asked = ch.length === 2; ch[1] && ch[1].click(); await wait(400); const kept = p.dishes.pho === 2;
-      eat().click(); await wait(500); ch = [...document.querySelectorAll('.dialog .dch')]; ch[0] && ch[0].click(); await wait(400); const ate = p.dishes.pho === 1;
+      eat().click(); await wait(500); const asked=!!document.querySelector('.bag-help .bh-act')&&!!document.querySelector('.bag-help .bh-close')&&!document.querySelector('.dialog');document.querySelector('.bag-help .bh-close')?.click();await wait(400);const kept=p.dishes.pho===2;
+      eat().click();await wait(500);document.querySelector('.bag-help .bh-act')?.click();await wait(400);const ate=p.dishes.pho===1;
       document.querySelectorAll('.dialog').forEach(d => d.remove()); G.paused = false;
       return { row, even, titled, tip: tip.slice(0, 80), asked, kept, ate };
     });
@@ -4350,6 +4594,8 @@ await check('netgames', async () => {
   const pre = () => { window.SV_PEER = { host: '127.0.0.1', port: 9099, path: '/nope', secure: false }; window.SV_MQTT = ['ws://127.0.0.1:9001/']; };
   const A = await open(b, { pre, w: 900, h: 700, lang: 'en', settings: { friendCode: 'GAMEA2', friendsOn: true, autoMeet: false, friends: [{ code: 'GAMEB3', name: 'Bin' }] } });
   const B = await open(b, { pre, w: 390, h: 760, lang: 'vi', touch: true, settings: { friendCode: 'GAMEB3', friendsOn: true, autoMeet: false, friends: [{ code: 'GAMEA2', name: 'Na' }] } });
+  await A.page.evaluate(() => { __sv.heroes[0].profile.name = 'Host Demo'; });
+  await B.page.evaluate(() => { __sv.heroes[0].profile.name = 'Guest Demo'; });
   await pairKeys(A, B);
   for (const P of [A, B]) { await clear(P.page); await P.page.evaluate(async () => { window.__Net = (await import('/js/net.js')).Net; }); }
   await A.page.evaluate(async () => __Net.host(__sv.sendHello())); await A.page.evaluate(() => __sv.shareStatus());
@@ -4359,15 +4605,20 @@ await check('netgames', async () => {
   await A.page.waitForFunction(() => Object.keys(__Net.remotes).length > 0, null, { timeout: 30000 });
   for (const P of [A, B]) await P.page.evaluate(() => { document.querySelectorAll('.modal').forEach(m => m.remove()); __sv.paused = false; });
   // Caro: A asks from the Friends tab, B says yes
-  await A.page.evaluate(async () => { __sv.openPad(0, 'friend'); await new Promise(r => setTimeout(r, 500)); document.querySelector('[data-caro]').click(); await new Promise(r => setTimeout(r, 400)); document.querySelector('.gamelevel [data-lvl="1"]')?.click(); });
+  await A.page.evaluate(async () => { __sv.openPad(0, 'friend'); await new Promise(r => setTimeout(r, 500)); document.querySelector('[data-caro]').click(); await new Promise(r => setTimeout(r, 400)); document.querySelector('.gamelevel [data-size="3"]').click(); document.querySelector('.gamelevel [data-lvl="1"]').click(); });
   await B.page.waitForSelector('.dialog .dch', { timeout: 20000 }); const ask = await B.page.evaluate(() => document.querySelector('.dialog .dtext').textContent); await B.page.evaluate(() => document.querySelector('.dialog .dch').click());
-  for (const P of [A, B]) await P.page.waitForSelector('.gl .caro', { timeout: 20000 });
+  for (const P of [A, B]) { await P.page.waitForSelector('.gl .caro', { timeout: 20000 }); ok(await P.page.locator('.caro-c').count() === 9, 'Selected 3 × 3 board must reach both players'); }
   // (a placed piece is marked .put: its emoji is swapped for a drawing, so the text is empty)
   const tap = async (P, i) => { await P.page.waitForFunction(i => { const c = document.querySelectorAll('.caro-c')[i]; return c && !c.classList.contains('put'); }, i); await P.page.evaluate(i => document.querySelectorAll('.caro-c')[i].click(), i); };
   const seen = async (P, i) => P.page.waitForFunction(i => document.querySelectorAll('.caro-c')[i].classList.contains('put'), i, { timeout: 20000 });
-  for (const [P, Q, i] of [[A, B, 0], [B, A, 3], [A, B, 1], [B, A, 4], [A, B, 2]]) { await tap(P, i); await seen(Q, i); }
+  for (const [P, Q, i] of [[A, B, 0], [B, A, 3], [A, B, 1], [B, A, 4], [A, B, 2]]) {
+    await tap(P, i); await seen(Q, i);
+    const piece = P === A ? '🌸' : '🍀';
+    for (const R of [A, B]) await R.page.waitForFunction(({i,piece}) => [...document.querySelectorAll('.caro-c')[i].querySelectorAll('[data-e]')].some(e => e.dataset.e === piece), {i,piece}, {timeout:10000});
+  }
   for (const P of [A, B]) await P.page.waitForSelector('.gl-win', { timeout: 20000 });
   const caro = { a: await A.page.evaluate(() => document.querySelector('.gl-win p').textContent), b: await B.page.evaluate(() => document.querySelector('.gl-win p').textContent), wonCells: await B.page.evaluate(() => document.querySelectorAll('.caro-c.win').length) };
+  ok(/Host Demo/.test(caro.a) && /Host Demo/.test(caro.b), 'Same assigned player must win on both boards: '+JSON.stringify(caro));
   for (const P of [A, B]) { await P.page.evaluate(() => document.querySelector('.gl-tapout')?.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }))); await P.page.waitForTimeout(800); await P.page.evaluate(() => { document.querySelectorAll('.gl, .modal').forEach(m => m.remove()); __sv.paused = false; }); }
   // Oẳn tù tì with everyone: A rock, B scissors, three times
   await A.page.evaluate(async () => { __sv.openPad(0, 'friend'); await new Promise(r => setTimeout(r, 500)); document.querySelector('[data-rpsall]').click(); await new Promise(r => setTimeout(r, 400)); document.querySelector('.gamelevel [data-lvl="1"]')?.click(); });
@@ -4441,6 +4692,286 @@ await check('together', async () => {
   return `story page turned on both ("${tale.b}…"); side by side: "${race}"; following ended ${follow} m behind; pickup ${pick} gone for B ("${claim.by} got it first"); the real place opens in the game straight away (Use the internet is on: owner, 10 Oct; the gate itself is checked by realphotos)`;
 });
 
+await check('ownertogetherstart', async () => {
+  const up = await new Promise(r => { const ws = new WebSocket('ws://127.0.0.1:9001/', 'mqtt'); const t = setTimeout(() => r(false), 2000); ws.onopen = () => { clearTimeout(t); ws.close(); r(true); }; ws.onerror = () => { clearTimeout(t); r(false); }; });
+  if (!up) return 'skipped (no local MQTT broker on 127.0.0.1:9001)';
+  const pre = () => { window.SV_PEER = { host: '127.0.0.1', port: 9099, path: '/nope', secure: false }; window.SV_MQTT = ['ws://127.0.0.1:9001/']; };
+  const A = await open(b, { pre, w: 900, h: 700, lang: 'en', settings: { friendCode: 'TGSA22', friendsOn: true, autoMeet: false, friends: [{ code: 'TGSB33', name: 'Bin' }] } });
+  const B = await open(b, { pre, w: 900, h: 700, lang: 'en', settings: { friendCode: 'TGSB33', friendsOn: true, autoMeet: false, friends: [{ code: 'TGSA22', name: 'Na' }] } });
+  await pairKeys(A, B);
+  for (const P of [A, B]) { await clear(P.page); await P.page.evaluate(async () => { window.__Net = (await import('/js/net.js')).Net; }); }
+  await A.page.evaluate(async () => __Net.host(__sv.sendHello())); await A.page.evaluate(() => __sv.shareStatus());
+  await B.page.waitForFunction(() => { const s = __Net.friends.status.TGSA22; return s && s.online && s.room; }, null, { timeout: 30000 });
+  await B.page.evaluate(() => { __sv.openPad(0, 'friend'); }); await B.page.waitForSelector('[data-joinf]'); await B.page.evaluate(() => document.querySelector('[data-joinf]').click());
+  await B.page.waitForFunction(() => Object.keys(__sv.partners).length > 0, null, { timeout: 45000 });
+  await A.page.waitForFunction(() => Object.values(__sv.partners).some(P => P.pos.y > -40), null, { timeout: 30000 });
+  const clean = async () => { for (const P of [A, B]) await P.page.evaluate(() => { document.querySelectorAll('.modal, .dialog, .gl, .theatre').forEach(m => m.remove()); __sv.paused = false; __sv.netGames.leave(); }); await A.page.waitForTimeout(600); };
+  await clean();
+  const accept = async () => { await B.page.waitForSelector('.dialog .dch', { timeout: 20000 }); await B.page.evaluate(() => document.querySelector('.dialog .dch').click()); };
+  // Cloud sealing and multi-broker delivery can put an initial move before gstart.
+  // Hold only the accepted start; ordinary real room messages still travel through the relay.
+  await B.page.evaluate(() => { const g=__sv.netGames,receive=g.receive.bind(g);window.__storyRelease=()=>{const start=window.__storyStart;window.__storyStart=null;receive(start);};g.receive=d=>{if(d.t==='gstart'&&d.game==='tale-banhchung'){window.__storyStart=d;return;}if(d.t==='gmove'&&window.__storyStart)window.__earlyStoryMoves=(window.__earlyStoryMoves||0)+1;receive(d);}; });
+  await A.page.evaluate(() => __sv.inviteGame('tale-banhchung', null, 1)); await accept();
+  await B.page.waitForFunction(()=>!!window.__storyStart);
+  await A.page.waitForFunction(()=>!!document.querySelector('.theatre .th-text')?.textContent.trim());
+  await A.page.evaluate(()=>document.querySelector('.th-pause').click());
+  await A.page.evaluate(()=>document.querySelector('.th-next').click());await A.page.waitForTimeout(400);await A.page.evaluate(()=>document.querySelector('.th-next').click());
+  const expected=await A.page.evaluate(()=>__sv.TALES.find(t=>t.id==='banhchung').pages[2][1]);
+  await A.page.waitForFunction(expected=>document.querySelector('.th-text')?.textContent.startsWith(expected),expected);
+  await B.page.waitForFunction(()=>window.__earlyStoryMoves>=2);
+  await B.page.evaluate(()=>window.__storyRelease());
+  await B.page.waitForFunction(()=>!!document.querySelector('.theatre .th-text')?.textContent.trim());await B.page.waitForTimeout(2000);
+  const states=[];for(const P of [A,B])states.push(await P.page.evaluate(()=>document.querySelector('.th-text p')?.textContent));
+  const errs=[...A.errors,...B.errors];await A.ctx.close();await B.ctx.close();
+  ok(states.every(s=>s===expected)&&!errs.length,JSON.stringify({expected,states,errs}));
+  return 'An accepted delayed story start retains earlier page moves: both real relay peers stay on the inviter’s chosen page; no late initial-page rollback';
+});
+
+await check('ownerstoryinitial', async () => {
+  const up = await new Promise(r => { const ws = new WebSocket('ws://127.0.0.1:9001/', 'mqtt'); const t = setTimeout(() => r(false), 2000); ws.onopen = () => { clearTimeout(t); ws.close(); r(true); }; ws.onerror = () => { clearTimeout(t); r(false); }; });
+  if (!up) return 'skipped (no local MQTT broker on 127.0.0.1:9001)';
+  const pre = () => { window.SV_PEER = { host: '127.0.0.1', port: 9099, path: '/nope', secure: false }; window.SV_MQTT = ['ws://127.0.0.1:9001/']; };
+  const A = await open(b, { pre, w: 900, h: 700, lang: 'en', settings: { friendCode: 'SRCA22', friendsOn: true, autoMeet: false, friends: [{ code: 'SRCB33', name: 'Bin' }] } });
+  const B = await open(b, { pre, w: 900, h: 700, lang: 'en', settings: { friendCode: 'SRCB33', friendsOn: true, autoMeet: false, friends: [{ code: 'SRCA22', name: 'Na' }] } });
+  await pairKeys(A, B);
+  for (const P of [A, B]) { await clear(P.page); await P.page.evaluate(async () => { window.__Net = (await import('/js/net.js')).Net; }); }
+  await A.page.evaluate(async () => __Net.host(__sv.sendHello())); await A.page.evaluate(() => __sv.shareStatus());
+  await B.page.waitForFunction(() => { const s = __Net.friends.status.SRCA22; return s && s.online && s.room; }, null, { timeout: 30000 });
+  await B.page.evaluate(() => { __sv.openPad(0, 'friend'); }); await B.page.waitForSelector('[data-joinf]'); await B.page.evaluate(() => document.querySelector('[data-joinf]').click());
+  await B.page.waitForFunction(() => Object.keys(__sv.partners).length > 0, null, { timeout: 45000 });
+  await A.page.waitForFunction(() => Object.values(__sv.partners).some(P => P.pos.y > -40), null, { timeout: 30000 });
+  const clean = async () => { for (const P of [A, B]) await P.page.evaluate(() => { document.querySelectorAll('.modal, .dialog, .gl, .theatre').forEach(m => m.remove()); __sv.paused = false; __sv.netGames.leave(); }); await A.page.waitForTimeout(600); };
+  await clean();
+  const accept = async () => { await B.page.waitForSelector('.dialog .dch', { timeout: 20000 }); await B.page.evaluate(() => document.querySelector('.dialog .dch').click()); };
+  // Delay the guest's initial page-zero broadcast until after the host's two real Next taps.
+  await B.page.evaluate(()=>{const send=__Net.send.bind(__Net);window.__releaseInitialPage=()=>{if(window.__heldInitialPage)send(window.__heldInitialPage);};__Net.send=d=>{if(d.t==='gmove'&&d.n===0&&d.mv===0){window.__heldInitialPage=d;return;}send(d);};});
+  await A.page.evaluate(()=>__sv.inviteGame('tale-banhchung',null,1));await accept();
+  for(const P of [A,B])await P.page.waitForFunction(()=>!!document.querySelector('.th-text')?.textContent.trim());
+  await A.page.evaluate(()=>document.querySelector('.th-pause').click());
+  await A.page.evaluate(()=>document.querySelector('.th-next').click());await A.page.waitForTimeout(400);await A.page.evaluate(()=>document.querySelector('.th-next').click());
+  const expected=await A.page.evaluate(()=>__sv.TALES.find(t=>t.id==='banhchung').pages[2][1]);
+  await B.page.waitForFunction(expected=>document.querySelector('.th-text p')?.textContent===expected,expected);
+  await B.page.evaluate(()=>window.__releaseInitialPage());await A.page.waitForTimeout(1500);
+  const states=[];for(const P of [A,B])states.push(await P.page.evaluate(()=>document.querySelector('.th-text p')?.textContent));
+  // A real first Back from the guest must still travel, including returning to page zero.
+  for(let turn=1;turn>=0;turn--){await B.page.evaluate(()=>document.querySelector('.th-prev').click());for(const P of [A,B])await P.page.waitForFunction(turn=>document.querySelector('.th-dots .on')&&[...document.querySelectorAll('.th-dots i')].indexOf(document.querySelector('.th-dots .on'))===turn,turn);}
+  const held=await B.page.evaluate(()=>!!window.__heldInitialPage),errs=[...A.errors,...B.errors];await A.ctx.close();await B.ctx.close();
+  ok(!held&&states.every(s=>s===expected)&&!errs.length,JSON.stringify({held,expected,states,errs}));
+  return 'Initial rendering sends no stale page-zero reset; two host Next taps survive delayed guest startup and the guest’s first real Back taps still synchronize';
+});
+
+await check('ownerhudocclusion', async () => {
+  const rows=[]; const overlaps=(a,b)=>a.x<b.x+b.width&&a.x+a.width>b.x&&a.y<b.y+b.height&&a.y+a.height>b.y;
+  for(const [w,h,lang] of [[320,640,'en'],[390,844,'en'],[320,640,'vi'],[390,844,'vi'],[844,390,'vi'],[820,1180,'en'],[1280,800,'en']]) {
+    const P=await open(b,{w,h,lang,touch:true,pre:()=>{
+      localStorage.setItem('sv2_playerid','tester000001');localStorage.setItem('sv2_tester',JSON.stringify({at:1,b:'r1'}));
+      localStorage.setItem('sv2_live',JSON.stringify({releases:{tester:{on:true,devices:['tester000001']}},festivals:{}}));
+    },route:async ctx=>{
+      await ctx.route('**/api/live**',r=>r.fulfill({contentType:'application/json',body:JSON.stringify({releases:{tester:{on:true,devices:['tester000001']}},festivals:{}})}));
+      await ctx.route('**/api/tester**',r=>r.fulfill({contentType:'application/json',body:JSON.stringify({ok:true,k:'0123456789abcdef',rid:'hud-fixture',mine:[],open:[]})}));
+    }});await clear(P.page);await P.page.waitForSelector('.testermark');await P.page.evaluate(()=>document.fonts.ready);await P.page.waitForTimeout(500);
+    const r=await P.page.evaluate(()=>{
+      const go=document.querySelector('.hud .q-go'),mini=document.querySelector('.hud .mini-wrap'),q=document.querySelector('.hud .quest'),a=go.getBoundingClientRect(),hits=[];
+      for(const x of [.15,.5,.85])for(const y of [.15,.5,.85])hits.push(go.contains(document.elementFromPoint(a.x+a.width*x,a.y+a.height*y)));
+      const rect=n=>{const r=n.getBoundingClientRect();return {x:r.x,y:r.y,width:r.width,height:r.height};};
+      return {go:rect(go),mini:rect(mini),quest:rect(q),hits};
+    });
+    await P.page.evaluate(()=>__sv.openSound(document.querySelector('.dk.snd')));await P.page.waitForTimeout(300);
+    r.audio=await P.page.locator('.audio-tray').boundingBox();r.w=w;r.h=h;r.lang=lang;rows.push(r);
+    fs.mkdirSync('out/owner-hud-occlusion',{recursive:true});await P.page.screenshot({path:`out/owner-hud-occlusion/${w}-${h}-${lang}.png`});
+    const errors=P.errors;await P.ctx.close();ok(!overlaps(r.go,r.mini)&&r.hits.every(Boolean)&&!overlaps(r.audio,r.quest)&&!errors.length,JSON.stringify({row:r,errors}));
+  }
+  return JSON.stringify(rows);
+});
+
+await check('ownerhudmic', async () => {
+  const rows=[];
+  for(const lang of ['en','vi']) {
+    const P=await open(b,{w:320,h:640,lang,touch:true});await clear(P.page);
+    await P.page.evaluate(()=>__sv.huds[0].setCall(true,false,true));await P.page.evaluate(()=>document.fonts.ready);await P.page.waitForTimeout(400);
+    await P.page.evaluate(()=>__sv.openSound(document.querySelector('.dk.snd')));await P.page.waitForTimeout(250);
+    const r=await P.page.evaluate(()=>{
+      const rect=s=>{const r=document.querySelector(s).getBoundingClientRect();return {x:r.x,y:r.y,right:r.right,bottom:r.bottom};};
+      const q=rect('.hud .quest'),go=rect('.q-go'),mini=rect('.mini-wrap'),audio=rect('.audio-tray'),mic=rect('.dk.call');
+      const overlap=(a,b)=>a.x<b.right&&a.right>b.x&&a.y<b.bottom&&a.bottom>b.y;
+      return {questClear:!overlap(go,mini),audioClear:!overlap(q,audio),micBelow:mic.y>=mini.bottom};
+    });rows.push({lang,...r});const errors=P.errors;await P.ctx.close();ok(r.questClear&&r.audioClear&&r.micBelow&&!errors.length,JSON.stringify({r,errors}));
+  }
+  return JSON.stringify(rows);
+});
+
+await check('owneraudiobounds', async () => {
+  for (const [w,h,lang] of [[390,844,'en'],[390,844,'vi'],[844,390,'vi'],[1280,800,'en'],[1280,800,'vi']]) {
+    const P=await open(b,{w,h,lang,touch:true}); await clear(P.page);
+    await P.page.evaluate(()=>{ __sv.huds[0].setCall(true,false,true); });
+    const layout=await P.page.evaluate(()=>{const nav=document.querySelector('.hud-tr .mini-wrap').getBoundingClientRect(), tools=document.querySelector('.hud-tr .tools');return {navBottom:nav.bottom,audio:tools.querySelector('.dk.snd')?.getBoundingClientRect().y,mic:tools.querySelector('.dk.call')?.getBoundingClientRect().y};});
+    ok(layout.audio>=layout.navBottom && layout.mic>=layout.navBottom,'Audio/Mic must remain under navigation: '+JSON.stringify(layout));
+    await P.page.evaluate(()=>__sv.openSound(document.querySelector('.dk.snd'))); await P.page.evaluate(()=>document.fonts.ready); await P.page.waitForTimeout(550);
+    const inspect=async()=>{ const box=await P.page.locator('.audio-tray').boundingBox(), sizes=await P.page.locator('.audio-tray .ss-sw').evaluateAll(els=>els.map(e=>e.getBoundingClientRect().height));
+      const order=await P.page.evaluate(()=>{const a=document.querySelector('.hud .dk.snd'),c=document.querySelector('.hud .dk.chat');return c.parentNode===a.parentNode ? a.getBoundingClientRect().right<=c.getBoundingClientRect().left : true;}); ok(order,'compact Audio must be left of chat after owner-requested swap');
+      const vp=P.page.viewportSize(); ok(await P.page.locator('.audio-tray button').count()===3 && box.width<=216 && box.height<=76,'Audio must contain only three discreet icon controls: '+JSON.stringify(box)); ok(box.x>=11 && box.y>=11 && box.x+box.width<=vp.width-11 && box.y+box.height<=vp.height-11 && sizes.every(n=>n>=64),JSON.stringify({w:vp.width,h:vp.height,lang,box,sizes})); };
+    await inspect();
+    const before=await P.page.evaluate(async()=>({...((await import('/js/state.js')).settings)}));
+    await P.page.locator('.audio-tray [data-k=music]').click();
+    const after=await P.page.evaluate(async()=>({...((await import('/js/state.js')).settings)}));
+    ok(before.sound===after.sound && before.voice===after.voice && before.music!==after.music,'Audio switches must remain independent');
+    await P.page.setViewportSize({width:320,height:568}); await P.page.waitForTimeout(300); await inspect();
+    await P.page.keyboard.press('Escape'); const focus=await P.page.evaluate(()=>{const a=document.activeElement,b=document.querySelector('.hud .dk.snd');return {correct:a===b,active:{tag:a.tagName,cls:a.className},visible:b.getClientRects().length,open:document.querySelectorAll('.audio-tray').length};}); ok(focus.correct,'Escape must return focus to Audio: '+JSON.stringify(focus)); await P.page.setViewportSize({width:w,height:h}); await P.page.waitForTimeout(100);
+    ok(await P.page.locator('.audio-tray').count()===0,'Closed Audio must stay closed after viewport changes');
+    const errors=P.errors; await P.ctx.close(); ok(!errors.length,errors.join(' | '));
+  }
+  return 'EN/VI phone and VI landscape keep12px margins through font/layout/viewport changes,64px switches and independent audio states';
+});
+
+await check('ownerfestplacement', async () => {
+  const P=await open(b,{w:1280,h:800}); await clear(P.page);
+  const r=await P.page.evaluate(async()=>{
+    const {createDecor}=await import('/js/festdecor.js'), W=await import('/js/world.js'), C=(await import('/js/custom.js')).CUSTOM;
+    C.festivals={...(C.festivals||{}),tet:{deco:5}};
+    const D=createDecor(()=>true), F={id:'tet',kind:'festival'}, points=D.plan('town',W.TOWN,F,4);
+    // Geometry from the rendered road in town.js, independent of festdecor's own onStreet/count predicate.
+    const inTownRoad=p=>p.x>W.TOWN.x-26 && p.x<W.TOWN.x+12 && Math.abs(p.z-W.TOWN.roadZ)<3.5+1;
+    const blocked=points.filter(inTownRoad);
+    return {total:points.length,blocked:blocked.slice(0,12),blockedCount:blocked.length};
+  });
+  const errors=P.errors; await P.ctx.close();
+  ok(r.total>0 && !r.blockedCount && !errors.length,JSON.stringify({...r,errors}));
+  return `${r.total} planned town decorations respect the actual shifted town-road bounds, independent of their own mask`;
+});
+
+await check('ownerautoplaystrategy', async () => {
+  const P = await open(b, { w: 390, h: 844, touch: true, pre: () => {
+    localStorage.setItem('sv2_playerid','autoplan0001'); localStorage.setItem('sv2_live',JSON.stringify({releases:{autoplay:{on:true,devices:['autoplan0001']}},festivals:{}}));
+  }, route: async ctx => {
+    await ctx.route('**/api/live**',rt=>rt.fulfill({contentType:'application/json',body:JSON.stringify({releases:{autoplay:{on:true,devices:['autoplan0001']}},festivals:{}})}));
+    await ctx.route('**/api/tester**',rt=>rt.fulfill({contentType:'application/json',body:JSON.stringify({ok:true,rid:'synthetic-plan-receipt',mine:[],open:[]})}));
+  } }); await clear(P.page);
+  await P.page.waitForFunction(() => !!__sv.autoplay, null, {timeout:15000});
+  await P.page.evaluate(() => {
+    const p = __sv.heroes[0].profile; p.age='big'; p.difficulty='hard'; p.gameDiff={...(p.gameDiff||{}),hanoi:'hard'};
+    // Test playing separately from the independently covered world walk; force the old random picker into a repeatable cycle.
+    __sv.gameSpot=()=>null; Math.random=()=>.01; __sv.autoplay.start(['game:hanoi'],'x5');
+  });
+  await P.page.waitForFunction(() => !__sv.autoplay.running() && JSON.parse(localStorage.getItem('sv2_autoplay_report')||'{}').done?.length === 1, null, {timeout:180000});
+  const report=await P.page.evaluate(()=>JSON.parse(localStorage.getItem('sv2_autoplay_report')));
+  const errors=P.errors; await P.ctx.close();
+  const row=report.done[0];
+  ok(row.key==='game:hanoi' && row.ok && /^won:/.test(row.said) && !errors.length, JSON.stringify({row,errors}));
+  return 'Real autoplay solves the4-disc Hanoi activity through legal UI taps and records won, independent of the random fallback';
+});
+
+await check('ownerallquestapproaches', async () => {
+  const P=await open(b,{w:1280,h:800});await clear(P.page);
+  const result=await P.page.evaluate(async()=>{
+    const G=__sv,{CHAPTERS}=await import('/js/content/chapters.js'),{YARD_STEPS}=await import('/js/content/yard.js'),{QUESTS}=await import('/js/data.js'),W=await import('/js/world.js'),C=(await import('/js/custom.js')).CUSTOM;
+    C.features={...(C.features||{}),story_prologue:true,story_ch1:true,story_ch2:true,story_ch3:true,story_yard:true,storyActions:true};
+    await G.lanterns.loadCh('ch2');await G.lanterns.loadCh('ch3');G.paused=true;
+    const h=G.heroes[0],p=h.profile,originalNight=G.world.isNight,rows=[],blocked=[],missing=[],duplicates=[];
+    const stand=(x,z)=>W.heightAt(x,z)>W.WATER+.25 && !G.world.boxes.some(b=>x>b.x0-.35&&x<b.x1+.35&&z>b.z0-.35&&z<b.z1+.35)
+      && !G.world.colliders.some(c=>c.r>0&&c.top==null&&Math.hypot(c.x-x,c.z-z)<c.r+.35)
+      && ![[0,0],[.3,0],[-.3,0],[0,.3],[0,-.3]].some(([dx,dz])=>G.world.solidAt?.(x+dx,z+dz));
+    const approach=(q,r)=>{
+      if(!q||!Number.isFinite(q.x)||!Number.isFinite(q.z))return null;
+      for(let d=0;d<=Math.max(.4,r-.35);d+=.35)for(let k=0;k<24;k++){
+        const a=k/24*Math.PI*2,x=q.x+Math.cos(a)*d,z=q.z+Math.sin(a)*d;
+        if(stand(x,z))return {x,z,d};
+      }
+      return null;
+    };
+    const record=(kind,id,q,r,night)=>{
+      if(!q||!Number.isFinite(q.x)||!Number.isFinite(q.z)){missing.push({kind,id,night});return;}
+      const at=approach(q,r);rows.push({kind,id,night,x:q.x,z:q.z,reach:r,approach:at});if(!at)blocked.push({kind,id,night,x:q.x,z:q.z,reach:r});
+    };
+    const steps=CHAPTERS.flatMap(ch=>ch.steps);
+    try {
+      for(const night of [false,true]){
+        G.world.isNight=()=>night;
+        for(const age of ['little','big']){
+          p.age=age;const done={};
+          for(const step of steps){
+            if(step.big&&age==='little'){done[step.id]=true;continue;}
+            p.lanterns={done:{...done},chapters:{},...(step.owl?{}:{companion:'firefly'})};
+            const q=G.lanterns.quest(p);
+            if(q?.id!=='L_'+step.id){missing.push({kind:'chapter-selection',id:step.id,age,night,actual:q?.id});done[step.id]=true;continue;}
+            record('chapter-'+age,step.id,q.target(),3,night);
+            const visible=G.interactables.filter(i=>/^story_/.test(i.id)&&i.r>0&&i.visible?.(h));
+            const ids=new Map();for(const i of visible){ids.set(i.id,(ids.get(i.id)||0)+1);record('story-interaction-'+age,i.id,i,i.r,night);}
+            for(const [id,count]of ids)if(count>1)duplicates.push({id,count,step:step.id,age,night});
+            done[step.id]=true;
+          }
+        }
+        p.age='big';const done={};
+        for(const step of YARD_STEPS){
+          p.yard={done:{...done},jobs:{}};
+          for(const i of G.interactables.filter(i=>/^yard_/.test(i.id)&&i.r>0&&i.visible?.(h)))record('yard-interaction',i.id,i,i.r,night);
+          const q=G.yard.quest(p);if(q)record('yard-goal',q.id,q.target(),3,night);
+          done[step.id]=true;
+        }
+        // Classic markers can point to a physical tower/statue: require a free approach,
+        // rather than declaring every intentionally solid landmark centre invalid.
+        const lanternQuest=G.lanterns.quest,yardQuest=G.yard.quest;G.lanterns.quest=()=>null;G.yard.quest=()=>null;
+        try{
+          const done={};
+          for(const step of QUESTS){
+            p.quests={...done};p.visited={};p.towers={};p.shrines={};p.discovered={};p.read={};p.orbs=0;
+            const q=G.currentQuest(p);
+            if(q?.id===step.id){const target=G.questTarget(h);if(target){const interaction=G.interactables.find(i=>i.id===target.id)||G.interactables.find(i=>Math.hypot(i.x-target.x,i.z-target.z)<.1);record('classic',step.id,target,interaction?.r||3.4,night);}else missing.push({kind:'classic-target',id:step.id,night});}
+            if(step.id==='shrines'){
+              const completed=W.SHRINES.slice(0,3),known=W.SHRINES[7];
+              p.shrines=Object.fromEntries(completed.map(q=>[q.id,true]));p.discovered={...p.shrines,[known.id]:true};
+              const first=G.questTarget(h);if(first?.id!==known.id)missing.push({kind:'known-shrine-priority',night,actual:first?.id});
+              delete p.discovered[known.id];const fallback=G.questTarget(h);
+              if(!fallback||p.shrines[fallback.id])missing.push({kind:'remaining-undiscovered-shrine',night,actual:fallback?.id});
+            }
+            done[step.id]=true;
+          }
+        }finally{G.lanterns.quest=lanternQuest;G.yard.quest=yardQuest;}
+      }
+    }finally{G.world.isNight=originalNight;G.paused=false;}
+    return {rows,blocked,missing,duplicates};
+  });
+  fs.writeFileSync('out/owner-all-quest-approaches.json',JSON.stringify(result,null,2));
+  const errors=P.errors;await P.ctx.close();
+  ok(result.rows.length>60&&!result.blocked.length&&!result.missing.length&&!errors.length,JSON.stringify({total:result.rows.length,blocked:result.blocked,missing:result.missing,errors}));
+  return `${result.rows.length} chapter/yard/classic targets have dry collision-free approaches within interaction range for child ages and light/dark predicates; static approach proof only, full route traversal and timed NPC availability remain pending`;
+});
+
+await check('ownerquesttargets', async () => {
+  const P = await open(b, { w: 1280, h: 800 }); await clear(P.page);
+  const r = await P.page.evaluate(async () => {
+    const G = __sv; await G.lanterns.loadCh('ch2'); await G.lanterns.loadCh('ch3');
+    const targets = G.interactables.filter(i => /^story_(light|ribbon)/.test(i.id));
+    const blocked = targets.filter(i => G.world.boxes.some(box => i.x > box.x0 - .6 && i.x < box.x1 + .6 && i.z > box.z0 - .6 && i.z < box.z1 + .6) || G.world.solidAt?.(i.x,i.z)).map(i => ({id:i.id,x:i.x,z:i.z}));
+    const sydney = targets.filter(i => /^story_light_c3_fly_/.test(i.id));
+    return { total:targets.length, sydney:sydney.length, blocked };
+  });
+  const errors = P.errors; await P.ctx.close();
+  ok(r.sydney === 3 && r.total >= 9 && !r.blocked.length && !errors.length, JSON.stringify({ ...r, errors }));
+  return `${r.total} chapter ribbons/lights, including all3 Sydney targets, remain outside house boxes and collision solids`;
+});
+
+await check('ownertalesync', async () => {
+  const P = await open(b, { w: 390, h: 844, touch: true }); await clear(P.page);
+  const r = await P.page.evaluate(async () => {
+    const { CUSTOM } = await import('/js/custom.js'), { openTheatre } = await import('/js/tales.js');
+    const previous = CUSTOM.features; CUSTOM.features = { ...(previous || {}), storyFilms: false };
+    const sent = [], wait = ms => new Promise(resolve => setTimeout(resolve, ms)); let receive;
+    const tale = { id: 'sync-regression', flag: '', title: () => 'Shared story', pages: [['', 'First page.', 'Trang đầu.'], ['', 'Second page.', 'Trang thứ hai.'], ['', 'Third page.', 'Trang thứ ba.']] };
+    const done = openTheatre(tale, { sync: { send: page => sent.push(page), listen: fn => { receive = fn; } } });
+    await wait(100); document.querySelector('.th-pause').click(); const initial = sent.slice();
+    receive(1); await wait(100); const remote = { sent: sent.slice(), text: document.querySelector('.th-text p').textContent };
+    receive(0); receive(1); await wait(100); const rapid = sent.slice();
+    document.querySelector('.th-next').click(); await wait(100); const local = { sent: sent.slice(), text: document.querySelector('.th-text p').textContent };
+    document.querySelector('.th-x').click(); await done; CUSTOM.features = previous;
+    return { initial, remote, rapid, local };
+  });
+  const errors = P.errors; await P.ctx.close();
+  // (repair16, 15 Oct AEDT) opening a shared story no longer broadcasts its first page: a delayed page-0 message rolled the
+  // other device back to the start (ownerstoryinitial). Only a child's own Back/Next/Read is sent.
+  ok(JSON.stringify(r.initial) === '[]' && JSON.stringify(r.remote.sent) === '[]' && r.remote.text === 'Second page.' && JSON.stringify(r.rapid) === '[]' && JSON.stringify(r.local.sent) === '[2]' && r.local.text === 'Third page.' && !errors.length, JSON.stringify({ ...r, errors }));
+  return 'Opening sends nothing; received page changes survive the asynchronous draw without being rebroadcast; rapid remote changes settle, local Next broadcasts once';
+});
+
 await check('chests', async () => {
   // treasure chests for two (round G): a child alone on a stone hears that a friend is needed; two children (split
   // screen here; a friend online works the same) on the two stones open it: coins, a treat, and the best-friends sticker
@@ -4463,9 +4994,9 @@ await check('types', async () => {
   // (js/state.js, js/netmsg.js, studio/core.cjs; tests/tsconfig.json lists them). Needs: cd tests && npm install
   const { execFileSync } = await import('child_process'), tsc = 'node_modules/.bin/tsc';
   if (!fs.existsSync(tsc)) return 'skipped (run npm install in tests)';
-  try { execFileSync(tsc, ['-p', '.'], { encoding: 'utf8' }); } catch (e) { ok(false, ((e.stdout || '') + '').split('\n').slice(0, 8).join(' | ')); }
+  try { execFileSync(tsc, ['-p', '.'], { encoding: 'utf8' }); execFileSync(tsc, ['-p','tsconfig-contracts.json'], {encoding:'utf8'}); } catch (e) { ok(false, ((e.stdout || '') + '').split('\n').slice(0, 8).join(' | ')); }
   const n = JSON.parse(fs.readFileSync('tsconfig.json', 'utf8')).files.length;
-  return `${n} files type-checked, no errors`;
+  return `${n} explicit files type-checked; detector/outbox/family-backup modules additionally strict-checked; no errors`;
 });
 
 await check('perf', async () => {
@@ -4808,7 +5339,7 @@ await check('knock', async () => {
   await E.page.waitForFunction(() => Object.keys(__sv.partners).length > 0, null, { timeout: 30000 });
 
   const errs = A.errors.concat(D.errors, E.errors).filter(e => !/WebSocket|ERR_CONNECTION|peerjs/i.test(e)); await A.ctx.close(); await E.ctx.close();
-  ok(panel && panel.digits === code && panel.animals === 6 && !panel.qr && aniKeys === 10 && atDoor.knocking && !atDoor.partners && atDoor.mic === false && atDoor.panel && !sentAway.remotes && !sentAway.knocks && !sentAway.pop && !stranger.remotes && !stranger.partners && !stranger.bubbles && !errs.length, JSON.stringify({ panel, aniKeys, atDoor, sentAway, stranger, errs }));
+  ok(panel && panel.digits === code && panel.animals === 6 && !panel.qr && aniKeys === 10 && atDoor.knocking && !atDoor.partners && atDoor.mic === 'none' && atDoor.panel && !sentAway.remotes && !sentAway.knocks && !sentAway.pop && !stranger.remotes && !stranger.partners && !stranger.bubbles && !errs.length, JSON.stringify({ panel, aniKeys, atDoor, sentAway, stranger, errs }));
   return `code ${code} shown as digits and 6 animals (no QR code); typed on the animal pad, knocked with the microphone off and nothing heard; "No thanks" sent them away; a stranger's moves without knocking ignored; another child typed the numbers and was let in`;
 });
 
@@ -4956,7 +5487,7 @@ await check('onlineoff', async () => {
 // (Play reading trial, owner 11 Oct 2026 AEDT; docs/cores/play-reading.md) the ten reading games behind Studio's readingTrial
 await check('reading', async () => {
   const { solveReading } = await import('./readsolve.mjs'), RD = await import('../js/content/reading.js');
-  const IDS = ['rd_trace', 'rd_sounds', 'rd_build', 'rd_rhyme', 'rd_sight', 'rd_tones', 'rd_syllable', 'rd_match', 'rd_sentence', 'rd_readalong'], BIG_ONLY = ['rd_sight', 'rd_match', 'rd_sentence'];
+  const IDS = ['rd_listentouch', 'rd_storychoice', 'rd_trace', 'rd_sounds', 'rd_build', 'rd_rhyme', 'rd_sight', 'rd_tones', 'rd_syllable', 'rd_match', 'rd_sentence', 'rd_readalong'], BIG_ONLY = ['rd_sight', 'rd_match', 'rd_sentence'];
   // the word lists: both languages, every picture drawn, every line to record listed in both languages
   const lines = RD.readingLines(), en = lines.filter(l => l.lang === 'en').length, vi = lines.filter(l => l.lang === 'vi').length;
   ok(en > 150 && vi > 150, `lines to record: en ${en}, vi ${vi}`);
@@ -4977,12 +5508,12 @@ await check('reading', async () => {
   const Q = await open(b, { w: 1024, h: 768, play: false }); const asked2 = []; Q.page.on('request', q => { if (/reading(menu)?\.js/.test(q.url())) asked2.push(q.url().split('/').pop()); });
   await Q.page.route('**/content/custom.json*', async r => { let j = {}; try { j = await (await r.fetch()).json(); } catch (e) { } j.features = { ...(j.features || {}), readingTrial: true }; await r.fulfill({ contentType: 'application/json', body: JSON.stringify(j) }); });
   await Q.page.reload(); await start(Q.page); await clear(Q.page);
-  await Q.page.waitForFunction(async () => Object.keys((await import('/js/games/frame.js')).GAMES).filter(k => /^rd_/.test(k)).length === 10, null, { timeout: 30000 }).catch(() => { });
+  await Q.page.waitForFunction(async () => Object.keys((await import('/js/games/frame.js')).GAMES).filter(k => /^rd_/.test(k)).length === 12, null, { timeout: 30000 }).catch(() => { });
   const on = await Q.page.evaluate(async () => { const F = await import('/js/games/frame.js'), A = await import('/js/content/activities.js'); __sv.openGamesHub(0); await new Promise(r => setTimeout(r, 300)); document.querySelector('.hubtabs [data-tab="learn"]')?.click(); await new Promise(r => setTimeout(r, 200));
     const hub = [...document.querySelectorAll('.hubbody [data-play]')].map(b => b.dataset.play), head = [...document.querySelectorAll('.hubbody .hubarea')].map(h => h.textContent); document.querySelectorAll('.modal').forEach(m => m.remove()); __sv.paused = false;
     return { games: Object.keys(F.GAMES).filter(k => /^rd_/.test(k)), big: A.gamesIn(F.GAMES, 'reading', false).map(g => g.id), little: A.gamesIn(F.GAMES, 'reading', true).map(g => g.id), hub: hub.filter(k => /^rd_/.test(k)), head }; });
   ok(IDS.every(id => on.games.includes(id) && on.big.includes(id) && on.hub.includes(id)) && on.head.some(h => /Reading corner/.test(h)), 'with the switch on: ' + JSON.stringify(on));
-  ok(BIG_ONLY.every(id => !on.little.includes(id)) && on.little.length === 7, 'under-5s see: ' + on.little.join(','));
+  ok(BIG_ONLY.every(id => !on.little.includes(id)) && on.little.length === IDS.length - BIG_ONLY.length && IDS.filter(id => !BIG_ONLY.includes(id)).every(id => on.little.includes(id)), 'under-5s see: ' + on.little.join(','));
   ok(!asked2.includes('reading.js'), 'the games\' code loaded before a game opened: ' + asked2.join(','));
   // every game finishes for an under-5 (no losing: three stars) and for a big kid at Easy, Medium and Hard, in both languages;
   // nothing is left behind when a game ends
@@ -4994,6 +5525,7 @@ await check('reading', async () => {
       // (sample: each game once per language, a different level each run; all of them when the reading games changed)
       if (sampled('reading') && vi !== (SEED + gi + (lang === 'vi' ? 2 : 0)) % (BIG_ONLY.includes(id) ? 3 : 4) + (BIG_ONLY.includes(id) ? 1 : 0)) continue;
       const r = await solveReading(Q.page, id, { level, little, timeout: 90000 });
+      console.log(`reading case: ${lang} ${id} ${little ? 'under-5' : 'level '+level}: ${r.ok && r.won && (!little || r.stars===3) ? 'PASS' : 'FAIL'} (${r.steps || 0} interactions)`);
       if (!r.ok || !r.won || (little && r.stars !== 3)) bad.push(`${lang} ${id} ${little ? 'under-5' : 'level ' + level}: ${JSON.stringify(r).slice(0, 160)}`);
       await Q.page.waitForTimeout(400);
       const rest = await Q.page.evaluate(() => document.querySelectorAll('.gl, .rd-lantern, .rd-pond, .rd-sky, .rd-train, .rd-page').length); if (rest) left.push(`${lang} ${id}`);
@@ -5005,9 +5537,411 @@ await check('reading', async () => {
   ok(asked2.includes('reading.js'), 'the games\' code never loaded');
   const errs = Q.errors.slice(); await Q.ctx.close();
   ok(!errs.length, errs.slice(0, 5).join(' | '));
-  return `${sampled('reading') ? 'SAMPLE (each game once per language, level by turn; all when reading files change): ' : ''}switch off: nothing loads or shows; on: 10 games in the Reading corner (7 for under-5s), all finish at Easy, Medium, Hard and for under-5s in English and Vietnamese; ${en} English and ${vi} Vietnamese lines`;
+  return `${sampled('reading') ? 'SAMPLE (each game once per language, level by turn; all when reading files change): ' : ''}switch off: nothing loads or shows; on: 12 games in the Reading corner (9 for under-5s), all finish at Easy, Medium, Hard and for under-5s in English and Vietnamese; ${en} English and ${vi} Vietnamese lines`;
 });
 
+// Owner-approved interface contracts: end-to-end screen, privacy and composed-capture regressions.
+async function ownerSmoke(file, args = []) {
+  const { execFileSync } = await import('node:child_process');
+  try { return execFileSync(process.execPath, [file, ...args], { encoding:'utf8', timeout:600000, maxBuffer:1048576 }).trim().replace(/\s+/g,' '); }
+  catch (error) {
+    // Preserve assertion/timeout diagnostics from the synthetic owner fixtures; the wrapper's
+    // generic 'Command failed' otherwise hides the reason in shard and isolated retries.
+    const detail = [error.stderr,error.stdout,error.message].filter(Boolean).join(' ').slice(-12000).replace(/\s+/g,' ').trim();
+    throw new Error(`${file} (status ${error.status}, signal ${error.signal || 'none'}): ${detail}`);
+  }
+}
+await check('ownerlearningprogression', async () => {
+  const rows=[];
+  for(const lang of ['en','vi']) {
+    const P=await open(b,{w:390,h:844,touch:true,lang});await clear(P.page);
+    for(const id of ['patternpicnic','shapebuilders','remembergarden']) for(const [mode,little,level] of [['under-5',true,1],['Easy',false,1],['Medium',false,2],['Hard',false,3]]) {
+      await P.page.evaluate(async({id,little,level})=>{
+        const G=__sv,F=await import('/js/games/frame.js');G.paused=true;
+        window.__learning=F.openGame(id,{players:[G.heroes[0].profile],little,level});
+      },{id,little,level});await P.page.waitForSelector('.gl');
+      const r=await P.page.evaluate(async()=>{
+        const F=await import('/js/games/frame.js'),wait=ms=>new Promise(resolve=>setTimeout(resolve,ms));let wrong=false,taps=0,ready=0;
+        const until=Date.now()+30000;
+        while(Date.now()<until&&!document.querySelector('.gl-win')) {
+          const ask=F.playWatch.ask;
+          if(ask) { const bad=ask.els.find(b=>!b.disabled&&!ask.check(b)); if(!wrong&&bad){bad.click();wrong=true;}else ask.els.find(ask.check)?.click();taps++; }
+          else { const next=F.playWatch.plan?.();if(next&&!next.disabled){if(next.textContent.match(/Ready|Sẵn sàng/))ready++;next.click();taps++;} }
+          await wait(60);
+        }
+        return {won:!!document.querySelector('.gl-win'),wrong,taps,ready,stars:document.querySelectorAll('.gl-stars i.on').length,sideways:document.scrollingElement.scrollWidth>innerWidth+1,
+          small:[...document.querySelectorAll('.gl-stage button')].filter(b=>!b.disabled&&b.getClientRects().length&&Math.min(b.getBoundingClientRect().width,b.getBoundingClientRect().height)<63).map(b=>b.className)};
+      });
+      fs.mkdirSync('out/owner-learning',{recursive:true});await P.page.screenshot({path:`out/owner-learning/${id}-${lang}-${mode}.png`});
+      rows.push({id,lang,mode,...r});ok(r.won&&r.wrong&&r.taps>2&&!r.sideways&&!r.small.length&&(!little||r.stars===3),JSON.stringify(rows.at(-1)));
+      await P.page.waitForTimeout(650);await P.page.locator('.gl-win p').first().click();await P.page.waitForSelector('.gl',{state:'detached'});const completed=await P.page.evaluate(()=>window.__learning);ok(completed.won,'Reward finish must return a completed activity');await P.page.waitForTimeout(100);
+    }
+    // A real pointer drag must reject the wrong shape and place the correct shape in its outline.
+    await P.page.evaluate(async()=>{const F=await import('/js/games/frame.js');window.__learning=F.openGame('shapebuilders',{players:[__sv.heroes[0].profile],little:true,level:1});});
+    await P.page.waitForSelector('.bt-slot:not([disabled])');
+    const slot=P.page.locator('.bt-slot:not([disabled])'),bad=P.page.locator('.bt-piece').filter({has:P.page.locator('svg circle')}).first(),good=P.page.locator('.bt-piece').filter({has:P.page.locator('svg path')}).first();
+    const drag=async b=>{const a=await b.boundingBox(),target=await slot.boundingBox();await P.page.mouse.move(a.x+a.width/2,a.y+a.height/2);await P.page.mouse.down();await P.page.mouse.move(target.x+target.width/2,target.y+target.height/2,{steps:12});await P.page.mouse.up();await P.page.waitForTimeout(250);};
+    await drag(bad);ok(await P.page.locator('.bt-slot[disabled]').count()===2,'wrong dragged shape must not fill the outline');
+    await drag(good);ok(await P.page.locator('.bt-slot').first().isDisabled(),'correct pointer drag must place first piece');
+    await P.page.locator('.gl-x').click();await P.page.waitForSelector('.gl',{state:'detached'});
+    const cleanup=await P.page.evaluate(async()=>{const F=await import('/js/games/frame.js');return {plan:F.playWatch.plan,ask:F.playWatch.ask};});ok(!cleanup.plan&&!cleanup.ask,'Cancel must clean up pending choice/placement/plan');
+    const errors=P.errors;await P.ctx.close();ok(!errors.length,errors.join(' | '));
+  }
+  return JSON.stringify(rows);
+});
+
+// (owner repair round, points 46-48, 16 Oct AEDT) the four reasoning games really change with the level: more choices,
+// bigger boards and look-alike pictures on Hard; never a forced single choice; a wrong tap says why in EN and VI; Garden
+// Steps never says the answer before the child chooses it.
+await check('ownerthinkinglevels', async () => {
+  const rows = [];
+  for (const lang of ['en', 'vi']) {
+    const P = await open(b, { w: 390, h: 844, touch: true, lang }); await clear(P.page);
+    for (const id of ['rulefinder', 'gardenorder', 'steppingpath', 'remembergarden']) for (const [mode, little, level] of [['under-5', true, 1], ['Easy', false, 1], ['Medium', false, 2], ['Hard', false, 3]]) {
+      await P.page.evaluate(async ({ id, little, level }) => { const G = __sv, F = await import('/js/games/frame.js'); G.paused = true; window.__thinking = F.openGame(id, { players: [G.heroes[0].profile], little, level }); }, { id, little, level });
+      await P.page.waitForSelector('.gl');
+      const r = await P.page.evaluate(async () => {
+        const F = await import('/js/games/frame.js'), wait = ms => new Promise(res => setTimeout(res, ms));
+        const help = () => document.querySelector('.gl-help').textContent.trim();
+        let wrongHelp = null, asks = 0, minChoices = 99, maxChoices = 0, small = [], askHelp = new Set(), grid = 0, flowers = 0, puddles = 0;
+        const until = Date.now() + 45000;
+        while (Date.now() < until && !document.querySelector('.gl-win')) {
+          const ask = F.playWatch.ask;
+          if (ask) {
+            const live = ask.els.filter(b => !b.disabled && b.getClientRects().length);
+            if (live.length) {
+              asks++; minChoices = Math.min(minChoices, live.length); maxChoices = Math.max(maxChoices, live.length); askHelp.add(help());
+              const path = document.querySelector('.think-path');
+              if (path) { grid = Math.max(grid, Math.round(Math.sqrt(path.children.length))); flowers = [...path.children].filter(c => /flower|hoa/i.test(c.getAttribute('aria-label'))).length; puddles = [...path.children].filter(c => /puddle|nước/i.test(c.getAttribute('aria-label'))).length; }
+              for (const x of document.querySelectorAll('.gl-stage button')) { if (x.disabled || !x.getClientRects().length) continue; const q = x.getBoundingClientRect(); if (Math.min(q.width, q.height) < (document.querySelector('.gl.little') ? 63 : 44) || q.left < -1 || q.right > innerWidth + 1) small.push(x.className); }
+              const bad = live.find(b => !ask.check(b));
+              if (wrongHelp === null && bad) { bad.click(); await wait(120); wrongHelp = help(); }
+              else live.find(ask.check)?.click();
+            }
+          } else { const next = F.playWatch.plan?.(); if (next && !next.disabled) next.click(); }
+          await wait(70);
+        }
+        const path = document.querySelector('.think-path'), deadEnds = path ? [...path.children].filter(c => /flower|hoa/i.test(c.getAttribute('aria-label')) && !c.classList.contains('right')).length : 0;
+        return { won: !!document.querySelector('.gl-win'), deadEnds, asks, minChoices, maxChoices, wrongHelp, askHelp: [...askHelp], grid, flowers, puddles, small: [...new Set(small)], sideways: document.scrollingElement.scrollWidth > innerWidth + 1 };
+      });
+      fs.mkdirSync('out/owner-thinking', { recursive: true }); await P.page.screenshot({ path: `out/owner-thinking/${id}-${lang}-${mode}.png` });
+      const row = { id, lang, mode, ...r }; rows.push(row); const say = JSON.stringify(row);
+      ok(r.won && r.asks > 1, 'did not finish: ' + say);
+      ok(r.minChoices >= 2, 'a forced single choice: ' + say);
+      ok(r.wrongHelp && !/^(Try again|Thử lại)/i.test(r.wrongHelp) , 'a wrong tap must say why: ' + say);
+      ok(!r.small.length && !r.sideways, 'small buttons or sideways scroll: ' + say);
+      if (lang === 'vi') ok(r.askHelp.every(t => /[ăâđêôơưàáảãạèéẻẽẹìíỉĩịòóỏõọùúủũụỳýỷỹỵ]/i.test(t)), 'English guidance in Vietnamese: ' + say);
+      if (id === 'gardenorder') ok(r.askHelp.filter(t => t !== r.wrongHelp).every(t => /first|next|trước|tiếp theo/i.test(t)), 'Garden Steps must not name the answer before the choice: ' + say);
+      await P.page.waitForTimeout(650); await P.page.locator('.gl-win p').first().click(); await P.page.waitForSelector('.gl', { state: 'detached' });
+      ok((await P.page.evaluate(() => window.__thinking)).won, 'the reward must finish the game: ' + say);
+    }
+    ok(!P.errors.length, P.errors.join('\n')); await P.ctx.close();
+  }
+  // the levels really differ (under-5 < Easy < Hard in choices or board size; Medium adds dead-end flowers)
+  const get = (id, mode) => rows.filter(x => x.id === id && x.mode === mode);
+  for (const lang of ['en', 'vi']) {
+    const one = (id, mode) => get(id, mode).find(x => x.lang === lang);
+    ok(one('rulefinder', 'under-5').maxChoices === 2 && one('rulefinder', 'Easy').maxChoices === 3 && one('rulefinder', 'Hard').maxChoices === 4, 'Find the Rule choices by level: ' + JSON.stringify(get('rulefinder', 'Hard')));
+    ok(one('steppingpath', 'under-5').grid === 3 && one('steppingpath', 'Easy').grid === 4 && one('steppingpath', 'Hard').grid === 5, 'Flower Path board by level');
+    ok(one('steppingpath', 'Easy').deadEnds === 0 && one('steppingpath', 'Medium').deadEnds >= 1 && one('steppingpath', 'Hard').deadEnds >= 1, 'Flower Path dead ends from Medium: ' + JSON.stringify(get('steppingpath', 'Medium')));
+    ok(one('gardenorder', 'Hard').maxChoices > one('gardenorder', 'under-5').maxChoices && one('remembergarden', 'Hard').maxChoices > one('remembergarden', 'Easy').maxChoices, 'Garden Steps and Remember the Garden choices grow');
+  }
+  // (owner, 16 Oct: "the flower path pictures overlap each other") on a tablet and a computer too, every square's picture
+  // stays inside its square and the squares do not touch
+  for (const [w, h, touch] of [[390, 844, true], [820, 1180, true], [1280, 800, false]]) {
+    const P = await open(b, { w, h, touch }); await clear(P.page);
+    for (const level of [1, 3]) {
+      await P.page.evaluate(async level => { const F = await import('/js/games/frame.js'); __sv.paused = true; window.__thinking = F.openGame('steppingpath', { players: [__sv.heroes[0].profile], little: false, level }); }, level);
+      await P.page.waitForSelector('.think-path'); await P.page.waitForTimeout(600);
+      const bad = await P.page.evaluate(() => { const out = [], cells = [...document.querySelectorAll('.think-path button')];
+        cells.forEach((c, i) => { const r = c.getBoundingClientRect(), a = c.querySelector('svg, .art, .emo')?.getBoundingClientRect(); if (a && (a.left < r.left - .5 || a.right > r.right + .5 || a.top < r.top - .5 || a.bottom > r.bottom + .5)) out.push(`picture ${i} ${Math.round(a.width)} in ${Math.round(r.width)}`);
+          const n = cells[i + 1]; if (n && (i + 1) % Math.round(Math.sqrt(cells.length)) && n.getBoundingClientRect().left < r.right + 2) out.push(`squares ${i} and ${i + 1} touch`); });
+        return out; });
+      ok(!bad.length, `Flower Path at ${w}x${h}, level ${level}: ` + bad.slice(0, 4).join('; '));
+      await P.page.locator('.gl-x').click(); await P.page.waitForSelector('.gl', { state: 'detached' });
+    }
+    await P.ctx.close();
+  }
+  fs.writeFileSync('out/owner-thinking/results.json', JSON.stringify(rows, null, 2));
+});
+await check('ownerlearninglayout', async () => {
+  const rows=[];
+  for(const [w,h,lang] of [[320,640,'en'],[320,640,'vi'],[390,844,'en'],[844,390,'vi'],[820,1180,'en'],[1280,800,'en']]) {
+    const P=await open(b,{w,h,touch:w<1000,lang});await clear(P.page);
+    for(const id of ['patternpicnic','shapebuilders','remembergarden']) {
+      await P.page.evaluate(async id=>{const F=await import('/js/games/frame.js');__sv.paused=true;window.__learning=F.openGame(id,{players:[__sv.heroes[0].profile],little:true,level:1});},id);
+      await P.page.waitForSelector('.gl-stage button');await P.page.evaluate(()=>document.fonts.ready);
+      const panel=await P.page.locator('.gl').boundingBox(), controls=P.page.locator('.gl-stage button:not([disabled])');
+      for(let i=0;i<await controls.count();i++) {
+        const control=controls.nth(i);await control.scrollIntoViewIfNeeded();const r=await control.evaluate(e=>{const a=e.getBoundingClientRect(),top=document.elementFromPoint(a.x+a.width/2,a.y+a.height/2);return {w:a.width,h:a.height,x:a.x,y:a.y,right:a.right,bottom:a.bottom,hit:e===top||e.contains(top),label:e.getAttribute('aria-label')||e.textContent};});
+        ok(r.w>=63&&r.h>=63&&r.x>=-1&&r.right<=w+1&&r.y>=-1&&r.bottom<=h+1&&r.hit,JSON.stringify({id,w,h,lang,r}));
+      }
+      const after=await P.page.locator('.gl').boundingBox();ok(Math.abs(panel.y-after.y)<1&&Math.abs(panel.height-after.height)<1,'Activity shell moved while scrolling controls');
+      await P.page.evaluate(()=>{document.querySelector('.gl-stage').scrollTop=0;});fs.mkdirSync('out/owner-learning-stage',{recursive:true});await P.page.screenshot({path:`out/owner-learning-stage/${id}-${w}-${h}-${lang}.png`});rows.push({id,w,h,lang,controls:await controls.count()});
+      await P.page.locator('.gl-x').click();await P.page.waitForSelector('.gl',{state:'detached'});
+    }
+    const errors=P.errors;await P.ctx.close();ok(!errors.length,errors.join(' | '));
+  }
+  // Touch sends implicit pointer capture; mouse-only drag proof does not cover that path.
+  const P=await open(b,{w:390,h:844,touch:true,lang:'vi'});await clear(P.page);
+  await P.page.evaluate(async()=>{const F=await import('/js/games/frame.js');__sv.paused=true;window.__learning=F.openGame('shapebuilders',{players:[__sv.heroes[0].profile],little:true,level:1});});
+  const piece=P.page.locator('.bt-piece').filter({has:P.page.locator('svg path')}).first(),slot=P.page.locator('.bt-slot:not([disabled])');await piece.scrollIntoViewIfNeeded();
+  const a=await piece.boundingBox(),target=await slot.boundingBox(),cdp=await P.ctx.newCDPSession(P.page);
+  const touch=async(type,x,y)=>cdp.send('Input.dispatchTouchEvent',{type,touchPoints:type==='touchEnd'||type==='touchCancel'?[]:[{x,y,id:1}]});
+  await touch('touchStart',a.x+a.width/2,a.y+a.height/2);for(let i=1;i<=12;i++)await touch('touchMove',a.x+a.width/2+(target.x+target.width/2-a.x-a.width/2)*i/12,a.y+a.height/2+(target.y+target.height/2-a.y-a.height/2)*i/12);await touch('touchEnd');
+  await P.page.waitForTimeout(400);ok(await P.page.locator('.bt-slot').first().isDisabled(),'Real touch drag must place the matching shape with implicit pointer capture');
+  await P.page.locator('.gl-x').click();const errors=P.errors;await P.ctx.close();ok(!errors.length,errors.join(' | '));return JSON.stringify(rows);
+});
+
+await check('owneractivityshell', async () => {
+  const P=await open(b,{w:320,h:640,touch:true,lang:'vi'});await clear(P.page);
+  await P.page.evaluate(async()=>{const V=await import('/js/voice.js');V.spoken.forEach(f=>f('A surprise gift is waiting in the valley.'));});await P.page.waitForSelector('.caption.show');
+  await P.page.evaluate(async()=>{const F=await import('/js/games/frame.js');__sv.paused=true;window.__learning=F.openGame('shapebuilders',{players:[__sv.heroes[0].profile],little:true,level:1});});await P.page.waitForSelector('.bt-piece');await P.page.evaluate(()=>document.fonts.ready);
+  const before=await P.page.locator('.gl-head').boundingBox();await P.page.locator('.bt-piece').last().scrollIntoViewIfNeeded();
+  const r=await P.page.evaluate(()=>{const head=document.querySelector('.gl-head').getBoundingClientRect(),star=document.querySelector('.gl .starbox').getBoundingClientRect(),help=document.querySelector('.gl-help').getBoundingClientRect();return {headY:head.y,caption:!!document.querySelector('.caption.show'),starHelpOverlap:star.x<help.right&&star.right>help.x&&star.y<help.bottom&&star.bottom>help.y,scroll:document.querySelector('.gl').scrollTop};});
+  fs.mkdirSync('out/owner-activity-shell',{recursive:true});await P.page.screenshot({path:'out/owner-activity-shell/phone-vi.png'});
+  const errors=P.errors;await P.ctx.close();ok(!r.caption&&!r.starHelpOverlap&&r.headY>=0&&Math.abs(r.headY-before.y)<1&&!errors.length,JSON.stringify({r,before,errors}));
+  return 'Small activity header stays visible while body scrolls; reward counter cannot cover guidance; queued valley captions are hidden on entry';
+});
+
+await check('ownerlearningcomposition', async () => {
+  const bad=[],rows=[],P=await open(b,{w:320,h:640,touch:true,lang:'vi'});await clear(P.page);
+  for(const id of ['patternpicnic','shapebuilders','remembergarden']) {
+    await P.page.evaluate(id=>{const p=__sv.heroes[0].profile;p.age='little';p.gameDiff={...p.gameDiff,[id]:'easy'};window.__learning=__sv.playGame(0,id,'replay');},id);await P.page.waitForSelector('.gl-lvl');await P.page.evaluate(()=>document.fonts.ready);await P.page.waitForTimeout(400);
+    const r=await P.page.evaluate(()=>{
+      const rect=s=>{const e=document.querySelector(s);if(!e)return null;const r=e.getBoundingClientRect();return {x:r.x,y:r.y,right:r.right,bottom:r.bottom,width:r.width,height:r.height};};
+      const header=[...document.querySelectorAll('.gl-head button')].map(b=>({label:b.getAttribute('aria-label')||b.textContent,width:b.getBoundingClientRect().width,height:b.getBoundingClientRect().height}));
+      const board=rect('.bt-picture'),repeat=rect('.bt-repeat'),palette=rect('.gl-stage .choices'),stage=rect('.gl-stage');
+      const maxPieceBottom=board?Math.max(...[...document.querySelectorAll('.bt-slot')].map(b=>b.getBoundingClientRect().bottom)):null;
+      return {header,board,repeat,palette,stage,maxPieceBottom};
+    });rows.push({id,...r});if(r.header.some(b=>b.width<63||b.height<63))bad.push(id+': under-5 header target below64px');
+    if(r.board&&(r.maxPieceBottom>r.board.bottom+1||r.maxPieceBottom>r.repeat.y-4||r.palette.bottom>r.stage.bottom+1))bad.push(id+': picture compresses/overlaps or palette cannot stay visible with the model');
+    fs.mkdirSync('out/owner-learning-composition',{recursive:true});await P.page.screenshot({path:`out/owner-learning-composition/${id}.png`});await P.page.locator('.gl-x').click();await P.page.waitForSelector('.gl',{state:'detached'});await P.page.waitForTimeout(100);
+  }
+  await P.page.setViewportSize({width:844,height:390});
+  await P.page.evaluate(async()=>{const F=await import('/js/games/frame.js');window.__learning=F.openGame('remembergarden',{players:[__sv.heroes[0].profile],little:true});});await P.page.waitForSelector('.gl-help');await P.page.waitForTimeout(400);
+  const overlap=await P.page.evaluate(()=>{const a=document.querySelector('.gl .starbox').getBoundingClientRect(),b=document.querySelector('.gl-help').getBoundingClientRect();return a.x<b.right&&a.right>b.x&&a.y<b.bottom&&a.bottom>b.y;});if(overlap)bad.push('landscape reward counter overlaps guidance');await P.page.locator('.gl-x').click();await P.page.waitForSelector('.gl',{state:'detached'});
+  await P.page.setViewportSize({width:320,height:640});
+  await P.page.evaluate(async()=>{const F=await import('/js/games/frame.js');F.register({id:'__guideprobe',icon:'🧩',name:()=> 'Guide probe',run(api){api.say('Choose the picture and think about what happens next. '.repeat(12),'Chọn hình và nghĩ xem chuyện gì xảy ra tiếp theo. '.repeat(12));const b=document.createElement('button');b.className='choice';b.textContent='Go';api.stage.appendChild(b);}});window.__learning=F.openGame('__guideprobe',{players:[__sv.heroes[0].profile],little:true});});await P.page.waitForSelector('.gl-stage .choice');await P.page.waitForTimeout(400);await P.page.locator('.gl-stage .choice').scrollIntoViewIfNeeded();
+  const help=await P.page.evaluate(()=>{const h=document.querySelector('.gl-help'),s=document.querySelector('.gl-stage').getBoundingClientRect();return {height:h.getBoundingClientRect().height,scrollable:h.scrollHeight>h.clientHeight,stageHeight:s.height,viewportHeight:innerHeight};});if(help.stageHeight<104||help.height>help.viewportHeight*.35)bad.push('long guidance removes the playing field');
+  const errors=P.errors;await P.ctx.close();ok(!bad.length&&!errors.length,JSON.stringify({bad,rows,help,errors}));return 'Real game entrance:64px header controls, complete picture and palette visible; landscape stars clear; long guidance scrolls without hiding play';
+});
+
+await check('ownerautoplaynormal', async () => {
+  return await ownerSmoke('owner-autoplay-plans.mjs', ['--speed=x1','--ids=robot,sortout']);
+});
+
+await check('ownerautoplaynormalmaze', async () => {
+  return await ownerSmoke('owner-autoplay-plans.mjs', ['--speed=x1','--ids=maze']);
+});
+
+await check('ownerautoplaynormalduck', async () => {
+  return await ownerSmoke('owner-autoplay-plans.mjs', ['--speed=x1','--ids=duckmaze']);
+});
+await check('ownerautoplay2x', async () => {
+  return await ownerSmoke('owner-autoplay-plans.mjs', ['--speed=x2']);
+});
+await check('ownerautoplay3x', async () => {
+  return await ownerSmoke('owner-autoplay-plans.mjs', ['--speed=x3']);
+});
+
+await check('ownerdecoroverlap', async () => {
+  return await ownerSmoke('owner-decor-overlap.mjs');
+});
+
+await check('ownerstudiofolds', async () => {
+  return await ownerSmoke('owner-studio-folds.mjs');
+});
+
+await check('ownerstudioperms', async () => {
+  return await ownerSmoke('owner-studio-perms.mjs');
+});
+
+await check('ownerheartstap', async () => {
+  // (owner, 16 Oct AEDT, point 50) the hearts explain themselves when tapped; the rest of the card still opens Settings.
+  // (owner, 16 Oct: "discrete, small but understandable"; one Studio switch per thing) a short note of two lines at
+  // most, clear of the buttons, and a short spoken line, each with its own switch; never a caption box as well
+  const P = await open(b, { w: 390, h: 844, touch: true }); await clear(P.page);
+  const voices = []; P.page.on('request', q => { const m = /\/voices\/(en|vi)\/\w\/(7863c82e65276c14|e751803424298077)\.mp3/.exec(q.url()); if (m) voices.push(m[2]); });
+  // (Full run 37: the daily gift's own note took the HUD note while this ran) the gift's note and voice stay quiet here
+  const sw = (id, on) => P.page.evaluate(([id, on]) => import('/js/custom.js').then(C => { C.CUSTOM.features = { ...(C.CUSTOM.features || {}), [id]: on }; }), [id, on]);
+  await sw('explain_gift_note', false); await sw('explain_gift_voice', false);
+  // the voice is on here (the checks start with it off), and any way it speaks counts: a recorded file or the device voice
+  await P.page.evaluate(async () => { (await import('/js/state.js')).settings.voice = true; window.__spoke = []; window.__explained = []; addEventListener('sv-explain', e => window.__explained.push(e.detail)); const s = speechSynthesis.speak.bind(speechSynthesis); speechSynthesis.speak = u => { window.__spoke.push(u.text); try { s(u); } catch (e) { } }; });
+  const box = await P.page.evaluate(() => { const h = document.querySelector('.hud .hearts'), r = h.getBoundingClientRect(); return { y: r.y + r.height / 2, x: r.x + r.width / 2, hit: Math.round(r.height), role: h.getAttribute('role'), label: h.getAttribute('aria-label') }; });
+  const tap = async () => { await P.page.waitForTimeout(3600); voices.length = 0; await P.page.evaluate(() => { window.__spoke = []; window.__explained = []; }); await P.page.touchscreen.tap(box.x, box.y); await P.page.waitForTimeout(1500); const ex = await P.page.evaluate(() => window.__explained.filter(e => e.kind === 'hearts')); if (ex.some(e => e.spoken)) voices.push('spoken'); };
+  const look = () => P.page.evaluate(() => { const n = document.querySelector('.hud .htoast.show'), r = n?.getBoundingClientRect();
+    const hits = !r ? [] : [...document.querySelectorAll('.hud button, .hud .z-view, .hud .dk, .hud .quest, .hud .pcard')].filter(e => { const q = e.getBoundingClientRect(); return q.width && r.left < q.right && r.right > q.left && r.top < q.bottom && r.bottom > q.top; }).map(e => e.className);
+    return { note: n?.textContent || '', explain: !!n?.classList.contains('explain'), lines: r ? Math.round(r.height / (parseFloat(getComputedStyle(n).lineHeight) || 21)) : 0, h: Math.round(r?.height || 0), w: Math.round(r?.width || 0), hits, caption: document.querySelector('.caption.show')?.textContent || '', settings: !!document.querySelector('.modal:not(.out)') }; });
+  await tap(); const both = { ...(await look()), voice: [...voices] };
+  await sw('explain_hearts_note', false); await tap(); const voiceOnly = { ...(await look()), voice: [...voices] };
+  await sw('explain_hearts_note', true); await sw('explain_hearts_voice', false); await tap(); const noteOnly = { ...(await look()), voice: [...voices] };
+  await sw('explain_hearts_note', false); await tap(); const none = { ...(await look()), voice: [...voices] };
+  await clear(P.page); await P.page.locator('.hud .pav').first().tap(); await P.page.waitForTimeout(800);
+  const card = await P.page.evaluate(() => !!document.querySelector('.modal:not(.out)'));
+  const errors = P.errors; await P.ctx.close();
+  const r = { box, both, voiceOnly, noteOnly, none, card, errors };
+  ok(box.role === 'button' && /hearts/i.test(box.label) && box.hit >= 44, 'hearts tap target: ' + JSON.stringify(box));
+  ok(/^Hearts show how strong you are\. Little ones never lose them\.$/.test(both.note) && both.explain && both.h <= 60 && !both.hits.length && !both.caption && both.voice.length >= 1 && !both.settings, 'note and voice: ' + JSON.stringify(both));
+  ok(!voiceOnly.note && !voiceOnly.caption && voiceOnly.voice.includes('spoken'), 'note switched off: ' + JSON.stringify(voiceOnly));
+  ok(noteOnly.note && !noteOnly.caption && !noteOnly.voice.length, 'voice switched off: ' + JSON.stringify(noteOnly));
+  ok(!none.note && !none.caption && !none.voice.length, 'both switched off: ' + JSON.stringify(none));
+  ok(card && !errors.length, JSON.stringify({ card, errors }));
+  return `hearts: own 44 px tap target; a short note (${both.h} px, clear of every button) and a short spoken line, each switched by Studio on its own, never a caption box; the picture (with its gear) still opens Settings`;
+});
+
+await check('ownerexplainswitches', async () => {
+  // (owner, 16 Oct AEDT: "all options to switch on/off one by one, each telling what will be switched off") with every
+  // explanation switch on (the default) and then off from Studio (content/custom.json features): the daily gift's note
+  // and voice, a game's question line (its space kept), the update notice. The hearts are checked in ownerheartstap
+  const ids = ['explain_gift_note', 'explain_gift_voice', 'explain_gameLine', 'explain_updateNotice', 'explain_voiceAsk', 'explain_hearts_note', 'explain_hearts_voice'];
+  const C = await import('../js/content/releases.js');
+  const listed = ids.filter(id => C.RELEASES.some(r => r.id === id && r.group === 'explain' && r.def === true && / Off: | Tắt: |Off:|Tắt:/.test(r.en + r.vi) && r.vi));
+  ok(listed.length === ids.length && C.RELEASE_GROUPS.explain, 'Studio switches missing, or not saying what Off does: ' + ids.filter(id => !listed.includes(id)).join(', '));
+  const run = async off => {
+    const route = off ? async ctx => ctx.route('**/content/custom.json*', async r => { let j = {}; try { j = await (await r.fetch()).json(); } catch (e) { } j.features = { ...(j.features || {}), ...Object.fromEntries(ids.map(id => [id, false])) }; await r.fulfill({ contentType: 'application/json', body: JSON.stringify(j) }); }) : null;
+    const P = await open(b, { w: 390, h: 844, touch: true, play: false, route, pre: () => { window.__ex = []; addEventListener('sv-explain', e => window.__ex.push({ ...e.detail, note: [...document.querySelectorAll('.hud .htoast.show')].map(n => n.textContent).join(' ') })); } });
+    await start(P.page); await clear(P.page);
+    await P.page.waitForFunction(() => window.__ex.some(e => e.kind === 'gift'), null, { timeout: 20000 }).catch(() => { });
+    const gift = await P.page.evaluate(() => { const ex = window.__ex.filter(e => e.kind === 'gift'); return { ex, note: ex.map(e => e.note).join(' ') }; });
+    await P.page.evaluate(() => window.svOfferUpdate?.()); await P.page.waitForTimeout(500);
+    const notice = await P.page.evaluate(() => !!document.querySelector('.update-notice'));
+    await P.page.evaluate(() => document.querySelector('.update-notice')?.remove());
+    // (review R3) a part of the game that has gone after a deploy still offers the update with the switch off
+    await P.page.evaluate(() => window.svModuleGone?.(new TypeError('Importing a module script failed.'))); await P.page.waitForTimeout(500);
+    const gone = await P.page.evaluate(() => !!document.querySelector('.update-notice'));
+    await P.page.evaluate(() => document.querySelector('.update-notice')?.remove());
+    await P.page.evaluate(() => __sv.openGamesHub(0)); await P.page.waitForSelector('.hplay', { timeout: 20000 }); await P.page.locator('.hplay').first().click();
+    await P.page.waitForSelector('.gl:not(.out)', { timeout: 30000 }); await P.page.waitForTimeout(1500);
+    const line = await P.page.evaluate(() => { const h = document.querySelector('.gl .gl-help'), r = h.getBoundingClientRect(); return { text: h.textContent.trim(), shown: getComputedStyle(h).visibility !== 'hidden', h: Math.round(r.height) }; });
+    const errors = P.errors; await P.ctx.close(); return { gift, notice, gone, line, errors };
+  };
+  const on = await run(false), off = await run(true);
+  ok(on.gift.ex.length && on.gift.ex.every(e => e.shown && e.spoken) && /gift/i.test(on.gift.note), 'gift on: ' + JSON.stringify(on.gift));
+  ok(off.gift.ex.length && off.gift.ex.every(e => !e.shown && !e.spoken) && !/gift/i.test(off.gift.note), 'gift off: ' + JSON.stringify(off.gift));
+  ok(on.notice && !off.notice, `update notice on ${on.notice}, off ${off.notice}`);
+  ok(on.gone && off.gone, `a gone part must offer the update even with the notice off: on ${on.gone}, off ${off.gone}`);
+  ok(on.line.text && on.line.shown && off.line.text && !off.line.shown && off.line.h === on.line.h, 'game question line: ' + JSON.stringify({ on: on.line, off: off.line }));
+  ok(!on.errors.length && !off.errors.length, JSON.stringify([on.errors, off.errors]));
+  return `${ids.length} Studio switches (each says what Off does, EN/VI); switched off: no gift note or voice, no update notice, a game's question line hidden with its space kept; on: all shown`;
+});
+
+await check('ownerupdatenotice', async () => {
+  // (owner point 10) a real service-worker version change with two tabs: the newer tab takes over and the older one
+  // stops saving, the small notice never covers the HUD or an activity, and the update keeps every child's progress
+  return await ownerSmoke('owner-update-notice.mjs');
+});
+
+await check('ownertabclaim', async () => {
+  // (third AI's review R1, 16 Oct AEDT) only the game page claims the tab: another page of the same site that loads the
+  // game's state.js (Studio online does, for the game's words and areas) and Studio's hidden copy of the game
+  // (index.html?studio=1) leave a child's game playing; a second real game tab still takes over
+  const P = await open(b, { w: 1180, h: 820, play: false });
+  try {
+    await start(P.page); await clear(P.page);
+    const heldNow = () => P.page.evaluate(() => !!document.querySelector('.tab-held'));
+    const other = await P.ctx.newPage(); await other.goto(URL + 'css/fonts.css');
+    await other.evaluate(u => import(u + 'js/state.js?studio'), URL); await P.page.waitForTimeout(1500);
+    const afterState = await heldNow(); await other.close();
+    const hidden = await P.ctx.newPage(); await hidden.goto(URL + 'index.html?studio=1'); await hidden.waitForFunction(() => window.__sv?.bootTimes, null, { timeout: 120000 }).catch(() => { }); await P.page.waitForTimeout(1500);
+    const afterStudioCopy = await heldNow(); await hidden.close();
+    ok(!afterState, 'a same-site page that loads the game\'s state.js stopped the game');
+    ok(!afterStudioCopy, 'Studio\'s hidden copy of the game (index.html?studio=1) stopped the game');
+    const second = await P.ctx.newPage(); await second.goto(URL); await P.page.waitForSelector('.tab-held', { timeout: 60000 }).catch(() => { });
+    const afterGame = await heldNow(); await second.close();
+    ok(afterGame, 'a second game tab no longer takes over from the older one');
+    ok(!P.errors.length, P.errors.join(' | '));
+    return 'a page loading state.js and Studio\'s hidden game copy leave the child\'s game playing; a second game tab still takes over';
+  } finally { await P.ctx.close(); }
+});
+
+await check('ownertheatreapproach', async () => {
+  process.env.SV_FAR = '1';
+  try { return await ownerSmoke('owner-theatre-walk.mjs', ['out/theatre-walk.json', '4']); } finally { delete process.env.SV_FAR; }
+});
+
+await check('ownerdecorworld', async () => {
+  return await ownerSmoke('owner-decor-world.mjs');
+});
+
+await check('ownerroadvoice', async () => {
+  return await ownerSmoke('owner-road-voice.mjs');
+});
+
+await check('ownerroadsafety', async () => {
+  return await ownerSmoke('owner-road-safety.mjs');
+});
+await check('ownerround', async () => {
+  return await ownerSmoke('owner-round-smoke.mjs');
+});
+await check('ownerlearningvoice', async () => {
+  return await ownerSmoke('owner-learning-voice.mjs');
+});
+await check('ownervoicerefresh', async () => {
+  return await ownerSmoke('owner-voice-refresh.mjs');
+});
+await check('ownervoiceindex', async () => {
+  return await ownerSmoke('owner-voice-index-download.mjs');
+});
+await check('ownerreporteddesktop', async () => {
+  return await ownerSmoke('owner-reported-screens.mjs', ['desktop']);
+});
+await check('ownerreportedphoneen', async () => {
+  return await ownerSmoke('owner-reported-screens.mjs', ['phone-en']);
+});
+await check('ownerreportedphonevi', async () => {
+  return await ownerSmoke('owner-reported-screens.mjs', ['phone-vi']);
+});
+await check('ownerautoplaynavigation', async () => {
+  return await ownerSmoke('owner-autoplay-navigation.mjs');
+});
+await check('ownerautoplayplans', async () => {
+  return await ownerSmoke('owner-autoplay-plans.mjs', process.env.SV_AUTOPLAY_BASELINE === '1' ? ['--baseline'] : []);
+});
+await check('ownerspeechcancel', async () => {
+  return await ownerSmoke('owner-speech-cancel.mjs');
+});
+await check('ownerhearts', async () => {
+  const P = await open(b, { w:390,h:844,touch:true }); await clear(P.page);
+  const result = await P.page.evaluate(async () => {
+    const G=__sv, h=G.heroes[0], wait=ms=>new Promise(resolve=>setTimeout(resolve,ms));
+    G.paused=true; h.profile.hearts=3; h.hearts=3;
+    const protectedModes=[];
+    for(const [age,difficulty] of [['little','hard'],['big','easy'],['big','medium']]) {
+      h.profile.age=age;h.profile.difficulty=difficulty;G.hurt(h,2);
+      protectedModes.push(h.hearts===3 && !h._rescuing);
+    }
+    h.profile.age='big';h.profile.difficulty='hard';G.hurt(h,2);
+    const lost=h.hearts===1;
+    const safe={x:h.lastSafe.x,z:h.lastSafe.z};h.pos.x+=12;h.stamina=0;h.exhausted=true;
+    G.hurt(h,1);const started=h._rescuing && h.hearts===0;
+    await wait(1000);
+    const rescued=h.hearts===3 && h.stamina===h.staminaMax && !h.exhausted && !h._rescuing && Math.hypot(h.pos.x-safe.x,h.pos.z-safe.z)<.01;
+    G.paused=false;return {protectedModes,lost,started,rescued};
+  });
+  ok(result.protectedModes.every(Boolean) && result.lost && result.started && result.rescued, JSON.stringify(result));
+  ok(!P.errors.length,P.errors.join(' | '));await P.ctx.close();
+  return 'fall-damage handler protects under-5/easy/medium; older Hard loses hearts; zero-heart rescue returns to lastSafe and restores hearts/stamina (emulated runtime, not a physical fall/device test)';
+});
+
+await check('ownerfamily', async () => {
+  return await ownerSmoke('owner-family-smoke.mjs');
+});
+await check('ownercapture', async () => {
+  return await ownerSmoke('owner-capture-smoke.mjs');
+});
+
+await check('reportdetectors', async () => {
+  const {execFileSync}=await import('node:child_process');
+  const result=execFileSync(process.execPath,['owner-report-detection.mjs'],{encoding:'utf8',timeout:30000});
+  fs.writeFileSync('out/reportdetectors.json',result);
+  return 'scroll/background/hidden controls excluded; real offscreen and failed opens retained; successful quick close and cancellation do not report';
+});
+
+await check('reportstorage', async () => {
+  const {execFileSync}=await import('node:child_process');
+  return execFileSync(process.execPath,['owner-report-storage.mjs'],{encoding:'utf8',timeout:60000}).trim();
+});
 await b.close();
 const failed = results.filter(r => !r[1]);
 console.log(`\n${results.length - failed.length}/${results.length} checks passed`);

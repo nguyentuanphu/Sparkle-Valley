@@ -126,11 +126,12 @@ export function createLanterns(G, { dialog, say, reward, save, openTheatre }) {
   function addCatchers(rs) {
     // (beside the road, never on it: ROAD-004)
     const offRoad = (x, z) => { const d = roadDist(x, z); return !d.road || d.d > d.road.w / 2 + 1.2; };
-    const v = spots[rs.at](), okAt = (x, z) => heightAt(x, z) > WATER + .4 && offRoad(x, z) && !onStreet(x, z) && !world.colliders.some(c => c.r > 0 && c.top == null && Math.hypot(c.x - x, c.z - z) < c.r + 1);
+    const v = spots[rs.at](), okAt = (x, z) => free(x, z, 1.2) && offRoad(x, z) && !onStreet(x, z) && !world.solidAt?.(x, z) && ribbons.every(r => r.s !== rs || Math.hypot(r.x - x, r.z - z) > 3);
     for (let k = 0; k < (rs.ribbons || rs.lights); k++) {
       let at = null;
-      for (let j = 0; j < 160 && !at; j++) { const a = k * 2.1 + j * .7, d = 5 + k * 4 + (j % 7), x = v.x + 4 + Math.cos(a) * d, z = v.z + Math.sin(a) * d; if (okAt(x, z)) at = [x, z]; }
-      at = at || [v.x + 4 + k * 3, v.z + k];
+      for (let j = 0; j < 1200 && !at; j++) { const a = k * 2.1 + j * .7, d = 5 + k * 4 + (j % 7) + Math.max(0, j - 159) / 20, x = v.x + 4 + Math.cos(a) * d, z = v.z + Math.sin(a) * d; if (okAt(x, z)) at = [x, z]; }
+      // Never put a required quest target inside a house as a fallback.
+      if (!at) throw new Error('No reachable story target: ' + rs.id);
       const g = new THREE.Group(); g.userData.noSolid = true;
       if (rs.lights) { const l = buildLantern(true); l.scale.setScalar(.6); g.add(l); const halo = new THREE.Mesh(new THREE.SphereGeometry(.55, 10, 8), glow('#ffcf6a', .22)); halo.material.depthWrite = false; g.add(halo); }
       else { const colors = ['#ff5a7a', '#ffd23f', '#5fb6ff'];

@@ -1,0 +1,3 @@
+fatal: path 'js/explain.js' exists on disk, but not in 'e75ec692a93a8bc8c290f36a01c47f32244be4bd'
+fatal: path 'js/games/playwatch.js' exists on disk, but not in 'e75ec692a93a8bc8c290f36a01c47f32244be4bd'
+Full suite: netlify/functions/family-devices.mjs changed and no check names it.

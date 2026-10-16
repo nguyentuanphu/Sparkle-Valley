@@ -1,3 +1,4 @@
+// @ts-check
 // Tester reports (owner, 12 Oct 2026 AEDT; brief docs/cores/tasks/tester-reports.md): the lists, words, limits and
 // rules for tester devices, with no screen (js/tester.js draws, netlify/lib/tester.mjs keeps the reports). A device is a
 // tester when Studio's Releases page switches `tester` on for it (every device, or only the ticked ones) and the tester
@@ -55,20 +56,30 @@ export const LIMITS = {
 };
 
 // tester levels (Studio): auto reports only, or auto reports and the ladybird
+/**
+ * @typedef {'auto' | 'ladybird'} TesterLevel
+ * @typedef {{ on?: unknown, devices?: unknown, levels?: Record<string, unknown> | null, peeks?: unknown }} TesterRelease  (Studio's saved rule; old saves may lack fields or hold wrong kinds)
+ */
+/** @param {unknown} v @returns {v is TesterLevel} */
+const isLevel = v => v === 'auto' || v === 'ladybird';
+/** @type {TesterLevel[]} */
 export const LEVELS = ['auto', 'ladybird'];
 // the release rule for `tester` → this device's level, or '' when it is not a tester
 //   rule: { on, devices: [ids], levels: { id: 'auto' | 'ladybird' }, peeks: [release ids] }
+/** @param {unknown} on @param {TesterRelease | null | undefined} rule @param {string} me @returns {TesterLevel | ''} */
 export function testerLevel(on, rule, me) {
   if (!on || !me) return '';
   const list = rule && Array.isArray(rule.devices) ? rule.devices.filter(d => typeof d === 'string') : [];
   if (list.length && !list.includes(me)) return '';
   const lv = rule && rule.levels && rule.levels[me];
-  return LEVELS.includes(lv) ? lv : 'ladybird';
+  return isLevel(lv) ? lv : 'ladybird';
 }
 // the releases a tester sees early ("Tester preview")
+/** @param {TesterRelease | null | undefined} rule @returns {string[]} */
 export const peeksOf = rule => rule && Array.isArray(rule.peeks) ? rule.peeks.filter(x => typeof x === 'string' && /^[\w-]{1,40}$/.test(x)).slice(0, 20) : [];
 
 // a problem's key on this device: the same kind, detail and place is one problem (the server groups by it too)
+/** @param {string} kind @param {unknown} [detail] @param {unknown} [where] @returns {string} */
 export const keyOf = (kind, detail, where) => [kind, String(detail || '').slice(0, 80), String(where || '').slice(0, 40)].join('|').replace(/[^\w .:/()'#,@|-]/g, '').slice(0, 160);
 
 // ---------- rewards ----------
@@ -79,7 +90,9 @@ export const BADGES = [
   { id: 'lb3', at: 25, color: '#ffcf3a', en: 'Gold Ladybird', vi: 'Bọ rùa Vàng' },
   { id: 'lb4', at: 50, color: 'rainbow', en: 'Rainbow Ladybird', vi: 'Bọ rùa Cầu vồng' }
 ];
+/** @param {number} helped */
 export const badgeFor = helped => [...BADGES].reverse().find(b => helped >= b.at) || null;
+/** @param {number} helped */
 export const nextBadge = helped => BADGES.find(b => helped < b.at) || null;
 // coins: for each report that helped, a little more when it had a spoken note
 export const COINS = { helped: 15, spoken: 10, thanks: 20 };

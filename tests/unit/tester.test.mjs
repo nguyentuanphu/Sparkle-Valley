@@ -89,3 +89,23 @@ test('each problem goes to the core it most likely belongs to (tools/tester-issu
   assert.equal(coreOf({ title: 'x', where: {}, auto: 'slow', kind: 'auto' }, null), 'analytics-infra');
   assert.equal(coreOf({ title: 'button off the screen', where: { window: 'modal pad' } }, null), 'kid-ui');
 });
+
+
+test('a report retry with its client ID returns the receipt without counting another report', async () => {
+  const S = mem(), body = rep(A, { clientId: 'a'.repeat(32) });
+  const first = await T.addReport(S, LIVE, body, 1000, 'ip');
+  const again = await T.addReport(S, LIVE, body, 2000, 'ip');
+  assert.equal(again.rid, first.rid); assert.equal(again.k, first.k);
+  const state = await T.deviceStatus(S, LIVE, A, 'r66', 3000); assert.equal(state.reports, 1);
+});
+test('Studio retains per-device progress, speed and autoplay choices and rejects invalid values', () => {
+  const c = cleanLive({ releases: { tester: { on: true, policies: { [A]: { revert: 'keep', speed: 'x5', autoplay: false }, bad: { revert: 'keep' }, [B]: { revert: 'invalid', speed: 'x99', autoplay: 'yes' } } } } });
+  assert.deepEqual(c.releases.tester.policies, { [A]: { revert: 'keep', speed: 'x5', autoplay: false } });
+});
+
+
+test('tester summary uses the Sydney day across the UTC date boundary', () => {
+ const now = Date.parse('2026-10-13T22:30:00Z');
+ const result = T.summary([{ firstAt:Date.parse('2026-10-13T22:00:00Z'), lastAt:now, devices:1, n:1, status:'new', title:'x' }], now);
+ assert.equal(result.day,'2026-10-14'); assert.equal(result.new,1); assert.equal(result.open,1);
+});

@@ -3,8 +3,9 @@
 import { settings, saveSettings, profiles } from './state.js';
 import { events } from './core/events.js';
 import { T } from './i18n.js';
+import { featureOn } from './custom.js';
 
-let PACK = null, packEmit = e => { }, hereArea = () => null;
+let PACK = null, packEmit = e => { }, hereArea = () => null, packStarted = false;
 // Keep the pack on the device by itself: a few seconds after the game opens (every time it opens), the voice cache is
 // checked against the list, and any file not there yet (first visit, a new pack, or a phone that cleared space) is
 // downloaded quietly. A small bar shows it (js/packbar.js); every line then plays with the recorded voice, offline too.
@@ -15,12 +16,16 @@ let PACK = null, packEmit = e => { }, hereArea = () => null;
 // the other places. On mobile data a grown-up is asked first (press and hold); the answer is kept, and Grown-ups can
 // change it. A line not downloaded yet still plays its recording from the internet (and is kept).
 export function startPack(pack, emit, here) {
+  const changed = PACK && PACK !== pack;
   PACK = pack; packEmit = emit; hereArea = here;
+  if (changed) { areaRevision++; AREAS = null; areasTried = null; groupOfHash = null; }
   // (an address that can't keep files, like http://192.168.… on a phone: the voices still play, from the internet)
   if (!('caches' in window)) { setTimeout(() => packEmit({ state: 'nostore', total: packFiles().length }), 3000); return; }
   if (settings.autoPack === false) return;
+  if (packStarted) { if (changed) checkPack().catch(() => { }); return; }
+  packStarted = true;
   setTimeout(() => { checkPack().catch(() => { }); }, 6000);
-  let againT = 0; const again = () => { clearTimeout(againT); againT = setTimeout(() => checkPack().catch(() => { }), 1500); };
+  let againT = 0; const again = () => { if (mayFetchRest()) close(); clearTimeout(againT); againT = setTimeout(() => checkPack().catch(() => { }), 1500); };
   addEventListener('online', again);
   try { const c = navigator.connection; if (c && c.addEventListener) c.addEventListener('change', again); } catch (e) { } // (onto Wi-Fi: the rest goes on)
   events.on('LanguageChanged', again); // (a new language, or both spoken: its core, then its areas)
@@ -47,8 +52,14 @@ export function allowMobilePack(yes) {
   saveSettings(); if (yes) checkPack().catch(() => { });
 }
 const askDue = () => settings.packCell !== true && (settings.packCell !== false || Date.now() - (settings.packAskAt || 0) > 7 * 864e5);
-let AREAS = null, areasTried = null;
-const loadAreas = () => areasTried || (areasTried = fetch('voices/areas.json').then(r => r.ok ? r.json() : null).then(j => { AREAS = j && j.groups ? j : null; }).catch(() => { }).finally(() => { if (!AREAS) areasTried = null; })); // (tried again next time if it failed)
+let AREAS = null, areasTried = null, areaRevision = 0;
+const loadAreas = () => {
+  if (areasTried) return areasTried;
+  const revision = areaRevision;
+  return areasTried = fetch('voices/areas.json').then(r => r.ok ? r.json() : null).then(j => {
+    if (revision === areaRevision) AREAS = j && j.groups ? j : null;
+  }).catch(() => { }).finally(() => { if (revision === areaRevision && !AREAS) areasTried = null; });
+}; // (tried again next time if it failed)
 let groupOfHash = null;
 // which area each line downloads with; a line not listed (added later in Studio) goes with 'world'. With no areas list
 // (an older pack) everything is the core, as before.
@@ -69,7 +80,7 @@ export function packOrder() {
   all.filter(g => !NOT_PLACES.includes(g)).forEach(add); add('world'); all.forEach(add);
   return out;
 }
-let checking = false;
+let checking = false, recheck = false;
 // (battery round, owner 12 Oct AEDT: "my phone gets very hot") the download is spread out: nothing while the valley is
 // being built (the busiest seconds of a start), then 6 files at a time with a short rest between (longer once the small
 // core is in), so the phone's radio and processor are never kept flat out
@@ -77,7 +88,11 @@ const PACK_REST = { core: 150, rest: 400 };
 const valleyBuilt = async () => { for (let i = 0; i < 240 && !(window.__sv && window.__sv.bootTimes); i++) await new Promise(r => setTimeout(r, 500)); };
 const rest = ms => new Promise(r => setTimeout(r, ms));
 async function checkPack() {
-  if (checking || !PACK) return; checking = true;
+  if (!PACK) return;
+  if (checking) { recheck = true; return; }
+  checking = true; recheck = false;
+  if (mayFetchRest()) close();
+  const manifest = PACK, langs = packLangs(), languageChanged = () => manifest !== PACK || langs.join() !== packLangs().join();
   try {
     await valleyBuilt();
     const cache = await caches.open('sv-voices');
@@ -85,22 +100,22 @@ async function checkPack() {
     // the whole pack is on the device, a start only looks at 16 files picked at random, says nothing and downloads
     // nothing; the full check (listing every file) runs only for a new pack, or when a file has gone missing
     const quick = async list => { const pick = list.length <= 64 ? list : Array.from({ length: 16 }, () => list[Math.floor(Math.random() * list.length)]); return (await Promise.all(pick.map(u => cache.match(u).then(Boolean)))).every(Boolean); };
-    if (packIsSaved() && await quick(packFiles())) { packEmit({ state: 'ready', quiet: true, known: true, total: packFiles().length }); return; }
+    if (packIsSaved(langs) && await quick(packFiles(null, langs))) { packEmit({ state: 'ready', quiet: true, known: true, total: packFiles(null, langs).length }); return; }
     await loadAreas();
     // a pack made by area whose list could not be fetched (a bad connection): nothing is downloaded until it can be,
     // so a phone on mobile data never takes the whole pack by mistake
     if (PACK.areas && !AREAS) return;
-    const order = packOrder(), core = packFiles(['core']);
+    const order = packOrder(), core = packFiles(['core'], langs);
     // only the core is wanted for now (mobile data, no yes yet) and it is all here: nothing to show, maybe a question
-    if (!mayFetchRest() && settings.packCore === packSig() + '|' + packLangs().join('') && await quick(core)) { packEmit({ state: 'ready', quiet: true, known: true, core: true, total: core.length }); askRest().catch(() => { }); return; }
+    if (!mayFetchRest() && settings.packCore === packSig() + '|' + langs.join('') && await quick(core)) { packEmit({ state: 'ready', quiet: true, known: true, core: true, total: core.length }); askRest().catch(() => { }); return; }
     const have = new Set((await cache.keys()).map(r => r.url)), abs = u => new URL(u, location.href).href;
-    const missingOf = gs => packFiles(gs).filter(u => !have.has(abs(u)));
+    const missingOf = gs => packFiles(gs, langs).filter(u => !have.has(abs(u)));
     const want = mayFetchRest() ? order : ['core'];
     // (r63, owner: the bar showed 108 %) the files to fetch are fixed now: a language or setting changed while it runs
     // (both languages switched on, say) used to add files to an area's list that the total never counted
     const pending = new Set(missingOf(want));
     let total = pending.size, done = 0;
-    if (!total) { donePack(want); packEmit({ state: 'ready', quiet: true, total: packFiles(want).length, core: want.length === 1 }); if (want.length === 1) askRest().catch(() => { }); return; }
+    if (!total) { if (languageChanged()) return; donePack(want, langs); packEmit({ state: 'ready', quiet: true, total: packFiles(want, langs).length, core: want.length === 1 }); if (want.length === 1) askRest().catch(() => { }); return; }
     if (navigator.onLine === false) { packEmit({ state: 'waiting', left: total }); return; }
     packEmit({ state: 'loading', done, total });
     // one area at a time, the next chosen again after each (the child may have walked somewhere new meanwhile)
@@ -110,27 +125,36 @@ async function checkPack() {
       if (g !== 'core' && !mayFetchRest()) break; // (left the Wi-Fi: the rest waits)
       const miss = missingOf([g]).filter(u => pending.has(u));
       for (let i = 0; i < miss.length; i += 6) {
+        if (languageChanged()) return; // finish only the current batch, then start the new selected language
+        if (g !== 'core' && !mayFetchRest()) break;
         await Promise.all(miss.slice(i, i + 6).map(async u => { try { const r = await fetch(u); if (r.ok) { await cache.put(u, r); have.add(abs(u)); pending.delete(u); done = Math.min(total, done + 1); } } catch (e) { } }));
         packEmit({ state: 'loading', done, total, area: g });
         if (navigator.onLine === false) { packEmit({ state: 'waiting', left: total - done }); return; } // goes on when the internet is back
         await rest(g === 'core' ? PACK_REST.core : PACK_REST.rest);
       }
-      if (g === 'core' && !missingOf(['core']).length) settings.packCore = packSig() + '|' + packLangs().join('');
+      if (languageChanged()) return;
+      if (g === 'core' && !missingOf(['core']).length) settings.packCore = packSig() + '|' + langs.join('');
     }
-    if (!missingOf(want).length) { donePack(want); packEmit({ state: 'ready', core: want.length === 1 }); if (want.length === 1) askRest().catch(() => { }); }
+    if (!missingOf(want).length) { donePack(want, langs); packEmit({ state: 'ready', core: want.length === 1 }); if (want.length === 1) askRest().catch(() => { }); }
     else if (!mayFetchRest() && !missingOf(['core']).length) { saveSettings(); packEmit({ state: 'ready', core: true }); askRest().catch(() => { }); }
     else packEmit({ state: 'waiting', left: missingOf(want).length });
-  } finally { checking = false; }
+  } finally {
+    checking = false;
+    // A language/connection/settings event during an in-flight request must not be lost.
+    if (recheck || languageChanged()) { recheck = false; setTimeout(() => checkPack().catch(() => { }), 0); }
+  }
 }
-function donePack(want) {
-  if (want.length === 1) settings.packCore = packSig() + '|' + packLangs().join('');
-  else { settings.packSaved = packSig(); settings.packLangs = packLangs().join(''); settings.packCore = packSig() + '|' + packLangs().join(''); }
+function donePack(want, langs) {
+  if (want.length === 1) settings.packCore = packSig() + '|' + langs.join('');
+  else { settings.packSaved = packSig(); settings.packLangs = langs.join(''); settings.packCore = packSig() + '|' + langs.join(''); }
   saveSettings();
 }
 // the whole pack is here for these languages (a device that saved it before round R item 12 kept every language)
-const packIsSaved = () => settings.packSaved === packSig() && (!settings.packLangs || packLangs().every(L => settings.packLangs.includes(L)));
+const packIsSaved = langs => settings.packSaved === packSig() && (!settings.packLangs || langs.every(L => settings.packLangs.includes(L)));
 // on mobile data with the core done: ask a grown-up about the rest (js/packbar.js shows the question)
 async function askRest() {
+  // (owner, 16 Oct) Studio can turn the question off: the rest of the voices then come on Wi-Fi only
+  if (!featureOn('explain_voiceAsk', true)) return;
   if (mayFetchRest() || !askDue() || packNet() === 'off') return;
   const rest = packOrder().filter(g => g !== 'core'); if (!rest.length) return;
   // how much is still to come (a device that kept an older pack has most of it already)
@@ -143,8 +167,8 @@ async function askRest() {
 const packSig = () => Object.keys(PACK.lines).length + ':' + (PACK.version || 1) + ':' + (PACK.made || '');
 // the files of the pack in these areas (all areas when none are named), in the children's own languages (Chinese and
 // Hindi only come with the places and games that speak them)
-function packFiles(groups) {
-  const urls = [], langs = ['en', 'vi', 'zh', 'hi'], mine = packLangs(), want = groups && new Set(groups);
+function packFiles(groups, mine = packLangs()) {
+  const urls = [], langs = ['en', 'vi', 'zh', 'hi'], want = groups && new Set(groups);
   // (round R) which language each line is in: `other` lists the lines that are not English, space-separated per
   // language (half the size of the old `langOf`, which named every line's language; older packs still have that)
   const other = new Map(); for (const [L, hs] of Object.entries(PACK.other || {})) for (const h of String(hs).split(' ')) if (h) other.set(h, L);
@@ -171,22 +195,24 @@ export async function savePackOffline(progress) {
 // (round R item 12, owner 10 Oct: "wifi should automatically, ask user to allow download over mobile") the core voices
 // are on the device; on mobile data the rest waits for a grown-up: a small card asks, and Yes needs a press and hold so
 // a little one can't say yes by accident. Not now asks again in a week; Grown-ups → voices can change it any time.
-let card = null;
+let card = null, cancelCardHold = () => { };
 export function askCard(mb) {
-  if (card) return;
+  if (card || mayFetchRest() || packNet() === 'off') return;
   card = document.createElement('div'); card.className = 'packask'; card.setAttribute('role', 'dialog');
-  card.style.cssText = 'position:fixed;left:50%;top:calc(env(safe-area-inset-top) + 76px);transform:translateX(-50%);z-index:70;width:min(360px,calc(100% - 32px));box-sizing:border-box;padding:12px 14px;border-radius:16px;background:rgba(255,255,255,.96);box-shadow:0 6px 24px rgba(60,30,90,.25);color:#3a2a20;font:600 14px/1.35 var(--font);text-align:center';
-  const p = document.createElement('p'); p.style.margin = '0 0 10px';
-  p.textContent = T(`Download the rest of the voices on mobile data? About ${mb} MB. On Wi-Fi they download by themselves.`, `Tải phần giọng đọc còn lại bằng dữ liệu di động? Khoảng ${mb} MB. Khi có Wi-Fi giọng đọc tự tải.`);
+  // (owner, 16 Oct: explanations small; it had covered the goal card) low on the screen, above Jump and Run, and short
+  card.style.cssText = 'position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom) + 184px);transform:translateX(-50%);z-index:70;width:min(340px,calc(100% - 32px));box-sizing:border-box;padding:10px 12px;border-radius:16px;background:rgba(255,255,255,.96);box-shadow:0 6px 24px rgba(60,30,90,.25);color:#3a2a20;font:600 14px/1.35 var(--font);text-align:center';
+  const p = document.createElement('p'); p.style.margin = '0 0 8px'; p.style.textAlign = 'center';
+  p.textContent = T(`Download the other voices on mobile data? About ${mb} MB (Wi-Fi does it by itself).`, `Tải các giọng còn lại bằng dữ liệu di động? Khoảng ${mb} MB (có Wi-Fi sẽ tự tải).`);
   const row = document.createElement('div'); row.style.cssText = 'display:flex;gap:8px;justify-content:center;flex-wrap:wrap';
   const btn = (text, bg) => { const b = document.createElement('button'); b.type = 'button'; b.style.cssText = `position:relative;overflow:hidden;min-height:48px;min-width:120px;flex:1 1 130px;padding:6px 12px;border:0;border-radius:12px;font:700 14px/1.2 var(--font);color:#fff;background:${bg};touch-action:none`; b.innerHTML = '<span style="position:absolute;left:0;top:0;bottom:0;width:0;background:rgba(255,255,255,.35)"></span><span style="position:relative"></span>'; b.lastChild.textContent = text; return b; };
   const yes = btn(T('Grown-ups: hold for Yes', 'Người lớn: giữ để đồng ý'), 'var(--purple, #8a5cf6)'), no = btn(T('Not now', 'Để sau'), '#9a8aa8');
   const fill = yes.firstChild; let t = 0;
   const stop = () => { clearTimeout(t); fill.style.transition = 'none'; fill.style.width = '0'; };
+  cancelCardHold = stop;
   yes.addEventListener('pointerdown', ev => { ev.preventDefault(); fill.style.transition = 'width 1.2s linear'; fill.style.width = '100%'; t = setTimeout(() => { close(); allowMobilePack(true); }, 1200); });
   for (const k of ['pointerup', 'pointerleave', 'pointercancel']) yes.addEventListener(k, stop);
   yes.addEventListener('contextmenu', ev => ev.preventDefault());
   no.onclick = () => { close(); allowMobilePack(false); };
   row.append(yes, no); card.append(p, row); document.body.appendChild(card);
 }
-const close = () => { if (card) { card.remove(); card = null; } };
+const close = () => { if (card) { cancelCardHold(); cancelCardHold = () => { }; card.remove(); card = null; } };

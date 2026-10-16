@@ -5,6 +5,7 @@
 // sentences are said in the language being read; what to do is said like in every game (both languages when a
 // grown-up chose that). Under-5s (api.little): voice first, pictures, no reading needed, nobody loses, no timers.
 // Loaded only when a reading game opens (js/games/readingmenu.js registers them while Studio's readingTrial is on).
+import { T } from '../i18n.js';
 import { untilRight, choiceButtons, HINT_AFTER } from './frame.js';
 import { settings } from '../state.js';
 import { sayAsync, hush, spoken } from '../voice.js';
@@ -468,5 +469,31 @@ async function readalong(api, c) {
   api.dots(steps, steps); return api.win();
 }
 
-const RUN = { rd_trace: trace, rd_sounds: sounds, rd_build: build, rd_rhyme: rhyme, rd_sight: sight, rd_tones: tones, rd_syllable: syllable, rd_match: match, rd_sentence: sentence, rd_readalong: readalong };
+// Guided listening: each round introduces a spoken word, then the child finds its picture.
+async function listenTouch(api, c) {
+  const pool = picWords(lang()), rounds = 4;
+  for (let r = 0; r < rounds; r++) {
+    if (api.closed) return; api.dots(rounds, r); api.stage.innerHTML = '';
+    const options = shuffle(pool).slice(0, api.little ? 2 : Math.min(4, tier(api) + 1)), target = options[0];
+    const prompt = el('div', 'rd-card'); prompt.appendChild(ear(api, () => c.read(target[0]))); api.stage.appendChild(prompt);
+    await c.say('Listen, then touch the matching picture. Tap the ear to hear it again.', 'Nghe rồi chạm vào tranh phù hợp. Chạm tai để nghe lại.'); await c.read(target[0]); if (api.closed) return;
+    const buttons = choiceButtons(api, shuffle(options), p => pic(p[1]) + (api.little ? '' : `<small>${esc(p[0])}</small>`), 'choice rd-option');
+    await untilRight(api, buttons, b => b._v[0] === target[0]); if (api.closed) return; await c.read(target[0]); api.praise();
+  }
+  return api.win();
+}
+const STORY_CHOICES = [
+  ['The cat is hungry. What can we give it?', 'Mèo đang đói. Mình cho mèo món gì?', '🐟', ['🐟','👟','🪁']],
+  ['It is raining. What will keep us dry?', 'Trời đang mưa. Vật gì giúp mình không bị ướt?', '☂️', ['☂️','🍎','🥁']],
+  ['We want to read a story. What should we open?', 'Mình muốn đọc truyện. Nên mở vật gì?', '📖', ['📖','🍌','👒']],
+  ['Our plant is thirsty. What does it need?', 'Cây đang khát. Cây cần gì?', '💧', ['💧','👟','🎩']]
+];
+async function storyChoice(api, c) {
+  const stories = shuffle(STORY_CHOICES);
+  for (let r = 0; r < stories.length; r++) { if (api.closed) return; api.dots(stories.length, r); api.stage.innerHTML = ''; const [en,vi,right,options] = stories[r];
+    const listen = ear(api, () => c.say(en, vi)); api.stage.appendChild(listen); await c.say(en, vi); if (api.closed) return;
+    const buttons = choiceButtons(api, shuffle(options.slice(0, api.little ? 2 : 3)), p => pic(p), 'choice rd-option'); await untilRight(api, buttons, b => b._v === right); if (api.closed) return; api.praise();
+  } return api.win();
+}
+const RUN = { rd_listentouch: listenTouch, rd_storychoice: storyChoice, rd_trace: trace, rd_sounds: sounds, rd_build: build, rd_rhyme: rhyme, rd_sight: sight, rd_tones: tones, rd_syllable: syllable, rd_match: match, rd_sentence: sentence, rd_readalong: readalong };
 export function play(id, api) { style(); const f = RUN[id]; return f ? f(api, ctx(api)) : api.win(); }

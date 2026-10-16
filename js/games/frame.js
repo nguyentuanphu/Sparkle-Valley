@@ -7,8 +7,10 @@ import { SFX, Music } from '../audio.js';
 import { el, wait, esc } from '../util.js';
 import { openHowTo } from '../howto.js';
 import { pic } from '../art.js';
+import { featureOn } from '../custom.js';
 
 import { GAMES, register } from './registry.js';
+import { playWatch, tell, setPlan } from './playwatch.js';
 export { GAMES, register }; // (the list itself is in registry.js)
 // Each kind of game has its own song.
 const GAME_MUSIC = {
@@ -23,10 +25,8 @@ const PRIZES = ['🦄', '🦖', '🚀', '🧸', '🎈', '🍭', '🪁', '🐬', 
 
 let current = null;
 export const gameOpen = () => !!current;
-// (owner, 13 Oct AEDT) the auto play check plays games like a child (js/autoplay.js): it hears each right and wrong
-// answer and the win, and while a game waits for the right one (untilRight) it can see which buttons it is choosing from
-export const playWatch = { on: null, ask: null };
-const tell = (k, e) => { if (playWatch.on) try { playWatch.on(k, e); } catch (x) { } };
+// the auto play check's view of the game (js/games/playwatch.js)
+export { playWatch };
 
 // players: array of profiles (1 or 2); level: 1..5; style: 'shrine' | 'village'
 // online: playing with friends on their own devices (js/netgames.js): { mine, names, move(n, mv), next(n, seat), all(n) }
@@ -39,20 +39,31 @@ export function openGame(id, { players, level = 1, style = 'shrine', partnerName
   if (current) current.close(false);
   return new Promise(resolve => {
     const layer = el('div', 'gl gl-' + style + (little ? ' little' : ''));
+    layer.dataset.gameId = id;
+    // (owner, 16 Oct) Studio can hide the game's question line on screen; the game still says it aloud. Its space
+    // stays, so nothing in the game moves (UX-001)
+    if (!featureOn('explain_gameLine', true)) layer.classList.add('no-help');
     layer.innerHTML = `
       <div class="gl-head">
         <button class="gl-x" aria-label="${T('Leave', 'Rời đi')}">✕</button>
         <div class="gl-title"><span class="gl-icon">${pic(def.icon)}</span><span>${esc(def.name())}</span></div>
-        <div class="gl-dots"></div>
-        ${levelPick ? `<button class="gl-lvl" aria-label="${T('How hard', 'Độ khó')}">${esc(T(...(LEVELS.find(l => l[0] === levelPick.value) || LEVELS[0]).slice(1)))} ▾</button>` : ''}
+        <div class="gl-status"><div class="gl-dots"></div>
+          ${levelPick ? `<button class="gl-lvl" aria-label="${T('How hard', 'Độ khó')}">${esc(T(...(LEVELS.find(l => l[0] === levelPick.value) || LEVELS[0]).slice(1)))} ▾</button>` : ''}
+          <div class="starbox">⭐ <b>0</b></div>
+        </div>
         <button class="gl-how" aria-label="${T('How to play', 'Cách chơi')}">📺</button>
       </div>
       <div class="gl-help"></div>
       <div class="gl-stage"></div>
-      <div class="starbox">⭐ <b>0</b></div>
       <div class="mascot">🦉</div><div class="mascot-say"></div>`;
-    document.body.appendChild(layer);
+    dispatchEvent(new Event('sv-hide-caption')); document.body.appendChild(layer);
     const stage = layer.querySelector('.gl-stage'), dots = layer.querySelector('.gl-dots'), help = layer.querySelector('.gl-help');
+    const setHelp = (en, vi, capital = false) => {
+      const before = help.offsetHeight, text = T(en, vi);
+      help.textContent = capital ? text.charAt(0).toUpperCase() + text.slice(1) : text;
+      // Retain the largest guidance height so selecting a piece cannot move its drop target.
+      help.style.setProperty('--gl-guide-height', Math.max(before, help.offsetHeight) + 'px');
+    };
     const cleanups = [];
     let closed = false;
     const prevMusic = Music.key; Music.play(GAME_MUSIC[id] || 'think');
@@ -60,11 +71,13 @@ export function openGame(id, { players, level = 1, style = 'shrine', partnerName
       stage, level, players, two: players.length > 1, partnerName, T, el, online,
       little,   // under-5 mode: everything gentle, nobody can lose
       strong,   // computer opponents play to win (big kids on medium or hard)
-      say: (en, vi) => { const t = T(en, vi); help.textContent = t.charAt(0).toUpperCase() + t.slice(1); say(en, vi); },
+      say: (en, vi) => { setHelp(en, vi, true); say(en, vi); },
       // Show text without speaking it.
-      show: (en, vi) => { help.textContent = T(en, vi); },
+      show: (en, vi) => { setHelp(en, vi); },
       sfx: SFX, wait,
       onCleanup: f => cleanups.push(f),
+      // Test autoplay still uses real UI taps; a strategy supplies the next legal target, not a synthetic win.
+      plan: (f, { maxActions = 0 } = {}) => { cleanups.push(setPlan(f, maxActions)); },
       dots(n, done) { tell('dots'); dots.innerHTML = Array.from({ length: n }, (_, i) => `<i class="${i < done ? 'on' : ''}"></i>`).join(''); },
       right(e) { tell('right', e); SFX.ok(); if (e) { e.classList.remove('wrong'); e.classList.add('right'); } reward(e); streak++; rights++; if (streak >= 3) combo(streak); else if (Math.random() < .08) lucky(); },
       wrong(e, en = 'Try again!', vi = 'Thử lại nhé!') { tell('wrong', e); SFX.no(); streak = 0; misses++; if (e) { e.classList.remove('wrong'); void e.offsetWidth; e.classList.add('wrong'); } mascot('hmm', T('Hmm… try again!', 'Ừm… thử lại nhé!')); say(en, vi); },
@@ -163,9 +176,11 @@ export function burstConfetti(parent) {
 }
 
 // Helper: wait for one of the given elements to be tapped. Returns the element.
-export function tapOne(els) {
+export function tapOne(els, api) {
   return new Promise(res => {
     const h = e => { els.forEach(x => x.removeEventListener('click', h)); res(e.currentTarget); };
+    // Lightweight callers/test fixtures can omit cleanup; real game frames provide it.
+    if (typeof api?.onCleanup === 'function') api.onCleanup(() => { els.forEach(x => x.removeEventListener('click', h)); res(null); });
     els.forEach(x => x.addEventListener('click', h));
   });
 }
@@ -179,8 +194,8 @@ export async function untilRight(api, els, check) {
   try {
     for (;;) {
       arm(); playWatch.ask = { els, check };
-      const e = await tapOne(els); playWatch.ask = null;
-      if (api.closed) return null;
+      const e = await tapOne(els, api); playWatch.ask = null;
+      if (!e || api.closed) return null;
       if (check(e)) { e.classList.remove('hint'); api.right(e); return e; }
       misses++; api.wrong(e);
     }

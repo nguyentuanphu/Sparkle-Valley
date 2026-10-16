@@ -1,0 +1,326 @@
+{
+  "phone-story": {
+    "stage": {
+      "w": 366,
+      "h": 612,
+      "top": 64
+    },
+    "viewport": [
+      390,
+      844
+    ],
+    "parts": {
+      ".th-text": [
+        {
+          "w": 366,
+          "h": 76,
+          "top": 686,
+          "font": "16px",
+          "text": "Mai An Tiêm and his family were sent to live on a lonely sandy island."
+        }
+      ],
+      ".th-text p": [
+        {
+          "w": 330,
+          "h": 46,
+          "top": 701,
+          "font": "17px",
+          "text": "Mai An Tiêm and his family were sent to live on a lonely sandy island."
+        }
+      ],
+      ".th-more": [],
+      ".film-help:not([hidden])": [],
+      ".ht-titlecard": [],
+      ".ht-cap": [],
+      ".caption.show": []
+    }
+  },
+  "phone-howto-title": {
+    "stage": {
+      "w": 330,
+      "h": 186,
+      "top": 258
+    },
+    "viewport": [
+      390,
+      844
+    ],
+    "parts": {
+      ".th-text": [],
+      ".th-text p": [],
+      ".th-more": [],
+      ".film-help:not([hidden])": [],
+      ".ht-titlecard": [
+        {
+          "w": 165,
+          "h": 70,
+          "top": 270,
+          "font": "16px",
+          "text": "Count With Me"
+        }
+      ],
+      ".ht-cap": [
+        {
+          "w": 330,
+          "h": 61,
+          "top": 443,
+          "font": "18px",
+          "text": ""
+        }
+      ],
+      ".caption.show": []
+    }
+  },
+  "phone-howto-step": {
+    "stage": {
+      "w": 330,
+      "h": 186,
+      "top": 258
+    },
+    "viewport": [
+      390,
+      844
+    ],
+    "parts": {
+      ".th-text": [],
+      ".th-text p": [],
+      ".th-more": [],
+      ".film-help:not([hidden])": [],
+      ".ht-titlecard": [
+        {
+          "w": 165,
+          "h": 70,
+          "top": 270,
+          "font": "16px",
+          "text": "Count With Me"
+        }
+      ],
+      ".ht-cap": [
+        {
+          "w": 330,
+          "h": 61,
+          "top": 443,
+          "font": "18px",
+          "text": ""
+        }
+      ],
+      ".caption.show": []
+    }
+  },
+  "tablet-story": {
+    "stage": {
+      "w": 796,
+      "h": 948,
+      "top": 64
+    },
+    "viewport": [
+      820,
+      1180
+    ],
+    "parts": {
+      ".th-text": [
+        {
+          "w": 796,
+          "h": 76,
+          "top": 1022,
+          "font": "16px",
+          "text": "Mai An Tiêm and his family were sent to live on a lonely sandy island."
+        }
+      ],
+      ".th-text p": [
+        {
+          "w": 660,
+          "h": 29,
+          "top": 1046,
+          "font": "21.32px",
+          "text": "Mai An Tiêm and his family were sent to live on a lonely sandy island."
+        }
+      ],
+      ".th-more": [],
+      ".film-help:not([hidden])": [],
+      ".ht-titlecard": [],
+      ".ht-cap": [],
+      ".caption.show": []
+    }
+  },
+  "tablet-howto-title": {
+    "stage": {
+      "w": 732,
+      "h": 412,
+      "top": 302
+    },
+    "viewport": [
+      820,
+      1180
+    ],
+    "parts": {
+      ".th-text": [],
+      ".th-text p": [],
+      ".th-more": [],
+      ".film-help:not([hidden])": [],
+      ".ht-titlecard": [
+        {
+          "w": 311,
+          "h": 59,
+          "top": 314,
+          "font": "16px",
+          "text": "Count With Me"
+        }
+      ],
+      ".ht-cap": [
+        {
+          "w": 732,
+          "h": 82,
+          "top": 714,
+          "font": "24px",
+          "text": ""
+        }
+      ],
+      ".caption.show": []
+    }
+  },
+  "tablet-howto-step": {
+    "stage": {
+      "w": 732,
+      "h": 412,
+      "top": 302
+    },
+    "viewport": [
+      820,
+      1180
+    ],
+    "parts": {
+      ".th-text": [],
+      ".th-text p": [],
+      ".th-more": [],
+      ".film-help:not([hidden])": [],
+      ".ht-titlecard": [
+        {
+          "w": 311,
+          "h": 59,
+          "top": 314,
+          "font": "16px",
+          "text": "Count With Me"
+        }
+      ],
+      ".ht-cap": [
+        {
+          "w": 732,
+          "h": 82,
+          "top": 714,
+          "font": "24px",
+          "text": ""
+        }
+      ],
+      ".caption.show": []
+    }
+  },
+  "computer-story": {
+    "stage": {
+      "w": 1256,
+      "h": 568,
+      "top": 64
+    },
+    "viewport": [
+      1280,
+      800
+    ],
+    "parts": {
+      ".th-text": [
+        {
+          "w": 1256,
+          "h": 76,
+          "top": 642,
+          "font": "16px",
+          "text": "Mai An Tiêm and his family were sent to live on a lonely sandy island."
+        }
+      ],
+      ".th-text p": [
+        {
+          "w": 743,
+          "h": 32,
+          "top": 664,
+          "font": "24px",
+          "text": "Mai An Tiêm and his family were sent to live on a lonely sandy island."
+        }
+      ],
+      ".th-more": [],
+      ".film-help:not([hidden])": [],
+      ".ht-titlecard": [],
+      ".ht-cap": [],
+      ".caption.show": []
+    }
+  },
+  "computer-howto-title": {
+    "stage": {
+      "w": 732,
+      "h": 412,
+      "top": 112
+    },
+    "viewport": [
+      1280,
+      800
+    ],
+    "parts": {
+      ".th-text": [],
+      ".th-text p": [],
+      ".th-more": [],
+      ".film-help:not([hidden])": [],
+      ".ht-titlecard": [
+        {
+          "w": 331,
+          "h": 63,
+          "top": 124,
+          "font": "16px",
+          "text": "Count With Me"
+        }
+      ],
+      ".ht-cap": [
+        {
+          "w": 732,
+          "h": 82,
+          "top": 524,
+          "font": "24px",
+          "text": ""
+        }
+      ],
+      ".caption.show": []
+    }
+  },
+  "computer-howto-step": {
+    "stage": {
+      "w": 732,
+      "h": 412,
+      "top": 112
+    },
+    "viewport": [
+      1280,
+      800
+    ],
+    "parts": {
+      ".th-text": [],
+      ".th-text p": [],
+      ".th-more": [],
+      ".film-help:not([hidden])": [],
+      ".ht-titlecard": [
+        {
+          "w": 331,
+          "h": 63,
+          "top": 124,
+          "font": "16px",
+          "text": "Count With Me"
+        }
+      ],
+      ".ht-cap": [
+        {
+          "w": 732,
+          "h": 82,
+          "top": 524,
+          "font": "24px",
+          "text": ""
+        }
+      ],
+      ".caption.show": []
+    }
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "run": "https://github.com/nguyentuanphu/Sparkle-Valley/actions/runs/38727825273",
+  "source": "100e7ed828e6dce025a89e67d00f577f6e46ec8a",
+  "date": "2026-10-15, 22:30 - 00:31 AEDT",
+  "result": "159/182 reported passed; shares 1,2,4,5,6,7,8 green; share 3 stopped by GitHub at its 120-minute limit",
+  "share3": "first check boot timed out waiting for the title screen (90 s) at 22:34; nothing more was logged until 00:30; its 23 checks never reported (not failures of those checks)",
+  "ownertalesync": "ran in another share and passed (not listed as failed)",
+  "follow_up": "27772f57 gives every in-browser check a 45-minute limit and replaces an unresponsive browser; boot passes locally (99 s). Next Full on 9afa91e7 shows whether boot's cold-start timeout repeats"
+}

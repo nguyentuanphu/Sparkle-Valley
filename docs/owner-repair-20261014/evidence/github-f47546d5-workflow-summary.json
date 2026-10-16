@@ -1,0 +1,18 @@
+{
+  "sourceCommit": "f47546d596230245bf3b96f8f10b1e06137df79b",
+  "fullRun": 38658819569,
+  "fullConclusion": "success",
+  "reportedPassed": 157,
+  "reportedTotal": 157,
+  "prComment": 6181842626,
+  "otherSuccessfulRuns": {
+    "checks": [
+      38658819353,
+      38658815058
+    ],
+    "quick": 38658814993,
+    "voices": 38658815011,
+    "mirror": 38658815030
+  },
+  "limitations": "PR summary and workflow states verified. Individual shard retries/skips and new code-map artifacts not yet inspected/imported. Speed checks excluded; later local learning draft is not covered."
+}

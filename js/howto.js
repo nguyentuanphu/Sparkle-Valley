@@ -319,7 +319,9 @@ export function openHowTo(id, { onPlay, onClose } = {}) {
   if (h.real) cards.push(h.real);
   cards.push(Object.assign(S('⭐ 🎉', 'Now it is your turn. Have fun!', 'Giờ đến lượt con. Chơi vui nhé!'), { end: true }));
   const prevMusic = Music.key; Music.play('none');
-  const m = el('div', 'howto', `<div class="ht-film"><div class="ht-screen"></div><div class="ht-cap"></div><div class="ht-bar"><i></i></div></div>
+  // (owner, 16 Oct AEDT: "the text in How to play should be the same position as the film") like a story film: the title
+  // in a bar above the picture, the words in a box under it, nothing written over the picture
+  const m = el('div', 'howto', `<div class="ht-film"><div class="ht-top"><b class="ht-title">${esc(T('How to play', 'Cách chơi'))}${g ? ': ' + esc(g.name()) : ''}</b></div><div class="ht-screen"></div><div class="ht-cap"></div><div class="ht-bar"><i></i></div></div>
     <div class="ht-ctl"><button class="ht-b ht-prev" aria-label="${T('Back', 'Lùi')}">⏮</button><button class="ht-b ht-pp" aria-label="${T('Pause', 'Tạm dừng')}">⏸</button><button class="ht-b ht-next" aria-label="${T('Next', 'Tiếp')}">⏭</button>
     ${onPlay ? `<button class="ht-play">▶ ${T('Play now', 'Chơi ngay')}</button>` : ''}</div><button class="ht-x" aria-label="${T('Close', 'Đóng')}">✕</button>`);
   document.body.appendChild(m);
@@ -349,7 +351,7 @@ export function openHowTo(id, { onPlay, onClose } = {}) {
     screen.innerHTML = scene + (c.title ? `<div class="ht-titlecard"><span class="ht-big">${art(c.pic)}</span><b class="ht-name">${esc(T(c.en, c.vi))}</b>${originLabel(id) ? `<small>${esc(originLabel(id))}</small>` : ''}</div>`
       : `<span class="ht-host th-c in-l${k > 1 ? ' still' : ''}" style="--d:0s">${CAST[host]()}</span><div class="ht-props">${pics.map((p, i) => `<span class="ht-pic${p === '👆' || p === '👇' ? ' finger' : ''}" style="--d:${.3 + i * .35}s">${art(p)}</span>`).join('')}</div>`);
     setTimeout(() => { const hs = screen.querySelector('.ht-host'); if (hs) hs.classList.remove('walking'); }, 1500);
-    cap.textContent = c.title ? '' : T(c.en, c.vi);
+    cap.textContent = c.title ? T('How to play ', 'Cách chơi ') + T(c.en, c.vi) : T(c.en, c.vi);
     SFX.pop && SFX.pop(k);
     const t0 = performance.now();
     screen.classList.add('speaking');
@@ -363,8 +365,7 @@ export function openHowTo(id, { onPlay, onClose } = {}) {
   };
   const showFilm = async (my, c) => {
     screen.querySelectorAll('.ht-titlecard').forEach(x => x.remove());
-    if (c.title) screen.appendChild(el('div', 'ht-titlecard', `<b class="ht-name">${esc(T(c.en, c.vi))}</b>${originLabel(id) ? `<small>${esc(originLabel(id))}</small>` : ''}`));
-    cap.textContent = c.title ? '' : T(c.en, c.vi);
+    cap.textContent = c.title ? T('How to play ', 'Cách chơi ') + T(c.en, c.vi) + (originLabel(id) ? ' · ' + originLabel(id) : '') : T(c.en, c.vi);
     SFX.pop && SFX.pop(k);
     const played = film.page(cards.slice(0, k).filter(x => !x.demo).length); // (the real game's turn has no film page)
     await sayAsync(c.title ? T('How to play ', 'Cách chơi ') + T(c.en, c.vi) : c.en, c.title ? T('How to play ', 'Cách chơi ') + c.vi : c.vi);

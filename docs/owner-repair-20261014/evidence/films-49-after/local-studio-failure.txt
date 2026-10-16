@@ -1,0 +1,16 @@
+Console transcript; status icons replaced with PASS/FAIL and pictographs escaped as code points.
+PASS boot (179s) 
+PASS features (79s) {"cities":8,"roads":37,"landmarks":55,"kiosks":28,"hosts":8,"house8":true,"tales":38,"vnTales":20,"deck":4.5,"river":-2.6,"pets":"kitty+puppy","petsVisible":true,"dialogClosed":true,"keyMap":true,"keyTab":"bag","zoom":true,"theatre":true,"flewToHost":true,"chatter":true}
+PASS contract (55s) 
+PASS phone (596s) 10 screens checked on desktop, phone and tablet; a friend's Join button clear of the status
+PASS voicepack (165s) first open downloads with a small bar ("Đang tải giọng đọc… 0%" → "Đang tải giọng đọc… 25%" … "Giọng đọc đã sẵn sàng [U+2713]"), the next open shows and downloads nothing, and files the phone lost are fetched again
+PASS welcomevoice (72s) Ông Cú's welcome shows the child's name ("Who will fly with you, Kiwi?…") and every spoken line (4) has a recording
+(node:18860) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///workspace/Sparkle-Valley/studio/ui/vi.js is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /workspace/Sparkle-Valley/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+FAIL studio: page.waitForSelector: Timeout 15000ms exceeded.
+Call log:
+[2m  - waiting for locator('.adrow .adcheck') to be visible[22m
+
+PASS ownerstudiofailures (3s) Failed device lookup preserves unseen policies/levels with explicit error; late Analytics response cannot overwrite Releases; unrelated traffic retained

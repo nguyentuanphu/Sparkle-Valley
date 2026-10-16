@@ -57,14 +57,18 @@ export function animal(S, kind, x, z, yaw = 0, scale = 1) {
   return g;
 }
 // legs, tail and breathing as in the valley; userData.nod tips the head (+ down) on top of that
-const animate = g => (dt, time) => { tickAnimal(g, dt, time); const r = g.userData.rig; if (r.head && g.userData.nod) r.head.rotation.x += g.userData.nod; };
+const animate = g => (dt, time) => { tickAnimal(g, dt, time); const r = g.userData.rig; if (r.filmScale) r.root.scale.multiply(r.filmScale); if (r.head && g.userData.nod) r.head.rotation.x += g.userData.nod; };
 
 // ---------- animals the valley does not have (rigged like js/animals.js, so tickAnimal moves them) ----------
 function rigged(build, o = {}) {
   const g = new THREE.Group(), root = new THREE.Group(); g.add(root);
   const r = Object.assign({ root, legs: [], ears: [], gait: 'walk', wag: 0, sway: 0, seed: Math.random() * 10, ph: 0, sp: 0, px: null, pz: null }, o);
   const piv = (parent, pos, parts) => { const p = new THREE.Group(); p.position.set(...pos); if (parts && parts.length) p.add(mesh(parts)); parent.add(p); return p; };
-  build(root, r, piv); g.userData.rig = r; g.userData.tick = animate(g); return g;
+  build(root, r, piv);
+  // tickAnimal resets its breathing scale every frame. Retain the authored animal size
+  // separately, otherwise a tiny mouse becomes adult-sized and a lion shrinks.
+  r.filmScale = root.scale.clone();
+  g.userData.rig = r; g.userData.tick = animate(g); return g;
 }
 const eyes = (x, y, z, rr = .04) => [-1, 1].flatMap(s => [P(Sp(rr, 10, 8), '#1a1a1a', [s * x, y, z]), P(Sp(rr * .35, 6, 5), '#ffffff', [s * x + rr * .3, y + rr * .35, z + rr * .75])]);
 const legs4 = (R, r, piv, c, hip, dx, dz, len, paw = c) => { for (const [x, z, ph] of [[dx, dz, 0], [-dx, dz, PI], [dx, -dz, PI], [-dx, -dz, 0]]) r.legs.push([piv(R, [x, hip, z], [P(Cap(len * .2, len * .7), c, [0, -len / 2, 0]), P(Sp(len * .22, 8, 6), paw, [0, -len + .03, .04], [0, 0, 0], [1, .6, 1.3])]), ph]); };
@@ -250,7 +254,8 @@ export const pond = (S, x, z, r = 3, c = '#5ab0d0') => S.add(mesh([P(Cyl(r, r, .
 // a Chinese village: houses with red doors and curved roofs, a willow, lanterns
 export function chinaVillage(S) {
   S.sky('#86cdf0', '#f4f6ff'); L.ground(S, '#9ad07a'); L.mountains(S, -110, '#7a98a8'); L.sun(S, -50, 50, -170, 8);
-  [[-7, -7, .2], [7, -7, -.2]].forEach(([x, z, ry]) => S.add(mesh([P(Box(5, 2.4, 3.4), '#f2e6d0', [0, 1.2, 0]), P(Box(1.2, 1.8, .1), '#c62f2f', [0, .9, 1.71]), P(Box(6.4, .3, 4.6), '#3a4a5a', [0, 2.55, 0]),
+  if (S.look) L.house(S, -7, -7, .2);
+  else [[-7, -7, .2], [7, -7, -.2]].forEach(([x, z, ry]) => S.add(mesh([P(Box(5, 2.4, 3.4), '#f2e6d0', [0, 1.2, 0]), P(Box(1.2, 1.8, .1), '#c62f2f', [0, .9, 1.71]), P(Box(6.4, .3, 4.6), '#3a4a5a', [0, 2.55, 0]),
     P(Cone(4, 1.4, 4), '#3a4a5a', [0, 3.3, 0], [0, PI / 4, 0], [1.25, 1, .85]), ...[-1, 1].map(s => P(Cone(.25, 1, 5), '#3a4a5a', [s * 3.2, 2.7, 2.2], [-.5, 0, s * -.9]))]), x, 0, z, ry));
   L.lantern(S, -3, 2.6, -4.6); L.lantern(S, 3, 2.6, -4.6); L.banyan(S, -13, -2, .8); L.bamboo(S, 12, -2);
   S.add(flat(60, 3, '#d8c8a0'), 0, .005, 4);
@@ -258,7 +263,8 @@ export function chinaVillage(S) {
 // an Indian village: a white house with a flat roof, palms, a banyan, a well
 export function indiaVillage(S, { well = true } = {}) {
   S.sky('#6ab8f0', '#fff4dc'); L.sun(S, 50, 50, -160, 10, '#fff0a0'); L.ground(S, '#c8b878');
-  S.add(mesh([P(Box(5, 2.6, 3.6), '#f4ece0', [0, 1.3, 0]), P(Box(5.4, .3, 4), '#e8a85a', [0, 2.7, 0]), P(Box(1.1, 1.8, .1), '#3a6ab0', [0, .9, 1.81]), P(Box(.8, .7, .1), '#3a6ab0', [-1.6, 1.5, 1.81])]), -6, 0, -7, .2);
+  if (S.look) L.house(S, -6, -7, .2);
+  else S.add(mesh([P(Box(5, 2.6, 3.6), '#f4ece0', [0, 1.3, 0]), P(Box(5.4, .3, 4), '#e8a85a', [0, 2.7, 0]), P(Box(1.1, 1.8, .1), '#3a6ab0', [0, .9, 1.81]), P(Box(.8, .7, .1), '#3a6ab0', [-1.6, 1.5, 1.81])]), -6, 0, -7, .2);
   L.palm(S, 8, -6, .3); L.palm(S, 11, -2, .4, 1); L.banyan(S, -13, -2, .9); L.mountains(S, -110, '#a8b0a0');
   if (well) S.add(mesh([P(Cyl(.9, .9, .9, 14), '#b8a890', [0, .45, 0]), P(Cyl(.7, .7, .92, 14), '#3a5a6a', [0, .46, 0]), ...[-1, 1].map(s => P(Cyl(.06, .06, 1.6, 6), '#7a5236', [s * .8, 1.2, 0])), P(Cyl(.05, .05, 1.8, 6), '#7a5236', [0, 1.95, 0], [0, 0, H])]), 4, 0, -3);
 }

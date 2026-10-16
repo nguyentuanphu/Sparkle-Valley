@@ -1,0 +1,5 @@
+{
+  "sourceCommit": "75313dc6",
+  "studioAppSha256": "65a65beaf7258d56ec46415f9361faab4338f94efed490f4f94c4c7e02e593ac",
+  "fixture": "ownerstudiofailures: real authenticated Studio and live store; failed players HTTP503; held Analytics response after Releases navigation"
+}

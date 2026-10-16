@@ -58,6 +58,7 @@ export class Hero {
     // something else is moving the explorer: a pet towing them to shore, or the ferry
     if (this.carry) {
       const c = this.carry(dt, t, pad);
+      this.carryVehicle = c && c.vehicle;
       if (c) {
         this.pos.set(c.x, c.y, c.z); if (c.yaw != null) this.yaw = c.yaw;
         this.vy = 0; this.onGround = !c.swim && c.state !== 'swim'; this.gliding = false; this.fallStart = null; this.goal = null;
@@ -266,7 +267,12 @@ export class Hero {
     const pov = !close && (this.riding || (this.carry && this.state === 'sit')) && game.settings.ridePov !== false;
     if (pov) {
       const fx = Math.sin(this.yaw), fz = Math.cos(this.yaw), sc = this.av.root.scale.x || 1, ey = p.y + (rideY || 0) + 1.45 * sc;
-      const eye = new THREE.Vector3(p.x + fx * .4, ey, p.z + fz * .4), look = new THREE.Vector3(p.x + fx * 12, ey - .9, p.z + fz * 12);
+      const vehicle = this.riding && this.riding.vehicle;
+      let eye = new THREE.Vector3(p.x + fx * .4, ey, p.z + fz * .4);
+      if (vehicle && vehicle.seat) { vehicle.o.updateMatrixWorld(true); eye = vehicle.o.localToWorld(new THREE.Vector3(vehicle.seat[0], vehicle.seat[1] + .9 * sc, vehicle.seat[2] + .25)); }
+      const passenger = this.carry && this.carryVehicle;
+      if (passenger && passenger.cabin && passenger.seat) { passenger.o.updateMatrixWorld(true); eye = passenger.o.localToWorld(new THREE.Vector3(-.45, passenger.seat[1] + .9 * sc, passenger.cabin.length / 2 - 1.5)); }
+      const look = new THREE.Vector3(eye.x + fx * 12, eye.y - .9, eye.z + fz * 12);
       this.camPos.lerp(eye, 1 - Math.exp(-dt * 8)); if (!this.camLook) this.camLook = look.clone(); this.camLook.lerp(look, 1 - Math.exp(-dt * 6));
       this.camYaw = this.yaw + Math.PI; this._pov = true;
       this.cam.position.copy(this.camPos); this.cam.lookAt(this.camLook); return;

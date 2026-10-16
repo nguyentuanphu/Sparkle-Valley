@@ -1,0 +1,192 @@
+{
+  "en-goal-card": [
+    {
+      "sel": ".hud .quest",
+      "w": 248,
+      "h": 56,
+      "font": "16px",
+      "text": "Talk to Grandpa Owl\n         GoF"
+    }
+  ],
+  "en-hearts-caption": [
+    {
+      "sel": ".caption",
+      "w": 195,
+      "h": 59,
+      "font": "16px",
+      "text": "A new sticker for your book!"
+    }
+  ],
+  "en-hearts-note": [
+    {
+      "sel": ".htoast.show",
+      "w": 320,
+      "h": 54,
+      "font": "16px",
+      "text": "Hearts show how strong you are. Little ones never lose them."
+    }
+  ],
+  "en-gift-note": [
+    {
+      "sel": ".htoast.show",
+      "w": 320,
+      "h": 54,
+      "font": "16px",
+      "text": "A surprise gift is near One Pillar Pagoda today!"
+    }
+  ],
+  "en-update-notice": [
+    {
+      "sel": ".update-notice",
+      "w": 358,
+      "h": 56,
+      "font": "14px",
+      "text": "A new update is available. Your progress stays saved.Update now×"
+    }
+  ],
+  "en-voice-question": [
+    {
+      "sel": ".packask",
+      "w": 340,
+      "h": 114,
+      "font": "14px",
+      "text": "Download the other voices on mobile data? About 40 MB (Wi-Fi does it by itself).Grown-ups: hold for YesNot now"
+    }
+  ],
+  "en-game-guidance": [
+    {
+      "sel": ".gl-help",
+      "w": 390,
+      "h": 27,
+      "font": "19px",
+      "text": "How many can you count?"
+    }
+  ],
+  "en-how-to-play": [
+    {
+      "sel": ".howto .ht-cap, .howto .ht-titlecard",
+      "w": 165,
+      "h": 70,
+      "font": "16px",
+      "text": "Count With Me"
+    },
+    {
+      "sel": ".howto .ht-cap, .howto .ht-titlecard",
+      "w": 330,
+      "h": 61,
+      "font": "18px",
+      "text": ""
+    }
+  ],
+  "en-owl-lesson": [
+    {
+      "sel": ".owl-lesson .sb-text, .owl-lesson .sb-title",
+      "w": 216,
+      "h": 23,
+      "font": "18px",
+      "text": "Grandpa Owl explains"
+    },
+    {
+      "sel": ".owl-lesson .sb-text, .owl-lesson .sb-title",
+      "w": 350,
+      "h": 84,
+      "font": "20px",
+      "text": "Coins buy food, clothes and toys. Every stall shows its price with little coin pictures."
+    }
+  ],
+  "vi-goal-card": [
+    {
+      "sel": ".hud .quest",
+      "w": 254,
+      "h": 56,
+      "font": "16px",
+      "text": "Nói chuyện với Ông Cú\n         ĐiF"
+    }
+  ],
+  "vi-hearts-caption": [
+    {
+      "sel": ".caption",
+      "w": 195,
+      "h": 59,
+      "font": "16px",
+      "text": "Một hình dán mới cho sổ của con!"
+    }
+  ],
+  "vi-hearts-note": [
+    {
+      "sel": ".htoast.show",
+      "w": 320,
+      "h": 54,
+      "font": "16px",
+      "text": "Trái tim cho biết con khỏe thế nào. Các bé không bao giờ mất tim."
+    }
+  ],
+  "vi-gift-note": [
+    {
+      "sel": ".htoast.show",
+      "w": 267,
+      "h": 33,
+      "font": "16px",
+      "text": "Hôm nay có quà gần Chùa Một Cột!"
+    }
+  ],
+  "vi-update-notice": [
+    {
+      "sel": ".update-notice",
+      "w": 358,
+      "h": 56,
+      "font": "14px",
+      "text": "Có bản cập nhật mới. Tiến trình của con vẫn được lưu.Cập nhật×"
+    }
+  ],
+  "vi-voice-question": [
+    {
+      "sel": ".packask",
+      "w": 340,
+      "h": 114,
+      "font": "14px",
+      "text": "Tải các giọng còn lại bằng dữ liệu di động? Khoảng 40 MB (có Wi-Fi sẽ tự tải).Người lớn: giữ để đồng ýĐể sau"
+    }
+  ],
+  "vi-game-guidance": [
+    {
+      "sel": ".gl-help",
+      "w": 390,
+      "h": 30,
+      "font": "19px",
+      "text": "Có bao nhiêu nhỉ? Đếm cùng nhé!"
+    }
+  ],
+  "vi-how-to-play": [
+    {
+      "sel": ".howto .ht-cap, .howto .ht-titlecard",
+      "w": 165,
+      "h": 70,
+      "font": "16px",
+      "text": "Cùng Đếm Nào"
+    },
+    {
+      "sel": ".howto .ht-cap, .howto .ht-titlecard",
+      "w": 330,
+      "h": 61,
+      "font": "18px",
+      "text": ""
+    }
+  ],
+  "vi-owl-lesson": [
+    {
+      "sel": ".owl-lesson .sb-text, .owl-lesson .sb-title",
+      "w": 184,
+      "h": 28,
+      "font": "18px",
+      "text": "Ông Cú chỉ cho con"
+    },
+    {
+      "sel": ".owl-lesson .sb-text, .owl-lesson .sb-title",
+      "w": 350,
+      "h": 84,
+      "font": "20px",
+      "text": "Đồng xu dùng để mua đồ ăn, quần áo và đồ chơi. Sạp nào cũng có hình đồng xu cho biết giá."
+    }
+  ]
+}

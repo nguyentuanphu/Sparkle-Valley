@@ -1,0 +1,31 @@
+{
+  "sourceCommit": "dd91f33ba019e59ce503bbf868e107e83e44d798",
+  "runId": 38601628166,
+  "url": "https://github.com/nguyentuanphu/Sparkle-Valley/actions/runs/38601628166",
+  "conclusion": "failure",
+  "passed": 140,
+  "total": 143,
+  "failed": [
+    "ownerfamily",
+    "together",
+    "knock"
+  ],
+  "checkMapArtifact": 11917150256,
+  "scope": "Older diagnostic candidate; newer local network fixes do not change this run. Family failure unresolved.",
+  "otherWorkflows": {
+    "Checks": [
+      38601628046,
+      38601619194
+    ],
+    "Quick checks": [
+      38601618968
+    ],
+    "Owner round voices": [
+      38601619098
+    ],
+    "Mirror to Google Drive": [
+      38601618915
+    ]
+  },
+  "otherWorkflowConclusion": "success; does not imply full-suite/review approval"
+}

@@ -1,3 +1,4 @@
+import { STORY_LOOKS } from './film-looks.js';
 // The story films of the tales that are not in js/content/films.js (films batch, owner 13 Oct AEDT: "every story becomes
 // a 3D film"): each film is its own small file in js/content/films/, loaded only when its story opens, so the game and
 // the other stories stay as quick to start as they were. A page script is the same as in js/content/films.js.
@@ -36,4 +37,4 @@ export const TALE_FILMS = {
   elephantmice: () => import('./films/elephantmice.js'),
   monkey: () => import('./films/monkey.js'),
 };
-export const taleFilm = async id => TALE_FILMS[id] ? (await TALE_FILMS[id]()).default : null;
+export const taleFilm = async id => TALE_FILMS[id] ? { ...(await TALE_FILMS[id]()).default, look: STORY_LOOKS[id] } : null;

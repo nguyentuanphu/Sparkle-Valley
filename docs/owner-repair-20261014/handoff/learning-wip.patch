@@ -1,0 +1,426 @@
+diff --git a/css/style.css b/css/style.css
+index fb1e5cea..3f8f9cb3 100644
+--- a/css/style.css
++++ b/css/style.css
+@@ -2638,3 +2638,26 @@ details.ocard.friends:not([open]) > summary::after { transform: rotate(-90deg);
+ .hud.small .quest { max-width: calc(100% - var(--quest-nav-reserve, 122px)); }
+ .hud.small.quest-below-nav .quest { top: var(--quest-below-top); max-width: calc(100% - 24px); }
+ .hud .q-text { min-width: 0; overflow-wrap: anywhere; }
++
++/* Activity controls remain anchored; only the playing field scrolls when content is tall. */
++.gl { overflow: hidden; }
++.gl-head, .gl-help { flex-shrink: 0; }
++.gl-stage { min-height: 0; overflow: auto; justify-content: flex-start; justify-content: safe center; }
++.gl-status { display: flex; align-items: center; gap: 12px; flex: none; }
++.gl-head .gl-status .starbox { position: static; margin: 0; font-size: 20px; }
++@media (max-width: 480px) {
++  .gl-head .gl-status { display: flex; align-items: center; gap: 8px; order: 5; flex-basis: 100%; width: 100%; }
++  .gl-status .gl-dots { flex: 1; flex-basis: auto; order: 0; justify-content: center; }
++  .gl-head .gl-status .starbox { position: static; flex: none; font-size: 18px; margin: 0; }
++}
++
++.gl-title, .gl-title > span:last-child { min-width: 0; overflow-wrap: anywhere; }
++.gl-help { min-height: min(var(--gl-guide-height, 1.4em), 30vh); max-height: 30vh; overflow: auto; }
++.gl.little .gl-head .gl-x, .gl.little .gl-head .gl-how { width: 64px; height: 64px; }
++.gl.little .gl-head button { min-width: 64px; min-height: 64px; }
++.gl .choice.bt-piece { width: 64px; height: 64px; min-width: 64px; min-height: 64px; }
++.gl.little .choice.bt-piece { width: 80px; height: 80px; }
++.gl[data-game-id="shapebuilders"] .gl-stage { gap: 8px; padding: 8px; }
++@media (max-height: 480px) and (min-width: 640px) {
++  .gl[data-game-id="shapebuilders"] .gl-stage { flex-direction: row; }
++}
+diff --git a/index.html b/index.html
+index 82899ce6..a5c3e1cf 100644
+--- a/index.html
++++ b/index.html
+@@ -108,6 +108,7 @@
+ <link rel="modulepreload" href="js/games/moneylogic.js">
+ <link rel="modulepreload" href="js/games/money.js">
+ <link rel="modulepreload" href="js/games/bigthinkers.js">
++<link rel="modulepreload" href="js/games/bigthinkers2.js">
+ <link rel="modulepreload" href="js/games/all.js">
+ <link rel="modulepreload" href="js/animals.js">
+ <link rel="modulepreload" href="js/farm.js">
+diff --git a/js/games/all.js b/js/games/all.js
+index 5e215187..91ef7559 100644
+--- a/js/games/all.js
++++ b/js/games/all.js
+@@ -16,3 +16,4 @@ import './learning.js';
+ import './money.js'; // (round S, owner plan 8 Oct) the ten money games
+ 
+ import './bigthinkers.js';
++import './bigthinkers2.js';
+diff --git a/js/games/frame.js b/js/games/frame.js
+index 53d5d093..53f4c05b 100644
+--- a/js/games/frame.js
++++ b/js/games/frame.js
+@@ -44,16 +44,23 @@ export function openGame(id, { players, level = 1, style = 'shrine', partnerName
+       <div class="gl-head">
+         <button class="gl-x" aria-label="${T('Leave', 'Rời đi')}">✕</button>
+         <div class="gl-title"><span class="gl-icon">${pic(def.icon)}</span><span>${esc(def.name())}</span></div>
+-        <div class="gl-dots"></div>
+-        ${levelPick ? `<button class="gl-lvl" aria-label="${T('How hard', 'Độ khó')}">${esc(T(...(LEVELS.find(l => l[0] === levelPick.value) || LEVELS[0]).slice(1)))} ▾</button>` : ''}
++        <div class="gl-status"><div class="gl-dots"></div>
++          ${levelPick ? `<button class="gl-lvl" aria-label="${T('How hard', 'Độ khó')}">${esc(T(...(LEVELS.find(l => l[0] === levelPick.value) || LEVELS[0]).slice(1)))} ▾</button>` : ''}
++          <div class="starbox">⭐ <b>0</b></div>
++        </div>
+         <button class="gl-how" aria-label="${T('How to play', 'Cách chơi')}">📺</button>
+       </div>
+       <div class="gl-help"></div>
+       <div class="gl-stage"></div>
+-      <div class="starbox">⭐ <b>0</b></div>
+       <div class="mascot">🦉</div><div class="mascot-say"></div>`;
+-    document.body.appendChild(layer);
++    dispatchEvent(new Event('sv-hide-caption')); document.body.appendChild(layer);
+     const stage = layer.querySelector('.gl-stage'), dots = layer.querySelector('.gl-dots'), help = layer.querySelector('.gl-help');
++    const setHelp = (en, vi, capital = false) => {
++      const before = help.offsetHeight, text = T(en, vi);
++      help.textContent = capital ? text.charAt(0).toUpperCase() + text.slice(1) : text;
++      // Retain the largest guidance height so selecting a piece cannot move its drop target.
++      help.style.setProperty('--gl-guide-height', Math.max(before, help.offsetHeight) + 'px');
++    };
+     const cleanups = [];
+     let closed = false;
+     const prevMusic = Music.key; Music.play(GAME_MUSIC[id] || 'think');
+@@ -61,9 +68,9 @@ export function openGame(id, { players, level = 1, style = 'shrine', partnerName
+       stage, level, players, two: players.length > 1, partnerName, T, el, online,
+       little,   // under-5 mode: everything gentle, nobody can lose
+       strong,   // computer opponents play to win (big kids on medium or hard)
+-      say: (en, vi) => { const t = T(en, vi); help.textContent = t.charAt(0).toUpperCase() + t.slice(1); say(en, vi); },
++      say: (en, vi) => { setHelp(en, vi, true); say(en, vi); },
+       // Show text without speaking it.
+-      show: (en, vi) => { help.textContent = T(en, vi); },
++      show: (en, vi) => { setHelp(en, vi); },
+       sfx: SFX, wait,
+       onCleanup: f => cleanups.push(f),
+       // Test autoplay still uses real UI taps; a strategy supplies the next legal target, not a synthetic win.
+diff --git a/js/ui.js b/js/ui.js
+index c66ed664..dc0e5cfa 100644
+--- a/js/ui.js
++++ b/js/ui.js
+@@ -69,12 +69,12 @@ let hideCaption = () => { };
+   };
+   spoken.push(text => {
+     if (settings.captions === false || !text) return;
+-    if (document.querySelector('.modal:not(.out), .wardrobe, .audio-tray, .dialog:not(.out), .storybook, .gl, .howto, .credits')) return;
++    if (document.querySelector('.modal:not(.out), .wardrobe, .audio-tray, .dialog:not(.out), .storybook, .gl, .howto, .credits')) { hideCaption(); return; }
+     if (!cap) { cap = el('div', 'caption'); cap.setAttribute('role', 'status'); cap.setAttribute('aria-live', 'polite'); document.body.appendChild(cap); }
+     stop(); let at = 0;
+     chunks(text).forEach(c => {
+       const ms = 2200 + c.length * 70;
+-      timers.push(setTimeout(() => { cap.textContent = c; cap.classList.add('show'); }, at));
++      timers.push(setTimeout(() => { if (document.querySelector('.modal:not(.out), .wardrobe, .audio-tray, .dialog:not(.out), .storybook, .gl, .howto, .credits')) { hideCaption(); return; } cap.textContent = c; cap.classList.add('show'); }, at));
+       at += ms;
+     });
+     timers.push(setTimeout(() => cap.classList.remove('show'), at));
+diff --git a/studio/ui/app.js b/studio/ui/app.js
+index 891f08a0..0dcfad85 100644
+--- a/studio/ui/app.js
++++ b/studio/ui/app.js
+@@ -702,7 +702,7 @@ async function drawReleases(P, lab) {
+         return `<details class="pkg" data-g="${G.g}"><summary><span class="gi">${REL_ICON[G.g] || '📦'}</span><b>${T(G.en, G.vi)}</b> <span class="pkn"></span><span class="relg-all"><button type="button" class="btn small ghost" data-pall="1">${T('All', 'Hết')}</button><button type="button" class="btn small ghost" data-pall="0">${T('None', 'Bỏ hết')}</button></span></summary>
+           ${off.map(lab).join('')}${on.length ? `<p class="note">${T('Already on for everyone:', 'Đã bật cho mọi người:')}</p>${on.map(lab).join('')}` : ''}</details>`; };
+       box.innerHTML = `<h4>🐞 ${T('Which devices are testers, and how', 'Máy nào là người thử, và thế nào')}</h4><p class="note">${T('None ticked: every device (while the switch is on). A tester accepts what is collected the first time, on the device.', 'Không chọn máy nào: mọi máy (khi công tắc bật). Người thử đồng ý với những gì được thu thập lần đầu, trên máy.')}</p><div id="tdl">${T('Loading the devices…', 'Đang tải danh sách máy…')}</div>
+-        <h4>↩️ ${T('When someone stops being a tester', 'Khi ai đó thôi làm người thử')}</h4><p class="note">${T('These are defaults. Each device’s choice below takes priority.', 'Đây là thiết lập mặc định. Lựa chọn của từng máy bên dưới được ưu tiên.')}</p><div class="revert">${[['keep', 'Keep all progress after testing', 'Giữ mọi tiến trình sau khi thử'], ['progress', 'Everything since they became a tester goes back (badges, stickers and clothes stay)', 'Mọi tiến bộ từ khi làm người thử được trả lại (huy hiệu, nhãn dán và quần áo vẫn giữ)'], ['autoplay', 'Only what auto play did goes back, after each run (what they played themselves stays)', 'Chỉ trả lại phần tự chơi đã làm, sau mỗi lần chạy (phần con tự chơi vẫn giữ)']].map(([k, en, vi]) => `<label class="chk"><input type="radio" name="trevert" data-trevert="${k}" ${(['keep', 'autoplay', 'progress'].includes(TR.revert) ? TR.revert : 'progress') === k ? 'checked' : ''}> ${T(en, vi)}</label>`).join('')}</div>
++        <h4>↩️ ${T('When someone stops being a tester', 'Khi ai đó thôi làm người thử')}</h4><p class="note">${T('These are defaults. Each device’s choice takes priority.', 'Đây là thiết lập mặc định. Lựa chọn của từng máy được ưu tiên.')}</p><div class="revert">${[['keep', 'Keep all progress after testing', 'Giữ mọi tiến trình sau khi thử'], ['progress', 'Everything since they became a tester goes back (badges, stickers and clothes stay)', 'Mọi tiến bộ từ khi làm người thử được trả lại (huy hiệu, nhãn dán và quần áo vẫn giữ)'], ['autoplay', 'Only what auto play did goes back, after each run (what they played themselves stays)', 'Chỉ trả lại phần tự chơi đã làm, sau mỗi lần chạy (phần con tự chơi vẫn giữ)']].map(([k, en, vi]) => `<label class="chk"><input type="radio" name="trevert" data-trevert="${k}" ${(['keep', 'autoplay', 'progress'].includes(TR.revert) ? TR.revert : 'progress') === k ? 'checked' : ''}> ${T(en, vi)}</label>`).join('')}</div>
+         <h4>👀 ${T('Sneak peeks: testers see these early', 'Xem trước: người thử thấy sớm')} <span class="pill" id="pkcount"></span></h4><input type="search" id="pkq" placeholder="${T('Find a feature…', 'Tìm một tính năng…')}"><div id="tpk">${allGroups.map(peekGroup).join('')}</div>`;
+       const pcount = () => { box.querySelector('#pkcount').textContent = T(`${box.querySelectorAll('[data-peek]:checked').length} picked`, `đã chọn ${box.querySelectorAll('[data-peek]:checked').length}`);
+         box.querySelectorAll('details.pkg').forEach(d => { d.querySelector('.pkn').textContent = `${d.querySelectorAll('[data-peek]:checked').length}/${d.querySelectorAll('[data-peek]').length}`; }); };
+diff --git a/sw.js b/sw.js
+index 2234b3d9..010f1e88 100644
+--- a/sw.js
++++ b/sw.js
+@@ -1,7 +1,7 @@
+ // Offline support: cache the whole game on first visit, then serve from the cache.
+ // Bump VERSION whenever files change so devices pick up the update. Updates only replace the game's files:
+ // saved progress (localStorage, IndexedDB, and the 'sv-save' copy) and the voice pack are never deleted.
+-const VERSION = 'sv-2026-10-14-repair10-r76';
++const VERSION = 'sv-2026-10-15-repair11-r76';
+ const FILES = [
+   './', 'index.html', 'manifest.webmanifest', 'css/style.css',
+   'vendor/three.module.js', 'vendor/peerjs.min.js', 'vendor/RoomEnvironment.js', 'css/fonts.css',
+@@ -10,7 +10,7 @@ const FILES = [
+   'js/world.js', 'js/avatar.js', 'js/player.js', 'js/input.js', 'js/net.js', 'js/mictest.js', 'js/hud.js', 'js/ui.js', 'js/data.js',
+   'js/farm.js', 'js/places.js', 'js/story.js', 'js/recorder.js', 'js/secrets.js', 'js/credits.js', 'js/howto.js', 'js/chat.js',
+   'js/listen.js', 'js/install.js', 'js/gather.js', 'js/trade.js', 'js/asia.js', 'js/heritage.js', 'js/pets.js', 'js/ferry.js', 'js/passport.js', 'js/festivals.js', 'js/weather.js', 'js/fun.js', 'js/learn.js', 'js/packhash.js', 'js/showcase.js', 'js/games/music.js', 'js/icons.js', 'js/words2.js', 'js/games/asia.js', 'js/houses.js', 'js/commands.js', 'js/extras.js', 'js/town.js', 'js/powerlines.js', 'js/viwords.js', 'js/vehicles.js', 'js/traffic.js', 'js/film.js', 'js/content/films.js', 'js/content/talefilms.js', 'js/content/films/kit.js', 'js/content/films/rongtien.js', 'js/content/films/caytre.js', 'js/content/films/tamcam.js', 'js/content/films/sodua.js', 'js/content/films/thachsanh.js', 'js/content/films/chucuoi.js', 'js/content/films/cockien.js', 'js/content/films/vusua.js', 'js/content/films/baluoiriu.js', 'js/content/films/quabau.js', 'js/content/films/thayboi.js', 'js/content/films/nhacmeo.js', 'js/content/films/ongtao.js', 'js/content/films/cachep.js', 'js/content/films/sontinh.js', 'js/content/films/rainbowserpent.js', 'js/content/films/emu.js', 'js/content/films/dotkangaroo.js', 'js/content/films/birdcolours.js', 'js/content/films/magicpudding.js', 'js/content/films/tiddalik.js', 'js/content/films/greatrace.js', 'js/content/films/maliang.js', 'js/content/films/weaver.js', 'js/content/films/nian.js', 'js/content/films/kongrong.js', 'js/content/films/change.js', 'js/content/films/crow.js', 'js/content/films/lionrabbit.js', 'js/content/films/ganesha.js', 'js/content/films/bluejackal.js', 'js/content/films/elephantmice.js', 'js/content/films/monkey.js', 'js/lanterns.js', 'js/companion.js', 'js/dinh.js', 'js/content/chapters.js', 'js/content/chapter2hanoi.js', 'js/content/chapter2props.js', 'js/content/chapter2films.js', 'js/content/chapter2text.js', 'js/yard.js', 'js/content/yard.js', 'js/content/map.js', 'js/openspot.js', 'js/handpad.js', 'js/kidplay.js', 'js/hoilang.js', 'js/surprises.js', 'js/parents.js', 'js/content/hoilang.js', 'js/content/surprises.js', 'js/content/parents.js', 'js/lunar.js', 'js/content/festcal.js', 'js/content/releases.js', 'js/emojiswap.js', 'js/regions.js', 'js/words.js', 'js/games/folk.js', 'js/games/folk2.js', 'js/roads.js', 'js/signposts.js', 'js/nametags.js', 'js/cities.js', 'js/games/cities.js', 'js/chatter.js', 'js/tales.js', 'js/talesdata.js', 'js/kite.js', 'js/relay.js', 'js/hawkers.js', 'js/snacks.js', 'js/animals.js', 'js/homes.js', 'js/art.js', 'js/suburbs.js', 'js/games/learning.js', 'js/games/all.js', 'js/cartoon.js', 'js/games/tienlen.js', 'js/games/tienlenrules.js', 'js/realworld.js', 'js/symbols.js', 'js/games/more.js', 'js/regionsites.js', 'js/vnfun.js', 'js/custom.js', 'content/custom.json', 'js/build.js', 'js/worldedit.js', 'js/folkshow.js', 'js/ads.js', 'js/solids.js', 'js/players.js', 'js/packbar.js', 'js/roomcode.js', 'js/photos.js', 'js/netmsg.js', 'js/lotus.js', 'js/worldcache.js', 'js/core/ids.js', 'js/core/events.js', 'js/core/rng.js', 'js/core/geo.js', 'js/placebook.js', 'js/familycards.js', 'js/myhouse.js', 'js/popups.js', 'js/vendors.js', 'js/games/registry.js', 'js/content/rules.js', 'js/report.js', 'js/coop.js', 'js/netgames.js', 'js/twinchests.js', 'js/claims.js', 'js/simple.js', 'js/songs.js', 'js/content/songs.js', 'js/content/activities.js', 'js/festdecor.js', 'js/festhunt.js', 'js/content/festhunt.js', 'js/seethrough.js', 'js/content/chapter3sydney.js', 'js/content/chapter3props.js', 'js/content/chapter3films.js', 'js/content/chapter3text.js', 'js/voicepack.js', 'js/autoplay.js', 'js/content/autoplay.js', 'js/testergate.js', 'js/tester.js', 'js/tester-detection.js', 'js/report-outbox.js', 'js/testerrewards.js', 'js/content/tester.js', 'js/plots.js', 'js/reeds.js', 'js/scrollhelp.js', 'js/chipinfo.js', 'js/soundsheet.js', 'js/content/familymissions.js', 'js/villagertalk.js', 'js/content/villagerlines.js', 'js/owlguide.js', 'js/pricetags.js', 'js/content/owllessons.js', 'js/jobs.js', 'js/content/jobs.js', 'js/wayfind.js', 'js/dayplan.js', 'js/animalhomes.js', 'js/keepcopy.js', 'js/content/devname.js',
+-  'js/games/money.js', 'js/games/moneylogic.js', 'js/games/frame.js', 'js/games/thinking.js', 'js/games/bigthinkers.js', 'js/games/strategy.js', 'js/games/vietnam.js', 'js/games/market.js', 'js/games/farmgames.js',
++  'js/games/money.js', 'js/games/moneylogic.js', 'js/games/frame.js', 'js/games/thinking.js', 'js/games/bigthinkers.js', 'js/games/bigthinkers2.js', 'js/games/strategy.js', 'js/games/vietnam.js', 'js/games/market.js', 'js/games/farmgames.js',
+   'js/shop.js', 'js/content/shop.js', 'js/boxes.js', 'js/content/boxes.js', // (round S: the clothes shop, mystery boxes, rankings, collectibles)
+   'js/games/readingmenu.js', 'js/games/reading.js', 'js/content/reading.js', // (Play reading trial)
+   'icons/icon-180.png', 'icons/icon-192.png', 'icons/icon-512.png'
+diff --git a/tests/owner-repair-evidence.mjs b/tests/owner-repair-evidence.mjs
+index 0c638b27..03a7a8ad 100644
+--- a/tests/owner-repair-evidence.mjs
++++ b/tests/owner-repair-evidence.mjs
+@@ -11,6 +11,8 @@ const phase = process.argv[2] || 'baseline';
+ const settingsOnly = process.argv.includes('--settings-only');
+ const audioOnly = process.argv.includes('--audio-only');
+ const transportOnly = process.argv.includes('--transport-only');
++const learningOnly = process.argv.includes('--learning-only');
++const activityOnly = process.argv.includes('--activity-only');
+ const sourceCommit = execFileSync('git', ['-C', repoRoot, 'rev-parse', '--verify', process.env.SV_EVIDENCE_COMMIT || 'HEAD'], {encoding:'utf8'}).trim();
+ const sourceFingerprints = {};
+ // Verify the served code, rather than attributing old pictures from a build label alone.
+@@ -28,7 +30,9 @@ const dir = path.join(repoRoot, 'docs/owner-repair-20261014/evidence', phase);
+ fs.mkdirSync(dir, { recursive: true });
+ const browser = await launch(), results = [];
+ try {
+-  for (const [device,w,h,touch,lang] of [['phone',390,844,true,'en'],['phone',390,844,true,'vi'],['tablet',820,1180,true,'en'],['computer',1280,800,false,'en']]) {
++  const views=[['phone',390,844,true,'en'],['phone',390,844,true,'vi'],['tablet',820,1180,true,'en'],['computer',1280,800,false,'en']];
++  if(learningOnly||activityOnly)views.push(['phone-small',320,640,true,'en'],['phone-small',320,640,true,'vi'],['phone-landscape',844,390,true,'vi']);
++  for (const [device,w,h,touch,lang] of views) {
+     const label = `${device}-${lang}`;
+     const P = await open(browser, { w,h,touch,lang,play:false, route:async ctx => {
+       await ctx.route('**/content/custom.json*', rt => rt.fulfill({ contentType:'application/json',body:'{}' }));
+@@ -40,6 +44,28 @@ try {
+       localStorage.setItem('sv2_playerid','tester000001');localStorage.setItem('sv2_tester',JSON.stringify({at:1,b:'r1'}));localStorage.setItem('sv2_live',JSON.stringify({releases:{tester:{on:true,devices:['tester000001']},autoplay:{on:true,devices:['tester000001']}},festivals:{}}));
+     }});
+     const shot = async name => { await P.page.evaluate(() => document.fonts.ready); await P.page.waitForTimeout(550); await P.page.screenshot({path:path.join(dir,`${label}-${name}.png`)}); };
++    if(learningOnly||activityOnly) {
++      await start(P.page);await clear(P.page);const states=[];
++      for(const id of activityOnly?['counting']:['patternpicnic','shapebuilders','remembergarden']) {
++        const available=await P.page.evaluate(async id=>!!(await import('/js/games/frame.js')).GAMES[id],id);
++        if(!available){states.push({id,available:false,note:'New activity has no gameplay in this source; no Before image manufactured'});continue;}
++        if(activityOnly){await P.page.evaluate(async()=>{const V=await import('/js/voice.js'),S=await import('/js/state.js');V.spoken.forEach(f=>f(S.settings.lang==='vi'?'Một món quà bất ngờ đang đợi con trong thung lũng.':'A surprise gift is waiting in the valley.'));});await P.page.waitForTimeout(30);}
++        await P.page.evaluate(id=>{const random=Math.random;Math.random=()=>.5;try{const p=__sv.heroes[0].profile;p.age='little';p.levels[id]=1;p.gameDiff={...p.gameDiff,[id]:'easy'};window.__captureGame=__sv.playGame(0,id,'replay');}finally{Math.random=random;}},id);await P.page.waitForSelector('.gl-stage');await shot(id+'-initial');
++        const layout=await P.page.evaluate(()=>{const rect=s=>{const e=document.querySelector(s);if(!e)return null;const r=e.getBoundingClientRect();return {x:r.x,y:r.y,width:r.width,height:r.height};};return {header:rect('.gl-head'),guidance:rect('.gl-help'),stage:rect('.gl-stage'),stars:rect('.gl .starbox'),worldCaption:!!document.querySelector('.caption.show')};});
++        if(learningOnly&&id==='shapebuilders') {
++          await P.page.locator('.bt-piece').filter({has:P.page.locator('svg path')}).first().click();await P.page.waitForFunction(()=>!!document.querySelector('.bt-slot:not([disabled])')?.onclick);await P.page.locator('.bt-slot:not([disabled])').click();await P.page.waitForFunction(()=>document.querySelector('.bt-slot')?.disabled);await shot(id+'-placed-piece');
++        }
++        states.push({id,available:true,mode:'under-5',layout});await P.page.locator('.gl-x').click();await P.page.waitForSelector('.gl',{state:'detached'});await clear(P.page);
++        if(learningOnly&&id==='remembergarden') {
++          await P.page.evaluate(id=>{const p=__sv.heroes[0].profile;p.age='big';p.levels[id]=1;p.gameDiff[id]='medium';window.__captureGame=__sv.playGame(0,id,'replay');},id);await P.page.waitForSelector('.gl-stage');await shot(id+'-model');
++          await P.page.getByRole('button',{name:/Ready to try|Sẵn sàng thử/}).click();await shot(id+'-recall');await P.page.getByRole('button',{name:/Show again|Xem lại/}).click();await shot(id+'-replay');
++          await P.page.locator('.gl-x').click();await P.page.waitForSelector('.gl',{state:'detached'});await clear(P.page);
++        }
++      }
++      results.push({device,w,h,lang,sourceCommit,sourceFingerprints,capturedAt:new Date().toISOString(),states,fixture:activityOnly?'Controlled queued valley caption and deterministic real counting activity entrance':'New learning activities through the real game entrance; deterministic choices; model/place/recall/replay states',errors:P.errors});
++      if(P.errors.length)throw Error('Page errors in attributed evidence: '+P.errors.join(' | '));
++      console.log(`${phase} ${label}: captured ${states.length} activity states`);await P.ctx.close();continue;
++    }
+     if (settingsOnly) {
+       await P.page.evaluate(async () => (await import('/js/ui.js')).openGrownups()); await P.page.waitForSelector('.grownups #gDone');
+       await shot('settings');
+@@ -106,4 +132,4 @@ try {
+     console.log(`${phase} ${label}: captured welcome, selection, bag, shop, audio`);
+     await P.ctx.close();
+   }
+-} finally { await browser.close();fs.writeFileSync(path.join(dir,transportOnly ? 'transport-results.json' : settingsOnly ? 'settings-results.json' : audioOnly ? 'audio-results.json' : 'results.json'),JSON.stringify(results,null,2)); }
++} finally { await browser.close();fs.writeFileSync(path.join(dir,learningOnly?'learning-results.json':activityOnly?'activity-results.json':transportOnly ? 'transport-results.json' : settingsOnly ? 'settings-results.json' : audioOnly ? 'audio-results.json' : 'results.json'),JSON.stringify(results,null,2)); }
+diff --git a/tests/run.mjs b/tests/run.mjs
+index 80120ebd..c46ec211 100644
+--- a/tests/run.mjs
++++ b/tests/run.mjs
+@@ -5436,6 +5436,108 @@ async function ownerSmoke(file) {
+     throw new Error(`${file} (status ${error.status}, signal ${error.signal || 'none'}): ${detail}`);
+   }
+ }
++await check('ownerlearningprogression', async () => {
++  const rows=[];
++  for(const lang of ['en','vi']) {
++    const P=await open(b,{w:390,h:844,touch:true,lang});await clear(P.page);
++    for(const id of ['patternpicnic','shapebuilders','remembergarden']) for(const [mode,little,level] of [['under-5',true,1],['Easy',false,1],['Medium',false,2],['Hard',false,3]]) {
++      await P.page.evaluate(async({id,little,level})=>{
++        const G=__sv,F=await import('/js/games/frame.js');G.paused=true;
++        window.__learning=F.openGame(id,{players:[G.heroes[0].profile],little,level});
++      },{id,little,level});await P.page.waitForSelector('.gl');
++      const r=await P.page.evaluate(async()=>{
++        const F=await import('/js/games/frame.js'),wait=ms=>new Promise(resolve=>setTimeout(resolve,ms));let wrong=false,taps=0,ready=0;
++        const until=Date.now()+30000;
++        while(Date.now()<until&&!document.querySelector('.gl-win')) {
++          const ask=F.playWatch.ask;
++          if(ask) { const bad=ask.els.find(b=>!b.disabled&&!ask.check(b)); if(!wrong&&bad){bad.click();wrong=true;}else ask.els.find(ask.check)?.click();taps++; }
++          else { const next=F.playWatch.plan?.();if(next&&!next.disabled){if(next.textContent.match(/Ready|Sẵn sàng/))ready++;next.click();taps++;} }
++          await wait(60);
++        }
++        return {won:!!document.querySelector('.gl-win'),wrong,taps,ready,stars:document.querySelectorAll('.gl-stars i.on').length,sideways:document.scrollingElement.scrollWidth>innerWidth+1,
++          small:[...document.querySelectorAll('.gl-stage button')].filter(b=>!b.disabled&&b.getClientRects().length&&Math.min(b.getBoundingClientRect().width,b.getBoundingClientRect().height)<63).map(b=>b.className)};
++      });
++      fs.mkdirSync('out/owner-learning',{recursive:true});await P.page.screenshot({path:`out/owner-learning/${id}-${lang}-${mode}.png`});
++      rows.push({id,lang,mode,...r});ok(r.won&&r.wrong&&r.taps>2&&!r.sideways&&!r.small.length&&(!little||r.stars===3),JSON.stringify(rows.at(-1)));
++      await P.page.waitForTimeout(650);await P.page.locator('.gl-win p').first().click();await P.page.waitForSelector('.gl',{state:'detached'});const completed=await P.page.evaluate(()=>window.__learning);ok(completed.won,'Reward finish must return a completed activity');await P.page.waitForTimeout(100);
++    }
++    // A real pointer drag must reject the wrong shape and place the correct shape in its outline.
++    await P.page.evaluate(async()=>{const F=await import('/js/games/frame.js');window.__learning=F.openGame('shapebuilders',{players:[__sv.heroes[0].profile],little:true,level:1});});
++    await P.page.waitForSelector('.bt-slot:not([disabled])');
++    const slot=P.page.locator('.bt-slot:not([disabled])'),bad=P.page.locator('.bt-piece').filter({has:P.page.locator('svg circle')}).first(),good=P.page.locator('.bt-piece').filter({has:P.page.locator('svg path')}).first();
++    const drag=async b=>{const a=await b.boundingBox(),target=await slot.boundingBox();await P.page.mouse.move(a.x+a.width/2,a.y+a.height/2);await P.page.mouse.down();await P.page.mouse.move(target.x+target.width/2,target.y+target.height/2,{steps:12});await P.page.mouse.up();await P.page.waitForTimeout(250);};
++    await drag(bad);ok(await P.page.locator('.bt-slot[disabled]').count()===2,'wrong dragged shape must not fill the outline');
++    await drag(good);ok(await P.page.locator('.bt-slot').first().isDisabled(),'correct pointer drag must place first piece');
++    await P.page.locator('.gl-x').click();await P.page.waitForSelector('.gl',{state:'detached'});
++    const cleanup=await P.page.evaluate(async()=>{const F=await import('/js/games/frame.js');return {plan:F.playWatch.plan,ask:F.playWatch.ask};});ok(!cleanup.plan&&!cleanup.ask,'Cancel must clean up pending choice/placement/plan');
++    const errors=P.errors;await P.ctx.close();ok(!errors.length,errors.join(' | '));
++  }
++  return JSON.stringify(rows);
++});
++
++await check('ownerlearninglayout', async () => {
++  const rows=[];
++  for(const [w,h,lang] of [[320,640,'en'],[320,640,'vi'],[390,844,'en'],[844,390,'vi'],[820,1180,'en'],[1280,800,'en']]) {
++    const P=await open(b,{w,h,touch:w<1000,lang});await clear(P.page);
++    for(const id of ['patternpicnic','shapebuilders','remembergarden']) {
++      await P.page.evaluate(async id=>{const F=await import('/js/games/frame.js');__sv.paused=true;window.__learning=F.openGame(id,{players:[__sv.heroes[0].profile],little:true,level:1});},id);
++      await P.page.waitForSelector('.gl-stage button');await P.page.evaluate(()=>document.fonts.ready);
++      const panel=await P.page.locator('.gl').boundingBox(), controls=P.page.locator('.gl-stage button:not([disabled])');
++      for(let i=0;i<await controls.count();i++) {
++        const control=controls.nth(i);await control.scrollIntoViewIfNeeded();const r=await control.evaluate(e=>{const a=e.getBoundingClientRect(),top=document.elementFromPoint(a.x+a.width/2,a.y+a.height/2);return {w:a.width,h:a.height,x:a.x,y:a.y,right:a.right,bottom:a.bottom,hit:e===top||e.contains(top),label:e.getAttribute('aria-label')||e.textContent};});
++        ok(r.w>=63&&r.h>=63&&r.x>=-1&&r.right<=w+1&&r.y>=-1&&r.bottom<=h+1&&r.hit,JSON.stringify({id,w,h,lang,r}));
++      }
++      const after=await P.page.locator('.gl').boundingBox();ok(Math.abs(panel.y-after.y)<1&&Math.abs(panel.height-after.height)<1,'Activity shell moved while scrolling controls');
++      await P.page.evaluate(()=>{document.querySelector('.gl-stage').scrollTop=0;});fs.mkdirSync('out/owner-learning-stage',{recursive:true});await P.page.screenshot({path:`out/owner-learning-stage/${id}-${w}-${h}-${lang}.png`});rows.push({id,w,h,lang,controls:await controls.count()});
++      await P.page.locator('.gl-x').click();await P.page.waitForSelector('.gl',{state:'detached'});
++    }
++    const errors=P.errors;await P.ctx.close();ok(!errors.length,errors.join(' | '));
++  }
++  // Touch sends implicit pointer capture; mouse-only drag proof does not cover that path.
++  const P=await open(b,{w:390,h:844,touch:true,lang:'vi'});await clear(P.page);
++  await P.page.evaluate(async()=>{const F=await import('/js/games/frame.js');__sv.paused=true;window.__learning=F.openGame('shapebuilders',{players:[__sv.heroes[0].profile],little:true,level:1});});
++  const piece=P.page.locator('.bt-piece').filter({has:P.page.locator('svg path')}).first(),slot=P.page.locator('.bt-slot:not([disabled])');await piece.scrollIntoViewIfNeeded();
++  const a=await piece.boundingBox(),target=await slot.boundingBox(),cdp=await P.ctx.newCDPSession(P.page);
++  const touch=async(type,x,y)=>cdp.send('Input.dispatchTouchEvent',{type,touchPoints:type==='touchEnd'||type==='touchCancel'?[]:[{x,y,id:1}]});
++  await touch('touchStart',a.x+a.width/2,a.y+a.height/2);for(let i=1;i<=12;i++)await touch('touchMove',a.x+a.width/2+(target.x+target.width/2-a.x-a.width/2)*i/12,a.y+a.height/2+(target.y+target.height/2-a.y-a.height/2)*i/12);await touch('touchEnd');
++  await P.page.waitForTimeout(400);ok(await P.page.locator('.bt-slot').first().isDisabled(),'Real touch drag must place the matching shape with implicit pointer capture');
++  await P.page.locator('.gl-x').click();const errors=P.errors;await P.ctx.close();ok(!errors.length,errors.join(' | '));return JSON.stringify(rows);
++});
++
++await check('owneractivityshell', async () => {
++  const P=await open(b,{w:320,h:640,touch:true,lang:'vi'});await clear(P.page);
++  await P.page.evaluate(async()=>{const V=await import('/js/voice.js');V.spoken.forEach(f=>f('A surprise gift is waiting in the valley.'));});await P.page.waitForSelector('.caption.show');
++  await P.page.evaluate(async()=>{const F=await import('/js/games/frame.js');__sv.paused=true;window.__learning=F.openGame('shapebuilders',{players:[__sv.heroes[0].profile],little:true,level:1});});await P.page.waitForSelector('.bt-piece');await P.page.evaluate(()=>document.fonts.ready);
++  const before=await P.page.locator('.gl-head').boundingBox();await P.page.locator('.bt-piece').last().scrollIntoViewIfNeeded();
++  const r=await P.page.evaluate(()=>{const head=document.querySelector('.gl-head').getBoundingClientRect(),star=document.querySelector('.gl .starbox').getBoundingClientRect(),help=document.querySelector('.gl-help').getBoundingClientRect();return {headY:head.y,caption:!!document.querySelector('.caption.show'),starHelpOverlap:star.x<help.right&&star.right>help.x&&star.y<help.bottom&&star.bottom>help.y,scroll:document.querySelector('.gl').scrollTop};});
++  fs.mkdirSync('out/owner-activity-shell',{recursive:true});await P.page.screenshot({path:'out/owner-activity-shell/phone-vi.png'});
++  const errors=P.errors;await P.ctx.close();ok(!r.caption&&!r.starHelpOverlap&&r.headY>=0&&Math.abs(r.headY-before.y)<1&&!errors.length,JSON.stringify({r,before,errors}));
++  return 'Small activity header stays visible while body scrolls; reward counter cannot cover guidance; queued valley captions are hidden on entry';
++});
++
++await check('ownerlearningcomposition', async () => {
++  const bad=[],rows=[],P=await open(b,{w:320,h:640,touch:true,lang:'vi'});await clear(P.page);
++  for(const id of ['patternpicnic','shapebuilders','remembergarden']) {
++    await P.page.evaluate(id=>{const p=__sv.heroes[0].profile;p.age='little';p.gameDiff={...p.gameDiff,[id]:'easy'};window.__learning=__sv.playGame(0,id,'replay');},id);await P.page.waitForSelector('.gl-lvl');await P.page.evaluate(()=>document.fonts.ready);await P.page.waitForTimeout(400);
++    const r=await P.page.evaluate(()=>{
++      const rect=s=>{const e=document.querySelector(s);if(!e)return null;const r=e.getBoundingClientRect();return {x:r.x,y:r.y,right:r.right,bottom:r.bottom,width:r.width,height:r.height};};
++      const header=[...document.querySelectorAll('.gl-head button')].map(b=>({label:b.getAttribute('aria-label')||b.textContent,width:b.getBoundingClientRect().width,height:b.getBoundingClientRect().height}));
++      const board=rect('.bt-picture'),repeat=rect('.bt-repeat'),palette=rect('.gl-stage .choices'),stage=rect('.gl-stage');
++      const maxPieceBottom=board?Math.max(...[...document.querySelectorAll('.bt-slot')].map(b=>b.getBoundingClientRect().bottom)):null;
++      return {header,board,repeat,palette,stage,maxPieceBottom};
++    });rows.push({id,...r});if(r.header.some(b=>b.width<63||b.height<63))bad.push(id+': under-5 header target below64px');
++    if(r.board&&(r.maxPieceBottom>r.board.bottom+1||r.maxPieceBottom>r.repeat.y-4||r.palette.bottom>r.stage.bottom+1))bad.push(id+': picture compresses/overlaps or palette cannot stay visible with the model');
++    fs.mkdirSync('out/owner-learning-composition',{recursive:true});await P.page.screenshot({path:`out/owner-learning-composition/${id}.png`});await P.page.locator('.gl-x').click();await P.page.waitForSelector('.gl',{state:'detached'});await P.page.waitForTimeout(100);
++  }
++  await P.page.setViewportSize({width:844,height:390});
++  await P.page.evaluate(async()=>{const F=await import('/js/games/frame.js');window.__learning=F.openGame('remembergarden',{players:[__sv.heroes[0].profile],little:true});});await P.page.waitForSelector('.gl-help');await P.page.waitForTimeout(400);
++  const overlap=await P.page.evaluate(()=>{const a=document.querySelector('.gl .starbox').getBoundingClientRect(),b=document.querySelector('.gl-help').getBoundingClientRect();return a.x<b.right&&a.right>b.x&&a.y<b.bottom&&a.bottom>b.y;});if(overlap)bad.push('landscape reward counter overlaps guidance');await P.page.locator('.gl-x').click();await P.page.waitForSelector('.gl',{state:'detached'});
++  await P.page.setViewportSize({width:320,height:640});
++  await P.page.evaluate(async()=>{const F=await import('/js/games/frame.js');F.register({id:'__guideprobe',icon:'🧩',name:()=> 'Guide probe',run(api){api.say('Choose the picture and think about what happens next. '.repeat(12),'Chọn hình và nghĩ xem chuyện gì xảy ra tiếp theo. '.repeat(12));const b=document.createElement('button');b.className='choice';b.textContent='Go';api.stage.appendChild(b);}});window.__learning=F.openGame('__guideprobe',{players:[__sv.heroes[0].profile],little:true});});await P.page.waitForSelector('.gl-stage .choice');await P.page.waitForTimeout(400);await P.page.locator('.gl-stage .choice').scrollIntoViewIfNeeded();
++  const help=await P.page.evaluate(()=>{const h=document.querySelector('.gl-help'),s=document.querySelector('.gl-stage').getBoundingClientRect();return {height:h.getBoundingClientRect().height,scrollable:h.scrollHeight>h.clientHeight,stageHeight:s.height,viewportHeight:innerHeight};});if(help.stageHeight<104||help.height>help.viewportHeight*.35)bad.push('long guidance removes the playing field');
++  const errors=P.errors;await P.ctx.close();ok(!bad.length&&!errors.length,JSON.stringify({bad,rows,help,errors}));return 'Real game entrance:64px header controls, complete picture and palette visible; landscape stars clear; long guidance scrolls without hiding play';
++});
++
+ await check('ownerround', async () => {
+   return await ownerSmoke('owner-round-smoke.mjs');
+ });
+diff --git a/js/games/bigthinkers2.js b/js/games/bigthinkers2.js
+new file mode 100644
+index 00000000..39cd0ba5
+--- /dev/null
++++ b/js/games/bigthinkers2.js
+@@ -0,0 +1,98 @@
++// Original learning activities, using the existing frame, art and gentle retry rules.
++import { register, choiceButtons, untilRight } from './frame.js';
++import { T } from '../i18n.js';
++import { pic } from '../art.js';
++import { el, shuffle, wait } from '../util.js';
++import { GAME_INFO } from '../content/activities.js';
++import { HOWTO } from '../howto.js';
++
++const tier = api => api.little ? 0 : api.level >= 3 ? 3 : api.level >= 2 ? 2 : 1;
++const INTRO = {
++  patternpicnic: ['Listen and look at the pattern. Choose the picture that comes next.', 'Nghe và nhìn quy luật. Chọn hình tiếp theo.'],
++  shapebuilders: ['Build the picture. Choose a shape, then tap its matching outline. You can drag the shape there too.', 'Ghép bức tranh. Chọn hình khối rồi chạm vào nét viền giống hình đó. Con cũng có thể kéo hình vào đó.'],
++  remembergarden: ['Look at the garden pictures. Put them back in the same order. You can see them again whenever you need.', 'Nhìn các hình trong vườn. Chọn lại theo đúng thứ tự. Con có thể xem lại bất cứ lúc nào.']
++};
++for (const [id, words] of Object.entries(INTRO)) {
++  GAME_INFO[id] = ['thinking', 3, 2]; HOWTO[id] = { steps: [{ pic: '🧩', en: words[0], vi: words[1] }] };
++}
++function repeat(api, speak) {
++  const button = el('button', 'btn bt-repeat', pic('🔁') + T('Hear again', 'Nghe lại'));
++  button.style.minHeight = '64px'; button.onclick = speak; api.stage.appendChild(button); return button;
++}
++const SYMBOLS = ['🍎', '🌸', '🐶', '🍌'];
++const NAMES = {'🍎':['Apple','Táo'],'🌸':['Flower','Hoa'],'🐶':['Dog','Chó'],'🍌':['Banana','Chuối'],'🌱':['Seedling','Cây non'],'💧':['Water','Nước'],'🌳':['Tree','Cây']};
++register({ id: 'patternpicnic', icon: '🧺', name: () => T('Pattern Picnic', 'Dã Ngoại Quy Luật'), async run(api) {
++  const patterns = [['🍎','🌸'], ['🍎','🍎','🌸'], ['🍎','🌸','🐶'], ['🍎','🌸','🌸','🐶']];
++  const level = tier(api), rounds = level === 0 ? 3 : 4;
++  for (let round = 0; round < rounds; round++) {
++    if (api.closed) return; api.stage.innerHTML = ''; api.dots(rounds, round);
++    const rule = patterns[Math.min(3, level === 0 ? 0 : level === 1 ? round % 2 : Math.min(level, round))];
++    const shift = round % rule.length, model = Array.from({ length: rule.length * 2 }, (_, i) => rule[(i + shift) % rule.length]);
++    const answer = rule[(model.length + shift) % rule.length];
++    const row = el('div', 'seq', model.map(value => `<span class="seq-item">${pic(value)}</span>`).join('') + '<span class="seq-item q">?</span>');
++    api.stage.appendChild(row); repeat(api, () => api.say(...INTRO.patternpicnic)); api.say(...INTRO.patternpicnic);
++    const options = shuffle([answer, ...SYMBOLS.filter(value => value !== answer).slice(0, level === 0 ? 1 : level === 3 ? 3 : 2)]);
++    const buttons = choiceButtons(api, options, value => pic(value)); buttons.forEach(b=>b.setAttribute('aria-label',T(...NAMES[b._v])));
++    if (!await untilRight(api, buttons, b => b._v === answer)) return;
++    row.lastElementChild.innerHTML = pic(answer); api.praise(); await wait(300);
++  }
++  return api.win();
++} });
++
++const SHAPES = {
++  triangle: {name: ['Triangle', 'Tam giác'], svg: '<path d="M50 12L88 85H12Z"/>'},
++  square: {name: ['Square', 'Hình vuông'], svg: '<rect x="15" y="15" width="70" height="70" rx="5"/>'},
++  circle: {name: ['Circle', 'Hình tròn'], svg: '<circle cx="50" cy="50" r="35"/>'},
++  rectangle: {name: ['Rectangle', 'Hình chữ nhật'], svg: '<rect x="10" y="27" width="80" height="46" rx="5"/>'}
++};
++const shape = (key, filled = true, rotation = 0) => `<svg viewBox="0 0 100 100" width="100%" height="100%" aria-hidden="true"><g transform="rotate(${rotation} 50 50)" fill="${filled ? '#ffd36a' : '#fff7e8'}" stroke="${filled ? '#6a4a8a' : '#b29cc5'}" stroke-width="5" ${filled ? '' : 'stroke-dasharray="7 5"'}>${SHAPES[key].svg}</g></svg>`;
++const PICTURES = [
++  [['triangle',80,4,120,88], ['square',90,75,100,112], ['circle',108,95,64,64]],
++  [['triangle',70,2,140,94], ['square',86,79,108,120], ['circle',93,88,64,64], ['rectangle',126,128,64,64,90]],
++  [['rectangle',10,61,192,112], ['square',152,9,110,110], ['circle',24,142,76,76], ['circle',151,142,76,76], ['square',172,28,64,64]],
++  [['rectangle',105,90,70,140,90], ['triangle',39,102,90,80], ['triangle',152,117,90,80], ['circle',84,31,112,112], ['circle',24,12,100,100], ['circle',155,11,100,100]]
++];
++register({ id: 'shapebuilders', icon: '🧩', name: () => T('Shape Builders', 'Ghép Tranh Hình Khối'), async run(api) {
++  const pieces = PICTURES[tier(api)], board = el('div', 'bt-picture');
++  const pictureHeight = Math.max(200, ...pieces.map(([,x,y,w,h]) => y+h+12));
++  board.style.cssText = `position:relative;width:280px;max-width:100%;height:${pictureHeight}px;flex-shrink:0;margin:0 auto`; api.stage.appendChild(board);
++  let active = null, selected = null, dragging = null;
++  const slots = pieces.map(([key,x,y,w,h,rotation], i) => {
++    const b = el('button', 'bt-slot', shape(key, false, rotation)); b.dataset.shape = key; b.disabled = true;
++    b.setAttribute('aria-label', T(...SHAPES[key].name)); b.style.cssText = `position:absolute;left:${x/2.8}%;top:${y}px;width:${w/2.8}%;height:${h}px;min-width:64px;min-height:64px;padding:0;background:transparent;border:0;pointer-events:none`;
++    board.appendChild(b); return b;
++  });
++  let guide = INTRO.shapebuilders; repeat(api, () => api.say(...guide)); api.say(...guide);
++  const buttons = choiceButtons(api, Object.keys(SHAPES).filter(key=>!api.little || key!=='rectangle'), key => shape(key), 'choice bt-piece');
++  buttons.forEach(b => { b.style.touchAction='none'; b.setAttribute('aria-label', T(...SHAPES[b._v].name)); b.onpointerdown = e => { dragging={button:b,x:e.clientX,y:e.clientY,started:false}; }; });
++  const move = e => { if (!dragging) return; if (!dragging.started && Math.hypot(e.clientX-dragging.x,e.clientY-dragging.y)>8) { dragging.started=true; dragging.button.click(); } if(dragging.started)e.preventDefault(); };
++  const up = e => { if (!dragging) return; const drag=dragging;dragging=null; if(drag.started && document.elementFromPoint(e.clientX,e.clientY)?.closest('.bt-slot')===active) { if(drag.button._v===active.dataset.shape) setTimeout(()=>active?.click(),0); else api.wrong(active); } };
++  document.addEventListener('pointermove',move,{passive:false});document.addEventListener('pointerup',up);
++  api.onCleanup(()=>{document.removeEventListener('pointermove',move);document.removeEventListener('pointerup',up);});
++  api.plan(()=>selected ? active : null);
++  for(let i=0;i<pieces.length;i++) {
++    if(api.closed)return;buttons.forEach(b=>b.classList.remove('right','wrong','hint'));api.dots(pieces.length,i);active=slots[i];active.disabled=false;active.style.pointerEvents='auto';active.style.zIndex='10';active.style.outline='3px dashed #ffb020';
++    guide = ['Choose the shape that matches the outline.', 'Chọn hình khối giống nét viền.'];api.say(...guide);
++    selected=null; if(!await untilRight(api,buttons,b=>b._v===pieces[i][0]))return;selected=buttons.find(b=>b._v===pieces[i][0]);
++    guide=['Tap the outline to put your shape in the picture.', 'Chạm vào nét viền để ghép hình vào tranh.'];api.say(...guide);
++    await new Promise(resolve=>{let done=false;const finish=()=>{if(done)return;done=true;active.onclick=null;resolve();};active.onclick=()=>{active.innerHTML=shape(pieces[i][0],true,pieces[i][5]);finish();};api.onCleanup(finish);});
++    if(api.closed)return;active.disabled=true;active.style.pointerEvents='none';active.style.outline='none';active.style.zIndex=String(i+1);selected=null;api.praise();
++  }
++  buttons.forEach(b=>b.disabled=true);return api.win();
++} });
++
++register({ id: 'remembergarden', icon: '🌱', name: () => T('Remember the Garden', 'Nhớ Khu Vườn'), async run(api) {
++  const level=tier(api),pool=['🌱','💧','🌸','🍎','🌳','🐶'],length=[2,3,4,6][level];
++  for(let round=0;round<3;round++) {
++    if(api.closed)return;api.stage.innerHTML='';api.dots(3,round);const order=Array.from({length},(_,i)=>pool[(i+round)%pool.length]);
++    const model=el('div','seq',order.map(v=>`<span class="seq-item">${pic(v)}</span>`).join(''));api.stage.appendChild(model);
++    repeat(api,()=>api.say(...INTRO.remembergarden));api.say(...INTRO.remembergarden);
++    if(level>0){const ready=el('button','btn',T('Ready to try', 'Sẵn sàng thử'));ready.style.minHeight='64px';api.stage.appendChild(ready);api.plan(()=>ready.isConnected?ready:null);
++      await new Promise(resolve=>{ready.onclick=resolve;api.onCleanup(resolve);});if(api.closed)return;ready.remove();model.querySelectorAll('.seq-item').forEach(b=>b.innerHTML='?');}
++    const show=el('button','btn',pic('🔁')+T('Show again', 'Xem lại'));show.style.minHeight='64px';show.onclick=()=>{model.querySelectorAll('.seq-item').forEach((b,i)=>b.innerHTML=pic(order[i]));api.say(...INTRO.remembergarden);};api.stage.appendChild(show);
++    const done=el('div','seq');api.stage.appendChild(done);const controls=el('div');api.stage.appendChild(controls);
++    for(let i=0;i<order.length;i++){if(api.closed)return;controls.innerHTML='';const old=api.stage;api.stage=controls;const options=shuffle([...new Set(order.slice(i))]);const buttons=choiceButtons(api,options,v=>pic(v));buttons.forEach(b=>b.setAttribute('aria-label',T(...NAMES[b._v])));api.stage=old;
++      if(!await untilRight(api,buttons,b=>b._v===order[i]))return;done.appendChild(el('span','seq-item',pic(order[i])));api.praise();}
++  }
++  return api.win();
++} });

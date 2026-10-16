@@ -1,0 +1,6656 @@
+{
+ "when": "2026-10-16T05:59:55.824Z",
+ "url": "http://localhost:8800/",
+ "tolerancePx": 2,
+ "devices": {
+  "phone": {
+   "panels": {
+    "welcome": {
+     "shell": ".screen.title .tt-cover",
+     "parts": {
+      "cover": ".screen.title .tt-cover",
+      "logo": ".screen.title .logo",
+      "start": ".screen.title .press",
+      "languages": ".screen.title .tt-panel"
+     },
+     "opened": true,
+     "open": {
+      "appearedAtMs": 0,
+      "baselineAtMs": 686,
+      "samples": 14,
+      "moved": true,
+      "parts": {
+       "cover": {
+        "base": [
+         16,
+         253.2,
+         358,
+         195.7
+        ],
+        "maxChange": {
+         "left": 0,
+         "top": 0,
+         "width": 0,
+         "height": 0
+        },
+        "moved": false,
+        "firstMoveAtMs": null,
+        "gone": false
+       },
+       "logo": {
+        "base": [
+         40.5,
+         276.2,
+         309,
+         151.7
+        ],
+        "maxChange": {
+         "left": 0,
+         "top": 0,
+         "width": 0,
+         "height": 0
+        },
+        "moved": false,
+        "firstMoveAtMs": null,
+        "gone": false
+       },
+       "start": {
+        "base": [
+         62.3,
+         460.6,
+         265.5,
+         68.5
+        ],
+        "maxChange": {
+         "left": 8.6,
+         "top": 2.2,
+         "width": -17.4,
+         "height": -4.5
+        },
+        "moved": true,
+        "firstMoveAtMs": 1198,
+        "gone": false,
+        "track": [
+         {
+          "t": 686,
+          "r": [
+           62.3,
+           460.6,
+           265.5,
+           68.5
+          ]
+         },
+         {
+          "t": 1198,
+          "r": [
+           65.9,
+           461.5,
+           258.2,
+           66.6
+          ]
+         },
+         {
+          "t": 1534,
+          "r": [
+           69.9,
+           462.6,
+           250.2,
+           64.5
+          ]
+         },
+         {
+          "t": 2278,
+          "r": [
+           67.9,
+           462.1,
+           254.1,
+           65.5
+          ]
+         },
+         {
+          "t": 2625,
+          "r": [
+           63.5,
+           460.9,
+           263.1,
+           67.9
+          ]
+         },
+         {
+          "t": 2973,
+          "r": [
+           62.3,
+           460.6,
+           265.4,
+           68.4
+          ]
+         },
+         {
+          "t": 3297,
+          "r": [
+           64.6,
+           461.2,
+           260.7,
+           67.3
+          ]
+         },
+         {
+          "t": 3461,
+          "r": [
+           66.8,
+           461.8,
+           256.4,
+           66.1
+          ]
+         },
+         {
+          "t": 3845,
+          "r": [
+           70.5,
+           462.7,
+           248.9,
+           64.2
+          ]
+         }
+        ]
+       },
+       "languages": {
+        "base": [
+         52.1,
+         716,
+         285.7,
+         112
+        ],
+        "maxChange": {
+         "left": 0,
+         "top": 0,
+         "width": 0,
+         "height": 0
+        },
+        "moved": false,
+        "firstMoveAtMs": null,
+        "gone": false
+       }
+      },
+      "shots": [
+       "phone-001-welcome-open-at-700ms.png",
+       "phone-002-welcome-open-at-2500ms.png"
+      ]
+     },
+     "actions": [
+      {
+       "action": "Tieng Viet",
+       "moved": true,
+       "parts": {
+        "cover": {
+         "base": [
+          16,
+          253.2,
+          358,
+          195.7
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 3.8,
+          "width": 0,
+          "height": -10.7
+         },
+         "moved": true,
+         "firstMoveAtMs": 1583,
+         "gone": false,
+         "track": [
+          {
+           "t": 0,
+           "r": [
+            16,
+            253.2,
+            358,
+            195.7
+           ]
+          },
+          {
+           "t": 1583,
+           "r": [
+            16,
+            257,
+            358,
+            185
+           ]
+          }
+         ]
+        },
+        "logo": {
+         "base": [
+          40.5,
+          276.2,
+          309,
+          151.7
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 3.8,
+          "width": 0,
+          "height": -10.7
+         },
+         "moved": true,
+         "firstMoveAtMs": 1583,
+         "gone": false,
+         "track": [
+          {
+           "t": 0,
+           "r": [
+            40.5,
+            276.2,
+            309,
+            151.7
+           ]
+          },
+          {
+           "t": 1583,
+           "r": [
+            40.5,
+            280,
+            309,
+            141
+           ]
+          }
+         ]
+        },
+        "start": {
+         "base": [
+          70.1,
+          462.6,
+          249.7,
+          64.4
+         ],
+         "maxChange": {
+          "left": -7.5,
+          "top": -8.8,
+          "width": 15.1,
+          "height": 4
+         },
+         "moved": true,
+         "firstMoveAtMs": 387,
+         "gone": false,
+         "track": [
+          {
+           "t": 0,
+           "r": [
+            70.1,
+            462.6,
+            249.7,
+            64.4
+           ]
+          },
+          {
+           "t": 387,
+           "r": [
+            66.2,
+            461.6,
+            257.7,
+            66.5
+           ]
+          },
+          {
+           "t": 712,
+           "r": [
+            62.6,
+            460.7,
+            264.8,
+            68.3
+           ]
+          },
+          {
+           "t": 1583,
+           "r": [
+            64.5,
+            454.1,
+            261.1,
+            67.7
+           ]
+          },
+          {
+           "t": 1736,
+           "r": [
+            70.9,
+            455.8,
+            248.1,
+            64.4
+           ]
+          },
+          {
+           "t": 2470,
+           "r": [
+            67.8,
+            455,
+            254.5,
+            66
+           ]
+          },
+          {
+           "t": 2782,
+           "r": [
+            64.2,
+            454.1,
+            261.6,
+            67.9
+           ]
+          }
+         ]
+        },
+        "languages": {
+         "base": [
+          52.1,
+          716,
+          285.7,
+          112
+         ],
+         "maxChange": {
+          "left": 0.2,
+          "top": -3,
+          "width": -0.4,
+          "height": 3
+         },
+         "moved": true,
+         "firstMoveAtMs": 1583,
+         "gone": false,
+         "track": [
+          {
+           "t": 0,
+           "r": [
+            52.1,
+            716,
+            285.7,
+            112
+           ]
+          },
+          {
+           "t": 1583,
+           "r": [
+            52.3,
+            713,
+            285.3,
+            115
+           ]
+          }
+         ]
+        }
+       },
+       "shots": [
+        "phone-003-welcome-before-Tieng-Viet.png",
+        "phone-004-welcome-after-Tieng-Viet.png"
+       ]
+      },
+      {
+       "action": "English",
+       "moved": true,
+       "parts": {
+        "cover": {
+         "base": [
+          16,
+          257,
+          358,
+          185
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": -3.8,
+          "width": 0,
+          "height": 10.7
+         },
+         "moved": true,
+         "firstMoveAtMs": 1368,
+         "gone": false,
+         "track": [
+          {
+           "t": 0,
+           "r": [
+            16,
+            257,
+            358,
+            185
+           ]
+          },
+          {
+           "t": 1368,
+           "r": [
+            16,
+            253.2,
+            358,
+            195.7
+           ]
+          }
+         ]
+        },
+        "logo": {
+         "base": [
+          40.5,
+          280,
+          309,
+          141
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": -3.8,
+          "width": 0,
+          "height": 10.7
+         },
+         "moved": true,
+         "firstMoveAtMs": 1368,
+         "gone": false,
+         "track": [
+          {
+           "t": 0,
+           "r": [
+            40.5,
+            280,
+            309,
+            141
+           ]
+          },
+          {
+           "t": 1368,
+           "r": [
+            40.5,
+            276.2,
+            309,
+            151.7
+           ]
+          }
+         ]
+        },
+        "start": {
+         "base": [
+          63.6,
+          453.9,
+          262.8,
+          68.2
+         ],
+         "maxChange": {
+          "left": 7.1,
+          "top": 8.9,
+          "width": -14.2,
+          "height": -4.1
+         },
+         "moved": true,
+         "firstMoveAtMs": 667,
+         "gone": false,
+         "track": [
+          {
+           "t": 0,
+           "r": [
+            63.6,
+            453.9,
+            262.8,
+            68.2
+           ]
+          },
+          {
+           "t": 667,
+           "r": [
+            66.4,
+            454.6,
+            257.2,
+            66.7
+           ]
+          },
+          {
+           "t": 1368,
+           "r": [
+            70.7,
+            462.8,
+            248.6,
+            64.1
+           ]
+          },
+          {
+           "t": 1682,
+           "r": [
+            68.6,
+            462.2,
+            252.9,
+            65.2
+           ]
+          },
+          {
+           "t": 1999,
+           "r": [
+            64.7,
+            461.2,
+            260.7,
+            67.2
+           ]
+          },
+          {
+           "t": 2326,
+           "r": [
+            62.4,
+            460.6,
+            265.3,
+            68.4
+           ]
+          },
+          {
+           "t": 2954,
+           "r": [
+            66.8,
+            461.8,
+            256.4,
+            66.1
+           ]
+          }
+         ]
+        },
+        "languages": {
+         "base": [
+          52.3,
+          713,
+          285.3,
+          115
+         ],
+         "maxChange": {
+          "left": -0.2,
+          "top": 3,
+          "width": 0.4,
+          "height": -3
+         },
+         "moved": true,
+         "firstMoveAtMs": 1368,
+         "gone": false,
+         "track": [
+          {
+           "t": 0,
+           "r": [
+            52.3,
+            713,
+            285.3,
+            115
+           ]
+          },
+          {
+           "t": 1368,
+           "r": [
+            52.1,
+            716,
+            285.7,
+            112
+           ]
+          }
+         ]
+        }
+       },
+       "shots": [
+        "phone-005-welcome-before-English.png",
+        "phone-006-welcome-after-English.png"
+       ]
+      },
+      {
+       "action": "learn Chinese on",
+       "moved": true,
+       "parts": {
+        "cover": {
+         "base": [
+          16,
+          253.2,
+          358,
+          195.7
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        },
+        "logo": {
+         "base": [
+          40.5,
+          276.2,
+          309,
+          151.7
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        },
+        "start": {
+         "base": [
+          64.1,
+          461.1,
+          261.9,
+          67.5
+         ],
+         "maxChange": {
+          "left": 6.6,
+          "top": 1.7,
+          "width": -13.3,
+          "height": -3.4
+         },
+         "moved": true,
+         "firstMoveAtMs": 316,
+         "gone": false,
+         "track": [
+          {
+           "t": 0,
+           "r": [
+            64.1,
+            461.1,
+            261.9,
+            67.5
+           ]
+          },
+          {
+           "t": 316,
+           "r": [
+            68.1,
+            462.1,
+            253.8,
+            65.5
+           ]
+          },
+          {
+           "t": 637,
+           "r": [
+            70.7,
+            462.8,
+            248.6,
+            64.1
+           ]
+          },
+          {
+           "t": 1136,
+           "r": [
+            69.1,
+            462.4,
+            251.8,
+            64.9
+           ]
+          },
+          {
+           "t": 1467,
+           "r": [
+            64.5,
+            461.2,
+            261.1,
+            67.3
+           ]
+          },
+          {
+           "t": 1812,
+           "r": [
+            62.4,
+            460.6,
+            265.3,
+            68.4
+           ]
+          },
+          {
+           "t": 2414,
+           "r": [
+            66.8,
+            461.8,
+            256.4,
+            66.1
+           ]
+          },
+          {
+           "t": 2559,
+           "r": [
+            68.7,
+            462.3,
+            252.6,
+            65.1
+           ]
+          }
+         ]
+        },
+        "languages": {
+         "base": [
+          52.1,
+          716,
+          285.7,
+          112
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        }
+       },
+       "shots": [
+        "phone-007-welcome-before-learn-Chinese-on.png",
+        "phone-008-welcome-after-learn-Chinese-on.png"
+       ]
+      },
+      {
+       "action": "learn Chinese off",
+       "moved": true,
+       "parts": {
+        "cover": {
+         "base": [
+          16,
+          253.2,
+          358,
+          195.7
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        },
+        "logo": {
+         "base": [
+          40.5,
+          276.2,
+          309,
+          151.7
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        },
+        "start": {
+         "base": [
+          68.5,
+          462.2,
+          253,
+          65.2
+         ],
+         "maxChange": {
+          "left": -6.1,
+          "top": -1.6,
+          "width": 12.2,
+          "height": 3.2
+         },
+         "moved": true,
+         "firstMoveAtMs": 294,
+         "gone": false,
+         "track": [
+          {
+           "t": 0,
+           "r": [
+            68.5,
+            462.2,
+            253,
+            65.2
+           ]
+          },
+          {
+           "t": 294,
+           "r": [
+            70.8,
+            462.8,
+            248.3,
+            64.1
+           ]
+          },
+          {
+           "t": 743,
+           "r": [
+            69.1,
+            462.4,
+            251.8,
+            64.9
+           ]
+          },
+          {
+           "t": 1053,
+           "r": [
+            65.3,
+            461.4,
+            259.4,
+            66.9
+           ]
+          },
+          {
+           "t": 1395,
+           "r": [
+            62.4,
+            460.6,
+            265.2,
+            68.4
+           ]
+          },
+          {
+           "t": 2105,
+           "r": [
+            67,
+            461.8,
+            256,
+            66
+           ]
+          },
+          {
+           "t": 2433,
+           "r": [
+            70.5,
+            462.7,
+            248.9,
+            64.2
+           ]
+          }
+         ]
+        },
+        "languages": {
+         "base": [
+          52.1,
+          716,
+          285.7,
+          112
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        }
+       },
+       "shots": [
+        "phone-009-welcome-before-learn-Chinese-off.png",
+        "phone-010-welcome-after-learn-Chinese-off.png"
+       ]
+      }
+     ]
+    },
+    "who": {
+     "shell": ".screen.who .who-card",
+     "parts": {
+      "card": ".screen.who .who-card",
+      "go button": ".screen.who .who-card .go",
+      "grown-ups button": ".screen.who .grown"
+     },
+     "opened": true,
+     "open": {
+      "appearedAtMs": 765,
+      "baselineAtMs": 1400,
+      "samples": 15,
+      "moved": false,
+      "parts": {
+       "card": {
+        "base": [
+         16,
+         199.1,
+         358,
+         381.8
+        ],
+        "maxChange": {
+         "left": 0,
+         "top": 0,
+         "width": 0,
+         "height": 0
+        },
+        "moved": false,
+        "firstMoveAtMs": null,
+        "gone": false
+       },
+       "go button": {
+        "base": [
+         90.3,
+         491.4,
+         209.4,
+         62.5
+        ],
+        "maxChange": {
+         "left": 0,
+         "top": 0,
+         "width": 0,
+         "height": 0
+        },
+        "moved": false,
+        "firstMoveAtMs": null,
+        "gone": false
+       },
+       "grown-ups button": {
+        "base": [
+         16,
+         788,
+         207,
+         40
+        ],
+        "maxChange": {
+         "left": 0,
+         "top": 0,
+         "width": 0,
+         "height": 0
+        },
+        "moved": false,
+        "firstMoveAtMs": null,
+        "gone": false
+       }
+      },
+      "shot": "phone-011-who-open.png"
+     },
+     "actions": [
+      {
+       "action": "pick player 1",
+       "moved": false,
+       "parts": {
+        "card": {
+         "base": [
+          16,
+          199.1,
+          358,
+          381.8
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        },
+        "go button": {
+         "base": [
+          90.3,
+          491.4,
+          209.4,
+          62.5
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        },
+        "grown-ups button": {
+         "base": [
+          16,
+          788,
+          207,
+          40
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        }
+       }
+      },
+      {
+       "action": "pick player 2",
+       "moved": false,
+       "parts": {
+        "card": {
+         "base": [
+          16,
+          199.1,
+          358,
+          381.8
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        },
+        "go button": {
+         "base": [
+          90.3,
+          491.4,
+          209.4,
+          62.5
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        },
+        "grown-ups button": {
+         "base": [
+          16,
+          788,
+          207,
+          40
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        }
+       }
+      },
+      {
+       "action": "mode two players",
+       "moved": false,
+       "parts": {
+        "card": {
+         "base": [
+          16,
+          199.1,
+          358,
+          381.8
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        },
+        "go button": {
+         "base": [
+          90.3,
+          491.4,
+          209.4,
+          62.5
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        },
+        "grown-ups button": {
+         "base": [
+          16,
+          788,
+          207,
+          40
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        }
+       }
+      },
+      {
+       "action": "pick player 1 (two)",
+       "moved": false,
+       "parts": {
+        "card": {
+         "base": [
+          16,
+          199.1,
+          358,
+          381.8
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        },
+        "go button": {
+         "base": [
+          90.3,
+          491.4,
+          209.4,
+          62.5
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        },
+        "grown-ups button": {
+         "base": [
+          16,
+          788,
+          207,
+          40
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        }
+       }
+      },
+      {
+       "action": "view side by side",
+       "moved": false,
+       "parts": {
+        "card": {
+         "base": [
+          16,
+          199.1,
+          358,
+          381.8
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        },
+        "go button": {
+         "base": [
+          90.3,
+          491.4,
+          209.4,
+          62.5
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        },
+        "grown-ups button": {
+         "base": [
+          16,
+          788,
+          207,
+          40
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        }
+       }
+      },
+      {
+       "action": "view face to face",
+       "moved": false,
+       "parts": {
+        "card": {
+         "base": [
+          16,
+          199.1,
+          358,
+          381.8
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        },
+        "go button": {
+         "base": [
+          90.3,
+          491.4,
+          209.4,
+          62.5
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        },
+        "grown-ups button": {
+         "base": [
+          16,
+          788,
+          207,
+          40
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        }
+       }
+      },
+      {
+       "action": "mode friend far away",
+       "moved": false,
+       "parts": {
+        "card": {
+         "base": [
+          16,
+          199.1,
+          358,
+          381.8
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        },
+        "go button": {
+         "base": [
+          90.3,
+          491.4,
+          209.4,
+          62.5
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        },
+        "grown-ups button": {
+         "base": [
+          16,
+          788,
+          207,
+          40
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        }
+       }
+      },
+      {
+       "action": "mode play alone",
+       "moved": false,
+       "parts": {
+        "card": {
+         "base": [
+          16,
+          199.1,
+          358,
+          381.8
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        },
+        "go button": {
+         "base": [
+          90.3,
+          491.4,
+          209.4,
+          62.5
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        },
+        "grown-ups button": {
+         "base": [
+          16,
+          788,
+          207,
+          40
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        }
+       }
+      },
+      {
+       "action": "pick player 1 again",
+       "moved": false,
+       "parts": {
+        "card": {
+         "base": [
+          16,
+          199.1,
+          358,
+          381.8
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        },
+        "go button": {
+         "base": [
+          90.3,
+          491.4,
+          209.4,
+          62.5
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        },
+        "grown-ups button": {
+         "base": [
+          16,
+          788,
+          207,
+          40
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        }
+       }
+      }
+     ]
+    },
+    "ladybird-tester": {
+     "shell": ".modal.tpanel .card",
+     "opened": true,
+     "actions": [
+      {
+       "action": "kind broken",
+       "moved": false,
+       "parts": {
+        "card": {
+         "base": [
+          14,
+          102,
+          362,
+          640
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        }
+       }
+      },
+      {
+       "action": "kind looks",
+       "moved": false,
+       "parts": {
+        "card": {
+         "base": [
+          14,
+          102,
+          362,
+          640
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        }
+       }
+      },
+      {
+       "action": "kind words",
+       "moved": false,
+       "parts": {
+        "card": {
+         "base": [
+          14,
+          102,
+          362,
+          640
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        }
+       }
+      },
+      {
+       "action": "kind sound",
+       "moved": false,
+       "parts": {
+        "card": {
+         "base": [
+          14,
+          102,
+          362,
+          640
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        }
+       }
+      },
+      {
+       "action": "kind idea",
+       "moved": false,
+       "parts": {
+        "card": {
+         "base": [
+          14,
+          102,
+          362,
+          640
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        }
+       }
+      },
+      {
+       "action": "type a note",
+       "moved": false,
+       "parts": {
+        "card": {
+         "base": [
+          14,
+          102,
+          362,
+          640
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        }
+       }
+      },
+      {
+       "action": "picture: scene only",
+       "moved": false,
+       "parts": {
+        "card": {
+         "base": [
+          14,
+          102,
+          362,
+          640
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        }
+       }
+      },
+      {
+       "action": "picture: whole interface",
+       "moved": false,
+       "parts": {
+        "card": {
+         "base": [
+          14,
+          102,
+          362,
+          640
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        }
+       }
+      },
+      {
+       "action": "Auto play tab",
+       "moved": false,
+       "parts": {
+        "card": {
+         "base": [
+          14,
+          102,
+          362,
+          640
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        }
+       },
+       "autoplayShot": "phone-022-ladybird-autoplay-tab.png"
+      },
+      {
+       "action": "wait in Auto play",
+       "moved": false,
+       "parts": {
+        "card": {
+         "base": [
+          14,
+          102,
+          362,
+          640
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        }
+       }
+      },
+      {
+       "action": "Tester tab",
+       "moved": false,
+       "parts": {
+        "card": {
+         "base": [
+          14,
+          102,
+          362,
+          640
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        }
+       }
+      },
+      {
+       "action": "Auto play tab again",
+       "moved": false,
+       "parts": {
+        "card": {
+         "base": [
+          14,
+          102,
+          362,
+          640
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        }
+       }
+      }
+     ],
+     "open": {
+      "appearedAtMs": 4805,
+      "baselineAtMs": 5500,
+      "samples": 40,
+      "moved": false,
+      "parts": {
+       "card": {
+        "base": [
+         14,
+         102,
+         362,
+         640
+        ],
+        "maxChange": {
+         "left": 0,
+         "top": 0,
+         "width": 0,
+         "height": 0
+        },
+        "moved": false,
+        "firstMoveAtMs": null,
+        "gone": false
+       }
+      },
+      "shot": "phone-021-ladybird-open.png"
+     }
+    }
+   },
+   "startup": {
+    "welcomeFirstNonWhiteFrameMs": 695,
+    "welcomeBackground": "radial-gradient(at 50% 38%, rgba(255, 250, 235, 0) 0%, rgba(",
+    "firstContentfulPaintMs": 100,
+    "titleTextRenderMs": null,
+    "worldReadyMs": 7494,
+    "bootTimes": {
+     "start": 665,
+     "world": 2137,
+     "people": 2270,
+     "town": 2720,
+     "roads": 3366,
+     "pretraffic": 4056,
+     "traffic": 4069,
+     "things": 5767,
+     "wideland": 6040,
+     "levelled": 6187,
+     "roadside": 6529,
+     "solids": 6541,
+     "ready": 6829,
+     "shaders": 9352
+    },
+    "navigation": {
+     "domContentLoaded": 243,
+     "load": 243
+    },
+    "wallClockToReadyMs": 17656,
+    "shots": {
+     "500": {
+      "file": "phone-startup-500ms.png",
+      "takenAtMs": 501,
+      "screen": {
+       "title": true,
+       "launch": [
+        "DIV",
+        "DIV",
+        "screen title sv2",
+        "DIV"
+       ],
+       "bodyBg": "rgb(248, 241, 255)"
+      }
+     },
+     "1000": {
+      "file": "phone-startup-1000ms.png",
+      "takenAtMs": 1000,
+      "screen": {
+       "title": true,
+       "launch": [
+        "DIV",
+        "DIV",
+        "screen title sv2",
+        "DIV"
+       ],
+       "bodyBg": "rgb(248, 241, 255)"
+      }
+     },
+     "2000": {
+      "file": "phone-startup-2000ms.png",
+      "takenAtMs": 2001,
+      "screen": {
+       "title": true,
+       "launch": [
+        "DIV",
+        "DIV",
+        "screen title sv2",
+        "DIV",
+        "nametags"
+       ],
+       "bodyBg": "rgb(248, 241, 255)"
+      }
+     },
+     "4000": {
+      "file": "phone-startup-4000ms.png",
+      "takenAtMs": 4000,
+      "screen": {
+       "title": true,
+       "launch": [
+        "DIV",
+        "DIV",
+        "screen title sv2",
+        "DIV",
+        "nametags"
+       ],
+       "bodyBg": "rgb(248, 241, 255)"
+      }
+     }
+    }
+   },
+   "bagIcons": {
+    "count": 96,
+    "medianPx": 64,
+    "limitPx": 38.4,
+    "tiny": [
+     {
+      "id": "gl=0",
+      "section": "Glider",
+      "label": "",
+      "kind": null,
+      "tile": [
+       105,
+       92
+      ],
+      "icon": null,
+      "size": 0,
+      "ofTile": 0
+     }
+    ],
+    "items": [
+     {
+      "id": "eat=pho",
+      "section": "Food tap to eat",
+      "label": "Phở (noodle soup)",
+      "kind": "svg.art..",
+      "tile": [
+       105,
+       117
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 61
+     },
+     {
+      "id": "eat=banhchung",
+      "section": "Food tap to eat",
+      "label": "Bánh chưng (square rice cake)",
+      "kind": "svg.art..",
+      "tile": [
+       105,
+       117
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 61
+     },
+     {
+      "id": "eat=xoixoai",
+      "section": "Food tap to eat",
+      "label": "Xôi xoài (mango sticky rice)",
+      "kind": "svg.art..",
+      "tile": [
+       105,
+       117
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 61
+     },
+     {
+      "id": "eat=chechuoi",
+      "section": "Food tap to eat",
+      "label": "Chè chuối (banana sweet soup)",
+      "kind": "svg.art..",
+      "tile": [
+       105,
+       117
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 61
+     },
+     {
+      "id": "eat=canhchua",
+      "section": "Food tap to eat",
+      "label": "Canh chua (sour fish soup)",
+      "kind": "svg.art..",
+      "tile": [
+       105,
+       117
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 61
+     },
+     {
+      "id": "eat=comchien",
+      "section": "Food tap to eat",
+      "label": "Egg fried rice",
+      "kind": "svg.art..",
+      "tile": [
+       105,
+       117
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 61
+     },
+     {
+      "id": "eat=comnam",
+      "section": "Food tap to eat",
+      "label": "Mushroom rice",
+      "kind": "svg.art..",
+      "tile": [
+       105,
+       117
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 61
+     },
+     {
+      "id": "eat=cakho",
+      "section": "Food tap to eat",
+      "label": "Cá kho (braised fish) with rice",
+      "kind": "svg.art..",
+      "tile": [
+       105,
+       117
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 61
+     },
+     {
+      "id": "eat=taonuong",
+      "section": "Food tap to eat",
+      "label": "Baked apples",
+      "kind": "svg.art..",
+      "tile": [
+       105,
+       117
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 61
+     },
+     {
+      "id": "eat=chuoinuong",
+      "section": "Food tap to eat",
+      "label": "Grilled banana",
+      "kind": "svg.art..",
+      "tile": [
+       105,
+       117
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 61
+     },
+     {
+      "id": "eat=nam",
+      "section": "Food tap to eat",
+      "label": "Mushroom skewer",
+      "kind": "svg.art..",
+      "tile": [
+       105,
+       117
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 61
+     },
+     {
+      "id": "eat=fruit",
+      "section": "Food tap to eat",
+      "label": "Rainbow fruit salad",
+      "kind": "svg.art..",
+      "tile": [
+       105,
+       117
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 61
+     },
+     {
+      "id": "eat=raumuong",
+      "section": "Food tap to eat",
+      "label": "Rau muống xào (stir-fried water spinach)",
+      "kind": "svg.art..",
+      "tile": [
+       105,
+       130
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 61
+     },
+     {
+      "id": "eat=khoainuong",
+      "section": "Food tap to eat",
+      "label": "Grilled sweet potato",
+      "kind": "svg.art..",
+      "tile": [
+       105,
+       130
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 61
+     },
+     {
+      "id": "eat=chedua",
+      "section": "Food tap to eat",
+      "label": "Chè đậu xanh (coconut and mung bean swee",
+      "kind": "svg.art..",
+      "tile": [
+       105,
+       130
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 61
+     },
+     {
+      "id": "eat=chemit",
+      "section": "Food tap to eat",
+      "label": "Chè mít (jackfruit and coconut dessert)",
+      "kind": "svg.art..",
+      "tile": [
+       105,
+       130
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 61
+     },
+     {
+      "id": "eat=macbread",
+      "section": "Food tap to eat",
+      "label": "Banana macadamia bread",
+      "kind": "svg.art..",
+      "tile": [
+       105,
+       130
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 61
+     },
+     {
+      "id": "eat=quandongpie",
+      "section": "Food tap to eat",
+      "label": "Quandong pie",
+      "kind": "svg.art..",
+      "tile": [
+       105,
+       130
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 61
+     },
+     {
+      "id": "eat=limefish",
+      "section": "Food tap to eat",
+      "label": "Fish with finger lime",
+      "kind": "svg.art..",
+      "tile": [
+       105,
+       117
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 61
+     },
+     {
+      "id": "eat=damper",
+      "section": "Food tap to eat",
+      "label": "Damper bread with bush tomato",
+      "kind": "svg.art..",
+      "tile": [
+       105,
+       117
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 61
+     },
+     {
+      "id": "eat=dumplings",
+      "section": "Food tap to eat",
+      "label": "Bok choy dumplings",
+      "kind": "svg.art..",
+      "tile": [
+       105,
+       117
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 61
+     },
+     {
+      "id": "eat=peachbun",
+      "section": "Food tap to eat",
+      "label": "Longevity peach buns",
+      "kind": "svg.art..",
+      "tile": [
+       105,
+       117
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 61
+     },
+     {
+      "id": "eat=peafried",
+      "section": "Food tap to eat",
+      "label": "Snow pea fried rice",
+      "kind": "svg.art..",
+      "tile": [
+       105,
+       117
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 61
+     },
+     {
+      "id": "eat=mandarins",
+      "section": "Food tap to eat",
+      "label": "Mandarin segments",
+      "kind": "svg.art..",
+      "tile": [
+       105,
+       117
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 61
+     },
+     {
+      "id": "eat=aampanna",
+      "section": "Food tap to eat",
+      "label": "Mango and ginger drink (aam panna)",
+      "kind": "svg.art..",
+      "tile": [
+       105,
+       117
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 61
+     },
+     {
+      "id": "eat=bharta",
+      "section": "Food tap to eat",
+      "label": "Smoky brinjal (baingan bharta)",
+      "kind": "svg.art..",
+      "tile": [
+       105,
+       117
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 61
+     },
+     {
+      "id": "eat=dal",
+      "section": "Food tap to eat",
+      "label": "Dal and rice",
+      "kind": "svg.art..",
+      "tile": [
+       105,
+       117
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 61
+     },
+     {
+      "id": "snack=bahai",
+      "section": "From shops and stalls tap to eat",
+      "label": "a bowl of phở (noodle soup)",
+      "kind": "svg.art..",
+      "tile": [
+       105,
+       130
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 61
+     },
+     {
+      "id": "snack=cothu",
+      "section": "From shops and stalls tap to eat",
+      "label": "green rice flakes (cốm)",
+      "kind": "svg.art..",
+      "tile": [
+       105,
+       130
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 61
+     },
+     {
+      "id": "snack=olai",
+      "section": "From shops and stalls tap to eat",
+      "label": "bánh bèo (little steamed rice cakes)",
+      "kind": "svg.art..",
+      "tile": [
+       105,
+       130
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 61
+     },
+     {
+      "id": "snack=chunam",
+      "section": "From shops and stalls tap to eat",
+      "label": "a Hội An silk lantern",
+      "kind": "svg.art..",
+      "tile": [
+       105,
+       117
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 61
+     },
+     {
+      "id": "snack=chutam",
+      "section": "From shops and stalls tap to eat",
+      "label": "a bánh mì (crunchy bread roll)",
+      "kind": "svg.art..",
+      "tile": [
+       105,
+       117
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 61
+     },
+     {
+      "id": "snack=cout",
+      "section": "From shops and stalls tap to eat",
+      "label": "a cold coconut",
+      "kind": "svg.art..",
+      "tile": [
+       105,
+       117
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 61
+     },
+     {
+      "id": "sellgem=crown",
+      "section": "Treasures tap for help",
+      "label": "Lost golden crown · $100",
+      "kind": "svg.art..",
+      "tile": [
+       105,
+       117
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 61
+     },
+     {
+      "id": "sellgem=diamond",
+      "section": "Treasures tap for help",
+      "label": "Sparkling diamond · $50",
+      "kind": "svg.art..",
+      "tile": [
+       105,
+       117
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 61
+     },
+     {
+      "id": "sellgem=ruby",
+      "section": "Treasures tap for help",
+      "label": "Red ruby · $25",
+      "kind": "svg.art..",
+      "tile": [
+       105,
+       117
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 61
+     },
+     {
+      "id": "sellgem=jade",
+      "section": "Treasures tap for help",
+      "label": "Green jade · $15",
+      "kind": "svg.art..",
+      "tile": [
+       105,
+       105
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 61
+     },
+     {
+      "id": "sellgem=gem",
+      "section": "Treasures tap for help",
+      "label": "Blue gem · $10",
+      "kind": "svg.art..",
+      "tile": [
+       105,
+       105
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 61
+     },
+     {
+      "id": "sellgem=gold",
+      "section": "Treasures tap for help",
+      "label": "Gold nugget · $6",
+      "kind": "svg.art..",
+      "tile": [
+       105,
+       105
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 61
+     },
+     {
+      "id": "sellgem=oldcoin",
+      "section": "Treasures tap for help",
+      "label": "Old bronze coin · $4",
+      "kind": "svg.art..",
+      "tile": [
+       105,
+       105
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 61
+     },
+     {
+      "id": "sellgem=crystal",
+      "section": "Treasures tap for help",
+      "label": "Purple crystal · $3",
+      "kind": "svg.art..",
+      "tile": [
+       105,
+       105
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 61
+     },
+     {
+      "id": "sellgem=fossil",
+      "section": "Treasures tap for help",
+      "label": "Fossil shell · $2",
+      "kind": "svg.art..",
+      "tile": [
+       105,
+       105
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 61
+     },
+     {
+      "id": "sellgem=bone",
+      "section": "Treasures tap for help",
+      "label": "Dinosaur bone · $1.50",
+      "kind": "svg.art..",
+      "tile": [
+       105,
+       117
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 61
+     },
+     {
+      "id": "sellgem=pebble",
+      "section": "Treasures tap for help",
+      "label": "Pretty pebble · 50c",
+      "kind": "svg.art..",
+      "tile": [
+       105,
+       117
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 61
+     },
+     {
+      "id": "ing=apple",
+      "section": "Ingredients",
+      "label": "Apple",
+      "kind": "svg.art..",
+      "tile": [
+       105,
+       105
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 61
+     },
+     {
+      "id": "ing=rice",
+      "section": "Ingredients",
+      "label": "Rice",
+      "kind": "svg.art..",
+      "tile": [
+       105,
+       105
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 61
+     },
+     {
+      "id": "ing=banana",
+      "section": "Ingredients",
+      "label": "Banana",
+      "kind": "svg.art..",
+      "tile": [
+       105,
+       105
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 61
+     },
+     {
+      "id": "ing=mango",
+      "section": "Ingredients",
+      "label": "Mango",
+      "kind": "svg.art..",
+      "tile": [
+       105,
+       105
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 61
+     },
+     {
+      "id": "ing=egg",
+      "section": "Ingredients",
+      "label": "Egg",
+      "kind": "svg.art..",
+      "tile": [
+       105,
+       105
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 61
+     },
+     {
+      "id": "ing=fish",
+      "section": "Ingredients",
+      "label": "Fish",
+      "kind": "svg.art..",
+      "tile": [
+       105,
+       105
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 61
+     },
+     {
+      "id": "ing=herb",
+      "section": "Ingredients",
+      "label": "Herbs",
+      "kind": "svg.art..",
+      "tile": [
+       105,
+       105
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 61
+     },
+     {
+      "id": "ing=mushroom",
+      "section": "Ingredients",
+      "label": "Mushroom",
+      "kind": "svg.art..",
+      "tile": [
+       105,
+       105
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 61
+     },
+     {
+      "id": "ing=noodles",
+      "section": "Ingredients",
+      "label": "Rice noodles",
+      "kind": "svg.art..",
+      "tile": [
+       105,
+       105
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 61
+     },
+     {
+      "id": "ing=leaf",
+      "section": "Ingredients",
+      "label": "Banana leaf",
+      "kind": "svg.art..",
+      "tile": [
+       105,
+       105
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 61
+     },
+     {
+      "id": "ing=bean",
+      "section": "Ingredients",
+      "label": "Mung beans",
+      "kind": "svg.art..",
+      "tile": [
+       105,
+       105
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 61
+     },
+     {
+      "id": "ing=mulberry",
+      "section": "Ingredients",
+      "label": "Mulberries",
+      "kind": "svg.art..",
+      "tile": [
+       105,
+       105
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 61
+     },
+     {
+      "id": "ing=guava",
+      "section": "Ingredients",
+      "label": "Guava",
+      "kind": "svg.art..",
+      "tile": [
+       105,
+       105
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 61
+     },
+     {
+      "id": "ing=strawberry",
+      "section": "Ingredients",
+      "label": "Wild strawberries",
+      "kind": "svg.art..",
+      "tile": [
+       105,
+       105
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 61
+     },
+     {
+      "id": "ing=lime",
+      "section": "Ingredients",
+      "label": "Wild lemon",
+      "kind": "svg.art..",
+      "tile": [
+       105,
+       105
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 61
+     },
+     {
+      "id": "ing=peach",
+      "section": "Ingredients",
+      "label": "Peach blossom",
+      "kind": "svg.art..",
+      "tile": [
+       105,
+       117
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 61
+     },
+     {
+      "id": "ing=apricot",
+      "section": "Ingredients",
+      "label": "Yellow apricot blossom",
+      "kind": "svg.art..",
+      "tile": [
+       105,
+       117
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 61
+     },
+     {
+      "id": "ing=wattle",
+      "section": "Ingredients",
+      "label": "Golden wattle",
+      "kind": "svg.art..",
+      "tile": [
+       105,
+       117
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 61
+     },
+     {
+      "id": "ing=hibiscus",
+      "section": "Ingredients",
+      "label": "Hibiscus",
+      "kind": "svg.art..",
+      "tile": [
+       105,
+       105
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 61
+     },
+     {
+      "id": "ing=coconut",
+      "section": "Ingredients",
+      "label": "Coconut",
+      "kind": "svg.art..",
+      "tile": [
+       105,
+       105
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 61
+     },
+     {
+      "id": "ing=jackfruit",
+      "section": "Ingredients",
+      "label": "Jackfruit",
+      "kind": "svg.art..",
+      "tile": [
+       105,
+       105
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 61
+     },
+     {
+      "id": "ing=chilli",
+      "section": "Ingredients",
+      "label": "Chilli",
+      "kind": "svg.art..",
+      "tile": [
+       105,
+       105
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 61
+     },
+     {
+      "id": "ing=waterspinach",
+      "section": "Ingredients",
+      "label": "Water spinach",
+      "kind": "svg.art..",
+      "tile": [
+       105,
+       105
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 61
+     },
+     {
+      "id": "ing=sweetpotato",
+      "section": "Ingredients",
+      "label": "Sweet potato",
+      "kind": "svg.art..",
+      "tile": [
+       105,
+       105
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 61
+     },
+     {
+      "id": "ing=macadamia",
+      "section": "Ingredients",
+      "label": "Macadamia nuts",
+      "kind": "svg.art..",
+      "tile": [
+       105,
+       117
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 61
+     },
+     {
+      "id": "ing=quandong",
+      "section": "Ingredients",
+      "label": "Quandong (desert peach)",
+      "kind": "svg.art..",
+      "tile": [
+       105,
+       117
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 61
+     },
+     {
+      "id": "ing=fingerlime",
+      "section": "Ingredients",
+      "label": "Finger lime",
+      "kind": "svg.art..",
+      "tile": [
+       105,
+       117
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 61
+     },
+     {
+      "id": "ing=bushtomato",
+      "section": "Ingredients",
+      "label": "Bush tomato",
+      "kind": "svg.art..",
+      "tile": [
+       105,
+       105
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 61
+     },
+     {
+      "id": "ing=cnpeach",
+      "section": "Ingredients",
+      "label": "Longevity peach",
+      "kind": "svg.art..",
+      "tile": [
+       105,
+       105
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 61
+     },
+     {
+      "id": "ing=mandarin",
+      "section": "Ingredients",
+      "label": "Mandarin",
+      "kind": "svg.art..",
+      "tile": [
+       105,
+       105
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 61
+     },
+     {
+      "id": "ing=bokchoy",
+      "section": "Ingredients",
+      "label": "Bok choy",
+      "kind": "svg.art..",
+      "tile": [
+       105,
+       105
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 61
+     },
+     {
+      "id": "ing=snowpea",
+      "section": "Ingredients",
+      "label": "Snow peas",
+      "kind": "svg.art..",
+      "tile": [
+       105,
+       105
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 61
+     },
+     {
+      "id": "ing=brinjal",
+      "section": "Ingredients",
+      "label": "Brinjal (eggplant)",
+      "kind": "svg.art..",
+      "tile": [
+       105,
+       105
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 61
+     },
+     {
+      "id": "ing=ginger",
+      "section": "Ingredients",
+      "label": "Ginger",
+      "kind": "svg.art..",
+      "tile": [
+       105,
+       105
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 61
+     },
+     {
+      "id": "ing=marigold",
+      "section": "Ingredients",
+      "label": "Marigold flowers",
+      "kind": "svg.art..",
+      "tile": [
+       105,
+       105
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 61
+     },
+     {
+      "id": "wear=cap",
+      "section": "Clothes and accessories tap to wear",
+      "label": "Red cap",
+      "kind": "svg.art.kpic",
+      "tile": [
+       105,
+       111
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 61
+     },
+     {
+      "id": "wear=flower",
+      "section": "Clothes and accessories tap to wear",
+      "label": "Flower clip",
+      "kind": "svg.art.kpic",
+      "tile": [
+       105,
+       111
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 61
+     },
+     {
+      "id": "wear=bunny",
+      "section": "Clothes and accessories tap to wear",
+      "label": "Bunny ears",
+      "kind": "svg.art.kpic",
+      "tile": [
+       105,
+       111
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 61
+     },
+     {
+      "id": "wear=nonla",
+      "section": "Clothes and accessories tap to wear",
+      "label": "Nón lá",
+      "kind": "svg.art.kpic",
+      "tile": [
+       105,
+       111
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 61
+     },
+     {
+      "id": "wear=crown",
+      "section": "Clothes and accessories tap to wear",
+      "label": "Golden crown",
+      "kind": "svg.art.kpic",
+      "tile": [
+       105,
+       111
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 61
+     },
+     {
+      "id": "wear=beanie",
+      "section": "Clothes and accessories tap to wear",
+      "label": "Woolly beanie",
+      "kind": "svg.art.kpic",
+      "tile": [
+       105,
+       111
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 61
+     },
+     {
+      "id": "wear=bucket",
+      "section": "Clothes and accessories tap to wear",
+      "label": "Bucket hat",
+      "kind": "svg.art.kpic",
+      "tile": [
+       105,
+       111
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 61
+     },
+     {
+      "id": "wear=dino",
+      "section": "Clothes and accessories tap to wear",
+      "label": "Dinosaur hood",
+      "kind": "svg.art.kpic",
+      "tile": [
+       105,
+       111
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 61
+     },
+     {
+      "id": "wear=sunhat",
+      "section": "Clothes and accessories tap to wear",
+      "label": "Straw sun hat",
+      "kind": "svg.art.kpic",
+      "tile": [
+       105,
+       111
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 61
+     },
+     {
+      "id": "wear=tiara",
+      "section": "Clothes and accessories tap to wear",
+      "label": "Sparkly tiara",
+      "kind": "svg.art.kpic",
+      "tile": [
+       105,
+       111
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 61
+     },
+     {
+      "id": "wear=catears",
+      "section": "Clothes and accessories tap to wear",
+      "label": "Cat ears",
+      "kind": "svg.art.kpic",
+      "tile": [
+       105,
+       111
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 61
+     },
+     {
+      "id": "wear=pearls",
+      "section": "Clothes and accessories tap to wear",
+      "label": "Pearl necklace",
+      "kind": "svg.art.kpic",
+      "tile": [
+       105,
+       111
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 61
+     },
+     {
+      "id": "wear=heart",
+      "section": "Clothes and accessories tap to wear",
+      "label": "Heart locket",
+      "kind": "svg.art.kpic",
+      "tile": [
+       105,
+       111
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 61
+     },
+     {
+      "id": "unwear=hat",
+      "section": "Wearing now tap to take off",
+      "label": "Hair bow",
+      "kind": "svg.art.kpic",
+      "tile": [
+       105,
+       111
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 61
+     },
+     {
+      "id": "kite=1",
+      "section": "Whistling kite",
+      "label": "Flying",
+      "kind": "svg.art..",
+      "tile": [
+       105,
+       105
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 61
+     },
+     {
+      "id": "whistle=1",
+      "section": "Whistling kite",
+      "label": "Whistle!",
+      "kind": "svg.art..",
+      "tile": [
+       105,
+       105
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 61
+     },
+     {
+      "id": "gl=0",
+      "section": "Glider",
+      "label": "",
+      "kind": null,
+      "tile": [
+       105,
+       92
+      ],
+      "icon": null,
+      "size": 0,
+      "ofTile": 0
+     }
+    ],
+    "shots": [
+     "phone-012-bag-tabs-top.png",
+     "phone-013-bag-tabs-section-1.png",
+     "phone-014-bag-tabs-section-2.png",
+     "phone-015-bag-tabs-section-3.png",
+     "phone-016-bag-tabs-section-4.png",
+     "phone-017-bag-tabs-section-5.png",
+     "phone-018-bag-tabs-section-6.png",
+     "phone-019-bag-tabs-section-7.png",
+     "phone-020-bag-tabs-section-8.png"
+    ]
+   },
+   "errors": []
+  },
+  "computer": {
+   "panels": {
+    "welcome": {
+     "shell": ".screen.title .tt-cover",
+     "parts": {
+      "cover": ".screen.title .tt-cover",
+      "logo": ".screen.title .logo",
+      "start": ".screen.title .press",
+      "languages": ".screen.title .tt-panel"
+     },
+     "opened": true,
+     "open": {
+      "appearedAtMs": 0,
+      "baselineAtMs": 1629,
+      "samples": 8,
+      "moved": true,
+      "parts": {
+       "cover": {
+        "base": [
+         190,
+         151.1,
+         900,
+         341.8
+        ],
+        "maxChange": {
+         "left": 0,
+         "top": 0,
+         "width": 0,
+         "height": 0
+        },
+        "moved": false,
+        "firstMoveAtMs": null,
+        "gone": false
+       },
+       "logo": {
+        "base": [
+         243,
+         190.1,
+         794,
+         271.8
+        ],
+        "maxChange": {
+         "left": 0,
+         "top": 0,
+         "width": 0,
+         "height": 0
+        },
+        "moved": false,
+        "firstMoveAtMs": null,
+        "gone": false
+       },
+       "start": {
+        "base": [
+         473.4,
+         505.7,
+         333.1,
+         80.5
+        ],
+        "maxChange": {
+         "left": -6.2,
+         "top": -1.5,
+         "width": 12.4,
+         "height": 2.9
+        },
+        "moved": true,
+        "firstMoveAtMs": 2754,
+        "gone": false,
+        "track": [
+         {
+          "t": 1629,
+          "r": [
+           473.4,
+           505.7,
+           333.1,
+           80.5
+          ]
+         },
+         {
+          "t": 2754,
+          "r": [
+           471.7,
+           505.2,
+           336.6,
+           81.3
+          ]
+         },
+         {
+          "t": 3281,
+          "r": [
+           467.2,
+           504.2,
+           345.5,
+           83.4
+          ]
+         },
+         {
+          "t": 3813,
+          "r": [
+           473.4,
+           505.7,
+           333.1,
+           80.5
+          ]
+         },
+         {
+          "t": 4827,
+          "r": [
+           474.6,
+           505.9,
+           330.8,
+           79.9
+          ]
+         },
+         {
+          "t": 5321,
+          "r": [
+           467.2,
+           504.2,
+           345.5,
+           83.4
+          ]
+         },
+         {
+          "t": 6260,
+          "r": [
+           478,
+           506.8,
+           324,
+           78.3
+          ]
+         }
+        ]
+       },
+       "languages": {
+        "base": [
+         497.1,
+         672,
+         285.7,
+         112
+        ],
+        "maxChange": {
+         "left": 0,
+         "top": 0,
+         "width": 0,
+         "height": 0
+        },
+        "moved": false,
+        "firstMoveAtMs": null,
+        "gone": false
+       }
+      },
+      "shots": [
+       "computer-001-welcome-open-at-700ms.png",
+       "computer-002-welcome-open-at-2500ms.png"
+      ]
+     },
+     "actions": [
+      {
+       "action": "Tieng Viet",
+       "moved": true,
+       "parts": {
+        "cover": {
+         "base": [
+          190,
+          151.1,
+          900,
+          341.8
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": -1.5,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        },
+        "logo": {
+         "base": [
+          243,
+          190.1,
+          794,
+          271.8
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": -1.5,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        },
+        "start": {
+         "base": [
+          469,
+          504.6,
+          342.1,
+          82.6
+         ],
+         "maxChange": {
+          "left": 6.6,
+          "top": -1.8,
+          "width": -13.2,
+          "height": -2.7
+         },
+         "moved": true,
+         "firstMoveAtMs": 1333,
+         "gone": false,
+         "track": [
+          {
+           "t": 0,
+           "r": [
+            469,
+            504.6,
+            342.1,
+            82.6
+           ]
+          },
+          {
+           "t": 1333,
+           "r": [
+            475.6,
+            504.4,
+            328.9,
+            79.9
+           ]
+          },
+          {
+           "t": 2537,
+           "r": [
+            468.7,
+            502.8,
+            342.5,
+            83.2
+           ]
+          }
+         ]
+        },
+        "languages": {
+         "base": [
+          497.1,
+          672,
+          285.7,
+          112
+         ],
+         "maxChange": {
+          "left": 0.2,
+          "top": -3,
+          "width": -0.4,
+          "height": 3
+         },
+         "moved": true,
+         "firstMoveAtMs": 1333,
+         "gone": false,
+         "track": [
+          {
+           "t": 0,
+           "r": [
+            497.1,
+            672,
+            285.7,
+            112
+           ]
+          },
+          {
+           "t": 1333,
+           "r": [
+            497.3,
+            669,
+            285.3,
+            115
+           ]
+          }
+         ]
+        }
+       },
+       "shots": [
+        "computer-003-welcome-before-Tieng-Viet.png",
+        "computer-004-welcome-after-Tieng-Viet.png"
+       ]
+      },
+      {
+       "action": "English",
+       "moved": true,
+       "parts": {
+        "cover": {
+         "base": [
+          190,
+          149.6,
+          900,
+          341.8
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 1.5,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        },
+        "logo": {
+         "base": [
+          243,
+          188.6,
+          794,
+          271.8
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 1.5,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        },
+        "start": {
+         "base": [
+          479.4,
+          505.4,
+          321.2,
+          78
+         ],
+         "maxChange": {
+          "left": -11,
+          "top": -2.7,
+          "width": 21.9,
+          "height": 5.4
+         },
+         "moved": true,
+         "firstMoveAtMs": 838,
+         "gone": false,
+         "track": [
+          {
+           "t": 0,
+           "r": [
+            479.4,
+            505.4,
+            321.2,
+            78
+           ]
+          },
+          {
+           "t": 838,
+           "r": [
+            468.4,
+            502.7,
+            343.1,
+            83.4
+           ]
+          },
+          {
+           "t": 1926,
+           "r": [
+            478.5,
+            506.9,
+            323,
+            78
+           ]
+          },
+          {
+           "t": 2787,
+           "r": [
+            469.8,
+            504.8,
+            340.3,
+            82.2
+           ]
+          }
+         ]
+        },
+        "languages": {
+         "base": [
+          497.3,
+          669,
+          285.3,
+          115
+         ],
+         "maxChange": {
+          "left": -0.2,
+          "top": 3,
+          "width": 0.4,
+          "height": -3
+         },
+         "moved": true,
+         "firstMoveAtMs": 1583,
+         "gone": false,
+         "track": [
+          {
+           "t": 0,
+           "r": [
+            497.3,
+            669,
+            285.3,
+            115
+           ]
+          },
+          {
+           "t": 1583,
+           "r": [
+            497.1,
+            672,
+            285.7,
+            112
+           ]
+          }
+         ]
+        }
+       },
+       "shots": [
+        "computer-005-welcome-before-English.png",
+        "computer-006-welcome-after-English.png"
+       ]
+      },
+      {
+       "action": "learn Chinese on",
+       "moved": true,
+       "parts": {
+        "cover": {
+         "base": [
+          190,
+          151.1,
+          900,
+          341.8
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        },
+        "logo": {
+         "base": [
+          243,
+          190.1,
+          794,
+          271.8
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        },
+        "start": {
+         "base": [
+          478.1,
+          506.8,
+          323.8,
+          78.2
+         ],
+         "maxChange": {
+          "left": -10.9,
+          "top": -2.6,
+          "width": 21.8,
+          "height": 5.3
+         },
+         "moved": true,
+         "firstMoveAtMs": 452,
+         "gone": false,
+         "track": [
+          {
+           "t": 0,
+           "r": [
+            478.1,
+            506.8,
+            323.8,
+            78.2
+           ]
+          },
+          {
+           "t": 452,
+           "r": [
+            470.6,
+            505,
+            338.8,
+            81.8
+           ]
+          },
+          {
+           "t": 956,
+           "r": [
+            467.2,
+            504.2,
+            345.6,
+            83.5
+           ]
+          },
+          {
+           "t": 1468,
+           "r": [
+            472.5,
+            505.4,
+            334.9,
+            80.9
+           ]
+          },
+          {
+           "t": 1866,
+           "r": [
+            478.4,
+            506.9,
+            323.2,
+            78
+           ]
+          },
+          {
+           "t": 2334,
+           "r": [
+            475.9,
+            506.3,
+            328.2,
+            79.3
+           ]
+          }
+         ]
+        },
+        "languages": {
+         "base": [
+          497.1,
+          672,
+          285.7,
+          112
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        }
+       },
+       "shots": [
+        "computer-007-welcome-before-learn-Chinese-on.png",
+        "computer-008-welcome-after-learn-Chinese-on.png"
+       ]
+      },
+      {
+       "action": "learn Chinese off",
+       "moved": true,
+       "parts": {
+        "cover": {
+         "base": [
+          190,
+          151.1,
+          900,
+          341.8
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        },
+        "logo": {
+         "base": [
+          243,
+          190.1,
+          794,
+          271.8
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        },
+        "start": {
+         "base": [
+          477,
+          506.5,
+          326,
+          78.7
+         ],
+         "maxChange": {
+          "left": -9.4,
+          "top": -2.2,
+          "width": 18.8,
+          "height": 4.6
+         },
+         "moved": true,
+         "firstMoveAtMs": 430,
+         "gone": false,
+         "track": [
+          {
+           "t": 0,
+           "r": [
+            477,
+            506.5,
+            326,
+            78.7
+           ]
+          },
+          {
+           "t": 430,
+           "r": [
+            469,
+            504.6,
+            342.1,
+            82.6
+           ]
+          },
+          {
+           "t": 847,
+           "r": [
+            467.6,
+            504.3,
+            344.8,
+            83.3
+           ]
+          },
+          {
+           "t": 1283,
+           "r": [
+            473.1,
+            505.6,
+            333.8,
+            80.6
+           ]
+          }
+         ]
+        },
+        "languages": {
+         "base": [
+          497.1,
+          672,
+          285.7,
+          112
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        }
+       },
+       "shots": [
+        "computer-009-welcome-before-learn-Chinese-off.png",
+        "computer-010-welcome-after-learn-Chinese-off.png"
+       ]
+      }
+     ]
+    },
+    "who": {
+     "shell": ".screen.who .who-card",
+     "parts": {
+      "card": ".screen.who .who-card",
+      "go button": ".screen.who .who-card .go",
+      "grown-ups button": ".screen.who .grown"
+     },
+     "opened": true,
+     "open": {
+      "appearedAtMs": 1238,
+      "baselineAtMs": 1985,
+      "samples": 10,
+      "moved": false,
+      "parts": {
+       "card": {
+        "base": [
+         280,
+         126.4,
+         720,
+         483.3
+        ],
+        "maxChange": {
+         "left": 0,
+         "top": 0,
+         "width": 0,
+         "height": 0
+        },
+        "moved": false,
+        "firstMoveAtMs": null,
+        "gone": false
+       },
+       "go button": {
+        "base": [
+         535.3,
+         520.1,
+         209.4,
+         62.5
+        ],
+        "maxChange": {
+         "left": 0,
+         "top": 0,
+         "width": 0,
+         "height": 0
+        },
+        "moved": false,
+        "firstMoveAtMs": null,
+        "gone": false
+       },
+       "grown-ups button": {
+        "base": [
+         16,
+         744,
+         207,
+         40
+        ],
+        "maxChange": {
+         "left": 0,
+         "top": 0,
+         "width": 0,
+         "height": 0
+        },
+        "moved": false,
+        "firstMoveAtMs": null,
+        "gone": false
+       }
+      },
+      "shot": "computer-011-who-open.png"
+     },
+     "actions": [
+      {
+       "action": "pick player 1",
+       "moved": false,
+       "parts": {
+        "card": {
+         "base": [
+          280,
+          126.4,
+          720,
+          483.3
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        },
+        "go button": {
+         "base": [
+          535.3,
+          520.1,
+          209.4,
+          62.5
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        },
+        "grown-ups button": {
+         "base": [
+          16,
+          744,
+          207,
+          40
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        }
+       }
+      },
+      {
+       "action": "pick player 2",
+       "moved": false,
+       "parts": {
+        "card": {
+         "base": [
+          280,
+          126.4,
+          720,
+          483.3
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        },
+        "go button": {
+         "base": [
+          535.3,
+          520.1,
+          209.4,
+          62.5
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        },
+        "grown-ups button": {
+         "base": [
+          16,
+          744,
+          207,
+          40
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        }
+       }
+      },
+      {
+       "action": "mode two players",
+       "moved": false,
+       "parts": {
+        "card": {
+         "base": [
+          280,
+          126.4,
+          720,
+          483.3
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        },
+        "go button": {
+         "base": [
+          535.3,
+          520.1,
+          209.4,
+          62.5
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        },
+        "grown-ups button": {
+         "base": [
+          16,
+          744,
+          207,
+          40
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        }
+       }
+      },
+      {
+       "action": "pick player 1 (two)",
+       "moved": false,
+       "parts": {
+        "card": {
+         "base": [
+          280,
+          126.4,
+          720,
+          483.3
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        },
+        "go button": {
+         "base": [
+          535.3,
+          520.1,
+          209.4,
+          62.5
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        },
+        "grown-ups button": {
+         "base": [
+          16,
+          744,
+          207,
+          40
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        }
+       }
+      },
+      {
+       "action": "view side by side",
+       "moved": false,
+       "parts": {
+        "card": {
+         "base": [
+          280,
+          126.4,
+          720,
+          483.3
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        },
+        "go button": {
+         "base": [
+          535.3,
+          520.1,
+          209.4,
+          62.5
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        },
+        "grown-ups button": {
+         "base": [
+          16,
+          744,
+          207,
+          40
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        }
+       }
+      },
+      {
+       "action": "view face to face",
+       "moved": false,
+       "parts": {
+        "card": {
+         "base": [
+          280,
+          126.4,
+          720,
+          483.3
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        },
+        "go button": {
+         "base": [
+          535.3,
+          520.1,
+          209.4,
+          62.5
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        },
+        "grown-ups button": {
+         "base": [
+          16,
+          744,
+          207,
+          40
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        }
+       }
+      },
+      {
+       "action": "mode friend far away",
+       "moved": false,
+       "parts": {
+        "card": {
+         "base": [
+          280,
+          126.4,
+          720,
+          483.3
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        },
+        "go button": {
+         "base": [
+          535.3,
+          520.1,
+          209.4,
+          62.5
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        },
+        "grown-ups button": {
+         "base": [
+          16,
+          744,
+          207,
+          40
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        }
+       }
+      },
+      {
+       "action": "mode play alone",
+       "moved": false,
+       "parts": {
+        "card": {
+         "base": [
+          280,
+          126.4,
+          720,
+          483.3
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        },
+        "go button": {
+         "base": [
+          535.3,
+          520.1,
+          209.4,
+          62.5
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        },
+        "grown-ups button": {
+         "base": [
+          16,
+          744,
+          207,
+          40
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        }
+       }
+      },
+      {
+       "action": "pick player 1 again",
+       "moved": false,
+       "parts": {
+        "card": {
+         "base": [
+          280,
+          126.4,
+          720,
+          483.3
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        },
+        "go button": {
+         "base": [
+          535.3,
+          520.1,
+          209.4,
+          62.5
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        },
+        "grown-ups button": {
+         "base": [
+          16,
+          744,
+          207,
+          40
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        }
+       }
+      }
+     ]
+    },
+    "ladybird-tester": {
+     "shell": ".modal.tpanel .card",
+     "opened": true,
+     "actions": [
+      {
+       "action": "kind broken",
+       "moved": false,
+       "parts": {
+        "card": {
+         "base": [
+          360,
+          80,
+          560,
+          640
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        }
+       }
+      },
+      {
+       "action": "kind looks",
+       "moved": false,
+       "parts": {
+        "card": {
+         "base": [
+          360,
+          80,
+          560,
+          640
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        }
+       }
+      },
+      {
+       "action": "kind words",
+       "moved": false,
+       "parts": {
+        "card": {
+         "base": [
+          360,
+          80,
+          560,
+          640
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        }
+       }
+      },
+      {
+       "action": "kind sound",
+       "moved": false,
+       "parts": {
+        "card": {
+         "base": [
+          360,
+          80,
+          560,
+          640
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        }
+       }
+      },
+      {
+       "action": "kind idea",
+       "moved": false,
+       "parts": {
+        "card": {
+         "base": [
+          360,
+          80,
+          560,
+          640
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        }
+       }
+      },
+      {
+       "action": "type a note",
+       "moved": false,
+       "parts": {
+        "card": {
+         "base": [
+          360,
+          80,
+          560,
+          640
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        }
+       }
+      },
+      {
+       "action": "picture: scene only",
+       "moved": false,
+       "parts": {
+        "card": {
+         "base": [
+          360,
+          80,
+          560,
+          640
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        }
+       }
+      },
+      {
+       "action": "picture: whole interface",
+       "moved": false,
+       "parts": {
+        "card": {
+         "base": [
+          360,
+          80,
+          560,
+          640
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        }
+       }
+      },
+      {
+       "action": "Auto play tab",
+       "moved": false,
+       "parts": {
+        "card": {
+         "base": [
+          360,
+          80,
+          560,
+          640
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        }
+       },
+       "autoplayShot": "computer-022-ladybird-autoplay-tab.png"
+      },
+      {
+       "action": "wait in Auto play",
+       "moved": false,
+       "parts": {
+        "card": {
+         "base": [
+          360,
+          80,
+          560,
+          640
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        }
+       }
+      },
+      {
+       "action": "Tester tab",
+       "moved": false,
+       "parts": {
+        "card": {
+         "base": [
+          360,
+          80,
+          560,
+          640
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        }
+       }
+      },
+      {
+       "action": "Auto play tab again",
+       "moved": false,
+       "parts": {
+        "card": {
+         "base": [
+          360,
+          80,
+          560,
+          640
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        }
+       }
+      }
+     ],
+     "open": {
+      "appearedAtMs": 8093,
+      "baselineAtMs": 8700,
+      "samples": 45,
+      "moved": false,
+      "parts": {
+       "card": {
+        "base": [
+         360,
+         80,
+         560,
+         640
+        ],
+        "maxChange": {
+         "left": 0,
+         "top": 0,
+         "width": 0,
+         "height": 0
+        },
+        "moved": false,
+        "firstMoveAtMs": null,
+        "gone": false
+       }
+      },
+      "shot": "computer-021-ladybird-open.png"
+     }
+    }
+   },
+   "startup": {
+    "welcomeFirstNonWhiteFrameMs": 684,
+    "welcomeBackground": "radial-gradient(at 50% 38%, rgba(255, 250, 235, 0) 0%, rgba(",
+    "firstContentfulPaintMs": 116,
+    "titleTextRenderMs": null,
+    "worldReadyMs": 8028,
+    "bootTimes": {
+     "start": 664,
+     "world": 2320,
+     "people": 2421,
+     "town": 2842,
+     "roads": 3502,
+     "pretraffic": 4085,
+     "traffic": 4103,
+     "things": 6188,
+     "wideland": 6533,
+     "levelled": 6698,
+     "roadside": 7052,
+     "solids": 7064,
+     "ready": 7364,
+     "shaders": 9693
+    },
+    "navigation": {
+     "domContentLoaded": 267,
+     "load": 267
+    },
+    "wallClockToReadyMs": 16606,
+    "shots": {
+     "500": {
+      "file": "computer-startup-500ms.png",
+      "takenAtMs": 500,
+      "screen": {
+       "title": true,
+       "launch": [
+        "DIV",
+        "DIV",
+        "screen title sv2",
+        "DIV"
+       ],
+       "bodyBg": "rgb(248, 241, 255)"
+      }
+     },
+     "1000": {
+      "file": "computer-startup-1000ms.png",
+      "takenAtMs": 1000,
+      "screen": {
+       "title": true,
+       "launch": [
+        "DIV",
+        "DIV",
+        "screen title sv2",
+        "DIV"
+       ],
+       "bodyBg": "rgb(248, 241, 255)"
+      }
+     },
+     "2000": {
+      "file": "computer-startup-2000ms.png",
+      "takenAtMs": 2000,
+      "screen": {
+       "title": true,
+       "launch": [
+        "DIV",
+        "DIV",
+        "screen title sv2",
+        "DIV"
+       ],
+       "bodyBg": "rgb(248, 241, 255)"
+      }
+     },
+     "4000": {
+      "file": "computer-startup-4000ms.png",
+      "takenAtMs": 4000,
+      "screen": {
+       "title": true,
+       "launch": [
+        "DIV",
+        "DIV",
+        "screen title sv2",
+        "DIV",
+        "nametags"
+       ],
+       "bodyBg": "rgb(248, 241, 255)"
+      }
+     }
+    }
+   },
+   "bagIcons": {
+    "count": 96,
+    "medianPx": 64,
+    "limitPx": 38.4,
+    "tiny": [
+     {
+      "id": "gl=0",
+      "section": "Glider",
+      "label": "",
+      "kind": null,
+      "tile": [
+       97,
+       92
+      ],
+      "icon": null,
+      "size": 0,
+      "ofTile": 0
+     }
+    ],
+    "items": [
+     {
+      "id": "eat=pho",
+      "section": "Food tap to eat",
+      "label": "Phở (noodle soup)",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       130
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "eat=banhchung",
+      "section": "Food tap to eat",
+      "label": "Bánh chưng (square rice cake)",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       130
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "eat=xoixoai",
+      "section": "Food tap to eat",
+      "label": "Xôi xoài (mango sticky rice)",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       130
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "eat=chechuoi",
+      "section": "Food tap to eat",
+      "label": "Chè chuối (banana sweet soup)",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       130
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "eat=canhchua",
+      "section": "Food tap to eat",
+      "label": "Canh chua (sour fish soup)",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       130
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "eat=comchien",
+      "section": "Food tap to eat",
+      "label": "Egg fried rice",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       130
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "eat=comnam",
+      "section": "Food tap to eat",
+      "label": "Mushroom rice",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       130
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "eat=cakho",
+      "section": "Food tap to eat",
+      "label": "Cá kho (braised fish) with rice",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       130
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "eat=taonuong",
+      "section": "Food tap to eat",
+      "label": "Baked apples",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       143
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "eat=chuoinuong",
+      "section": "Food tap to eat",
+      "label": "Grilled banana",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       143
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "eat=nam",
+      "section": "Food tap to eat",
+      "label": "Mushroom skewer",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       143
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "eat=fruit",
+      "section": "Food tap to eat",
+      "label": "Rainbow fruit salad",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       143
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "eat=raumuong",
+      "section": "Food tap to eat",
+      "label": "Rau muống xào (stir-fried water spinach)",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       143
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "eat=khoainuong",
+      "section": "Food tap to eat",
+      "label": "Grilled sweet potato",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       143
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "eat=chedua",
+      "section": "Food tap to eat",
+      "label": "Chè đậu xanh (coconut and mung bean swee",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       143
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "eat=chemit",
+      "section": "Food tap to eat",
+      "label": "Chè mít (jackfruit and coconut dessert)",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       143
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "eat=macbread",
+      "section": "Food tap to eat",
+      "label": "Banana macadamia bread",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       117
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "eat=quandongpie",
+      "section": "Food tap to eat",
+      "label": "Quandong pie",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       117
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "eat=limefish",
+      "section": "Food tap to eat",
+      "label": "Fish with finger lime",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       117
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "eat=damper",
+      "section": "Food tap to eat",
+      "label": "Damper bread with bush tomato",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       117
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "eat=dumplings",
+      "section": "Food tap to eat",
+      "label": "Bok choy dumplings",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       117
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "eat=peachbun",
+      "section": "Food tap to eat",
+      "label": "Longevity peach buns",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       117
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "eat=peafried",
+      "section": "Food tap to eat",
+      "label": "Snow pea fried rice",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       117
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "eat=mandarins",
+      "section": "Food tap to eat",
+      "label": "Mandarin segments",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       117
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "eat=aampanna",
+      "section": "Food tap to eat",
+      "label": "Mango and ginger drink (aam panna)",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       130
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "eat=bharta",
+      "section": "Food tap to eat",
+      "label": "Smoky brinjal (baingan bharta)",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       130
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "eat=dal",
+      "section": "Food tap to eat",
+      "label": "Dal and rice",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       130
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "snack=bahai",
+      "section": "From shops and stalls tap to eat",
+      "label": "a bowl of phở (noodle soup)",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       130
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "snack=cothu",
+      "section": "From shops and stalls tap to eat",
+      "label": "green rice flakes (cốm)",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       130
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "snack=olai",
+      "section": "From shops and stalls tap to eat",
+      "label": "bánh bèo (little steamed rice cakes)",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       130
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "snack=chunam",
+      "section": "From shops and stalls tap to eat",
+      "label": "a Hội An silk lantern",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       130
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "snack=chutam",
+      "section": "From shops and stalls tap to eat",
+      "label": "a bánh mì (crunchy bread roll)",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       130
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "snack=cout",
+      "section": "From shops and stalls tap to eat",
+      "label": "a cold coconut",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       130
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "sellgem=crown",
+      "section": "Treasures tap for help",
+      "label": "Lost golden crown · $100",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       117
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "sellgem=diamond",
+      "section": "Treasures tap for help",
+      "label": "Sparkling diamond · $50",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       117
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "sellgem=ruby",
+      "section": "Treasures tap for help",
+      "label": "Red ruby · $25",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       117
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "sellgem=jade",
+      "section": "Treasures tap for help",
+      "label": "Green jade · $15",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       117
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "sellgem=gem",
+      "section": "Treasures tap for help",
+      "label": "Blue gem · $10",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       117
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "sellgem=gold",
+      "section": "Treasures tap for help",
+      "label": "Gold nugget · $6",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       117
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "sellgem=oldcoin",
+      "section": "Treasures tap for help",
+      "label": "Old bronze coin · $4",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       117
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "sellgem=crystal",
+      "section": "Treasures tap for help",
+      "label": "Purple crystal · $3",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       117
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "sellgem=fossil",
+      "section": "Treasures tap for help",
+      "label": "Fossil shell · $2",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       117
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "sellgem=bone",
+      "section": "Treasures tap for help",
+      "label": "Dinosaur bone · $1.50",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       117
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "sellgem=pebble",
+      "section": "Treasures tap for help",
+      "label": "Pretty pebble · 50c",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       117
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "ing=apple",
+      "section": "Ingredients",
+      "label": "Apple",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       105
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "ing=rice",
+      "section": "Ingredients",
+      "label": "Rice",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       105
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "ing=banana",
+      "section": "Ingredients",
+      "label": "Banana",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       105
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "ing=mango",
+      "section": "Ingredients",
+      "label": "Mango",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       105
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "ing=egg",
+      "section": "Ingredients",
+      "label": "Egg",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       105
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "ing=fish",
+      "section": "Ingredients",
+      "label": "Fish",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       105
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "ing=herb",
+      "section": "Ingredients",
+      "label": "Herbs",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       105
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "ing=mushroom",
+      "section": "Ingredients",
+      "label": "Mushroom",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       105
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "ing=noodles",
+      "section": "Ingredients",
+      "label": "Rice noodles",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       105
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "ing=leaf",
+      "section": "Ingredients",
+      "label": "Banana leaf",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       105
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "ing=bean",
+      "section": "Ingredients",
+      "label": "Mung beans",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       105
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "ing=mulberry",
+      "section": "Ingredients",
+      "label": "Mulberries",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       105
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "ing=guava",
+      "section": "Ingredients",
+      "label": "Guava",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       105
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "ing=strawberry",
+      "section": "Ingredients",
+      "label": "Wild strawberries",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       105
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "ing=lime",
+      "section": "Ingredients",
+      "label": "Wild lemon",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       105
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "ing=peach",
+      "section": "Ingredients",
+      "label": "Peach blossom",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       105
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "ing=apricot",
+      "section": "Ingredients",
+      "label": "Yellow apricot blossom",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       117
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "ing=wattle",
+      "section": "Ingredients",
+      "label": "Golden wattle",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       117
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "ing=hibiscus",
+      "section": "Ingredients",
+      "label": "Hibiscus",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       117
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "ing=coconut",
+      "section": "Ingredients",
+      "label": "Coconut",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       117
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "ing=jackfruit",
+      "section": "Ingredients",
+      "label": "Jackfruit",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       117
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "ing=chilli",
+      "section": "Ingredients",
+      "label": "Chilli",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       117
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "ing=waterspinach",
+      "section": "Ingredients",
+      "label": "Water spinach",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       117
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "ing=sweetpotato",
+      "section": "Ingredients",
+      "label": "Sweet potato",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       117
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "ing=macadamia",
+      "section": "Ingredients",
+      "label": "Macadamia nuts",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       117
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "ing=quandong",
+      "section": "Ingredients",
+      "label": "Quandong (desert peach)",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       117
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "ing=fingerlime",
+      "section": "Ingredients",
+      "label": "Finger lime",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       117
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "ing=bushtomato",
+      "section": "Ingredients",
+      "label": "Bush tomato",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       117
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "ing=cnpeach",
+      "section": "Ingredients",
+      "label": "Longevity peach",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       117
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "ing=mandarin",
+      "section": "Ingredients",
+      "label": "Mandarin",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       117
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "ing=bokchoy",
+      "section": "Ingredients",
+      "label": "Bok choy",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       117
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "ing=snowpea",
+      "section": "Ingredients",
+      "label": "Snow peas",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       117
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "ing=brinjal",
+      "section": "Ingredients",
+      "label": "Brinjal (eggplant)",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       105
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "ing=ginger",
+      "section": "Ingredients",
+      "label": "Ginger",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       105
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "ing=marigold",
+      "section": "Ingredients",
+      "label": "Marigold flowers",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       105
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "wear=cap",
+      "section": "Clothes and accessories tap to wear",
+      "label": "Red cap",
+      "kind": "svg.art.kpic",
+      "tile": [
+       97,
+       111
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "wear=flower",
+      "section": "Clothes and accessories tap to wear",
+      "label": "Flower clip",
+      "kind": "svg.art.kpic",
+      "tile": [
+       97,
+       111
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "wear=bunny",
+      "section": "Clothes and accessories tap to wear",
+      "label": "Bunny ears",
+      "kind": "svg.art.kpic",
+      "tile": [
+       97,
+       111
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "wear=nonla",
+      "section": "Clothes and accessories tap to wear",
+      "label": "Nón lá",
+      "kind": "svg.art.kpic",
+      "tile": [
+       97,
+       111
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "wear=crown",
+      "section": "Clothes and accessories tap to wear",
+      "label": "Golden crown",
+      "kind": "svg.art.kpic",
+      "tile": [
+       97,
+       111
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "wear=beanie",
+      "section": "Clothes and accessories tap to wear",
+      "label": "Woolly beanie",
+      "kind": "svg.art.kpic",
+      "tile": [
+       97,
+       111
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "wear=bucket",
+      "section": "Clothes and accessories tap to wear",
+      "label": "Bucket hat",
+      "kind": "svg.art.kpic",
+      "tile": [
+       97,
+       111
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "wear=dino",
+      "section": "Clothes and accessories tap to wear",
+      "label": "Dinosaur hood",
+      "kind": "svg.art.kpic",
+      "tile": [
+       97,
+       111
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "wear=sunhat",
+      "section": "Clothes and accessories tap to wear",
+      "label": "Straw sun hat",
+      "kind": "svg.art.kpic",
+      "tile": [
+       97,
+       111
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "wear=tiara",
+      "section": "Clothes and accessories tap to wear",
+      "label": "Sparkly tiara",
+      "kind": "svg.art.kpic",
+      "tile": [
+       97,
+       111
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "wear=catears",
+      "section": "Clothes and accessories tap to wear",
+      "label": "Cat ears",
+      "kind": "svg.art.kpic",
+      "tile": [
+       97,
+       111
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "wear=pearls",
+      "section": "Clothes and accessories tap to wear",
+      "label": "Pearl necklace",
+      "kind": "svg.art.kpic",
+      "tile": [
+       97,
+       111
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "wear=heart",
+      "section": "Clothes and accessories tap to wear",
+      "label": "Heart locket",
+      "kind": "svg.art.kpic",
+      "tile": [
+       97,
+       111
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "unwear=hat",
+      "section": "Wearing now tap to take off",
+      "label": "Hair bow",
+      "kind": "svg.art.kpic",
+      "tile": [
+       97,
+       111
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "kite=1",
+      "section": "Whistling kite",
+      "label": "Flying",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       105
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "whistle=1",
+      "section": "Whistling kite",
+      "label": "Whistle!",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       105
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "gl=0",
+      "section": "Glider",
+      "label": "",
+      "kind": null,
+      "tile": [
+       97,
+       92
+      ],
+      "icon": null,
+      "size": 0,
+      "ofTile": 0
+     }
+    ],
+    "shots": [
+     "computer-012-bag-tabs-top.png",
+     "computer-013-bag-tabs-section-1.png",
+     "computer-014-bag-tabs-section-2.png",
+     "computer-015-bag-tabs-section-3.png",
+     "computer-016-bag-tabs-section-4.png",
+     "computer-017-bag-tabs-section-5.png",
+     "computer-018-bag-tabs-section-6.png",
+     "computer-019-bag-tabs-section-7.png",
+     "computer-020-bag-tabs-section-8.png"
+    ]
+   },
+   "errors": []
+  }
+ }
+}

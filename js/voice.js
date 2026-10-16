@@ -117,24 +117,24 @@ export function say(en, vi) { const t = swapNames(settings.lang === 'vi' ? (vi ?
 export function sayAsync(en, vi) { return speak(en, vi); }
 // (owner, 13 Oct: soft music under the story films) how many lines are being spoken now; the theatre lowers its music
 // while it is more than 0
-let talking = 0; const talkers = new Set();
+const activeSpeech = new Set(), talkers = new Set();
 export const onSpeaking = f => { talkers.add(f); return () => talkers.delete(f); };
-const told = () => talkers.forEach(f => { try { f(talking); } catch (e) { } });
+const told = () => talkers.forEach(f => { try { f(activeSpeech.size); } catch (e) { } });
 async function speak(en, vi) {
   if (!settings.voice) return;
-  talking++; told();
-  try { return await speakNow(en, vi); } finally { talking--; told(); }
+  const ticket = {}; activeSpeech.add(ticket); told();
+  try { return await speakNow(en, vi); } finally { activeSpeech.delete(ticket); told(); }
 }
 async function speakNow(en, vi) {
   en = swapNames(en, 'en'); vi = swapNames(vi, 'vi');
   const my = ++seq;
   if (!PACK && !packTried) { await waitPack(); if (my !== seq) return; }
   try { speechSynthesis.cancel(); } catch (e) { }
-  try { if (playing) playing.stop(); } catch (e) { }
+  stopPlayback();
   // a family recording of exactly this line wins over any other voice
   if (settings.familyVoice) {
     const ph = FAMILY_PHRASES.find(p => p.en === en || p.vi === vi);
-    if (ph && hasClip(settings.lang, ph.id)) { await playClip(settings.lang, ph.id); return; }
+    if (ph && hasClip(settings.lang, ph.id)) { await playClip(settings.lang, ph.id, my); return; }
   }
   const parts = [settings.lang === 'vi' ? ['vi', vi ?? en] : ['en', en]];
   if (settings.bilingual && vi != null && en !== vi) parts.push(settings.lang === 'vi' ? ['en', en] : ['vi', vi]);
@@ -142,8 +142,10 @@ async function speakNow(en, vi) {
     if (my !== seq) return;
     if (window.__svVoiceLog) window.__svVoiceLog(lang, text, !!packSlot(lang, text)); // for tools/voice-harvest.mjs
     try { if (await playPack(lang, text, my)) continue; } catch (e) { }
+    if (my !== seq) return;
     // (round R item 12) a line with changing words (a number, an item, a name) is put together from its recorded parts
     try { if (await playParts(lang, text, my)) continue; } catch (e) { }
+    if (my !== seq) return;
     // Not recorded as a whole: recorded sentences inside it still play from the pack; only the rest uses another voice.
     const bits = sentences(text);
     if (PACK && bits.length > 1 && bits.some(b => packSlot(lang, b) || tplMatch(lang, b))) {
@@ -217,13 +219,14 @@ export function sayIn(lang, text) {
   if (window.__svVoiceLog) window.__svVoiceLog(lang, text, !!packSlot(lang, text));
   const my = ++seq;
   try { speechSynthesis.cancel(); } catch (e) { }
+  stopPlayback();
   if (!PACK && !packTried) { waitPack().then(() => { packTried = true; if (my === seq) sayIn(lang, text); }); return; }
   if (packSlot(lang, text)) { playPack(lang, text, my).then(ok => { if (!ok && my === seq) deviceSpeak(text, lang, my); }).catch(() => deviceSpeak(text, lang, my)); return; }
   deviceSpeak(text, lang, my);
 }
 // the phone's own voice only (Grown-ups → Advanced → Phone voice ▶), so the chosen voice is really heard
-export function sayDevice(lang, text) { const my = ++seq; try { speechSynthesis.cancel(); } catch (e) { } try { if (playing) playing.stop(); } catch (e) { } return deviceSpeak(text, lang, my); }
-export function hush() { seq++; try { speechSynthesis.cancel(); } catch (e) { } try { if (playing) playing.stop(); } catch (e) { } }
+export function sayDevice(lang, text) { const my = ++seq; try { speechSynthesis.cancel(); } catch (e) { } stopPlayback(); activeSpeech.clear(); told(); return deviceSpeak(text, lang, my); }
+export function hush() { seq++; try { speechSynthesis.cancel(); } catch (e) { } stopPlayback(); activeSpeech.clear(); told(); }
 
 // ---------- Family voice: real recordings of a grown-up ----------
 // A grown-up records the game's most-used lines. Those lines are then played in their real voice,
@@ -278,10 +281,14 @@ export async function deleteClip(lang, id) { await tx('readwrite', st => st.dele
 let playing = null;
 // Played through Web Audio, which (once unlocked by the first tap) can play at any time, even on iPhone.
 // Returns a promise that resolves when the clip has finished (or false if there is no clip).
-export function playClip(lang, id) {
+export function playClip(lang, id, my = null) {
   const c = clips[lang + ':' + id]; if (!c) return false;
+  // A family line inherits its narration token; a direct preview replaces the current voice.
+  if (my == null) { my = ++seq; activeSpeech.clear(); told(); }
+  if (my !== seq) return Promise.resolve();
+  stopPlayback();
   if (c.decoded) return playBuffer(c.decoded);
-  return decode(c.data).then(buf => { c.decoded = buf; return playBuffer(buf); }).catch(() => { });
+  return decode(c.data).then(buf => { c.decoded = buf; if (my === seq) return playBuffer(buf); }).catch(() => { });
 }
 // (a decoder that never answers falls back to the plain player after 5 s)
 function decode(data) { const a = ac(); return a ? Promise.race([a.decodeAudioData(data.slice(0)), new Promise((_, no) => setTimeout(() => no(new Error('slow decode')), 5000))]) : Promise.reject(new Error('no audio')); }
@@ -290,15 +297,26 @@ const SILENT = (() => { const b = new Uint8Array(46), v = new DataView(b.buffer)
   w(0, 'RIFF'); v.setUint32(4, 38, true); w(8, 'WAVEfmt '); v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true); v.setUint32(24, 8000, true); v.setUint32(28, 16000, true); v.setUint16(32, 2, true); v.setUint16(34, 16, true); w(36, 'data'); v.setUint32(40, 2, true);
   return 'data:audio/wav;base64,' + btoa(String.fromCharCode(...b)); })();
 let player = null, primed = false;
+let cancelUrlPlayback = null;
+function stopPlayback() {
+  const source = playing; playing = null;
+  try { source?.stop(); } catch (e) { }
+  if (cancelUrlPlayback) cancelUrlPlayback();
+  try { player?.pause(); } catch (e) { }
+}
 unlockers.push(() => { if (primed) return; try { player = player || new Audio(); player.src = SILENT; const p = player.play(); if (p) p.then(() => { primed = true; player.pause(); }).catch(() => { }); } catch (e) { } });
 function playUrl(url, rate = 1) {
   if (!player) return Promise.resolve(false);
+  if (cancelUrlPlayback) cancelUrlPlayback();
   // (owner, 13 Oct: some films did not start by themselves) a recording the phone never starts, or that stalls, used to
   // leave the line "speaking" for ever, so the story's page never turned: it gives up after 6 s without a start, and a
   // started one ends at its own length plus 1.5 s at the latest
   return new Promise(res => {
-    let done = false; const end = ok => { if (done) return; done = true; clearTimeout(t0); clearTimeout(t1); res(ok); };
-    const t0 = setTimeout(() => { try { player.pause(); } catch (e) { } end(false); }, 6000); let t1 = null;
+    let done = false, t0 = null, t1 = null;
+    const end = ok => { if (done) return; done = true; clearTimeout(t0); clearTimeout(t1); if (cancelUrlPlayback === cancel) { cancelUrlPlayback = null; player.onended = player.onerror = player.onplaying = null; } res(ok); };
+    const cancel = () => { try { player.pause(); } catch (e) { } end(true); };
+    cancelUrlPlayback = cancel;
+    t0 = setTimeout(() => { try { player.pause(); } catch (e) { } end(false); }, 6000);
     try {
       player.pause(); player.src = url; player.preservesPitch = player.webkitPreservesPitch = rate === 1; player.playbackRate = rate;
       player.onended = () => end(true); player.onerror = () => end(false);
@@ -311,7 +329,7 @@ function playUrl(url, rate = 1) {
 export const voiceDiag = { pack: 'loading', lastMiss: '', audio: '' };
 function playBuffer(buf, rate = 1) {
   const a = ac(); if (!a) return Promise.resolve();
-  try { if (playing) playing.stop(); } catch (e) { }
+  stopPlayback();
   const s = a.createBufferSource(); s.buffer = buf; s.playbackRate.value = rate; s.connect(a.destination); s.start(); playing = s;
   return new Promise(res => { s.onended = res; setTimeout(res, buf.duration / rate * 1000 + 400); });
 }
@@ -327,7 +345,20 @@ let packTried = false;
 // (round R, PERF-001) fetched on the first tap or key press, or soon after the valley is ready: nothing is spoken before a
 // child taps, so the title screen comes up without it
 let packReady = null;
-const loadPack = () => packReady || (packReady = fetch('voices/manifest.json').then(r => r.ok ? r.json() : null).then(j => { if (j && j.lines) { PACK = j; voiceDiag.pack = 'ok'; autoSavePack(); } else { voiceDiag.pack = 'missing'; packEmit({ state: 'nopack' }); } }).catch(() => { voiceDiag.pack = 'offline'; packEmit({ state: 'nopack' }); }).finally(() => { packTried = true; }));
+let packRevision = 0;
+const loadPack = () => {
+  if (packReady) return packReady;
+  const revision = packRevision;
+  return packReady = fetch('voices/manifest.json').then(r => r.ok ? r.json() : null).then(j => {
+    if (revision !== packRevision) return; // A background refresh already supplied a newer index.
+    if (j && j.lines) { PACK = j; voiceDiag.pack = 'ok'; autoSavePack(); }
+    else { voiceDiag.pack = 'missing'; packEmit({ state: 'nopack' }); }
+  }).catch(() => { if (revision === packRevision) { voiceDiag.pack = 'offline'; packEmit({ state: 'nopack' }); } }).finally(() => { packTried = true; });
+};
+navigator.serviceWorker?.addEventListener('message', e => {
+  if (e.data?.type !== 'SV_VOICE_MANIFEST' || !e.data.manifest?.lines) return;
+  packRevision++; PACK = e.data.manifest; voiceDiag.pack = 'ok'; autoSavePack();
+});
 for (const ev of ['pointerdown', 'keydown', 'touchstart']) addEventListener(ev, loadPack, { once: true, capture: true, passive: true });
 // (owner, 11 Oct AEDT; Release, PERF-001) without a tap it comes a few seconds after the valley is ready (main.js sets
 // G.bootTimes then), not at a fixed 8 s: on a slow tablet the valley took longer than that, so the list (about 120 KB)
@@ -359,6 +390,7 @@ const packRate = slot => { const k = speakerKind(), st = STYLE_RATE[settings.voi
 export const savePackOffline = progress => voicePackMod().then(m => m.savePackOffline(progress));
 export const packUrl = (lang, text, slot) => `voices/${lang}/${slot}/${packKey(lang, text) || lineHash(lang, text)}.mp3`;
 async function playPack(lang, text, my) {
+  if (my !== seq) return true;
   const slot = packSlot(lang, text); if (!slot) return false;
   const k = 'pack|' + slot + '|' + lang + '|' + text;
   const url = packUrl(lang, text, slot), a = ac();
@@ -369,7 +401,7 @@ async function playPack(lang, text, my) {
     // (a slow phone network: the line is given up after 8 s, never waited for for ever)
     const ctl = typeof AbortController !== 'undefined' ? new AbortController() : null, tm = ctl && setTimeout(() => ctl.abort(), 8000);
     let data; try { const r = await fetch(url, ctl ? { signal: ctl.signal } : undefined); if (!r.ok) { voiceDiag.lastMiss = 'file ' + r.status; return false; } data = await r.arrayBuffer(); } catch (e) { voiceDiag.lastMiss = 'file slow'; return false; } finally { clearTimeout(tm); }
-    try { buf = await decode(data); } catch (e) { voiceDiag.lastMiss = 'decode'; return playUrl(url, packRate(slot)); }
+    try { buf = await decode(data); } catch (e) { if (my !== seq) return true; voiceDiag.lastMiss = 'decode'; return playUrl(url, packRate(slot)); }
     mem.set(k, buf); if (mem.size > 120) mem.delete(mem.keys().next().value);
   }
   if (my !== seq) return true;
