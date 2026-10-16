@@ -4,6 +4,8 @@ The owner split the "feel and sound, sticker book, daily adventure" plan into th
 
 ## Prompt
 
+**Round (owner, 17 Oct AEDT): r80.** r79 is taken by other work; chats A, B and C all go into **r80** together. r79 may not be on `main` yet when you start: do not stop for that (owner, 16 Oct: "just work first"); start from `main` as below and Release puts everything in r80.
+
 You are chat C of three helper chats on Sparkle Valley: the daily adventure. Chat A (feel and sound, branch `work/feel-sound`) gives you `feel.js`: the press, open, reward and confetti effects. Chat B (sticker book, branch `work/sticker-book`) gives you `stickers.give(id)` for rewards. Another chat, **Release**, owns `main`, the version number, the voice index and every deployment. You never deploy.
 
 ### 1. Start
@@ -11,7 +13,7 @@ You are chat C of three helper chats on Sparkle Valley: the daily adventure. Cha
 1. Read `CLAUDE.md`, `HANDOFF.md`, `docs/SO-TAY-THIET-KE.md` (with UX-001 to UX-010), `docs/ARCHITECTURE.md` (events and lifecycle) and `docs/cores/BOARD.md`.
 2. Read this file and the other two prompts in `docs/plans-20261016/`. Read `js/surprises.js` and `js/content/surprises.js` (how a thing waits for the child so it is never missed), `js/wayfind.js` ("Show me the way"), `js/owlguide.js` and the Adventures tab in `js/ui.js`.
 3. Read the owner's mockups and rules in `docs/ui-redesign-20261016/` (`README.md`, and `canvas/Adventure.dc.html` and `canvas/HUD.dc.html` for the exact design). Follow UI-1 to UI-10, ADV-1 to ADV-6 and HUD-4 (also copied in section 2 below).
-4. Check on the board that r79 is on `main`, that chat A wrote "feel.js API pushed" and that chat B wrote "stickers API pushed". If any is missing, tell the owner with one pop-up.
+4. Check on the board that chat A wrote "feel.js API pushed" (it has) and that chat B wrote "stickers API pushed". If either is missing, tell the owner with one pop-up.
 5. Create your branch: `git fetch origin main work/feel-sound work/sticker-book && git checkout -b work/daily-adventure origin/main && git merge --no-edit origin/work/feel-sound origin/work/sticker-book`. Merge both again before each push.
    The plan and mockup docs (`docs/plans-20261016/`, `docs/ui-redesign-20261016/`) are on the branch `work/plans-20261016` until Release merges it. If they are not on `main` yet, read them there first (`git fetch origin work/plans-20261016 && git show origin/work/plans-20261016:docs/plans-20261016/<file>`) and merge that branch into yours right after creating it: `git merge --no-edit origin/work/plans-20261016`.
 
