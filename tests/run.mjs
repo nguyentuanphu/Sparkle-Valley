@@ -5621,6 +5621,22 @@ await check('ownerthinkinglevels', async () => {
     ok(one('steppingpath', 'Easy').deadEnds === 0 && one('steppingpath', 'Medium').deadEnds >= 1 && one('steppingpath', 'Hard').deadEnds >= 1, 'Flower Path dead ends from Medium: ' + JSON.stringify(get('steppingpath', 'Medium')));
     ok(one('gardenorder', 'Hard').maxChoices > one('gardenorder', 'under-5').maxChoices && one('remembergarden', 'Hard').maxChoices > one('remembergarden', 'Easy').maxChoices, 'Garden Steps and Remember the Garden choices grow');
   }
+  // (owner, 16 Oct: "the flower path pictures overlap each other") on a tablet and a computer too, every square's picture
+  // stays inside its square and the squares do not touch
+  for (const [w, h, touch] of [[390, 844, true], [820, 1180, true], [1280, 800, false]]) {
+    const P = await open(b, { w, h, touch }); await clear(P.page);
+    for (const level of [1, 3]) {
+      await P.page.evaluate(async level => { const F = await import('/js/games/frame.js'); __sv.paused = true; window.__thinking = F.openGame('steppingpath', { players: [__sv.heroes[0].profile], little: false, level }); }, level);
+      await P.page.waitForSelector('.think-path'); await P.page.waitForTimeout(600);
+      const bad = await P.page.evaluate(() => { const out = [], cells = [...document.querySelectorAll('.think-path button')];
+        cells.forEach((c, i) => { const r = c.getBoundingClientRect(), a = c.querySelector('svg, .art, .emo')?.getBoundingClientRect(); if (a && (a.left < r.left - .5 || a.right > r.right + .5 || a.top < r.top - .5 || a.bottom > r.bottom + .5)) out.push(`picture ${i} ${Math.round(a.width)} in ${Math.round(r.width)}`);
+          const n = cells[i + 1]; if (n && (i + 1) % Math.round(Math.sqrt(cells.length)) && n.getBoundingClientRect().left < r.right + 2) out.push(`squares ${i} and ${i + 1} touch`); });
+        return out; });
+      ok(!bad.length, `Flower Path at ${w}x${h}, level ${level}: ` + bad.slice(0, 4).join('; '));
+      await P.page.locator('.gl-x').click(); await P.page.waitForSelector('.gl', { state: 'detached' });
+    }
+    await P.ctx.close();
+  }
   fs.writeFileSync('out/owner-thinking/results.json', JSON.stringify(rows, null, 2));
 });
 await check('ownerlearninglayout', async () => {

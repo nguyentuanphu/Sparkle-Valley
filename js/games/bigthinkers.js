@@ -153,7 +153,8 @@ register({ id: 'steppingpath', icon: '🗺️', name: () => T('Flower Path', 'Đ
   const grid = el('div', 'think-path'); grid.style.cssText = `display:grid;grid-template-columns:repeat(${size},minmax(64px,1fr));gap:8px;max-width:${size > 4 ? 400 : 460}px;margin:auto`;
   api.stage.appendChild(grid); const cells = [];
   const flower = i => route.includes(i) || decoys.includes(i);
-  for (let i = 0; i < size * size; i++) { const b = el('button', 'choice', pic(i === route.at(-1) ? '🏁' : flower(i) ? '🌸' : '💧')); b.style.cssText = 'width:100%;height:auto;aspect-ratio:1;min-width:0;min-height:64px'; b.dataset.cell = i; b.setAttribute('aria-label', i === route.at(-1) ? T('Flag', 'Lá cờ') : flower(i) ? T('Flower stepping stone', 'Bước qua hoa') : T('Puddle', 'Vũng nước')); grid.appendChild(b); cells.push(b); }
+  // (owner, 16 Oct) a fixed picture size: the shared choice size drew 80 px pictures in 74 px squares on tablets and computers
+  for (let i = 0; i < size * size; i++) { const b = el('button', 'choice', pic(i === route.at(-1) ? '🏁' : flower(i) ? '🌸' : '💧')); b.style.cssText = 'width:100%;height:auto;aspect-ratio:1;min-width:0;min-height:64px;font-size:46px;overflow:hidden'; b.dataset.cell = i; b.setAttribute('aria-label', i === route.at(-1) ? T('Flag', 'Lá cờ') : flower(i) ? T('Flower stepping stone', 'Bước qua hoa') : T('Puddle', 'Vũng nước')); grid.appendChild(b); cells.push(b); }
   cells[0].classList.add('right'); api.say(...instructions.steppingpath[0]);
   repeat(api, () => decoys.length ? ['Some flowers stop at a puddle. Find the flowers that go all the way to the flag.', 'Có hoa dẫn đến vũng nước. Tìm đường hoa đi đến tận lá cờ.'] : instructions.steppingpath[0]);
   if (decoys.length) api.show('Some flowers stop at a puddle. Find the flowers that go all the way to the flag.', 'Có hoa dẫn đến vũng nước. Tìm đường hoa đi đến tận lá cờ.');
