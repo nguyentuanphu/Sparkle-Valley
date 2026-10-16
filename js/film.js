@@ -725,7 +725,8 @@ function dressStory(S) {
       for(let i=0;i<12;i++)ball(.16,'#fff6e4',-11+i*2,-.15,12.6+Math.sin(i)*.2,[2,.3,1]);
       if(kind!=='sea'){flowers(-8,-2,'#ffb5a0',5);rocks(7,-3,'#e8d4b3',3);} break;
     case 'bamboo':
-      L.bamboo(S,-6,-10,'#69be70',5,8);L.bamboo(S,7,-11,'#87cb6b',4,9);
+      // Batch the additional bamboo into the dressing mesh: no extra draw call per leaf.
+      for (const x of [-6, 7]) for (let i=0;i<5;i++) { const px=x+i*.25,h=5+i*.45; post(.075,h,'#69be70',px,h/2,-10); for(let j=1;j<5;j++) { post(.095,.06,'#a0d18a',px,j*h/5,-10); parts.push(P(Cone(.2,1.1,4),'#87cb6b',[px+.3,j*h/5+.4,-10],[0,0,-.9],[1,1,.3])); } }
       B(4,.18,1,'#cda56b',-6,.12,-2);for(let i=0;i<5;i++)post(.065,1.3,'#e8ce91',-7.5+i*.7,.75,-2);flowers(7,-3);break;
     case 'tet': case 'newyear': case 'festival': case 'wedding': case 'moonfestival':
       bunting();L.blossom(S,-7,-6);L.blossom(S,7,-7);
