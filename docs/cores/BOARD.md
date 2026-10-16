@@ -96,6 +96,8 @@ Format for a request:
 ## Owner plan: feel and sound, sticker book, daily adventure (16 Oct AEDT)
 - **Now:** plan docs only (no game code) · branch `work/plans-20261016` · three chat prompts in `docs/plans-20261016/` (chat A feel and sound `work/feel-sound`, chat B sticker book `work/sticker-book`, chat C daily adventure `work/daily-adventure`) and the owner's UI redesign mockups and rules in `docs/ui-redesign-20261016/` · ready for Release (docs only) · 16 Oct AEDT
 - [ ] (owner plan → Release) merge `work/plans-20261016` with the next round; then merge A, then B, then C as each says "ready for Release" · the three chats depend on each other in that order · docs only · 16 Oct AEDT
+- **Now (chat A, feel and sound):** building · branch `work/feel-sound` · feel.js API pushed (`press`, `open`, `close`, `reward(kind, from, to, n)`, `nope`, `celebrate({ little })`, in `js/feel.js`); chats B and C can start from it · owner's answers 16 Oct AEDT: plan "go", Grown-ups "Tap sounds" switch yes, gentle confetti for under-5s yes; started from `main` (r78), which r it ships in is decided later · 16 Oct AEDT
+- [ ] (chat A → Release) add `js/feel.js` to the offline list (`sw.js` FILES) · new file · 16 Oct AEDT
 
 ## Front Desk
 - **Now:** robot working again (timer fired at 1:39 am AEDT). Fixed on branches: #27 (PR #40), #28 (PR #42), #29 (PR #43), #31 (PR #44). Owner's go: #30 (keep Khám phá), #33 (80 to 90 percent see-through; link footprints so they fade). #35 waits for the owner's iPhone voice report; #41 retrying · branch `core/front-desk` · waiting for Release to merge the bugfix pull requests · 11 Oct, 3:15 am AEDT (Sydney)

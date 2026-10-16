@@ -13,6 +13,7 @@ import { pic, hasArt as hasPic } from './art.js';
 import { SFX } from './audio.js';
 import { say } from './voice.js';
 import { explain as explainBrief } from './explain.js';
+import * as feel from './feel.js';
 
 export const EMOTES = [
   { id: 'hi', icon: '👋', en: 'Hi!', vi: 'Xin chào!' },
@@ -171,6 +172,8 @@ export class Hud {
 
   update(dt, camera, fogMap, markers) {
     const h = this.hero, p = h.profile;
+    // under-5s: the action button's picture breathes (css: feel and sound)
+    { const lt = p.age !== 'big'; if (this.last.little !== lt) { this.root.classList.toggle('little', lt); this.last.little = lt; } }
     // (batch rollout) the "Where is…?" button waits for its batch day (Studio switch 'wayfind'), unless a child playing used it
     { const w = !this.game.keep || this.game.keep('wayfind'); if (this.last.where !== w) { const b = this.q('.z-where'); if (b) b.style.display = w ? '' : 'none'; this.last.where = w; } }
     // hearts
@@ -183,7 +186,14 @@ export class Hud {
     if (this.last.m !== mk) {
       this.q('.chip.c-money').innerHTML = '<i>🪙</i>' + fmt(farm.coins); this.q('.chip.c-orbs').innerHTML = '<i>🔮</i>' + p.orbs; this.q('.chip.c-leafy').innerHTML = '<i>🍃</i>' + Object.keys(p.leafies).length;
       if (this.last.m) this.q('.chips').classList.add('bump'), setTimeout(() => this.q('.chips').classList.remove('bump'), 400);
-      this.last.m = mk;
+      // (feel and sound, owner plan 16 Oct AEDT) what was earned flies into its counter from where the child last
+      // tapped (js/feel.js). Coins are shared, so only the first player's screen shows them flying.
+      const nums = [farm.coins, p.orbs, Object.keys(p.leafies).length];
+      if (this.last.m && this.nums) [['coin', '.chip.c-money'], ['orb', '.chip.c-orbs'], ['leaf', '.chip.c-leafy']].forEach(([kind, sel], k) => {
+        const d = nums[k] - this.nums[k]; if (d <= 0 || (k === 0 && this.i !== 0)) return;
+        feel.reward(kind, null, this.q(sel), k === 0 ? Math.ceil(Math.min(d, 50) / 10) : d);
+      });
+      this.nums = nums; this.last.m = mk;
     }
     // objective + clock
     const obj = this.game.objective(h), qi = this.game.objectiveIcon(h);

@@ -2735,3 +2735,20 @@ body.bigtext .theatre .th-text { --thp: clamp(20px, 3.2vw, 28px); --thm: clamp(1
 /* (r78, after the release pictures: on a computer one line of story sat in a box built for four) wide screens fit about
    twice the words on a line, so the box keeps room for 2 lines of the story and 1 spoken line there; phones keep 3 + 1 */
 @media (min-width: 700px) { .theatre .th-text { height: calc(var(--thp) * 1.35 * 2 + var(--thm) * 1.35 + 4px + 16px); } }
+
+/* feel and sound (chat A, owner plan 16 Oct AEDT; js/feel.js). The press uses the separate `scale` property, so a
+   button's own transform (its press, its centring) still works. Windows never move (UX-001). Calm mode: no movement. */
+.sv-press { scale: .94; }
+.sv-spring { animation: sv-spring .24s ease-out; }
+@keyframes sv-spring { 0% { scale: .94; } 55% { scale: 1.05; } 100% { scale: 1; } }
+.sv-wiggle { animation: sv-wiggle .42s ease-in-out; }
+@keyframes sv-wiggle { 20% { rotate: -5deg; } 45% { rotate: 4deg; } 70% { rotate: -2deg; } 100% { rotate: 0deg; } }
+.sv-jiggle { animation: sv-jiggle .4s ease-out; }
+@keyframes sv-jiggle { 30% { scale: 1.22; } 60% { scale: .95; } 100% { scale: 1; } }
+.sv-fly { position: fixed; z-index: 90; width: 34px; height: 34px; pointer-events: none; display: flex; align-items: center; justify-content: center; font-size: 28px; filter: drop-shadow(0 3px 2px rgba(58, 42, 32, .35)); }
+.sv-fly.big { width: 56px; height: 56px; font-size: 46px; }
+.sv-fly .art, .sv-fly svg { width: 100%; height: 100%; }
+/* under-5s: the action button's picture breathes slowly, so a little one sees what can be tapped */
+.hud.little .act .ai { animation: sv-breathe 2.4s ease-in-out infinite; }
+@keyframes sv-breathe { 50% { scale: 1.08; } }
+body.calm .sv-press, body.calm .sv-spring, body.calm .sv-wiggle, body.calm .sv-jiggle, body.calm .hud.little .act .ai { animation: none !important; scale: none !important; rotate: none !important; }
