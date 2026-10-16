@@ -1,0 +1,19 @@
+[
+  {
+    "id": "maze",
+    "lang": "en",
+    "speed": "x1",
+    "g": "games",
+    "key": "game:maze",
+    "name": "Mountain Maze",
+    "ok": false,
+    "skipped": false,
+    "problems": [
+      "help: auto play could not work out how to play it"
+    ],
+    "notes": [],
+    "said": "played: 0 ✓, 0 ✗, 37 taps",
+    "secs": 93.6,
+    "fps": 59
+  }
+]

@@ -1,0 +1,5 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {"strict":true,"noImplicitAny":true,"checkJs":true},
+  "files": ["../js/tester-detection.js","../js/report-outbox.js", "../js/family-backup.js", "../js/content/autoplay.js", "../js/games/playwatch.js", "../js/content/tester.js", "../netlify/lib/hello-clean.mjs", "../netlify/lib/family-devices.mjs"]
+}

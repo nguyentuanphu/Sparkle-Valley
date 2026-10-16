@@ -2,8 +2,9 @@
 import './emojiswap.js'; // (first: no phone emoji on the page or on any canvas)
 import { THREE, sprite, P, merge, toonVC } from './gfx.js';
 import { createSeeThrough } from './seethrough.js';
+import { withRideView } from './rideview.js';
 import { RoomEnvironment } from '../vendor/RoomEnvironment.js';
-import { settings, saveSettings, saveProfiles, farm, profiles } from './state.js';
+import { settings, saveSettings, saveProfiles, farm, profiles, claimTab } from './state.js';
 import { T, nm, onLang, registerName } from './i18n.js';
 import { say, hush, loadClips, setVoiceGenders } from './voice.js';
 import { SFX, Music, ac } from './audio.js';
@@ -46,7 +47,7 @@ import { createWeather } from './weather.js';
 import { createFun, confetti } from './fun.js';
 import { createLearning } from './learn.js';
 import { createShowcase } from './showcase.js';
-import { createRoads, plantRoadside } from './roads.js';
+import { createRoads, plantRoadside, createCrossings } from './roads.js';
 import { createSignposts } from './signposts.js';
 import { createNameTags } from './nametags.js';
 import { createTraffic } from './traffic.js';
@@ -98,6 +99,8 @@ import { setupTrading, openTrade } from './trade.js';
 import { createSecrets, SECRETS } from './secrets.js';
 import { PROLOGUE, showStory, storyCheck, showQuestTale, QUEST_TALES } from './story.js';
 import { openWardrobe, openGamesHub, openQuick, nextGameAfter } from './ui.js';
+// (owner point 10) this page is the game: it claims the tab, so an older game tab stops saving (js/state.js)
+claimTab();
 
 // ---------- renderer & world ----------
 // (battery round, owner 12 Oct AEDT) Graphics: Fast, Auto, Pretty (60 frames a second) and Pretty+ ('max': the same
@@ -131,7 +134,7 @@ const scene = new THREE.Scene();
   const pm = new THREE.PMREMGenerator(renderer); scene.environment = pm.fromScene(new RoomEnvironment(), .04).texture; pm.dispose();
 }
 // how long each start-up step takes (ms since this file began; tests/run.mjs "perf" and Grown-ups › Advanced read it)
-const BOOT0 = performance.now(), bootTimes = { start: Math.round(BOOT0) }, bootMark = k => { bootTimes[k] = Math.round(performance.now() - BOOT0); };
+const BOOT0 = performance.now(), bootTimes = { start: Math.round(BOOT0) }, bootMark = k => { bootTimes[k] = Math.round(performance.now() - BOOT0); const steps = ['world', 'people', 'town', 'roads', 'pretraffic', 'traffic', 'things', 'wideland', 'levelled', 'roadside', 'solids', 'shaders', 'ready']; const n = steps.indexOf(k); if (n >= 0) window.svLaunchProgress?.(n + 1, steps.length, T(`Preparing the valley: ${n + 1}/${steps.length}`, `Chuẩn bị thung lũng: ${n + 1}/${steps.length}`)); };
 // (round R, faster launch) the title and "Who's playing?" show at once; the valley is built behind them in steps, with a
 // breath between steps so the screen keeps answering taps. Pressing Go before it is ready waits a moment (startWhenBuilt).
 let framesSeen = 0, framesDone = null; const firstFrames = new Promise(r => { framesDone = r; });
@@ -145,7 +148,7 @@ async function startWhenBuilt(mode, chosen) {
   startSession(mode, chosen);
 }
 document.getElementById('boot')?.remove();
-showTitle(() => showWho((mode, chosen) => startWhenBuilt(mode, chosen)));
+showTitle(async () => { await bootReady; showWho((mode, chosen) => startWhenBuilt(mode, chosen)); });
 await breathe();
 const world = createWorld(scene, quality); bootMark('world'); await breathe();
 // the map picture: read back from the device when this build painted it before (js/worldcache.js)
@@ -168,6 +171,7 @@ const twoHalves = () => G.heroes.length > 1;
 G.halfBusy = () => false;
 Object.defineProperty(G, 'paused', { get: () => twoHalves() ? G.halfBusy(G.lastPlayer) : pausedFlag, set: v => { pausedFlag = !!v; }, enumerable: true });
 window.__sv = G; // handy for debugging in the browser console
+window.svFeatureOn = featureOn; // (owner, 16 Oct) js/launch.js asks Studio about the update notice through this
 // phones and tablets (round P): the layout keeps the joystick's half of the screen free (css: body.touch)
 if (matchMedia('(pointer: coarse)').matches || navigator.maxTouchPoints > 0) document.body.classList.add('touch');
 G.renderer = renderer;
@@ -192,8 +196,8 @@ function nameTag(name, color = '#ffffff') {
   s.onBeforeRender = (r, sc, cam) => { s.material.opacity = Math.min(1, Math.max(0, (cam.position.distanceTo(s.position) - 5) / 5)); };
   return s;
 }
-function addNPC({ id, name, look, model, x, z, face = 0, icon = '💬', talk }) {
-  const A = model ? null : nameAvatar(buildAvatar(look, null), name), obj = model || A.root;
+function addNPC({ id, name, faceName, look, model, x, z, face = 0, icon = '💬', talk }) {
+  const A = model ? null : nameAvatar(buildAvatar(look, null), faceName || name, true, id), obj = model || A.root;
   const av = model ? null : obj;
   obj.position.set(x, world.groundAt(x, z), z); obj.rotation.y = face; scene.add(obj);
   const tag = nameTag(name); tag.position.set(x, obj.position.y + (model ? 3.4 : 2.0), z); scene.add(tag);
@@ -414,9 +418,9 @@ async function playGame(i, id, source, shrine) {
   if (res.restart) { events.emit('ActivityAbandoned', { activityId: actId, reason: 'level' }); p.gameDiff = { ...(p.gameDiff || {}), [id]: res.restart }; save(); return playGame(i, id, source === 'shrine' ? 'replay' : source, shrine); }
   if (res.won) events.emit('ActivityCompleted', { activityId: actId, defId: makeId('game', id), players: playerIds, result: { won: true, stars: res.stars || 0, level } });
   else events.emit('ActivityAbandoned', { activityId: actId, reason: 'left' });
-  if (!res.won) return;
+  if (!res.won) { if (source === 'hub') G.openGamesHub(i); return; }
   // after the rewards: straight on to the next game, or this one again, if the child chose that
-  const then = () => { if (res.next === 'next' && nextId) playGame(i, nextId, 'replay'); else if (res.next === 'again') playGame(i, id, source === 'shrine' ? 'replay' : source, shrine); };
+  const then = () => { if (res.next === 'next' && nextId) playGame(i, nextId, source === 'hub' ? 'hub' : 'replay'); else if (res.next === 'again') playGame(i, id, source === 'shrine' ? 'replay' : source, shrine); else if (source === 'hub') G.openGamesHub(i); };
   // winning Kite Flying earns the whistling kite (diều sáo), which then flies above you everywhere
   if (id === 'kite' && !p.kite) {
     p.kite = true; p.kiteOn = true; save(); G.kites.sync();
@@ -452,7 +456,7 @@ async function playGame(i, id, source, shrine) {
 G.playGame = playGame;
 G.job = (kind, n = 1, h) => jobProgress(G, kind, n, h);
 G.STICKERS = STICKERS;
-G.openWardrobe = i => { if (twoHalves()) G.lastPlayer = i; if (G.paused) return; G.paused = true; G.closeUp = i; openWardrobe(G, i, () => { G.paused = false; G.closeUp = null; }); };
+G.openWardrobe = i => { if (twoHalves()) G.lastPlayer = i; if (G.paused) return; G.paused = true; G.closeUp = null; openWardrobe(G, i, () => { G.paused = false; G.closeUp = null; }); };
 
 async function foundLeafy(h, lf) {
   const p = h.profile; if (p.leafies[lf.id]) return;
@@ -570,18 +574,19 @@ G.openGamesHub = i => { if (twoHalves()) G.lastPlayer = i; if (G.paused) return;
 const npcLike = it => /^(npc_|g_|v_|pc_|cards$|dacau$|musiccorner$|bear$|stall$)/.test(it.id || '');
 // the nearest open spot to (x, z): not inside a building, tree or stall, not in water. Travelling lands there.
 G.clearSpot = (x, z, pad = .9) => {
-  const W = G.world, free = (px, pz) => heightAt(px, pz) > WATER + .3 && !(W.solidAt && (W.solidAt(px, pz) || W.solidAt(px + .6, pz) || W.solidAt(px - .6, pz) || W.solidAt(px, pz + .6) || W.solidAt(px, pz - .6))) && !W.colliders.some(c => c.r > 0 && Math.hypot(c.x - px, c.z - pz) < c.r + pad) && !W.boxes.some(b => px > b.x0 - pad && px < b.x1 + pad && pz > b.z0 - pad && pz < b.z1 + pad);
+  // (reports #251/#256) inside the valley's walkable edge, as G.goodSpot: past it the child is held at the edge beside what stands there
+  const W = G.world, free = (px, pz) => Math.abs(px) <= HALF - 10 && Math.abs(pz) <= HALF - 10 && heightAt(px, pz) > WATER + .3 && !(W.solidAt && (W.solidAt(px, pz) || W.solidAt(px + .6, pz) || W.solidAt(px - .6, pz) || W.solidAt(px, pz + .6) || W.solidAt(px, pz - .6))) && !W.colliders.some(c => c.r > 0 && Math.hypot(c.x - px, c.z - pz) < c.r + pad) && !W.boxes.some(b => px > b.x0 - pad && px < b.x1 + pad && pz > b.z0 - pad && pz < b.z1 + pad);
   if (free(x, z)) return [x, z];
   for (let r = 1.5; r <= 14; r += 1.25) for (let k = 0; k < 16; k++) { const a = k / 16 * Math.PI * 2, px = x + Math.cos(a) * r, pz = z + Math.sin(a) * r; if (free(px, pz)) return [px, pz]; }
   return [x, z];
 };
 G.landBy = async (h, x, z) => { const [sx, sz] = G.clearSpot(x + 1.8, z + 1.4); await G.travel(h, sx - 4.5, sz - 1); h.yaw = Math.atan2(x - h.pos.x, z - h.pos.z); h.camYaw = h.yaw + Math.PI; };
-G.meetAndPlay = async (i, id) => {
+G.meetAndPlay = async (i, id, source = 'place') => {
   const h = G.heroes[i], it = G.gameSpot(id); if (!h) return;
-  if (!it) { G.playGame(i, id, 'place'); return; }
+  if (!it) { return G.playGame(i, id, source); return; }
   if (dist2(h.pos.x, h.pos.z, it.x, it.z) > 4) await G.landBy(h, it.x, it.z);
   G.fx && G.fx(it.x, heightAt(it.x, it.z) + 2.4, it.z, '🎮'); await wait(500);
-  G.playGame(i, id, 'place');
+  return G.playGame(i, id, source);
 };
 // the villager nearest to a place on the map (within 20 m), so travelling lands you right next to them
 G.npcNear = (x, z, r = 20) => G.interactables.filter(it => npcLike(it) && Number.isFinite(it.x) && dist2(it.x, it.z, x, z) < r).sort((a, b) => dist2(a.x, a.z, x, z) - dist2(b.x, b.z, x, z))[0] || null;
@@ -672,7 +677,7 @@ function questTarget(h) {
     case 'leafy': return near(LEAFIES.filter(l => !p.leafies[l.id]));
     case 'statue': return p.orbs >= 4 ? world.statue : near(SHRINES.filter(s => !p.shrines[s.id] && p.discovered[s.id])) || world.statue;
     case 'tower': return near(TOWERS.filter(t => !p.towers[t.id]));
-    case 'shrine': return near(SHRINES.filter(s => !p.shrines[s.id] && p.discovered[s.id]));
+    case 'shrine': return near(SHRINES.filter(s => !p.shrines[s.id] && p.discovered[s.id])) || near(SHRINES.filter(s => !p.shrines[s.id]));
   }
   return null;
 }
@@ -754,11 +759,35 @@ G.onCooked = (h) => { checkQuests(h); G.job('cook', 1, h); };
 G.rebuildHero = i => { const h = G.heroes[i]; if (h) { h.buildModel(); G.huds[i].refreshWho(); sendHello(); } };
 G.fogMapFor = p => G.fogMaps[p.id] || (G.fogMaps[p.id] = fogMapFor(p, mapPic.now()));
 G.mapPic = mapPic; G.waterPic = waterPic; // (the checks read where each picture came from)
+G.avatarPreview = i => {
+  const h = G.heroes[i]; if (!h) return '';
+  const preview = new THREE.Scene(); preview.background = new THREE.Color('#f1eaff'); preview.environment = scene.environment;
+  const avatar = h.av.root.clone(true); avatar.position.set(0, 0, 0); avatar.rotation.set(0, .12, 0); preview.add(avatar);
+  preview.add(new THREE.HemisphereLight(0xffffff, 0xd9c79a, 1.8)); const sun = new THREE.DirectionalLight(0xffffff, 2); sun.position.set(3, 5, 4); preview.add(sun);
+  // Hidden gliders/idle copies must not enlarge the bounds and shrink the outfit.
+  avatar.updateMatrixWorld(true); const bounds=new THREE.Box3();
+  avatar.traverseVisible(o=>{if(o.isMesh&&o.geometry){if(!o.geometry.boundingBox)o.geometry.computeBoundingBox();bounds.union(o.geometry.boundingBox.clone().applyMatrix4(o.matrixWorld));}});
+  const size=bounds.getSize(new THREE.Vector3()),center=bounds.getCenter(new THREE.Vector3()),width=260,height=320,aspect=width/height;
+  const cam=new THREE.PerspectiveCamera(32,aspect,.1,100),distance=Math.max(size.y,size.x/aspect)/(2*Math.tan(THREE.MathUtils.degToRad(16)))*1.12;
+  cam.position.set(center.x,center.y,center.z+distance+size.z/2);cam.lookAt(center);
+  const target=new THREE.WebGLRenderTarget(width,height);target.texture.colorSpace=THREE.SRGBColorSpace;
+  const previousTarget=renderer.getRenderTarget(),viewport=renderer.getViewport(new THREE.Vector4()),scissor=renderer.getScissor(new THREE.Vector4()),scissorTest=renderer.getScissorTest();
+  try {
+    // setViewport takes logical screen units even for a render target. The game's
+    // adaptive pixel ratio can be below 1; compensate so the target is filled.
+    const ratio=renderer.getPixelRatio();
+    renderer.setRenderTarget(target);renderer.setScissorTest(false);renderer.setViewport(0,0,width/ratio,height/ratio);renderer.render(preview,cam);
+    const bytes=new Uint8Array(width*height*4);renderer.readRenderTargetPixels(target,0,0,width,height,bytes);
+    const c=document.createElement('canvas');c.width=width;c.height=height;const ctx=c.getContext('2d'),data=ctx.createImageData(width,height);
+    for(let y=0;y<height;y++)data.data.set(bytes.subarray((height-y-1)*width*4,(height-y)*width*4),y*width*4);
+    ctx.putImageData(data,0,0);return c.toDataURL('image/jpeg',.85);
+  } finally {renderer.setRenderTarget(previousTarget);renderer.setViewport(viewport);renderer.setScissor(scissor);renderer.setScissorTest(scissorTest);target.dispose();}
+};
 G.snapshot = (i, max = 720, q = .8) => {
   const h = G.heroes[i] || G.heroes[0], w = renderer.domElement.width, hh = renderer.domElement.height;
   renderer.setScissorTest(false); renderer.setViewport(0, 0, w / renderer.getPixelRatio(), hh / renderer.getPixelRatio());
   h.cam.aspect = w / hh; h.cam.updateProjectionMatrix(); G.huds.forEach(x => x.root.style.visibility = 'hidden');
-  renderer.render(scene, h.cam);
+  withRideView(h, () => renderer.render(scene, h.cam));
   const c = document.createElement('canvas'), k = Math.min(1, max / Math.max(w, hh)); c.width = w * k; c.height = hh * k; c.getContext('2d').drawImage(renderer.domElement, 0, 0, c.width, c.height);
   G.huds.forEach(x => x.root.style.visibility = '');
   return c.toDataURL('image/jpeg', q);
@@ -840,7 +869,7 @@ G.setAudio = (kind, on) => {
   if (kind === 'voice' && !on) hush();
   saveSettings(); G.huds.forEach(h => h.refreshAudio());
 };
-G.openSound = () => import('./soundsheet.js').then(m => m.openSoundSheet(G));
+G.openSound = anchor => import('./soundsheet.js').then(m => m.openSoundSheet(G, anchor));
 // (r63) the first tap asks for the microphone and turns it on; then each tap turns it off or on again
 G.toggleMute = async () => { if (!Net.micLive) { Net.resumeAudio(); await Net.getMic(true); } else { Net.setMuted(!Net.muted); Net.resumeAudio(); } G.huds.forEach(hd => hd.setCall(Net.connected, false, Net.muted || !Net.micLive)); };
 // Keyboard shortcuts on computers (shown as little key badges on the buttons). Player 1's screen.
@@ -1642,7 +1671,7 @@ function frame(now) {
     G.showcaseCam(i, h, dt); // a landmark fly-around takes over the camera
     if (r.length > 1) aimCam(h, q);
     world.updateSky(0, h.cam.position, h.pos);
-    renderer.render(scene, h.cam); drawn += renderer.info.render.calls;
+    withRideView(h, () => renderer.render(scene, h.cam)); drawn += renderer.info.render.calls;
     if (G.nameTags) G.nameTags.update(i, h, q);
     const p = h.profile;
     // what the minimap shows, worked out only when it is redrawn
@@ -1717,7 +1746,7 @@ G.festivals = createFestivals(G);
 // (owner, 12 Oct) the auto play check for grown-ups testing the game: only on the devices Studio's Releases page allows
 // (switch `autoplay`: every device, or the ticked ones); everywhere else nothing of it is even downloaded
 { const apGate = async () => { const A = await import('./content/autoplay.js'); let me = ''; try { me = localStorage.getItem('sv2_playerid') || ''; } catch (e) { }
-    if (A.apAllowed(releaseOn('autoplay', false), liveRule('autoplay'), me)) (await import('./autoplay.js')).mountAutoplay(G); else if (G.autoplay) G.autoplay.unmount(); };
+    if (A.apAllowed(releaseOn('autoplay', false) && liveRule('tester')?.policies?.[me]?.autoplay !== false, liveRule('autoplay'), me)) (await import('./autoplay.js')).mountAutoplay(G); else if (G.autoplay) G.autoplay.unmount(); };
   apGate(); onLive(apGate); }
 // (owner, 12 Oct) tester devices report problems by themselves and with the ladybird (js/testergate.js, js/tester.js)
 import('./testergate.js').then(m => m.testerGate(G));
@@ -1761,7 +1790,7 @@ for (const c of (STUDIO_ON_MAP && Array.isArray(CUSTOM.npcs) ? CUSTOM.npcs : [])
   const look = { style: ['dress', 'shirt', 'aodai', 'tunic', 'overalls', 'hoodie'].includes(L.style) ? L.style : 'shirt', color: hex(L.color) || '#5fb0ff', hat: 'none', back: 'none', hair: hex(L.hair) || '#2a1d14', hairStyle: ['buns', 'short', 'long', 'ponytail', 'spiky'].includes(L.hairStyle) ? L.hairStyle : 'short', skin: hex(L.skin) || '#f1c6a4', glider: 0, age: L.age === 'old' || L.age === 'kid' ? L.age : 'adult' };
   const lines = (Array.isArray(c.lines) ? c.lines : []).filter(l => Array.isArray(l) && (l[0] || l[1])).slice(0, 12).map(l => [String(l[0] || l[1]).slice(0, 300), String(l[1] || l[0]).slice(0, 300)]);
   if (c.gender === 'f' || c.gender === 'm') { CUSTOM.genders = { ...(CUSTOM.genders || {}), [name]: c.gender }; setVoiceGenders(CUSTOM.genders); }
-  addNPC({ id: 'fam_' + name.replace(/[^\p{L}\p{N}]+/gu, '_'), name, look, x: +c.x, z: +c.z, face: +c.face || 0, icon: typeof c.icon === 'string' ? c.icon.slice(0, 4) : '💬', talk: () => dialog(name, lines.length ? lines : [['Hello! Nice to see you!', 'Xin chào! Gặp con vui quá!']]) });
+  addNPC({ id: 'fam_' + (c.id || name.replace(/[^\p{L}\p{N}]+/gu, '_')), name, faceName: c.faceName, look, x: +c.x, z: +c.z, face: +c.face || 0, icon: typeof c.icon === 'string' ? c.icon.slice(0, 4) : '💬', talk: () => dialog(name, lines.length ? lines : [['Hello! Nice to see you!', 'Xin chào! Gặp con vui quá!']]) });
 }
 // each village's games time table (with a countdown board) and its singer; after every host is in place
 G.folkShow = createFolkShow(G, { looks: [kidLook('shirt', '#ff7eb8', '#1d1412', 'buns', 'none'), kidLook('overalls', '#3cc7e8', '#3b2618', 'short', 'cap'), kidLook('dress', '#ffb52e', '#1d1412', 'ponytail', 'flower')] });
@@ -1857,6 +1886,7 @@ G.openTrade = (i, id) => { if (G.paused) return; openTrade(G, G.heroes[i], id); 
 G.secrets = createSecrets(G);
 ensureJobs();
 G.claims.wrap(); // (after every pickup exists: first come, first served online)
+createCrossings(G); // Road warnings beside the existing crossings, after all doors/stalls are known.
 setupBubbles(); setupAreaSigns(); setupGuides();
 $('#songBtn').onclick = () => G.places.nextSong();
 resize();
@@ -1871,12 +1901,14 @@ import('./villagertalk.js').then(m => m.createVillagerTalk(G)).then(() => import
 import('./pricetags.js').then(m => m.createPriceTags(G));
 import('./jobs.js').then(m => m.createJobs(G));
 import('./wayfind.js').then(m => m.createWayfind(G));   // (Round U) "Where is…?" sparkles
-G.openWhere = i => G.wayfind && G.wayfind.open(i);
+G.openWhere = i => featureOn('wayfind', false) && G.wayfind && G.wayfind.open(i);
+onLive(() => { if (!featureOn('wayfind',false)) { G.wayfind?.stop(true); document.querySelectorAll('.wherepick').forEach(m => m.querySelector('.x')?.click()); } });
 import('./animalhomes.js').then(m => m.createAnimalHomes(G));   // (Round U) animals with homes   // (Round U) a job board in every place   // (Round U) a coin-picture price over every food stall
 // (Round U) a tap on a coin, orb or Leafy chip (top bar, Backpack) says what it is (js/chipinfo.js, loaded on the first tap)
 document.addEventListener('click', e => { const c = e.target.closest && e.target.closest('[data-chip]'); if (c) import('./chipinfo.js').then(m => m.showChip(c.dataset.chip, c)); });
 import('./state.js').then(S => { if (S.restoredFromCopy) setTimeout(() => toast(T('Your progress was brought back from the safe copy on this device.', 'Tiến trình chơi đã được khôi phục từ bản lưu dự phòng trên máy.')), 1200); });
 document.addEventListener('visibilitychange', () => { if (document.hidden) { if (playing) keepSpot(); save(); hush(); } });
 addEventListener('pagehide', () => { if (playing) keepSpot(); saveProfiles(true); });
-if ('serviceWorker' in navigator && location.protocol.startsWith('http') && !/localhost|127\.0\.0\.1/.test(location.hostname)) navigator.serviceWorker.register('sw.js').catch(() => { });
 bootMark('ready'); G.bootTimes = bootTimes; bootDone();
+// (owner, 16 Oct AEDT) no device contacts the family service unless Studio switches the trial on, or on a tester device
+{ const refresh = () => (featureOn('familyDevices', false) || G.tester) ? import('./familydevices.js').then(m => m.refreshDevicePhotos()).catch(() => {}) : null; refresh(); addEventListener('online', refresh); setInterval(refresh, 60000); }

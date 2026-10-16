@@ -16,7 +16,7 @@ export function privacyHTML() {
     ['Saves stay on this device.', 'Dữ liệu chơi được lưu trên máy này.'],
     ['Analytics and Backup', 'Phân tích và sao lưu'],
     ['Online play and the internet are off until a grown-up turns them on. Friends see a name, look and photo only after being let in.', 'Chơi trực tuyến và internet tắt cho tới khi người lớn bật. Bạn bè chỉ thấy tên, hình nhân vật và ảnh sau khi được cho vào.'],
-    ['Family photos (your own photos on villagers’ faces and on postcards) download only after the family code is typed in Children → Family photos.', 'Ảnh gia đình (ảnh của nhà mình trên mặt dân làng và trên bưu thiếp) chỉ tải về khi đã gõ mã gia đình trong Các con → Ảnh gia đình.'],
+    ['Private family photos download after you connect this device in Family photos and devices. Approve new devices on an already connected device. Earlier shared photos can still use their existing photo code.', 'Ảnh gia đình riêng tư tải về sau khi kết nối máy trong Ảnh gia đình và thiết bị. Chấp nhận máy mới trên máy đã kết nối. Ảnh chia sẻ trước đây vẫn dùng được mã ảnh cũ.'],
     ['The voices are recorded ahead of time and come with the game. There are no voice keys on this device.', 'Giọng đọc được thu sẵn và đi kèm trò chơi. Máy này không có key giọng đọc.'],
     ['Real-world maps (Google) open straight away when a grown-up has turned on Use the internet; while it is off, a grown-up presses and holds first.', 'Bản đồ nơi thật (Google) mở ngay khi người lớn đã bật Dùng internet; khi đang tắt, người lớn nhấn giữ trước.']];
   return `<details class="g-priv"><summary>🔒 ${T('Privacy: what the game keeps and sends', 'Riêng tư: trò chơi lưu và gửi gì')}</summary><ul>${L.map(([en, vi]) => `<li>${T(en, vi)}</li>`).join('')}</ul></details>`;
@@ -32,7 +32,7 @@ export function netListHTML() {
     ['Game updates: a new version downloads by itself.', 'Cập nhật trò chơi: bản mới tự tải về.'],
     ['Recorded voices: downloaded once, then kept for offline play.', 'Giọng đọc đã thu: tải một lần, rồi giữ lại để chơi không cần mạng.'],
     ['Messages, stories, festivals and names set by your family.', 'Lời nhắn, truyện, lễ hội và tên do gia đình đặt.'],
-    ['Family photos, only after the family code is typed (Children → Family photos).', 'Ảnh gia đình, chỉ khi đã gõ mã gia đình (Các con → Ảnh gia đình).'],
+    ['Private family photos, after connecting and approving this device in Family photos and devices.', 'Ảnh gia đình riêng tư, sau khi kết nối và chấp nhận máy trong Ảnh gia đình và thiết bị.'],
     ['Analytics and Backup', 'Phân tích và sao lưu'],
     ['Talking to the game (🎤) and villager chat (AI), only when switched on below.', 'Nói chuyện với trò chơi (🎤) và dân làng trò chuyện (AI), chỉ khi được bật bên dưới.']];
   const ul = L => `<ul>${L.map(([en, vi]) => `<li>${T(en, vi)}</li>`).join('')}</ul>`;

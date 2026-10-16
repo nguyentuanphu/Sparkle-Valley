@@ -1,12 +1,12 @@
 {
- "at": "2026-10-13T02:58:03.167Z",
- "inbox": 507,
- "added": 3,
- "already": 197,
- "held": 307,
- "harvestedJs": "20db0255cb36c616e0c4ce2b9c5090d8aa05ce32",
- "recorded": 346,
+ "at": "2026-10-15T19:52:10.236Z",
+ "inbox": 551,
+ "added": 0,
+ "already": 225,
+ "held": 326,
+ "harvestedJs": "18c0a6d4e1dad5fbb3189abf859a0c2066807d2a",
+ "recorded": 0,
  "waiting": 0,
- "lines": 7396,
- "pending": 346
+ "lines": 8174,
+ "pending": 308
 }

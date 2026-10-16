@@ -1,0 +1,66 @@
+[
+  {
+    "w": 390,
+    "h": 844,
+    "lang": "en",
+    "passed": true
+  },
+  {
+    "w": 390,
+    "h": 844,
+    "lang": "vi",
+    "passed": true
+  },
+  {
+    "w": 820,
+    "h": 1180,
+    "lang": "en",
+    "passed": true
+  },
+  {
+    "w": 1280,
+    "h": 800,
+    "lang": "en",
+    "passed": true
+  },
+  {
+    "w": 844,
+    "h": 390,
+    "lang": "en",
+    "passed": true
+  },
+  {
+    "w": 844,
+    "h": 390,
+    "lang": "vi",
+    "passed": true
+  },
+  {
+    "who": 390,
+    "passed": true
+  },
+  {
+    "who": 844,
+    "passed": true
+  },
+  {
+    "game": "rulefinder",
+    "passed": true
+  },
+  {
+    "game": "gardenorder",
+    "passed": true
+  },
+  {
+    "game": "steppingpath",
+    "passed": true
+  },
+  {
+    "game": "rd_listentouch",
+    "passed": true
+  },
+  {
+    "game": "rd_storychoice",
+    "passed": true
+  }
+]

@@ -1,0 +1,11 @@
+{
+  "validProof": false,
+  "reason": "Initial probe relied on a polling completion without asserting final page state. Superseded by explicit same-page/current-pack assertion, which reproduced the stale index. Do not count this raw aggregate as successful update-path proof.",
+  "rawResult": {
+    "ownervoicerefresh": {
+      "ok": true,
+      "secs": 32,
+      "note": "Older cached manifest returns immediately; delayed fresh index reaches the running game without reload and remains available offline"
+    }
+  }
+}

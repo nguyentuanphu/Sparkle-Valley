@@ -19,7 +19,7 @@ export function scheduled(F, now) {
 
 // the streets some places draw themselves (not in the valley's road list; widths as in js/town.js and js/regions.js):
 // along x at z, half width hw
-const INNER = { town: { x0: 6, x1: 44, z: TOWN.roadZ, hw: 3.5 }, aussie: { x0: AUSSIE.x0, x1: AUSSIE.x1, z: AUSSIE.roadZ, hw: 3.5 }, market: { x0: MARKET.x0, x1: MARKET.x1, z: MARKET.roadZ, hw: 4 } };
+const INNER = { town: { x0: TOWN.x - 26, x1: TOWN.x + 12, z: TOWN.roadZ, hw: 3.5 }, aussie: { x0: AUSSIE.x0, x1: AUSSIE.x1, z: AUSSIE.roadZ, hw: 3.5 }, market: { x0: MARKET.x0, x1: MARKET.x1, z: MARKET.roadZ, hw: 4 } };
 // how much one place can carry at "as now" (1x, PERF budgets): pieces along its streets on the day, strings of bunting
 export const MAX_PIECES = 48, MAX_BUNTING = 10;
 // (owner, 13 Oct) how much each festival decorates: 5 times r69's by default, chosen per festival in Studio's Festivals
@@ -37,6 +37,19 @@ export function createDecor(free) {
   // spots beside the streets of a place: a little off every road, lane and footpath (never on it or its verge, G5) and
   // beside a city's main street; kept 5 m apart; worked out once per place
   const streetCache = {}, candCache = {};
+  // Share ground occupancy between simultaneous festivals; rebuilding resets it once.
+  const occupied = new Map(), wires = new Set(), distribution = [];
+  const begin = () => { occupied.clear(); wires.clear(); distribution.length=0; };
+  const cell = q => [Math.floor(q.x / 2), Math.floor(q.z / 2)];
+  const occupy = (q,kind='piece') => { const [x,z]=cell(q), key=x+','+z; if(!occupied.has(key))occupied.set(key,[]);occupied.get(key).push({...q,kind}); };
+  const available = q => { const [x,z]=cell(q);for(let dx=-1;dx<=1;dx++)for(let dz=-1;dz<=1;dz++)if((occupied.get((x+dx)+','+(z+dz))||[]).some(p=>Math.hypot(p.x-q.x,p.z-q.z)<1.8))return false;return true; };
+  // (owner, 15 Oct: "crowded poles") a post stands clear of every piece, and at least 4 m from any other post unless it is that post
+  const canSupport = q => { const [x,z]=cell(q);for(let dx=-2;dx<=2;dx++)for(let dz=-2;dz<=2;dz++)if((occupied.get((x+dx)+','+(z+dz))||[]).some(p=>{const d=Math.hypot(p.x-q.x,p.z-q.z);return p.kind==='support'?d>.05&&d<4:d<1.8;}))return false;return true; };
+  // (a piece drawn outside decorate: the ring round a place without streets, a table, the roadside) takes the ground only if it is free
+  const fits = (q,kind='piece') => kind==='support'?canSupport(q):available(q);
+  const claim = (q,kind='piece') => { if(!fits(q,kind))return false; occupy(q,kind); return true; };
+  const wireKey = (a,b,wall=false) => (wall?'wall:':'post:')+[[a.x,a.z],[b.x,b.z]].map(p=>p.map(n=>n.toFixed(3)).join(',')).sort().join('|');
+  const order = (q,id) => { let h=2166136261;for(const c of id+'|'+q.x+'|'+q.z)h=Math.imul(h^c.charCodeAt(0),16777619);return h>>>0; };
   const streetSpots = (key, o, gap = 5) => {
     if (streetCache[key + gap]) return streetCache[key + gap];
     const cand = candCache[key] || (candCache[key] = candidates(key, o)), out = [];
@@ -132,10 +145,18 @@ export function createDecor(free) {
     // (each piece with where it stands, so js/festivals.js can draw only the patches near the children)
     const L = layout(key, o, F, A.stage, houses, mm), items = []; if (!L) return null;
     const add = (x, z, r, kind = 'piece') => items.push({ x, z, kind, parts: r.parts, glows: r.glows });
-    L.pieces.forEach((q, i) => add(q.x, q.z, piece(F.theme, i, q.x, heightAt(q.x, q.z), q.z, q.a)));
-    L.strings.forEach(([a, b, high]) => { const h = high ? 6.2 : 3.2; add((a.x + b.x) / 2, (a.z + b.z) / 2, bunting([a.x, heightAt(a.x, a.z) + h, a.z], [b.x, heightAt(b.x, b.z) + h, b.z], bc, bk), 'string'); });
-    L.fronts.forEach((q, i) => { add(q.x, q.z, piece(F.theme, i + 1, q.x, heightAt(q.x, q.z), q.z, q.a));
-      const [[x1, z1], [x2, z2]] = q.g, y = Math.min(heightAt(x1, z1), heightAt(x2, z2)) + 2.6; add((x1 + x2) / 2, (z1 + z2) / 2, bunting([x1, y, z1], [x2, y, z2], bc, bk, true), 'string'); });
+    const region = o.w && o.d ? { ...o, x0:o.x0-20,x1:o.x1+20,z0:o.z0-20,z1:o.z1+20 } : o.x0 == null ? { ...o, r:(o.r||24)+20 } : o, rk=region===o?key:key+'+';
+    const alternatives=streetSpots(rk,region,GAP[mm||decoOf(F)]).concat(openSpots(rk,region)).map(q=>({q,n:order(q,F.id+'|'+key)})).sort((a,b)=>a.n-b.n).map(v=>v.q);
+    let next=0, extra=0, relocated=0;
+    const putPiece=(at,i)=>{let q=at;if(!q||!available(q)){q=null;while(next<alternatives.length){const p=alternatives[next++];if(available(p)){q=p;break;}}}if(!q)return;if(q!==at)relocated++;occupy(q);add(q.x,q.z,piece(F.theme,i,q.x,heightAt(q.x,q.z),q.z,q.a));};
+    // Keep one strand per route and reserve its support footprints before scattering pieces.
+    L.strings.forEach(([a,b,high])=>{const k=wireKey(a,b);if(wires.has(k)||!canSupport(a)||!canSupport(b)){extra++;return;}wires.add(k);occupy(a,'support');occupy(b,'support');const h=high?6.2:3.2;add((a.x+b.x)/2,(a.z+b.z)/2,bunting([a.x,heightAt(a.x,a.z)+h,a.z],[b.x,heightAt(b.x,b.z)+h,b.z],bc,bk),'string');});
+    L.pieces.forEach((q,i)=>putPiece(q,i));
+    L.fronts.forEach((q,i)=>{putPiece(q,i+1);const [[x1,z1],[x2,z2]]=q.g,k=wireKey({x:x1,z:z1},{x:x2,z:z2},true);if(wires.has(k)){extra++;return;}wires.add(k);const y=Math.min(heightAt(x1,z1),heightAt(x2,z2))+2.6;add((x1+x2)/2,(z1+z2)/2,bunting([x1,y,z1],[x2,y,z2],bc,bk,true),'string');});
+    // A duplicate strand becomes a separate piece on unused open ground, preserving the amount.
+    for(let i=0;i<extra;i++)putPiece(null,L.pieces.length+i);
+
+    const requested=L.pieces.length+L.strings.length+2*L.fronts.length;distribution.push({place:key,festival:F.id,requested,placed:items.length,relocated,unplaced:requested-items.length});
     return items;
   };
   // (checks) the spots that carry a piece at a stage, and how much a place carries: pieces, strings, house fronts
@@ -158,7 +179,7 @@ export function createDecor(free) {
     return all.filter(q => !skip(q.x, q.z));
   };
   const fronts = houses => houses.map(frontOf).filter(q => free(q.x, q.z, .6) && !(roadDist(q.x, q.z).road && roadDist(q.x, q.z).d < roadDist(q.x, q.z).road.w / 2 + 1.2));
-  return { streetSpots, decorate, plan, count, onStreet, roadSpots, fronts };
+  return { begin, fits, claim, note: row => { distribution.push(row); }, distribution:()=>distribution.map(row=>({...row})), streetSpots, decorate, plan, count, onStreet, roadSpots, fronts };
 }
 
 // a festival tapped on the calendar that is not on today: still to come (days to go; nothing starts), or in its

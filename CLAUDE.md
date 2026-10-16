@@ -1,5 +1,8 @@
 # Sparkle Valley: rules for the assistant
 
+**Owner-approved UI and future-feature rules (14 Oct 2026 AEDT):** read the section “Owner-approved interface and feature rules” in [the design handbook](docs/SO-TAY-THIET-KE.md) (UX-001–UX-010) before planning or changing a feature. Work order and implementation sequence: [owner UI audit](docs/cores/tasks/owner-ui-audit-20261014.md). Approval to write these rules does not deploy runtime changes.
+
+
 **HARD RULE: nothing reaches `main` (and so Netlify) until the owner has checked the round and clearly said "yes, deploy".**
 - Commit locally as you go.
 - When a round is done, show what changed and how it was tested, and give the Netlify zip. No local bundle (owner, 11 Oct: the offline files are on GitHub and Google Drive; the Netlify zip is still wanted).

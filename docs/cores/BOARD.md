@@ -9,6 +9,13 @@ Format for a request:
 `- [ ] (from → to) what is needed · why · files · date AEST`
 
 ## Release
+- **Now (owner repair,15 Oct AEDT):** isolated repair20 checkpoint1e2f06cc:20 real warning taps/5 layouts,64px bus choices, recorded EN/VI guidance, normal1× maze completion and107units passed; source20 paired pictures under capture from frozen8767. Applied decoration21 duplicate-placement/support repair is UNVERIFIED; original baseline duplicated107 pieces. Exacte75 diagnostic Full38690078655 PASSED171/171 without retries/skips; later changes need their own Full. Intake216 through299, all open; remaining Studio/family/learning/films/quests/autoplay/rates/natural decorations/screen evidence remain unfinished. No merge/deployment/release approved. [Durable status](../owner-repair-20261014/STATUS.md).
+- **Now (combined owner round, 14 Oct 12:34 pm AEDT):** candidate r75 on `work/owner-round-20261014`, draft PR #195; latest remote checkpoint `daf2e3e`, additional validated fixes and 112 recorded voices being integrated. Passed: 88 unit tests; six screen/language cases, fixed portrait/landscape Who panels and five learning games; two-device family transfer/offline/revocation; composed-interface capture; autoplay, tester reporting and offline startup after first-run fixes; source/UI checks 9/9; local perf/battery/startup 3/3. Settings footer now has a reserved lane; current-source visual/Studio/contract checks running. GitHub full suite is checking the earlier checkpoint; the next push must recheck r75. AI review status is error (underlying is_error:true / VERDICT:none), despite green wrapper workflow. No deployment or zero-bug claim.
+- **Owner scope update (14 Oct, 9:07 am AEDT): everything discussed is in one combined round**, including family photo/device linking, learning/Big Thinkers additions and film improvements alongside UI, Studio, testing and collected bugs. Earlier later-batch wording means implementation checkpoints only, not separate release rounds. Canonical combined checklist: `docs/cores/tasks/owner-ui-audit-20261014.md`; no new deployment approval. Open recovery/content details and #139 blockers must remain visible; nothing silently omitted.
+- **Now (owner-approved rules, 14 Oct 9:03 am AEDT):** UX-001–UX-010 written into the canonical design handbook and linked from CLAUDE.md / HANDOFF.md. Implementation sequence, core ownership, dependencies and acceptance recorded in `docs/cores/tasks/owner-ui-audit-20261014.md`; docs branch `docs/family-device-work-order-20261014`. Documentation complete; runtime work remains pending. First repair batch: reporting/owner controls plus startup/shared fixed-screen components; then Bag/shop/Studio adoption; learning/film content later. No new deployment.
+- [ ] (Owner via Release -> all cores) **14 Oct UI and reliability review:** fixed panels, immediate Welcome/resource progress, update/import failures, Bag art/help, in-Pad Shop and mirror, compact camera/audio, Studio folds/admin permissions/performance, unified testing with per-device progress policy, report capture and learning/film expansion. Findings, priorities and release acceptance: `docs/cores/tasks/owner-ui-audit-20261014.md` on `docs/family-device-work-order-20261014`. Source/screenshots/open-issue review complete; runtime implementation and device verification pending. No new deployment.
+- [ ] (Owner via Release -> Kid UI, Play, Voice & Audio) **Backpack UI work order:** extend picture/name/purpose/spoken help to every bag item (food, ingredients, treasures, clothes, hats, kite, festival prizes, glider and pets); replace the oversized general food dialogue with one compact Backpack-specific Eat/Not now card, preserving readability and 64 px targets for under-5s. No accidental consumption/selling/wearing while explaining. Brief: `docs/cores/tasks/backpack-item-help.md`, on `docs/family-device-work-order-20261014`. Queued for this discussion; no game change or deployment. Owner, 14 Oct AEDT.
+- [ ] (Owner via Release -> Studio, Analytics & Infra, Kid UI) **Work order accepted, design under discussion:** separate private photo collections for each family; parents connect another device themselves using a temporary code and parent approval, without contacting the site owner. Photo connection does not imply progress/profile transfer. Proposed Grown-ups screens, recovery questions, ownership and verification: `docs/cores/tasks/family-device-linking.md` on `docs/family-device-work-order-20261014`. No implementation or deployment approved; r74 unchanged. Owner, 14 Oct AEDT.
 - **Now (Release verification, 14 Oct AEDT):** **r74 approved and merged into main (PR #138, `1ce11b29`); **live on sparklevalley.au and sparklevalley.netlify.app, verified 14 Oct, 7:03 am AEDT.**** Source PR #138 at `96b3ad9b`; Owner said "Release" on 14 Oct AEDT; verification metadata and the refreshed test map are preserved in GitHub. GitHub suite 137/137 reported green (7 online checks skipped), rollout pass, Quick checks pass, AI review looks fine. Local `suite.mjs --jobs 1 --only perf,battery,startup`: 3/3 pass; unit: 81 pass, 1 legacy skip; types, rules and bilingual audit pass. Six valley/Pad screenshots inspected at phone 390x844, tablet 820x1180 and computer 1280x800; no page errors. The phone's bottom surprise hint overlaps Jump on both r73 and r74 (existing UI follow-up, not introduced by r74). GitHub check-map artifact retained in a local commit; Netlify review ZIP built and verified. PR #139 remains excluded: AI review retry failed, original Full suite and Checks runs require action; PR #139 stays outside main. `core/rollout` is already included in #138; old board statuses do not mean new code.
 - **Now (13 Oct, 11:55 pm AEDT):** **r71 live** (pull request #85; festival decorations 5x over the whole valley, Halloween kinds, festival hunt, View tray, Fit the screen, Studio devices, auto play, daily voices); SparkleStudio.exe r71 published. **Next: r72, the films chat (`claude/quirky-maxwell-4lm9tv`): merge `main` into your branch (overlaps: `sw.js`, `js/build.js`, `studio/version.json`, `tests/run.mjs`, `tests/suite.mjs`, `.github/workflows/full-suite.yml`, `css/style.css`, `HANDOFF.md`, the board, `voices/manifest.json` and `voices/areas.json` rebuilt with the voice tools, 6 voice files both changed), keep r72, run the full suite again, then ask the owner.** The Google Drive mirror is full (`mirror` check red: storageQuotaExceeded).
 - **Now (films chat, Release this once):** **r72** = live r70 + the story films batch; full suite on GitHub (126 of 138) and the 12 failures run again here (all pass but `startup` and `testerreport`, both failing on main too); waiting for the owner's "yes, deploy" · branch `claude/quirky-maxwell-4lm9tv` · 13 Oct, 9:15 pm AEDT
@@ -34,6 +41,56 @@ Format for a request:
 - Still to build from the Round R plan (`docs/cores/ROUND-R.md`, Part 2): items 2 to 12 (Concept D layout, child's journey, homes, surprises, shop and wardrobe, money games, the rest of the festival groups, Hội làng times, 5–8 challenges, parent features, voice pack by area); the owner's privacy decisions of 9 Oct; splitting the code into per-core folders (infrastructure round).
 
 - [ ] (Release → Play, Kid UI, World, Online) **Round U (r62) is being built by the Release robot chat** (`docs/cores/ROUND-U.md`, owner's "go" 11 Oct AEDT): until it is merged please do not change `js/ui.js`, `js/simple.js`, `js/hud.js`, `js/parents.js`, `js/shop.js`, `js/content/shop.js`, `js/traffic.js`, `js/vehicles.js`, `js/myhouse.js`, `js/town.js`, `js/animals.js`, `js/weather.js`, `css/style.css`; put requests for them here instead · 11 Oct AEDT
+
+## Owner repair: third AI (points 46-48, 52, 56)
+- **Now (16 Oct AEDT, about 1:30 pm):** points 46-48, 52, 56 done and pushed · `work/owner-repair-learning-20261016` (merged with checkpoint r77) · draft PR #301 · GitHub full suite started by hand on this branch · waiting for: Release to record the lines below (then `voicecover` goes green), to fix R1 before r77's "yes, deploy", and to merge · **ready for Release** once the full suite is green apart from `voicecover` · docs: `docs/owner-repair-20261014/learning-progression.md` (16 Oct section), `improvements.md`, `independent-review.md`
+- [ ] (third AI → Release) **R1, high: opening Studio online stops a child's game** (the one-tab lock in `js/state.js:44-47` also fires for Studio pages that load the game's `state.js`). Reproduced; fix proposal and the other findings (R2-R8) in `docs/owner-repair-20261014/independent-review.md` · `js/state.js`, `studio/ui/app.js` · 16 Oct AEDT
+- [ ] (third AI → Release) **45 new spoken lines to record** (EN and VI each; the reasoning games, `js/games/bigthinkers.js` and `bigthinkers2.js`). `voicecover` stays red on this branch until they are recorded, because Release owns `voices/manifest.json` and `voices/areas.json` this round. `node tools/make-voice-pack.mjs --cover` lists them. · 16 Oct AEDT
+- "Put the little story in order. Choose what happens first, then what happens next." / "Xếp câu chuyện nhỏ theo thứ tự. Chọn việc xảy ra trước, rồi việc tiếp theo."
+- "Yes! They are all fruit." / "Đúng rồi! Tất cả đều là trái cây."
+- "Not that one. Look again: they are all fruit." / "Chưa đúng. Nhìn lại nhé: tất cả đều là trái cây."
+- "Yes! They are all animals." / "Đúng rồi! Tất cả đều là con vật."
+- "Not that one. Look again: they are all animals." / "Chưa đúng. Nhìn lại nhé: tất cả đều là con vật."
+- "Yes! They are all things to wear." / "Đúng rồi! Tất cả đều là đồ để mặc."
+- "Not that one. Look again: they are all things to wear." / "Chưa đúng. Nhìn lại nhé: tất cả đều là đồ để mặc."
+- "Yes! They all take us places." / "Đúng rồi! Tất cả đều chở mình đi."
+- "Not that one. Look again: they all take us places." / "Chưa đúng. Nhìn lại nhé: tất cả đều chở mình đi."
+- "Yes! They are all flowers." / "Đúng rồi! Tất cả đều là hoa."
+- "Not that one. Look again: they are all flowers." / "Chưa đúng. Nhìn lại nhé: tất cả đều là hoa."
+- "Yes! They all live in the water." / "Đúng rồi! Tất cả đều sống dưới nước."
+- "Not that one. Look again: they all live in the water." / "Chưa đúng. Nhìn lại nhé: tất cả đều sống dưới nước."
+- "Yes! They can all fly." / "Đúng rồi! Tất cả đều biết bay."
+- "Not that one. Look again: they can all fly." / "Chưa đúng. Nhìn lại nhé: tất cả đều biết bay."
+- "Yes! They are all red." / "Đúng rồi! Tất cả đều màu đỏ."
+- "Not that one. Look again: they are all red." / "Chưa đúng. Nhìn lại nhé: tất cả đều màu đỏ."
+- "Yes! They are all yellow." / "Đúng rồi! Tất cả đều màu vàng."
+- "Not that one. Look again: they are all yellow." / "Chưa đúng. Nhìn lại nhé: tất cả đều màu vàng."
+- "What happens first?" / "Việc gì xảy ra trước tiên?"
+- "What happens next?" / "Tiếp theo là gì?"
+- "That picture is not part of this story." / "Hình đó không thuộc câu chuyện này."
+- "That comes later. What has to happen before it?" / "Việc đó xảy ra sau. Trước đó phải có gì?"
+- "Some flowers stop at a puddle. Find the flowers that go all the way to the flag." / "Có hoa dẫn đến vũng nước. Tìm đường hoa đi đến tận lá cờ."
+- "You have been there already. Go on towards the flag." / "Con đi qua đó rồi. Đi tiếp về phía lá cờ nhé."
+- "Those flowers stop at a puddle. Find the way to the flag." / "Đường hoa đó dừng ở vũng nước. Tìm đường đến lá cờ nhé."
+- "That is a puddle. Step on a flower." / "Đó là vũng nước. Bước lên hoa nhé."
+- "Water it." / "Tưới nước."
+- "The tree grows." / "Cây lớn lên."
+- "Snow falls." / "Tuyết rơi."
+- "Build a snowman." / "Đắp người tuyết."
+- "The sun comes out." / "Mặt trời ló ra."
+- "The snowman melts." / "Người tuyết tan chảy."
+- "Clouds come." / "Mây kéo đến."
+- "It rains." / "Trời mưa."
+- "A rainbow!" / "Cầu vồng!"
+- "The rice grows." / "Lúa lớn lên."
+- "Harvest the rice." / "Gặt lúa."
+- "Cook the rice." / "Nấu cơm."
+- "Eat together." / "Cùng nhau ăn cơm."
+- "A little shoot." / "Một mầm nhỏ."
+- "A flower opens." / "Hoa nở."
+- "A bee visits." / "Ong đến thăm."
+- "That one comes later. Which picture was before it?" / "Hình đó ở sau. Hình nào đứng trước nó?"
+- "That picture was not in the garden row. Tap Show again to look." / "Hình đó không có trong hàng. Chạm Xem lại để nhìn nhé."
 
 ## Front Desk
 - **Now:** robot working again (timer fired at 1:39 am AEDT). Fixed on branches: #27 (PR #40), #28 (PR #42), #29 (PR #43), #31 (PR #44). Owner's go: #30 (keep Khám phá), #33 (80 to 90 percent see-through; link footprints so they fade). #35 waits for the owner's iPhone voice report; #41 retrying · branch `core/front-desk` · waiting for Release to merge the bugfix pull requests · 11 Oct, 3:15 am AEDT (Sydney)
@@ -165,3 +222,7 @@ Format for a request:
 - [ ] (Analytics & Infra → Release, Online) the voice relay (TURN) is set up: checked 10 Oct AEST, https://sparklevalley.netlify.app/api/turn answers Cloudflare turn: servers (ports 3478, 443, 80, 5349) with short-lived details. Release: drop the TURN reminder from CLAUDE.md; Online: close the relay item above · 10 Oct AEST
 - [ ] (Analytics & Infra → All cores) never write "Sparkle Studio" or "Studio" in text a parent or child sees (owner, 10 Oct; check `nostudio`) · 10 Oct AEST
 - [ ] (Voice & Audio → Analytics & Infra) for your notes: `sw.js` keeps `voices/areas.json` in the `sv-voices` cache like `voices/manifest.json`, and FILES has one new file, `js/voicepack.js` (the voice pack's downloading, split from `js/voice.js` and loaded only when it starts, so PERF-001 stays under its limit). No version bump. · 10 Oct AEST
+
+- [ ] (Release repair -> Voice & Audio) Record companion hat explanation EN “Save coins for a hat for your companion. Choose Buy when you are ready.” / VI “Để dành tiền mua mũ cho bạn đồng hành. Chọn Mua khi con đã sẵn sàng.” Four f/m files missing; isolated checkpoint voice workflow is being enabled so active PR300 full suite stays fixed at87f9d334. 15 Oct AEDT.
+
+Release repair update (15 Oct 2026 AEDT): repair13 narration cancellation / legal Robot-maze-sorting autoplay passed focused4/4, eight EN/VI completions. Nine existing regressions running; not ready for Release/deployment. b09 Full38681986376 failed163/164; together retry still open. Checkpoint branch work/owner-repair-checkpoint-20261015.

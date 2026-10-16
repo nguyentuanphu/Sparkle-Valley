@@ -1,0 +1,15 @@
+{
+  "sourceCommit": "25176e742b5525f62c801d7b467ae451baaabe26",
+  "baselineCommit": "6a6ae885f86ad58a52688782eeba1d5417985fe9",
+  "recordedAt": "2026-10-14T11:33:58.608061+00:00",
+  "command": "cd tests && PLAYWRIGHT_BROWSERS_PATH=/workspace/test-browsers node suite.mjs --only unit,types,rules,arch,bilingual,reportstorage,testerreport,wearbag,bagitems --jobs 1",
+  "runtime": {
+    "node": "24.19.0",
+    "typescript": "5.9.3",
+    "playwright": "1.56.1",
+    "chromium": "141.0.7390.37",
+    "chromiumBuild": 1194
+  },
+  "scope": "Emulated Chromium, controlled report services; no physical-device or production-delivery proof",
+  "result": "9/9; 99 unit tests; no skips; four minutes"
+}

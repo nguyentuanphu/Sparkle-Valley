@@ -1,0 +1,278 @@
+{
+  "phone-story": {
+    "stage": {
+      "w": 366,
+      "h": 629,
+      "top": 64
+    },
+    "viewport": [
+      390,
+      844
+    ],
+    "parts": {
+      ".th-text": [
+        {
+          "w": 366,
+          "h": 59,
+          "top": 703,
+          "font": "16px",
+          "text": "Mai An Tiêm and his family were sent to live on a lonely sandy island."
+        }
+      ],
+      ".th-text p": [
+        {
+          "w": 338,
+          "h": 43,
+          "top": 711,
+          "font": "16px",
+          "text": "Mai An Tiêm and his family were sent to live on a lonely sandy island."
+        }
+      ],
+      ".th-more": [],
+      ".film-help:not([hidden])": [],
+      ".ht-titlecard": [],
+      ".ht-cap": [],
+      ".caption.show": []
+    }
+  },
+  "phone-howto-title": {
+    "stage": {
+      "w": 330,
+      "h": 186,
+      "top": 272
+    },
+    "viewport": [
+      390,
+      844
+    ],
+    "parts": {
+      ".th-text": [],
+      ".th-text p": [],
+      ".th-more": [],
+      ".film-help:not([hidden])": [],
+      ".ht-titlecard": [],
+      ".ht-cap": [
+        {
+          "w": 330,
+          "h": 52,
+          "top": 468,
+          "font": "16px",
+          "text": "How to play Count With Me"
+        }
+      ],
+      ".caption.show": []
+    }
+  },
+  "phone-howto-step": {
+    "stage": {
+      "w": 330,
+      "h": 186,
+      "top": 272
+    },
+    "viewport": [
+      390,
+      844
+    ],
+    "parts": {
+      ".th-text": [],
+      ".th-text p": [],
+      ".th-more": [],
+      ".film-help:not([hidden])": [],
+      ".ht-titlecard": [],
+      ".ht-cap": [
+        {
+          "w": 330,
+          "h": 52,
+          "top": 468,
+          "font": "16px",
+          "text": "Count the things on the screen."
+        }
+      ],
+      ".caption.show": []
+    }
+  },
+  "tablet-story": {
+    "stage": {
+      "w": 796,
+      "h": 972,
+      "top": 64
+    },
+    "viewport": [
+      820,
+      1180
+    ],
+    "parts": {
+      ".th-text": [
+        {
+          "w": 796,
+          "h": 52,
+          "top": 1046,
+          "font": "16px",
+          "text": "Mai An Tiêm and his family were sent to live on a lonely sandy island."
+        }
+      ],
+      ".th-text p": [
+        {
+          "w": 558,
+          "h": 24,
+          "top": 1060,
+          "font": "18.04px",
+          "text": "Mai An Tiêm and his family were sent to live on a lonely sandy island."
+        }
+      ],
+      ".th-more": [],
+      ".film-help:not([hidden])": [],
+      ".ht-titlecard": [],
+      ".ht-cap": [],
+      ".caption.show": []
+    }
+  },
+  "tablet-howto-title": {
+    "stage": {
+      "w": 732,
+      "h": 412,
+      "top": 332
+    },
+    "viewport": [
+      820,
+      1180
+    ],
+    "parts": {
+      ".th-text": [],
+      ".th-text p": [],
+      ".th-more": [],
+      ".film-help:not([hidden])": [],
+      ".ht-titlecard": [],
+      ".ht-cap": [
+        {
+          "w": 732,
+          "h": 52,
+          "top": 754,
+          "font": "18.04px",
+          "text": "How to play Count With Me"
+        }
+      ],
+      ".caption.show": []
+    }
+  },
+  "tablet-howto-step": {
+    "stage": {
+      "w": 732,
+      "h": 412,
+      "top": 332
+    },
+    "viewport": [
+      820,
+      1180
+    ],
+    "parts": {
+      ".th-text": [],
+      ".th-text p": [],
+      ".th-more": [],
+      ".film-help:not([hidden])": [],
+      ".ht-titlecard": [],
+      ".ht-cap": [
+        {
+          "w": 732,
+          "h": 52,
+          "top": 754,
+          "font": "18.04px",
+          "text": "Count the things on the screen."
+        }
+      ],
+      ".caption.show": []
+    }
+  },
+  "computer-story": {
+    "stage": {
+      "w": 1256,
+      "h": 592,
+      "top": 64
+    },
+    "viewport": [
+      1280,
+      800
+    ],
+    "parts": {
+      ".th-text": [
+        {
+          "w": 1256,
+          "h": 52,
+          "top": 666,
+          "font": "16px",
+          "text": "Mai An Tiêm and his family were sent to live on a lonely sandy island."
+        }
+      ],
+      ".th-text p": [
+        {
+          "w": 619,
+          "h": 27,
+          "top": 679,
+          "font": "20px",
+          "text": "Mai An Tiêm and his family were sent to live on a lonely sandy island."
+        }
+      ],
+      ".th-more": [],
+      ".film-help:not([hidden])": [],
+      ".ht-titlecard": [],
+      ".ht-cap": [],
+      ".caption.show": []
+    }
+  },
+  "computer-howto-title": {
+    "stage": {
+      "w": 732,
+      "h": 412,
+      "top": 142
+    },
+    "viewport": [
+      1280,
+      800
+    ],
+    "parts": {
+      ".th-text": [],
+      ".th-text p": [],
+      ".th-more": [],
+      ".film-help:not([hidden])": [],
+      ".ht-titlecard": [],
+      ".ht-cap": [
+        {
+          "w": 732,
+          "h": 52,
+          "top": 564,
+          "font": "20px",
+          "text": "How to play Count With Me"
+        }
+      ],
+      ".caption.show": []
+    }
+  },
+  "computer-howto-step": {
+    "stage": {
+      "w": 732,
+      "h": 412,
+      "top": 142
+    },
+    "viewport": [
+      1280,
+      800
+    ],
+    "parts": {
+      ".th-text": [],
+      ".th-text p": [],
+      ".th-more": [],
+      ".film-help:not([hidden])": [],
+      ".ht-titlecard": [],
+      ".ht-cap": [
+        {
+          "w": 732,
+          "h": 52,
+          "top": 564,
+          "font": "20px",
+          "text": "Count the things on the screen."
+        }
+      ],
+      ".caption.show": []
+    }
+  }
+}

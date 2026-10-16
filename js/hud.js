@@ -11,6 +11,8 @@ import { SIZE, HALF } from './world.js';
 import { avatarURL } from './avatar.js';
 import { pic, hasArt as hasPic } from './art.js';
 import { SFX } from './audio.js';
+import { say } from './voice.js';
+import { explain as explainBrief } from './explain.js';
 
 export const EMOTES = [
   { id: 'hi', icon: '👋', en: 'Hi!', vi: 'Xin chào!' },
@@ -55,7 +57,7 @@ export class Hud {
         <button class="dk voicecmd" hidden><span>${ICONS.ask}</span><small>${T('Ask', 'Hỏi')}</small><kbd class="kb">K</kbd></button>
         <button class="dk chat"><span>${ICONS.talk}</span><small>${T('Talk', 'Nói')}</small><kbd class="kb">T</kbd></button>
         <button class="dk call" hidden><span>${ICONS.callOff}</span><small>${T('Mic off', 'Micrô tắt')}</small><kbd class="kb">C</kbd></button>
-        <button class="dk mus"><span>${ICONS.music}</span><small>${T('Music', 'Nhạc')}</small><kbd class="kb">N</kbd></button>
+        <button class="dk mus" hidden><span>${ICONS.music}</span><small>${T('Music', 'Nhạc')}</small><kbd class="kb">N</kbd></button>
         <button class="dk snd"><span>${ICONS.sound}</span><small>${T('Sound', 'Tiếng')}</small><kbd class="kb">O</kbd></button>
       </div>
       <button class="act" hidden><span class="ai"></span><span class="al"></span><kbd class="kb">E</kbd></button>
@@ -82,6 +84,12 @@ export class Hud {
     this.q('.simplesw').hidden = game.mode === 'split' || i > 0;
     this.q('.simplesw').onclick = () => { SFX.tap(); game.simple && game.simple.show(); };
     this.q('.pcard').onclick = () => game.openQuick(i);
+    // (owner, 16 Oct AEDT, point 50: "keep, explain on tap") the hearts explain themselves instead of opening Settings
+    { const hb = this.q('.hearts'), HEARTS = ['Hearts show how strong you are. Little ones never lose them.', 'Trái tim cho biết con khỏe thế nào. Các bé không bao giờ mất tim.']
+      hb.setAttribute('role', 'button'); hb.tabIndex = 0; hb.setAttribute('aria-label', T('What do the hearts mean?', 'Trái tim có nghĩa là gì?'));
+      // (owner, 16 Oct) a short note and a short spoken line, each with its own Studio switch (js/explain.js)
+      const explain = e => { e.stopPropagation(); e.preventDefault(); SFX.tap && SFX.tap(); explainBrief(this, 'hearts', HEARTS); };
+      hb.onclick = explain; hb.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') explain(e); }; }
     this.q('.dk.map').onclick = () => game.openPad(i, 'map');
     this.q('.dk.bag').onclick = () => game.openPad(i, 'bag');
     // (tester's notes, 12 Oct; owner: "bottom bar") the clothes shop has its own button beside the Bag (it was inside
@@ -94,7 +102,7 @@ export class Hud {
     // press and hold Music: the Songs page (round O)
     { const b = this.q('.dk.mus'); let t = 0; b.addEventListener('pointerdown', () => { clearTimeout(t); t = setTimeout(() => { this._musHeld = true; game.openSongs && game.openSongs(); }, 650); }); for (const ev of ['pointerup', 'pointercancel', 'pointerleave']) b.addEventListener(ev, () => clearTimeout(t)); }
     this.q('.z-where').onclick = () => game.openWhere && game.openWhere(i);   // (Round U) "Where is…?" sparkles
-    this.q('.dk.snd').onclick = () => game.openSound();   // (Round U) the three Sound switches: music, sounds, voice
+    this.q('.dk.snd').onclick = () => game.openSound(this.q('.dk.snd'));   // (Round U) the three Sound switches: music, sounds, voice
     this.q('.friendchip').onclick = () => { const r = game.findFriend(i); if (r) game.say && game.say(r[0], r[1]); };
     // (Round V, owner 13 Oct) a tap on the quest folds it to a small chip and hides its arrow and sparkles; a tap on the chip
     // opens it again and says the goal (remembered per child)
@@ -108,7 +116,7 @@ export class Hud {
     // (owner, 13 Oct AEDT: too many buttons down one side) zoom, camera view and Where is sit in a tray behind one View
     // button; it closes by itself after a while, or with a tap on View again (their keys work all the time)
     { const zr = this.q('.zoomer'), tb = this.q('.z-tray'); let t = 0;
-      const open = on => { zr.classList.toggle('open', on); tb.setAttribute('aria-expanded', String(on)); clearTimeout(t); if (on) t = setTimeout(() => open(false), 8000); };
+      const open = on => { zr.classList.toggle('open', on); tb.setAttribute('aria-expanded', String(on)); clearTimeout(t); if (on) { document.querySelector('.audio-tray')?.close?.(); document.querySelectorAll('.zoomer.open').forEach(z => { if (z !== zr) { z.classList.remove('open'); z.querySelector('.z-tray')?.setAttribute('aria-expanded', 'false'); } }); t = setTimeout(() => open(false), 8000); } };
       tb.addEventListener('pointerdown', e => e.stopPropagation());
       tb.onclick = e => { e.stopPropagation(); open(!zr.classList.contains('open')); };
       this.q('.ztray').addEventListener('pointerdown', () => open(true), true); }
@@ -117,25 +125,36 @@ export class Hud {
     EMOTES.forEach(e => { const b = el('button', 'em', `<span>${e.icon}</span><small>${esc(T(e.en, e.vi))}</small>`); b.onclick = () => { this.toggleEmotes(false); game.emote(i, e.id); }; em.appendChild(b); });
     this.regionT = 0; this.toastT = 0; this.last = {};
     this.refreshWho();
+    this.navWatch = new ResizeObserver(() => this.fitQuest()); this.navWatch.observe(this.q('.hud-tr'));
   }
   refreshAudio() {
     const s = this.game.settings, m = this.q('.dk.mus'), d = this.q('.dk.snd');
-    m.classList.toggle('off', !s.music); d.classList.toggle('off', !(s.sound || s.voice)); d.querySelector('span').innerHTML = s.sound || s.voice ? ICONS.sound : ICONS.soundOff;
+    m.classList.toggle('off', !s.music); const active = s.music || s.sound || s.voice; d.classList.toggle('off', !active); d.querySelector('span').innerHTML = active ? ICONS.sound : ICONS.soundOff; d.querySelector('small').textContent = T('Audio', 'Âm thanh'); d.setAttribute('aria-label', T('Audio: music, sounds and voice', 'Âm thanh: nhạc, tiếng động và giọng nói'));
   }
-  foldQuest() { const f = !!this.hero.profile.questFold, q = this.q('.quest'); q.classList.toggle('fold', f); this.q('.q-say').setAttribute('aria-label', f ? T('Show the goal', 'Hiện nhiệm vụ') : T('Hide the goal', 'Ẩn nhiệm vụ')); }
+  foldQuest() { const f = !!this.hero.profile.questFold, q = this.q('.quest'); q.classList.toggle('fold', f); this.q('.q-say').setAttribute('aria-label', f ? T('Show the goal', 'Hiện nhiệm vụ') : T('Hide the goal', 'Ẩn nhiệm vụ')); this.fitQuest(); }
+  fitQuest() {
+    const root = this.root, nav = this.q('.hud-tr'), quest = this.q('.quest');
+    if (!root.classList.contains('small')) { root.classList.remove('quest-below-nav'); return; }
+    const reserve = nav.offsetWidth + (parseFloat(getComputedStyle(nav).right) || 0) + (parseFloat(getComputedStyle(quest).left) || 0) + 14;
+    root.style.setProperty('--quest-nav-reserve', reserve + 'px');
+    root.style.setProperty('--quest-below-top', (nav.offsetTop + nav.offsetHeight + 12) + 'px');
+    root.classList.toggle('quest-below-nav', !quest.classList.contains('fold') && root.clientWidth - reserve < 180);
+  }
   refreshWho() { const p = this.hero.profile; this.q('.pav').src = avatarURL(p); this.q('.pname').textContent = nm(p.name); this.q('.pname').classList.toggle('starname', !!(p.look && p.look.star)); } // (owner, 12 Oct: this week's star tester gets a gold star by the name)
   toggleEmotes(v) { const e = this.q('.emotes'); e.hidden = v == null ? !e.hidden : !v; }
   layout(r, two) {
     Object.assign(this.root.style, { left: r.x + 'px', top: r.y + 'px', width: r.w + 'px', height: r.h + 'px', transform: r.rot ? `rotate(${r.rot}deg)` : '' });
     this.root.classList.toggle('far', r.rot === 180);   // (two players face to face: this half is turned to the far end)
     const small = two || r.w < 560 || r.h < 420; this.root.classList.toggle('small', small); this.rect = r;
-    // on phones the dock has room for four buttons only, so Talk, Music and Sound move to a small row under the clock
-    const tools = this.q('.tools'), dock = this.q('.dock');
-    for (const k of ['chat', 'mus', 'snd']) { const b = this.q('.dk.' + k); if (small && b.parentNode !== tools) tools.appendChild(b); if (!small && b.parentNode !== dock) dock.appendChild(b); }
-    if (!small) dock.insertBefore(this.q('.dk.call'), this.q('.dk.mus'));
+    // Audio and the microphone always stay below navigation, on desktop as on phones.
+    const tools = this.q('.tools'), dock = this.q('.dock'), chat = this.q('.dk.chat');
+    const chatHome = small ? tools : dock; if (chat.parentNode !== chatHome) chatHome.appendChild(chat);
+    for (const k of ['snd', 'call', 'mus']) { const b = this.q('.dk.' + k); if (b.parentNode !== tools) tools.appendChild(b); }
+    if (small) { const audio = this.q('.dk.snd'); if (tools.firstElementChild !== audio) tools.prepend(audio); if (chat.previousElementSibling !== audio) tools.insertBefore(chat, audio.nextSibling); }
+    this.fitQuest();
   }
   showRegion(name) { const e = this.q('.region'); e.textContent = name; e.classList.remove('show'); void e.offsetWidth; e.classList.add('show'); }
-  toast(msg) { const e = this.q('.htoast'); e.textContent = msg; e.classList.add('show'); clearTimeout(this._tt); this._tt = setTimeout(() => e.classList.remove('show'), 3200); }
+  toast(msg, o = {}) { const e = this.q('.htoast'); e.textContent = msg; e.classList.toggle('explain', !!o.explain); e.classList.add('show'); clearTimeout(this._tt); this._tt = setTimeout(() => e.classList.remove('show'), Math.max(3200, msg.length * 30)); }
   setAction(it) {
     const b = this.q('.act');
     if (!it) { b.hidden = true; this.last.act = null; return; }
@@ -240,7 +259,7 @@ export class Hud {
       c.beginPath(); c.arc(48, 48, R, -Math.PI / 2, -Math.PI / 2 + val * Math.PI * 2); c.stroke();
     }
   }
-  destroy() { this.root.remove(); }
+  destroy() { this.navWatch?.disconnect(); this.root.remove(); }
 }
 
 // The explorer's map. The whole valley is always shown (much easier for children to find things);

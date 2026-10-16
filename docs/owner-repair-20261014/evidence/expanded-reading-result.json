@@ -1,0 +1,13 @@
+{
+  "sourceCommit": "25176e742b5525f62c801d7b467ae451baaabe26",
+  "diagnosticRemoteCommit": "ee145bd182cbfcb450e90105d363ff689fc117ca",
+  "command": "suite.mjs --only reading,rollout,hoilang,voicecover,ownerround,soundsw,reportdetectors --all --jobs 1",
+  "check": "reading",
+  "ok": true,
+  "seconds": 1529,
+  "cases": 90,
+  "sampled": false,
+  "recordedAt": "2026-10-14T11:53:08.268290+00:00",
+  "result": "reading (1529s) switch off: nothing loads or shows; on: 12 games in the Reading corner (9 for under-5s), all finish at Easy, Medium, Hard and for under-5s in English and Vietnamese; 254 English and 287 Vietnamese lines",
+  "scope": "Emulated Chromium, controlled content switches. Other checks in this group remain pending; this is not full-suite proof."
+}

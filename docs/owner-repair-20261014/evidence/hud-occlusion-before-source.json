@@ -1,0 +1,10 @@
+{
+  "sourceCommit": "a246d1163f6593546e1db48b3b674f7ab0b462b3",
+  "method": "Regression capture from served checkout before HUD edits; fixed synthetic tester API,320x640 EN. Visual overlap reproduced; all9 hit points still reach Go.",
+  "fingerprints": {
+    "js/hud.js": "f3eb043af6b5df4116bbc6d7b6b4fc6ac0c60c757fbe9e9d18204151a164d938",
+    "js/soundsheet.js": "877b52499c22074628d6bc40595fc23a44d080f55ebad61d8969dc565456bbc1",
+    "css/style.css": "e820ff42ca59cf065b77ad426ae2a0c96012175598a0ad5da4c4f7c827ac3617",
+    "sw.js": "ef217c21371b693de4c55e80bc1aa0238b11739c13682f35876d85ef492277e5"
+  }
+}

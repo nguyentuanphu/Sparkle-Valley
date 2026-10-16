@@ -35,9 +35,11 @@ export const stageOf = en => (STAGES.find(([re]) => re.test(en)) || [0, 'meadow'
 
 // sync (round H, reading together online): { send(page), listen(fn) } — a page turned here turns for every friend reading
 export function openTheatre(tale, { name = '', onDone, startPage = 0, sync = null } = {}) {
-  let fromFriend = false;
   return new Promise(resolve => {
     let k = startPage, auto = true, alive = true, token = 0;
+    let displayed = false;
+    // Both friends already start on page zero. Publishing a late initial render can undo real Next taps.
+    const publish = fromFriend => { const initial = !displayed; displayed = true; if (sync && !fromFriend && (!initial || k !== startPage)) sync.send(k); };
     // (owner, 13 Oct) a soft music bed under the story, lowered while the narrator speaks; the music before comes back on
     // close. Music.play follows the music switch, and the music's loudness calm mode.
     const prev = Music.key; Music.play('story'); const offTalk = onSpeaking(n => Music.under(n > 0));
@@ -60,13 +62,13 @@ export function openTheatre(tale, { name = '', onDone, startPage = 0, sync = nul
       film = F.createFilm(stage, script, tale.ctx); if (!film) return; m.classList.add('film');
       // a narration line inside the film shows under the page's words, and is spoken only while the story reads itself
       film.onSay = (en, vi, kind) => { if (kind !== 'help') { text.querySelectorAll('.th-more').forEach(e => e.remove()); text.appendChild(el('p', 'th-more', esc(T(en, vi).replace(/\{name\}/g, name)))); } return auto ? sayAsync(en, vi) : Promise.resolve(); };
-    }).catch(e => console.warn('film', e)) : Promise.resolve();
+    }).catch(e => { console.warn('film', e); window.svModuleGone?.(e); }) : Promise.resolve();
     const readyOr = Promise.race([ready, wait(10000).then(() => { gaveUp = true; })]);
     const rate = () => window.__svFilmRate || 1; // (checks only: films played faster)
-    const draw = async () => {
+    const draw = async (fromFriend = false) => {
       const my = ++token; await readyOr; if (!alive || my !== token) return;
       const [pics, en, vi] = tale.pages[k], st = stageOf(en);
-      if (film) return drawFilm(my, en, vi);
+      if (film) return drawFilm(my, en, vi, fromFriend);
       stage.className = 'th-stage st-' + st; bg.innerHTML = SCENES[st] ? `<svg class="sc" viewBox="0 0 800 450" preserveAspectRatio="xMidYMax slice" aria-hidden="true">${SCENES[st]()}</svg>` : STAGE_ART[st] || '';
       // actors: spread across the stage, each entering from its side, then moving its own way
       // on a narrow (phone) stage fewer, smaller actors, spread over the whole width, so nobody overlaps
@@ -86,7 +88,7 @@ export function openTheatre(tale, { name = '', onDone, startPage = 0, sync = nul
       if (/✨|magic|thần|fairy|Bụt/i.test(pics + en)) for (let i = 0; i < 10; i++) fx.appendChild(el('i', 'th-spark', pic('✨'))).style.cssText = `left:${10 + (i * 41) % 80}%;top:${10 + (i * 23) % 60}%;animation-delay:${(i % 6) * .3}s`;
       text.innerHTML = `<p>${esc(T(en, vi).replace(/\{name\}/g, name))}</p>`;
       dots.innerHTML = tale.pages.map((_, i) => `<i class="${i === k ? 'on' : i < k ? 'done' : ''}"></i>`).join('');
-      if (sync && !fromFriend) sync.send(k);
+      publish(fromFriend);
       m.querySelector('.th-prev').disabled = k === 0;
       m.querySelector('.th-next').innerHTML = (k === tale.pages.length - 1 ? pic('🏁') : '▶') + `<small>${k === tale.pages.length - 1 ? T('End', 'Hết') : T('Next', 'Sau')}</small>`;
       SFX.page ? SFX.page() : SFX.tap();
@@ -101,10 +103,10 @@ export function openTheatre(tale, { name = '', onDone, startPage = 0, sync = nul
       next();
     };
     // a page of a film: the film and the narrator start together; the page is over when both have finished
-    const drawFilm = async (my, en, vi) => {
+    const drawFilm = async (my, en, vi, fromFriend) => {
       text.innerHTML = `<p>${esc(T(en, vi).replace(/\{name\}/g, name))}</p>`;
       dots.innerHTML = tale.pages.map((_, i) => `<i class="${i === k ? 'on' : i < k ? 'done' : ''}"></i>`).join('');
-      if (sync && !fromFriend) sync.send(k);
+      publish(fromFriend);
       m.querySelector('.th-prev').disabled = k === 0;
       m.querySelector('.th-next').innerHTML = (k === tale.pages.length - 1 ? pic('🏁') : '▶') + `<small>${k === tale.pages.length - 1 ? T('End', 'Hết') : T('Next', 'Sau')}</small>`;
       SFX.page ? SFX.page() : SFX.tap();
@@ -121,7 +123,7 @@ export function openTheatre(tale, { name = '', onDone, startPage = 0, sync = nul
     const finish = done => { if (!alive) return; alive = false; hush(); offTalk(); Music.under(false); if (film) film.close(); m.classList.add('out'); setTimeout(() => m.remove(), 300); Music.play(prev || 'field'); resolve(done); onDone && onDone(done); };
     const next = () => { if (k < tale.pages.length - 1) { k++; draw(); } else { SFX.chime && SFX.chime(); finish(true); } };
     // a friend turned the page
-    if (sync) sync.listen(p => { if (!alive || p === k || p < 0 || p >= tale.pages.length) return; fromFriend = true; k = p; draw(); fromFriend = false; });
+    if (sync) sync.listen(p => { if (!alive || p === k || p < 0 || p >= tale.pages.length) return; k = p; draw(true); });
     m.querySelector('.th-next').onclick = () => { SFX.tap(); next(); };
     m.querySelector('.th-prev').onclick = () => { if (k > 0) { SFX.tap(); k--; draw(); } };
     // (tester's notes, 12 Oct) four clear buttons: back, next, pause (stops the voice and the page turning) and the green

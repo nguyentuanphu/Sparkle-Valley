@@ -8,9 +8,11 @@ import { startRecording, releaseMic, micProblem } from './recorder.js';
 import { SFX, Music, ac } from './audio.js';
 import { fmt, cur, spoken as money } from './money.js';
 import { el, esc, $, clamp, wait, local } from './util.js';
+import { familyDevicesHTML, bindFamilyDevices } from './familydevices.js';
 import { familyCode, setFamilyCode, familyPhotoCount, featureOn } from './custom.js';
+const familyTrialOn = () => featureOn('familyDevices', false) || !!window.__sv?.tester;
 import { DEFAULT_OUTFITS, outfitOf, CLOTHES, ITEM, owns, wear as wearItem } from './content/shop.js'; // (round S, owner plan 8 Oct) two starting outfits when the clothes shop is on
-import { avatarURL, applyNpcFaces } from './avatar.js';
+import { avatarURL, applyNpcFaces, namedVillagers } from './avatar.js';
 import { confetti, holdButton } from './popups.js';
 export { holdButton }; // (round R privacy, 9 Oct) moved to popups.js so the real-place window can ask a grown-up too
 import { placeBookHTML, bindPlaceBook } from './placebook.js';
@@ -68,12 +70,12 @@ let hideCaption = () => { };
   };
   spoken.push(text => {
     if (settings.captions === false || !text) return;
-    if (document.querySelector('.dialog:not(.out), .storybook, .gl, .howto, .credits')) return;
+    if (document.querySelector('.modal:not(.out), .wardrobe, .audio-tray, .dialog:not(.out), .storybook, .gl, .howto, .credits')) { hideCaption(); return; }
     if (!cap) { cap = el('div', 'caption'); cap.setAttribute('role', 'status'); cap.setAttribute('aria-live', 'polite'); document.body.appendChild(cap); }
     stop(); let at = 0;
     chunks(text).forEach(c => {
       const ms = 2200 + c.length * 70;
-      timers.push(setTimeout(() => { cap.textContent = c; cap.classList.add('show'); }, at));
+      timers.push(setTimeout(() => { if (document.querySelector('.modal:not(.out), .wardrobe, .audio-tray, .dialog:not(.out), .storybook, .gl, .howto, .credits')) { hideCaption(); return; } cap.textContent = c; cap.classList.add('show'); }, at));
       at += ms;
     });
     timers.push(setTimeout(() => cap.classList.remove('show'), at));
@@ -125,14 +127,15 @@ export function showTitle(onStart) {
   };
   redraw();
   s.querySelector('.about').onclick = e => { e.stopPropagation(); ac(); openCredits(hideCaption); };
-  s.addEventListener('click', e => { if (e.target.closest('.seg') || e.target.closest('.about') || e.target.closest('.installchip') || e.target.closest('.learnrow')) return; ac(); SFX.chime(); s.remove(); onStart(); });
+  let starting = false;
+  s.addEventListener('click', async e => { if (starting || e.target.closest('.seg') || e.target.closest('.about') || e.target.closest('.installchip') || e.target.closest('.learnrow')) return; starting=true; ac(); SFX.chime(); try { await onStart(); s.remove(); } catch (error) { starting=false; throw error; } });
 }
 
 // ---------- Who's playing ----------
 // two players on one device: the way they sit now (Grown-ups 'auto' = face to face on touch screens; js/main.js rects)
 export const twoViewNow = () => settings.twoView === 'face' || settings.twoView === 'side' ? settings.twoView : document.body.classList.contains('touch') ? 'face' : 'side';
 export function showWho(onGo) {
-  let mode = 'solo', chosen = [];
+  let mode = 'solo', chosen = [], shellHeight = null;
   const s = el('div', 'screen who sv2');
   document.body.appendChild(s);
   let asked = false;
@@ -166,6 +169,12 @@ export function showWho(onGo) {
       </div>
       <button class="grown"><span class="ring"></span>${T('Grown-ups', 'Phụ huynh')}<small>${T('press and hold', 'nhấn giữ')}</small></button>`;
     s.querySelectorAll('.views button').forEach(b => b.onclick = () => { settings.twoView = b.dataset.v; saveSettings(); SFX.tap(); draw(); });
+    const whoCard = s.querySelector('.who-card'), whoAction = whoCard.querySelector('.go'), whoBody = el('div', 'who-body');
+    const naturalHeight = whoCard.getBoundingClientRect().height;
+    [...whoCard.children].filter(n => n !== whoAction).forEach(n => whoBody.appendChild(n)); whoCard.prepend(whoBody); whoAction.classList.add('who-footer');
+    // Keep the original compact opening size across redraws; additional choices scroll inside.
+    if (shellHeight === null) shellHeight = naturalHeight;
+    whoCard.style.height = `${shellHeight}px`;
     s.querySelectorAll('.modes button').forEach(b => b.onclick = () => { mode = b.dataset.m; chosen = chosen.slice(0, mode === 'split' ? 2 : 1); SFX.tap(); draw(); });
     s.querySelectorAll('.pick[data-id]').forEach(b => b.onclick = () => {
       const id = b.dataset.id; SFX.pop(chosen.length);
@@ -232,7 +241,7 @@ function openCropper(title, done) {
   m.querySelector('#cfile').onchange = e => { const f = e.target.files[0]; if (!f) return; const url = URL.createObjectURL(f), i = new Image(); i.onload = () => { img = i; zoom = 1; ox = oy = 0; zr.value = 1; draw(); URL.revokeObjectURL(url); }; i.src = url; };
   zr.oninput = () => { zoom = +zr.value; draw(); };
   const ptrs = new Map(); let pinch0 = 0, zoom0 = 1;
-  cv.addEventListener('pointerdown', e => { if (!img) return; ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY }); cv.setPointerCapture(e.pointerId); if (ptrs.size === 2) { const [a, b] = [...ptrs.values()]; pinch0 = Math.hypot(a.x - b.x, a.y - b.y); zoom0 = zoom; } });
+  cv.addEventListener('pointerdown', e => { if (!img) return; ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY }); if (e.isTrusted) cv.setPointerCapture(e.pointerId); if (ptrs.size === 2) { const [a, b] = [...ptrs.values()]; pinch0 = Math.hypot(a.x - b.x, a.y - b.y); zoom0 = zoom; } });
   cv.addEventListener('pointermove', e => { const pr = ptrs.get(e.pointerId); if (!pr) return; if (ptrs.size === 1) { const k = 480 / cv.clientWidth; ox += (e.clientX - pr.x) * k; oy += (e.clientY - pr.y) * k; } pr.x = e.clientX; pr.y = e.clientY; if (ptrs.size === 2 && pinch0) { const [a, b] = [...ptrs.values()]; zoom = clamp(zoom0 * Math.hypot(a.x - b.x, a.y - b.y) / pinch0, 1, 5); zr.value = zoom; } draw(); });
   const up = e => { ptrs.delete(e.pointerId); if (ptrs.size < 2) pinch0 = 0; }; cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', up);
   const finish = keep => {
@@ -303,8 +312,9 @@ export function openGrownups(after) {
     card.innerHTML = `
       <button class="x" aria-label="${T('Close', 'Đóng')}">✕</button>
       <h2>${T('Grown-ups', 'Phụ huynh')} <small class="buildtag">${T('Build', 'Bản')} ${BUILD}</small></h2>
-      <div class="g-install"></div>
+      <div class="grownups-body"><div class="g-install"></div>
       ${privacyHTML()}
+      ${familyTrialOn() ? familyDevicesHTML() : ''}
       <div class="toggles gcaprow">
         <label class="tog"><input type="checkbox" id="gCap" ${settings.captions === false ? '' : 'checked'}> ${T('Captions: show everything that is said as text', 'Phụ đề: hiện chữ cho mọi câu được nói')}</label>
       </div>
@@ -315,10 +325,10 @@ export function openGrownups(after) {
       <div class="plist">${profiles.map(p => `<div class="prow"><img src="${avatarURL(p)}" alt=""><div class="pw"><b>${esc(nm(p.name))}</b><small>🔮 ${p.orbs} · ✨ ${Object.keys(p.shrines).length}/12 · 💰 ${fmt(farm.coins)}</small></div><button class="btn ghost" data-rep="${p.id}" aria-label="${T('Play report', 'Báo cáo chơi')}">${pic('📊')}</button><button class="btn" data-ed="${p.id}">${T('Edit', 'Sửa')}</button></div>`).join('')}</div>
       <button class="btn wide" id="gAdd">+ ${T('Add a player', 'Thêm người chơi')}</button>
       ${window.__sv && window.__sv.heroes && window.__sv.heroes.length ? `<button class="btn wide" id="gChange">👫 ${T('Change player', 'Đổi người chơi')}</button>` : ''}
-      <h3>🔒 ${T('Family photos', 'Ảnh gia đình')}</h3>
-      <p class="note">${T('Your family’s own photos (on villagers’ faces and on postcards) are private. Type the family code once on this device to download them; ask the grown-up who set up the game for it.', 'Ảnh của gia đình (trên mặt dân làng và trên bưu thiếp) được giữ riêng. Gõ mã gia đình một lần trên máy này để tải ảnh về; hỏi người lớn đã cài trò chơi để lấy mã.')}</p>
+      <details class="legacy-family"><summary>${T('Earlier photo code (optional)', 'Mã ảnh trước đây (không bắt buộc)')}</summary>
+      <p class="note">${T('Use this only for earlier shared photos, if you already have their code. For your own family, use Family photos and devices above; a connected device gives you the pairing code.', 'Chỉ dùng cho ảnh chia sẻ trước đây nếu bạn đã có mã. Với gia đình của mình, dùng Ảnh gia đình và thiết bị ở trên; máy đã kết nối sẽ cung cấp mã ghép đôi.')}</p>
       <div class="vrow"><input type="text" id="gFam" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="20" placeholder="ABCD-EFGH-JKMN" value="${familyCode() ? '••••' + esc(familyCode().slice(-4)) : ''}"><button class="btn" id="gFamSave">${T('Save', 'Lưu')}</button></div>
-      <p class="note" id="gFamRes">${(() => { const c = familyPhotoCount(); return familyCode() ? T(`${c.have} of ${c.of} family photos on this device.`, `${c.have}/${c.of} ảnh gia đình trên máy này.`) : T('No family code on this device: family photos are not shown.', 'Máy này chưa có mã gia đình: ảnh gia đình không hiện.'); })()}</p>
+      <p class="note" id="gFamRes">${(() => { const c = familyPhotoCount(); return familyCode() ? T(`${c.have} of ${c.of} family photos on this device.`, `${c.have}/${c.of} ảnh gia đình trên máy này.`) : T('No earlier photo code saved on this device.', 'Máy này chưa lưu mã ảnh trước đây.'); })()}</p></details>
       </div></details>
       <details class="gsec" data-sec="sound" ${gOpen.has('sound') ? 'open' : ''}><summary><span class="gi">🔊</span><b>${T('Sound and voices', 'Âm thanh và giọng nói')}</b></summary><div class="gbody">
       <div class="toggles">
@@ -412,7 +422,7 @@ export function openGrownups(after) {
       <ul class="gnote"><li>${T('Sparkle Valley is a free family game made for fun and learning. It is provided as it is, without any promise or warranty.', 'Thung Lũng Lấp Lánh là trò chơi gia đình miễn phí, làm ra để vui chơi và học hỏi. Trò chơi được cung cấp như hiện có, không kèm bất kỳ cam kết hay bảo đảm nào.')}</li><li>${T('A grown-up is responsible for the child’s play: when and how long they play, online play and chat, and the device itself.', 'Người lớn chịu trách nhiệm về việc chơi của trẻ: chơi lúc nào, chơi bao lâu, chơi trực tuyến, trò chuyện, và cả thiết bị.')}</li><li>${T('Games the valley suggests playing for real (tug of war, jump rope, hopscotch, đá cầu, kites, cooking…) need a grown-up watching, a safe place and the right equipment.', 'Các trò chơi được gợi ý chơi ngoài đời (kéo co, nhảy dây, nhảy lò cò, đá cầu, thả diều, nấu ăn…) cần có người lớn trông, chỗ chơi an toàn và dụng cụ phù hợp.')}</li><li>${T('Take a break every 20 to 30 minutes, and stop if a child feels unwell (tired eyes, dizziness, motion sickness).', 'Nghỉ giải lao sau mỗi 20 đến 30 phút, và dừng chơi nếu trẻ thấy khó chịu (mỏi mắt, chóng mặt, say xe).')}</li><li>${T('Places, festivals, food and history are told simply for children and may not be complete or exact.', 'Địa danh, lễ hội, món ăn và lịch sử được kể đơn giản cho trẻ, có thể chưa đầy đủ hoặc chưa chính xác hoàn toàn.')}</li><li>${T('Online friends, chat and real photos come from other people and services; the makers are not responsible for their content.', 'Bạn bè trực tuyến, trò chuyện và ảnh thật đến từ người khác và các dịch vụ khác; người làm game không chịu trách nhiệm về nội dung đó.')}</li><li>${T('As far as the law allows, the makers are not responsible for any loss, injury or damage from using the game.', 'Trong phạm vi pháp luật cho phép, người làm game không chịu trách nhiệm về bất kỳ mất mát, thương tích hay thiệt hại nào do việc sử dụng trò chơi.')}</li></ul>
       </div></details>
 
-      <button class="btn primary wide" id="gDone">💾 ${T('Save & close', 'Lưu và đóng')}</button>`;
+      </div><button class="btn primary wide" id="gDone">💾 ${T('Save & close', 'Lưu và đóng')}</button>`;
     bindLang(card, () => { draw(); after && after(); }); bindLearn(card, () => draw());
     card.querySelectorAll('details.gsec').forEach(d => d.ontoggle = () => { if (d.open) gOpen.add(d.dataset.sec); else gOpen.delete(d.dataset.sec); });
     bindPackStatus(card, () => { const y = m.scrollTop; draw(); m.scrollTop = y; });
@@ -475,6 +485,9 @@ export function openGrownups(after) {
     card.querySelectorAll('[data-rep]').forEach(b => b.onclick = () => { SFX.tap(); openReport(profiles.find(p => p.id === b.dataset.rep)); });
     card.querySelectorAll('[data-ed]').forEach(b => b.onclick = () => openEditor(profiles.find(p => p.id === b.dataset.ed), () => { draw(); after && after(); }));
     // (round R privacy) the family code: kept on this device only (never in a backup); empty removes it and the photos
+    // (owner, 16 Oct AEDT) family devices and photo sharing is a trial: shown when Studio switches it on, and on tester
+    // devices so the owner can try it on the real service first
+    if (familyTrialOn()) bindFamilyDevices(card, namedVillagers().map(id => ({ id, name: nm(window.__sv?.npcs.find(n => n.id === id)?.name || id) })));
     card.querySelector('#gFamSave').onclick = async () => { const v = card.querySelector('#gFam').value.trim(), out = card.querySelector('#gFamRes'); if (/^•/.test(v)) return; out.textContent = '…';
       const r = await setFamilyCode(v).catch(() => ({ ok: false }));
       out.textContent = r.cleared ? T('Family code removed from this device.', 'Đã xóa mã gia đình khỏi máy này.') : r.bad ? T('That code is not right: check it with the grown-up who set up the game.', 'Mã chưa đúng: hỏi lại người lớn đã cài trò chơi.') : r.ok ? T(`Saved: ${r.n || 0} of ${r.of || 0} family photos on this device.`, `Đã lưu: ${r.n || 0}/${r.of || 0} ảnh gia đình trên máy này.`) : T('Saved. The photos come the next time this device is online.', 'Đã lưu. Ảnh sẽ về khi máy có mạng.'); };
@@ -612,7 +625,7 @@ export function openEditor(profile, after) {
   zr.oninput = () => { zoom = +zr.value; draw(); };
   // drag with one finger to move, pinch with two fingers (or use the slider) to zoom
   const ptrs = new Map(); let pinch0 = 0, zoom0 = 1;
-  cv.addEventListener('pointerdown', e => { if (!img) return; ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY }); cv.setPointerCapture(e.pointerId); if (ptrs.size === 2) { const [a, b] = [...ptrs.values()]; pinch0 = Math.hypot(a.x - b.x, a.y - b.y); zoom0 = zoom; } });
+  cv.addEventListener('pointerdown', e => { if (!img) return; ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY }); if (e.isTrusted) cv.setPointerCapture(e.pointerId); if (ptrs.size === 2) { const [a, b] = [...ptrs.values()]; pinch0 = Math.hypot(a.x - b.x, a.y - b.y); zoom0 = zoom; } });
   cv.addEventListener('pointermove', e => {
     const pr = ptrs.get(e.pointerId); if (!pr) return;
     if (ptrs.size === 1) { const k = 480 / cv.clientWidth; ox += (e.clientX - pr.x) * k; oy += (e.clientY - pr.y) * k; }
@@ -720,10 +733,10 @@ export function openPad(game, i, tab) {
     const sl = card.querySelector('.pad-tabs') ? card.querySelector('.pad-tabs').scrollLeft : 0;
     card.innerHTML = `<div class="pad-head"><div class="pad-tabs">${TABS.map((t, k) => `<button data-t="${t[0]}" class="${t[0] === tab ? 'on' : ''}"><span>${pic(t[1])}</span><small>${t[2]}<kbd class="padkey">${k + 1}</kbd></small></button>`).join('')}</div><button class="x" aria-label="${T('Close', 'Đóng')}">✕<kbd class="padkey">Esc</kbd></button></div><div class="pad-body"></div>`;
     card.querySelector('.pad-tabs').scrollLeft = sl;
-    card.querySelectorAll('.pad-tabs button').forEach(b => b.onclick = () => { SFX.tap(); if (b.dataset.t === 'shop') { toShop(); return; } tab = b.dataset.t; draw(); });
+    card.querySelectorAll('.pad-tabs button').forEach(b => b.onclick = () => { SFX.tap(); tab = b.dataset.t; draw(); });
     card.querySelector('.x').onclick = close;
     const body = card.querySelector('.pad-body');
-    ({ map: drawMap, bag: drawBag, log: drawLog, album: drawAlbum, games: drawGames, cam: drawCam, friend: drawFriend, passport: b => game.drawPassport(b, hero), cal: drawCal })[tab](body);
+    ({ shop: b => game.shop.openShop(i, b), map: drawMap, bag: drawBag, log: drawLog, album: drawAlbum, games: drawGames, cam: drawCam, friend: drawFriend, passport: b => game.drawPassport(b, hero), cal: drawCal })[tab](body);
     if (tab === 'bag' || tab === 'log' || tab === 'album') foldHeadings(body, tab); // (owner, 13 Oct) each part opens and closes
   };
   // computer keyboards: 1–8 pick a tab, ← → step through them, Esc closes
@@ -734,11 +747,11 @@ export function openPad(game, i, tab) {
     if (/^Digit[1-9]$/.test(e.code)) k = +e.code.slice(5) - 1;
     else if (e.code === 'ArrowRight' || e.code === 'BracketRight') k = (cur + 1) % TABS.length;
     else if (e.code === 'ArrowLeft' || e.code === 'BracketLeft') k = (cur + TABS.length - 1) % TABS.length;
-    if (k >= 0 && TABS[k]) { e.preventDefault(); e.stopImmediatePropagation(); SFX.tap(); if (TABS[k][0] === 'shop') { toShop(); return; } tab = TABS[k][0]; draw(); }
+    if (k >= 0 && TABS[k]) { e.preventDefault(); e.stopImmediatePropagation(); SFX.tap(); tab = TABS[k][0]; draw(); }
   };
   addEventListener('keydown', onKey, true);
   const close = () => { removeEventListener('keydown', onKey, true); m.close(); game.closePad(i); };
-  const toShop = () => { close(); setTimeout(() => game.shop.openShop(i), 220); };
+
   function drawMap(body) {
     withSitePlaces(game.PLACES);
     const S = 600, wrap = el('div', 'mapwrap'), cv = el('canvas', 'bigmap'); cv.width = cv.height = S; wrap.appendChild(cv); body.appendChild(wrap);
@@ -855,7 +868,6 @@ export function openPad(game, i, tab) {
       ok.querySelector('.no').onclick = () => ok.remove();
     };
   }
-  let sellPick = null; // a treasure tapped once in the bag: tap again to sell it
   function drawBag(body) {
     // (Round V) what an ingredient is for: the dishes it goes into at a cooking pot
     const ingInfo = id => { const it = ITEMS[id], uses = RECIPES.filter(r => r.need.includes(id)), names = uses.map(r => r.name());
@@ -872,8 +884,8 @@ export function openPad(game, i, tab) {
       <div class="slots">${dishes.map(([id, n]) => { const r = dishInfo(id) || { icon: '🥘', name: () => T('Mystery stew', 'Món hầm bí ẩn') }; return `<button class="slot" data-eat="${id}" title="${esc(r.name() + ' · ' + T('tap to eat: hearts and energy back', 'chạm để ăn: thêm tim và sức'))}"><span>${r.icon}</span><b>${n}</b><small>${esc(r.name())}</small></button>`; }).join('') || `<p class="note">${T('Cook at a cooking pot to make food.', 'Nấu ăn ở nồi nấu để có món ăn.')}</p>`}</div>
       <h3>🛍️ ${T('From shops and stalls', 'Mua ở quán và sạp')} <small>${T('tap to eat', 'chạm để ăn')}</small></h3>
       <div class="slots">${bought.map(([id, n]) => { const v = snackOf(id); return `<button class="slot" data-snack="${id}" title="${esc(T(v.food[1], v.food[2]) + ' · ' + T('tap to eat', 'chạm để ăn'))}"><span>${v.food[0]}</span><b>${n}</b><small>${esc(T(v.food[1], v.food[2]))}</small></button>`; }).join('') || `<p class="note">${T('Buy food at kiosks, market stalls and from street sellers. It goes in here!', 'Mua đồ ăn ở quán, sạp chợ và các cô gánh hàng rong. Đồ mua sẽ nằm ở đây!')}</p>`}</div>
-      <h3>💎 ${T('Treasures', 'Báu vật')} <small>${T('tap twice to sell', 'chạm 2 lần để bán')}</small></h3>
-      <div class="slots">${gems.map(([id, n]) => `<button class="slot gemslot ${sellPick === id ? 'on' : ''}" data-sellgem="${id}" title="${esc(WILD[id].name() + ' · ' + T('a treasure: tap twice to sell it for coins', 'báu vật: chạm 2 lần để bán lấy tiền'))}"><span>${WILD[id].icon}</span><b>${n}</b><small>${sellPick === id ? '💰 ' + T('Sell', 'Bán') + ' ' + fmt(WILD[id].sell) + '?' : esc(WILD[id].name()) + ' · ' + fmt(WILD[id].sell)}</small></button>`).join('') || `<p class="note">${T('Dig at the sparkly mounds of earth and crack rocks open to find treasures!', 'Đào ở những ụ đất lấp lánh và gõ vỡ hòn đá để tìm báu vật!')}</p>`}</div>
+      <h3>💎 ${T('Treasures', 'Báu vật')} <small>${T('tap for help', 'chạm để xem hướng dẫn')}</small></h3>
+      <div class="slots">${gems.map(([id, n]) => `<button class="slot gemslot" data-sellgem="${id}" title="${esc(WILD[id].name() + ' · ' + T('a treasure: choose Sell one in its help card', 'báu vật: chọn Bán một trong hướng dẫn'))}"><span>${WILD[id].icon}</span><b>${n}</b><small>${esc(WILD[id].name()) + ' · ' + fmt(WILD[id].sell)}</small></button>`).join('') || `<p class="note">${T('Dig at the sparkly mounds of earth and crack rocks open to find treasures!', 'Đào ở những ụ đất lấp lánh và gõ vỡ hòn đá để tìm báu vật!')}</p>`}</div>
       <h3>${T('Ingredients', 'Nguyên liệu')}</h3>
       <div class="slots">${items.map(([id, n]) => `<button class="slot" data-ing="${id}" title="${esc(ingInfo(id)[0])}"><span>${ITEMS[id].icon}</span><b>${n}</b><small>${esc(ITEMS[id].name())}</small></button>`).join('') || `<p class="note">${T('Empty! Shake apple trees and look for herbs and mushrooms.', 'Trống trơn! Rung cây táo và tìm rau thơm, nấm nhé.')}</p>`}</div>
       ${(() => { const SLOT_ICON = { hat: '👒', neck: '📿', top: '👕', bottom: '👖', feet: '👟', back: '🪽' }; // (Round U, owner 11 Oct: everything bought shows here until it is worn) the clothes and accessories the child owns
@@ -890,16 +902,23 @@ export function openPad(game, i, tab) {
       <div class="slots">${p.glider ? p.owned.gliders.map(g => `<button class="slot ${p.look.glider === g ? 'on' : ''}" data-gl="${g}"><span class="sw big" style="background:${GLIDERS[g]}"></span></button>`).join('') : `<p class="note">${T('Not yet! Ông Cú has something for you…', 'Chưa có! Ông Cú có món quà cho con đấy…')}</p>`}</div>`;
     jumpNav(body, body.querySelector('.bag-top')); // (owner, 13 Oct AEDT: the Backpack's section-button row back, after the tester's notes took it out)
     // (Round V, owner 13 Oct) food asks first ("Eat it?"); an ingredient says what it is and which dishes it makes
-    const askEat = async (name, icon, en, vi) => { SFX.tap(); return (await dialog(name, [[`${icon} ${name}: ${en} Eat it now?`, `${icon} ${name}: ${vi} Ăn bây giờ nhé?`]], [['😋 Yes, eat it', '😋 Ăn thôi'], ['👋 Not now', '👋 Để sau']])) === 0; };
+    const helpCard = (name, art, en, vi, action, run) => {
+      body.querySelector('.bag-help')?.remove();
+      const c = el('div', 'bag-help', `<div>${art}<b>${esc(name)}</b></div><p>${esc(T(en, vi))}</p><div class="actions">${action ? `<button class="btn primary bh-act">${action}</button>` : ''}<button class="btn bh-close">${T('Not now', 'Để sau')}</button></div>`);
+      c.setAttribute('role', 'region'); c.setAttribute('aria-label', name); body.appendChild(c); say(`${name}. ${en}`, `${name}. ${vi}`);
+      c.querySelector('.bh-close').onclick = () => { c.remove(); run?.(false); };
+      if (action) c.querySelector('.bh-act').onclick = () => { c.remove(); run?.(true); }; return c;
+    };
+    const askEat = (name, icon, en, vi) => new Promise(resolve => { SFX.tap(); helpCard(name, pic(icon), en, vi, T('Eat', 'Ăn'), resolve); });
     body.querySelectorAll('[data-eat]').forEach(b => b.onclick = async () => { const r = dishInfo(b.dataset.eat) || { icon: '🥘', heal: 1, name: () => T('Mystery stew', 'Món hầm bí ẩn') };
-      if (await askEat(r.name(), r.icon, `it gives you ${r.heal} heart${r.heal > 1 ? 's' : ''} and extra energy.`, `món này cho con ${r.heal} tim và thêm sức.`)) game.eat(hero, b.dataset.eat); draw(); });
+      if (await askEat(r.name(), r.icon, `Restores up to ${r.heal} hearts and refills energy. Hearts only fall for older children on Hard.`, `Hồi tối đa ${r.heal} tim và nạp năng lượng. Chỉ trẻ lớn ở mức Khó mới mất tim.`)) game.eat(hero, b.dataset.eat); draw(); });
     body.querySelectorAll('[data-snack]').forEach(b => b.onclick = async () => { const v = snackOf(b.dataset.snack);
       if (await askEat(T(v.food[1], v.food[2]), v.food[0], 'a treat from the market.', 'một món ngon mua ở chợ.')) eatSnack(game, hero, b.dataset.snack, true); draw(); });
     body.querySelectorAll('[data-ing]').forEach(b => b.onclick = () => { SFX.tap(); const [line, en, vi] = ingInfo(b.dataset.ing); toast(line); say(en, vi); });
     body.querySelectorAll('[data-sellgem]').forEach(b => b.onclick = () => {
       const id = b.dataset.sellgem, w = WILD[id];
-      if (sellPick !== id) { sellPick = id; SFX.tap(); say(`${w.name()}: ${money(w.sell)}. Tap again to sell it.`, `${w.name()}: ${money(w.sell)}. Chạm lần nữa để bán nhé.`); draw(); return; }
-      sellPick = null; p.inv[id]--; if (p.inv[id] <= 0) delete p.inv[id]; farm.coins += w.sell; saveFarm(); game.save(); SFX.coin();
+      if (!(p.inv[id] > 0)) return;
+      p.inv[id]--; if (p.inv[id] <= 0) delete p.inv[id]; farm.coins += w.sell; saveFarm(); game.save(); SFX.coin();
       say(`Sold! Now you have ${money(farm.coins)}.`, `Bán rồi! Giờ con có ${money(farm.coins)}.`); game.job && game.job('sell', 1, hero); draw();
     });
     if (body.querySelector('#bagPets')) body.querySelector('#bagPets').onclick = () => { m.close(); game.closePad(i); setTimeout(() => game.pets.openAdopt(hero), 220); };
@@ -910,6 +929,21 @@ export function openPad(game, i, tab) {
     body.querySelectorAll('[data-whistle]').forEach(b => b.onclick = () => { game.kites.whistle(hero); });
     game.hoilang && game.hoilang.bindBag(body, hero, draw); // (round S) carry a village festival prize, like the kite
     body.querySelectorAll('[data-gl]').forEach(b => b.onclick = () => { p.look.glider = +b.dataset.gl; saveProfiles(); game.rebuildHero(i); SFX.ok(); draw(); });
+    // Help is the first tap; every change requires an explicit action inside the same Bag.
+    for (const b of body.querySelectorAll('.slot')) {
+      if (b.dataset.eat || b.dataset.snack) continue;
+      const oldAction = b.onclick, name = b.querySelector('small')?.textContent || b.title || T('Item', 'Đồ dùng');
+      const it = ITEM[b.dataset.wear], ingredient = b.dataset.ing, treasure = WILD[b.dataset.sellgem];
+      let en = 'Keep this item in your Backpack and use its action when you need it.', vi = 'Giữ món này trong Ba lô và chọn hành động khi cần.';
+      if (it || b.dataset.hat || b.dataset.unwear) { en = 'Clothes and accessories change how your character looks.'; vi = 'Quần áo và phụ kiện thay đổi vẻ ngoài của nhân vật.'; }
+      if (b.dataset.gl) { en = 'Choose the colour of your glider for flying safely from high places.'; vi = 'Chọn màu cánh lượn để bay an toàn từ nơi cao.'; }
+      if (b.dataset.kite || b.dataset.whistle) { en = 'Your whistling kite follows you; its bamboo flute sings in the wind.'; vi = 'Diều sáo bay theo con; sáo tre hát trong gió.'; }
+      if (ingredient) { const info = ingInfo(ingredient); en = info[1]; vi = info[2]; }
+      if (treasure) { en = `A treasure you found. Sell one for ${money(treasure.sell)} or keep it.`; vi = `Báu vật con tìm được. Bán một món lấy ${money(treasure.sell)} hoặc giữ lại.`; }
+      const action = treasure ? T('Sell one', 'Bán một') : b.dataset.unwear || b.dataset.hat === 'none' ? T('Remove', 'Bỏ ra') : b.dataset.wear || b.dataset.hat ? T('Wear', 'Mặc') : b.dataset.kite ? (p.kiteOn !== false ? T('Put away', 'Cất đi') : T('Fly', 'Thả diều')) : b.dataset.hlcarry ? (p.hoilang?.carryOn !== false && p.hoilang?.carry === b.dataset.hlcarry ? T('Put away', 'Cất đi') : T('Carry', 'Mang theo')) : b.dataset.whistle ? T('Whistle', 'Thổi sáo') : b.dataset.gl !== undefined ? T('Choose', 'Chọn') : T('Use', 'Dùng');
+      b.onclick = () => { const art = b.querySelector('svg, .art, .sw')?.outerHTML || ''; helpCard(name, art, en, vi, oldAction && !ingredient ? action : '', ok => { if (ok) { oldAction?.call(b); } }); };
+    }
+
   }
   // (round R, owner 9 Oct) side stories in their own list: the child picks one to follow on the goal bar
   const sideHTML = () => { const list = game.sideStories ? game.sideStories() : []; if (!list.length) return '';
@@ -1209,17 +1243,17 @@ export function openGamesHub(game, i, onClose) {
     <div class="hubbody"></div>`;
   const draw = () => {
     card.querySelectorAll('.hubtabs [data-tab]').forEach(b => { const on = b.dataset.tab === cur; b.classList.toggle('on', on); b.setAttribute('aria-selected', on); });
-    const hb = card.querySelector('.hubbody'); hb.innerHTML = body(cur); hb.scrollTop = 0;
+    const hb = card.querySelector('.hubbody'); hb.innerHTML = body(cur); hb.scrollTop = openGamesHub.scroll || 0;
     bind(hb);
   };
-  card.querySelectorAll('.hubtabs [data-tab]').forEach(b => b.onclick = () => { cur = openGamesHub.last = b.dataset.tab; SFX.tap(); draw(); const row = b.parentElement; row.scrollTo({ left: b.offsetLeft - row.clientWidth / 2 + b.offsetWidth / 2, behavior: 'smooth' }); }); // sideways only: the page must not jump
+  card.querySelectorAll('.hubtabs [data-tab]').forEach(b => b.onclick = () => { cur = openGamesHub.last = b.dataset.tab; openGamesHub.scroll = 0; SFX.tap(); draw(); const row = b.parentElement; row.scrollTo({ left: b.offsetLeft - row.clientWidth / 2 + b.offsetWidth / 2, behavior: 'smooth' }); }); // sideways only: the page must not jump
   card.querySelector('.x').onclick = close;
   const bind = root => {
     root.querySelectorAll('[data-tale]').forEach(b => b.onclick = () => { close(); game.readTale(i, b.dataset.tale); });
     root.querySelectorAll('[data-songs]').forEach(b => b.onclick = () => { SFX.tap(); close(); game.openSongs(b.dataset.songs); });
-    root.querySelectorAll('[data-play]').forEach(b => b.onclick = () => { const id = b.dataset.play; close(); game.meetAndPlay(i, id); });
+    root.querySelectorAll('[data-play]').forEach(b => b.onclick = () => { const id = b.dataset.play; close(); openGamesHub.scroll = root.scrollTop; game.meetAndPlay(i, id, 'hub'); });
     root.querySelectorAll('[data-go]').forEach(b => b.onclick = () => { close(); game.goToGame(i, b.dataset.go); });
-    root.querySelectorAll('[data-how]').forEach(b => b.onclick = () => { const id = b.dataset.how; openHowTo(id, { onPlay: () => { close(); game.playGame(i, id, 'place'); } }); });
+    root.querySelectorAll('[data-how]').forEach(b => b.onclick = () => { const id = b.dataset.how; openHowTo(id, { onPlay: () => { close(); game.playGame(i, id, 'hub'); } }); });
   };
   draw();
   say('Which game shall we play?', 'Mình chơi trò gì nào?');

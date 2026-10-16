@@ -1,0 +1,14 @@
+{
+  "baseCommit": "f47546d596230245bf3b96f8f10b1e06137df79b",
+  "runtimePatch": "../../handoff/learning-wip.patch",
+  "patchSha256": "b386528b11e15d9ca8bf3dd414cd916af87e870a37ff1c5477f44c63130e39bc",
+  "files": {
+    "index.html": "c8a912084dedf65371089cc8b0b2adae09f01d9e345dcf45e73d7915e7bab58a",
+    "js/games/all.js": "9d95b11752d4bd02ad1f17e5e65b161faa0f69dac40773f47a1bbe93835ba7bc",
+    "studio/ui/app.js": "fe13d7e565d7cf3b40d33b3413a3c65806367e4fce7af638148e1a9af856a8fe",
+    "sw.js": "a02c8708740db33593a1d632fa824056568cbf10d68f6f9befbb66f12fe579f0",
+    "tests/run.mjs": "b5308b0d73fe71744eae289400360bb4b4f9487e0c385252fea8603adca8493a",
+    "js/games/bigthinkers2.js": "733cd164d165d55bd0749177af444567a2bd1ed9113283233abee9527dd07f17"
+  },
+  "scope": "24 completed reward-screen screenshots from synthetic EN/VI age/level fixture. These show completion, not full activity-stage visual design or recorded voice proof. Runtime changes remain a local draft recoverable from the patch."
+}

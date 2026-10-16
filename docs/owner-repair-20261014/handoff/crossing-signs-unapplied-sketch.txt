@@ -1,0 +1,31 @@
+
+// Henry's road-safety request: explain the existing crossings without changing their roads or artwork.
+// Signs stand beside the footpath approaches; the walking strip, doors and existing interactions stay clear.
+export function createCrossings(G) {
+  const { scene, world } = G, list = [], missing = [];
+  const free = (x, z) => G.goodSpot(x, z)
+    && !((G.homes && G.homes.list) || []).some(h => h.door && Math.hypot(h.door.x - x, h.door.z - z) < 2.2)
+    && G.interactables.every(it => !Number.isFinite(it.x) || Math.hypot(it.x - x, it.z - z) > 1.8);
+  for (const [id, place] of [['town', TOWN], ['aussie', AUSSIE]]) {
+    const crossing = { id, x: place.x - 4, z: place.roadZ, halfRoad: 3.5, signs: [] };
+    for (const side of [-1, 1]) {
+      let at = null;
+      for (const dx of [5.2, 6.2, 7.2, -5.2, -6.2, -7.2]) {
+        for (const offset of [5, 5.6, 6.2]) { const x = crossing.x + dx * -side, z = crossing.z + offset * side; if (free(x, z)) { at = { x, z }; break; } }
+        if (at) break;
+      }
+      if (!at) { missing.push({ id, side }); continue; }
+      const root = new THREE.Group(); root.position.set(at.x, heightAt(at.x, at.z), at.z); root.rotation.y = side < 0 ? 0 : Math.PI;
+      const post = new THREE.Mesh(merge([P(new THREE.CylinderGeometry(.07, .07, 3.1, 8), '#6a4a3a', [0, 1.55, 0]), P(new THREE.CylinderGeometry(.18, .23, .12, 8), '#a8a296', [0, .06, 0])]), toonVC()); post.castShadow = true; root.add(post);
+      const stop = gateSign(['STOP', 'DỪNG'], 1.7, .9, '#d9483a', '#fff8e0'); stop.position.y = 2.65; root.add(stop);
+      const watch = gateSign(['LOOK · LISTEN', 'NHÌN · NGHE'], 2.4, .65, '#ffd23f', '#4a3a3f'); watch.position.y = 1.8; root.add(watch); scene.add(root);
+      const it = { id: 'crossing_' + id + '_' + (side < 0 ? 'north' : 'south'), x: at.x, z: at.z, r: 2.4, icon: '\u{1F463}',
+        label: () => T('Crossing: stop, look, listen', 'Sang đường: dừng, nhìn, nghe'),
+        act: () => { SFX.tap(); return G.dialog(T('Stop, look and listen', 'Dừng, nhìn và nghe'), [['Stop at the kerb. Look and listen both ways. Cross with a grown-up when the road is clear. Keep looking as you cross.', 'Dừng ở mép đường. Nhìn và lắng nghe cả hai phía. Đi cùng người lớn khi đường đã vắng xe. Tiếp tục quan sát khi sang đường.']], [['Got it', 'Con hiểu rồi']]); } };
+      G.interactables.push(it); root.traverse(o => { if (o.isMesh) { o.userData.it = it; (G.tapTargets = G.tapTargets || []).push(o); } });
+      world.colliders.push({ x: at.x, z: at.z, r: .16 }); crossing.signs.push({ x: at.x, z: at.z, side, interaction: it.id });
+    }
+    list.push(crossing);
+  }
+  return (G.crossings = { list, missing });
+}

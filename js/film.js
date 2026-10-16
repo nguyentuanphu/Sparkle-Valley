@@ -160,7 +160,7 @@ export function createFilm(stage, script, ctx = {}) {
   const r = renderer(); if (!r || !script) return null;
   const scene = new THREE.Scene(), cam = new THREE.PerspectiveCamera(42, 1, .1, 600);
   const sky = skyTex(); scene.background = sky; scene.fog = new THREE.Fog('#cfefff', 60, 260);
-  const hemi = new THREE.HemisphereLight(0xffffff, 0xd9c79a, .85), sun = new THREE.DirectionalLight(0xffffff, 1.05);
+  const hemi = new THREE.HemisphereLight(0xffffff, 0xf1dfc0, 1.25), sun = new THREE.DirectionalLight(0xffffff, 1.4);
   sun.position.set(30, 50, 25); scene.add(hemi, sun);
   stage.appendChild(r.domElement);
   const help = el('div', 'film-help'); help.hidden = true; stage.appendChild(help);
@@ -207,8 +207,8 @@ export function createFilm(stage, script, ctx = {}) {
     S.every = f => S.tickers.push(f);
     S.sky = (top, bottom, fog) => { sky.paint(top, bottom); scene.fog.color.set(fog || bottom); S.skyNow = [top, bottom]; };
     S.skyTo = (t, dur, top, bottom) => { let from; return S.tw(t, dur, (k, first) => { if (first) from = S.skyNow.slice(); const a = mixHex(from[0], top, k), b = mixHex(from[1], bottom, k); sky.paint(a, b); scene.fog.color.set(b); if (k >= 1) S.skyNow = [top, bottom]; }, lin); };
-    S.light = (sunI = 1.05, hemiI = .85) => { sun.intensity = sunI; hemi.intensity = hemiI; };
-    S.lightTo = (t, dur, sunI, hemiI) => { let a, b; return S.tw(t, dur, (k, first) => { if (first) { a = sun.intensity; b = hemi.intensity; } sun.intensity = lerp(a, sunI, k); hemi.intensity = lerp(b, hemiI, k); }, lin); };
+    S.light = (sunI = 1.05, hemiI = .85) => { sun.intensity = Math.max(.45, sunI); hemi.intensity = Math.max(.65, hemiI); };
+    S.lightTo = (t, dur, sunI, hemiI) => { let a, b; return S.tw(t, dur, (k, first) => { if (first) { a = sun.intensity; b = hemi.intensity; } sun.intensity = Math.max(.45, lerp(a, sunI, k)); hemi.intensity = Math.max(.65, lerp(b, hemiI, k)); }, lin); };
     // actors
     S.person = (look, x, z, yaw = 0, scale = 1) => { const a = person(look, scale); a.px = x; a.pz = z; a.yaw = yaw; S.add(a.o, x, 0, z, yaw); S.actors.push(a); return a; };
     S.face = (a, t, yaw, dur = .45) => { if (Array.isArray(yaw)) yaw = Math.atan2(yaw[0] - a.px, yaw[1] - a.pz); let y0 = a.yaw, d = ((yaw - y0 + Math.PI * 3) % (Math.PI * 2)) - Math.PI; a.yaw = y0 + d; S.tw(t, dur, k => { a.o.rotation.y = y0 + d * k; }); return t + dur; };
@@ -299,7 +299,7 @@ export function createFilm(stage, script, ctx = {}) {
     page(k) {
       if (page) page.dispose();
       paused = false; r.domElement.hidden = false;
-      page = new Page(k); scene.fog.near = 60; scene.fog.far = 260; sun.intensity = 1.05; hemi.intensity = .85;
+      page = new Page(k); scene.fog.near = 60; scene.fog.far = 260; sun.intensity = 1.4; hemi.intensity = 1.25;
       try { script.pages[k] && script.pages[k](page); } catch (e) { console.warn('film page', k, e); }
       page.ev.sort((a, b) => a.t - b.t);
       cam.position.copy(page.camPos); cam.lookAt(page.camLook);
@@ -358,11 +358,14 @@ export const SETS = {
   },
   // a village house of mud walls and a thatched roof, open at the front
   house(S, x, z, ry = 0) {
+    const variant = ((S.houseCount = (S.houseCount || 0) + 1) + Math.round(Math.abs(x + z))) % 4;
+    const walls = ['#f4dca8', '#dcebc8', '#f3d4cd', '#d6e4f3'][variant], roof = ['#dfb867', '#c87568', '#d89d65', '#8eacd0'][variant];
     const m = mesh([
-      P(Box(6, 2.4, 4), '#e2c79a', [0, 1.2, 0]), P(Box(1.4, 1.9, .12), '#4a3020', [0, .95, 2.01]),
-      P(Box(1, .8, .1), '#3a2a1a', [-1.9, 1.4, 2.01]), P(Box(1, .8, .1), '#3a2a1a', [1.9, 1.4, 2.01]),
-      P(Cone(4.6, 2.2, 4), '#c9a25a', [0, 3.5, 0], [0, Math.PI / 4, 0], [1.3, 1, .9]),
-      P(Box(7, .25, 1.6), '#c9a25a', [0, 2.45, 2.6]), ...[-3, -1, 1, 3].map(px => P(Cyl(.1, .1, 2.4, 6), '#6a4a2a', [px, 1.2, 3.3])),
+      P(Box(6, 2.4, 4), walls, [0, 1.2, 0]), P(Box(1.4, 1.9, .12), '#4a3020', [0, .95, 2.01]),
+      P(Box(1, .8, .1), '#ffdc88', [-1.9, 1.4, 2.01]), P(Box(1, .8, .1), '#ffdc88', [1.9, 1.4, 2.01]),
+      P(Cone(4.6, 2.2, 4), roof, [0, 3.5, 0], [0, Math.PI / 4, 0], [1.3, 1, .9]),
+      P(Box(7, .25, 1.6), roof, [0, 2.45, 2.6]), ...[-3, -1, 1, 3].map(px => P(Cyl(.1, .1, 2.4, 6), '#6a4a2a', [px, 1.2, 3.3])),
+      ...[-2, 2].flatMap(px => [P(Box(.9, .24, .35), '#ab7750', [px, .6, 2.25]), P(S_(.2), ['#ff8bbb', '#ffd764', '#b6a1ee', '#e69d60'][variant], [px, .92, 2.25])]),
       P(Box(6.4, .15, 1.8), '#cbb27e', [0, .07, 2.8])
     ]);
     return S.add(m, x, 0, z, ry);

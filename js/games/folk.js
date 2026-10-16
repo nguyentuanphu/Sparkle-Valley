@@ -224,7 +224,7 @@ register({
       }
     };
     const pt = e => { const q = local(c, e); return { x: q.x * w / q.r.width, y: q.y * h / q.r.height }; };
-    c.onpointerdown = e => { if (moving) return; const p = pt(e); if (Math.hypot(p.x - sh.x, p.y - sh.y) < sh.r * 4 || p.y > h * .7) { aim = p; c.setPointerCapture(e.pointerId); } };
+    c.onpointerdown = e => { if (moving) return; const p = pt(e); if (Math.hypot(p.x - sh.x, p.y - sh.y) < sh.r * 4 || p.y > h * .7) { aim = p; if (e.isTrusted) c.setPointerCapture(e.pointerId); } };
     c.onpointermove = e => { if (aim) aim = pt(e); };
     c.onpointerup = () => {
       if (!aim) return;

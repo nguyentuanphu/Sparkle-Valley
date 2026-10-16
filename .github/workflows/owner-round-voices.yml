@@ -1,0 +1,48 @@
+# Record this review branch without merging its code into voices/daily or main.
+name: Owner round voices
+on:
+  push:
+    branches: [work/owner-round-20261014, work/owner-repair-20261014, work/owner-repair-checkpoint-20261015]
+    paths: ['js/**', 'tools/voice-extra.json', '.github/workflows/owner-round-voices.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: owner-round-voices
+  cancel-in-progress: true
+jobs:
+  record:
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    env:
+      AZURE_SPEECH_KEY: ${{ secrets.AZURE_SPEECH_KEY }}
+      AZURE_SPEECH_REGION: australiaeast
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Record missing fixed lines and verify coverage
+        run: |
+          test -n "$AZURE_SPEECH_KEY" || { echo '::error::Azure voice credential unavailable'; exit 1; }
+          node tools/make-voice-pack.mjs --engine azure
+          node tools/make-voice-pack.mjs --cover
+      - name: Collect only new recordings and updated indexes
+        run: |
+          python3 - <<'PY'
+          import pathlib, shutil, subprocess
+          changed = subprocess.check_output(['git','diff','--name-only','--','voices'], text=True).splitlines()
+          new = subprocess.check_output(['git','ls-files','--others','--exclude-standard','voices'], text=True).splitlines()
+          for name in sorted(set(changed + new)):
+              source = pathlib.Path(name)
+              if source.is_file():
+                  target = pathlib.Path('voices-delta') / source
+                  target.parent.mkdir(parents=True, exist_ok=True)
+                  shutil.copy2(source, target)
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: owner-round-voices-${{ github.sha }}
+          path: voices-delta/
+          if-no-files-found: error
+          retention-days: 14

@@ -192,7 +192,7 @@ export function createTraffic(G) {
           // off at the next stop (the end of its route, where it rests), or when Jump is pressed
           if (dest && performance.now() - rideT0 > 7000) { h.carry = null; sl.passenger = null; say(`Here we are: ${dest.name()}! Bye bye!`, `Tới ${dest.name()} rồi! Tạm biệt!`); h.place(dest.x + 1.2, dest.z + 1.2); return null; }   // (a short ride, then the stop chosen)
           if (pad.jump() || (started && m.wait > 0 && gone > 2)) { h.carry = null; sl.passenger = null; const o = sl.v.o; h.place(o.position.x + Math.cos(o.rotation.y) * 2.6, o.position.z - Math.sin(o.rotation.y) * 2.6); say('Here we are! Bye bye!', 'Tới nơi rồi! Tạm biệt con!'); return null; }
-          const p = sl.v.o.localToWorld(new THREE.Vector3(...seatOf(sl, sl.v))); return { x: p.x, y: p.y - .55, z: p.z, yaw: sl.v.o.rotation.y, state: 'sit', speed: 0, rest: true };
+          const p = sl.v.o.localToWorld(new THREE.Vector3(...seatOf(sl, sl.v))); return { vehicle: sl.v, x: p.x, y: p.y - .55, z: p.z, yaw: sl.v.o.rotation.y, state: 'sit', speed: 0, rest: true };
         };
       } });
   }

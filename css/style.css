@@ -135,7 +135,9 @@ select option { color: #000; }
 .hud > * { position: absolute; }
 .hud button { pointer-events: auto; }
 .hud-tl { left: calc(var(--pad) + env(safe-area-inset-left)); top: calc(var(--pad) + env(safe-area-inset-top)); display: flex; flex-direction: column; gap: 6px; align-items: flex-start; }
-.hearts { display: flex; flex-wrap: wrap; gap: 3px; max-width: 220px; }
+.hearts { display: flex; flex-wrap: wrap; gap: 3px; max-width: 220px; cursor: pointer; }
+/* (point 50) the hearts are their own tap target: 44 px tall, the extra height taken back by margins so the card keeps its layout */
+.hud .hearts { min-height: 44px; align-items: center; margin: -13px 0; }
 .heart { width: 26px; height: 24px; display: inline-block; font-style: normal;
   background: linear-gradient(90deg, #ff4f6a calc(var(--f) * 100%), rgba(255, 255, 255, .25) 0);
   -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 26 24'%3E%3Cpath d='M13 23S1 15 1 7.5C1 3.6 4 1 7.2 1 9.8 1 11.8 2.6 13 4.6 14.2 2.6 16.2 1 18.8 1 22 1 25 3.6 25 7.5 25 15 13 23 13 23z'/%3E%3C/svg%3E") center/contain no-repeat;
@@ -1036,6 +1038,7 @@ button { color: var(--text); }
 @keyframes conf-fall { to { transform: translate(var(--dx), 110vh) rotate(var(--rot)); opacity: .9; } }
 /* conversations for little ones: big picture buttons */
 .dialog.little .dtext { font-size: clamp(19px, 4.4vw, 24px); }
+.dialog.little .dch { min-height: 64px; }
 .dialog.little .dnext { display: none; }
 .travel .walk { background: #e9fbe4; }
 /* scrapbook */
@@ -2528,3 +2531,161 @@ details.ocard.friends:not([open]) > summary::after { transform: rotate(-90deg); 
 .qs-tester .tst-stop { display: flex; align-items: center; justify-content: center; gap: 10px; min-height: 48px; background: #fff; color: #a33; border: 2px solid #f3c6c6; }
 .qs-tester .note { margin: 0; }
 
+
+/* Owner round, 14 Oct: fixed shells, optical item sizes and compact trays (UX-001–004). */
+.screen.title .tt-cover, .screen.title .logo, .sv2 .who-card, .dialog, .wardrobe { animation: none !important; }
+.sv2.screen.who { justify-content: center; }
+.modal .card { max-height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 28px); }
+.pad .card { height: min(760px, calc(100dvh - 24px)); display:flex; flex-direction:column; }
+.pad-head { flex:none; } .pad-body { flex:1; min-height:0; max-height:none; }
+.grownups .card { padding-bottom:100px; } .grownups #gDone { position:sticky; bottom:0; margin:20px auto 0; width:min(360px,100%); display:block; z-index:2; box-shadow:0 0 0 12px #fffaf0; }
+.zoomer .ztray { flex-direction:column; top:auto; bottom:0; gap:8px; }
+.zoomer .ztray button { flex:none; }
+.pad .slot > .kpic, .pad .slot > .art, .pad .slot > svg { display:block; width:64px; height:64px; max-width:100%; margin:8px auto; }
+.pad .slot > span:not(.sw) { display:flex; justify-content:center; align-items:center; min-height:64px; }
+.pad .slot > span .art { width:64px; height:64px; }
+.launch-progress { padding:10px; display:flex; flex-direction:column; align-items:center; gap:6px; color:#4a2a78; font-size:16px; }
+.launch-progress progress { width:min(340px,70vw); accent-color:#8a5cf6; }
+.update-notice { position:fixed; left:50%; transform:translateX(-50%); bottom:calc(env(safe-area-inset-bottom) + 176px); z-index:100001; width:max-content; max-width:min(380px, calc(100% - 32px)); padding:6px 6px 6px 14px; background:#fffaf0; color:#4a2a78; border-radius:22px; box-shadow:0 4px 16px #0003; display:flex; gap:8px; align-items:center; font:600 14px/1.25 Fredoka, "Baloo 2", sans-serif; }
+/* (owner point 10) small and out of the way: above the dock and the captions, never over the HUD or an activity */
+.update-notice button { min-height:44px; min-width:44px; flex:none; border:0; border-radius:22px; padding:0 14px; font:inherit; background:var(--purple); color:#fff; cursor:pointer; }
+.update-notice button[aria-label] { padding:0; background:#efe6ff; color:#4a2a78; font-size:20px; }
+/* (owner point 10) a newer tab of the game took over: this one waits behind a card */
+.tab-held { position:fixed; inset:0; z-index:100002; display:grid; place-items:center; padding:16px; background:rgba(40, 24, 72, .72); }
+.tab-held > div { max-width:420px; padding:20px; border-radius:24px; background:#fffaf0; color:#4a2a78; text-align:center; font:600 17px/1.35 Fredoka, "Baloo 2", sans-serif; box-shadow:0 8px 30px #0005; }
+.tab-held button { min-height:64px; min-width:160px; margin-top:12px; border:0; border-radius:32px; background:var(--purple); color:#fff; font:inherit; font-size:20px; cursor:pointer; }
+.bag-help { position:sticky; bottom:0; z-index:3; border:2px solid #d9c9f5; border-radius:20px; background:#fffaf0; padding:12px; display:grid; gap:8px; box-shadow:0 4px 20px #4a2a7822; font-size:16px; }
+.bag-help .art, .bag-help .kpic { width:64px; height:64px; } .bag-help .actions { justify-content:center; }
+.bag-help button { min-height:64px; } .bag-help p { margin:0; }
+.audio-tray { position:fixed; right:12px; top:calc(env(safe-area-inset-top) + 100px); z-index:70; display:grid; gap:8px; padding:12px; border-radius:20px; background:#fffaf0; box-shadow:0 4px 20px #0003; color:#4a2a78; }
+.audio-tray button { display:flex; align-items:center; gap:8px; min-height:64px; padding:8px 12px; border:2px solid #e9def5; border-radius:16px; background:white; color:inherit; font:700 16px var(--font); }
+.audio-tray button.on { border-color:#8a5cf6; } .audio-tray .art { width:32px; height:32px; }
+.hud .dk.mus { display:none; }
+
+.shop-preview { display:block; margin:8px auto; max-width:200px; height:220px; object-fit:contain; border-radius:20px; background:#f1eaff; }
+.shop-collections { display:flex; gap:8px; flex-wrap:wrap; }
+.shop-content .kgrid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; }
+.shop-content .ktabs { display:flex; flex-wrap:wrap; gap:8px; }
+.shop-content .ktab .art { width:44px; height:44px; }
+.shop-content .kitem .kpic { width:72px; height:72px; max-width:90%; margin:auto; }
+.shop-content .kitem { min-height:120px; }
+.wardrobe-content .wrow { display:flex; gap:12px; align-items:center; margin:12px 0; }
+.wardrobe-content .wslot { width:90px; display:flex; flex-direction:column; align-items:center; gap:4px; font-size:16px; }
+.wardrobe-content .wslot .art { width:40px; height:40px; }
+.wardrobe-content .wchips { display:flex; flex-wrap:wrap; gap:8px; }
+.wardrobe-content .chip { min-width:64px; min-height:64px; }
+.wardrobe-content .chip .kpic { width:48px; height:48px; }
+.wardrobe-content .chip.none { font-size:16px; }
+
+.sv2 .who-card { max-height:calc(100dvh - 120px - env(safe-area-inset-top) - env(safe-area-inset-bottom)); overflow-y:auto; flex:none; }
+.shop-content .ktab, .shop-collections .btn { min-height:64px; min-width:64px; }
+.shop-content .kask { position:sticky; bottom:0; z-index:4; background:#fffaf0; border:2px solid #d9c9f5; border-radius:20px; padding:12px; }
+.shop-content .kaskbox { display:flex; align-items:center; justify-content:center; flex-wrap:wrap; gap:12px; }
+.shop-content .kaskbox .kpic { width:72px; height:72px; }
+.shop-content .kbtns button { min-width:64px; min-height:64px; }
+.apbox { font-size:16px !important; }
+
+.pad-body > * { flex-shrink:0; }
+.wardrobe-content .wrow { flex:none; overflow:visible; padding:4px 0; align-items:flex-start; }
+.wardrobe-content .wslot { flex:none; }
+.wardrobe-content .wchips { flex:1; min-width:0; }
+.audio-tray .ss-sw { flex:none; flex-direction:row; min-height:64px; height:64px; justify-content:space-between; font-size:16px; }
+.audio-tray .ss-sw span { font-size:24px; }
+.audio-tray .ss-sw i, .audio-tray .ss-sw:not(.on) i:not(.off) { display:inline; font-size:16px; }
+.audio-tray .ss-sw:not(.on) i { color:#855071; }
+
+.zoomer, .zoomer:has(.z-lb) { top:48%; transform:none; }
+.wardrobe-content .wslot small { font-size:16px; }
+
+.sv2 .who-card:not(.first) { max-height:calc(100dvh - 120px - env(safe-area-inset-top) - env(safe-area-inset-bottom)); overflow:hidden; }
+.who-body { flex:1; min-height:0; width:100%; overflow-y:auto; display:flex; flex-direction:column; align-items:center; gap:4px; }
+.who-body > * { flex-shrink:0; } .who-footer { flex:none; margin:0 auto; }
+
+/* Keep a hint above the phone's action and movement controls, including long Vietnamese text. */
+@media (max-width:700px) and (min-height:521px) {
+  body.touch .htoast { bottom:calc(env(safe-area-inset-bottom) + 330px); white-space:normal; overflow:visible; text-overflow:clip; width:max-content; max-width:calc(100% - 32px); line-height:1.3; }
+}
+
+/* Settings keep their header/footer outside the scrolling body, so Save never covers a note. */
+.grownups .card { height:min(900px,calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 28px)); overflow:hidden; padding-bottom:18px; }
+.grownups .card > h2, .grownups .card > .x { flex:none; }
+.grownups-body { flex:1; min-height:0; overflow-y:auto; display:flex; flex-direction:column; gap:16px; padding-bottom:16px; }
+.grownups-body > * { flex-shrink:0; }
+.grownups #gDone { position:static; flex:none; margin:4px auto 0; box-shadow:none; }
+.wardrobe-content .whead .x { font-size:16px; min-width:64px; }
+
+/* Shared ladybird shell: tab state is separate from a running check or report draft. */
+.tpanel .card { height:min(640px,calc(100dvh - 28px)); overflow:hidden; }
+.tpanel .tp-head, .testing-tabs { flex:none; }
+.testing-tabs { display:flex; gap:8px; }
+.testing-tabs button { flex:1; min-height:44px; }
+.testing-actions { flex:none; margin:0; }
+.testing-report, .testing-auto { flex:1; min-height:0; overflow:auto; display:flex; flex-direction:column; gap:12px; }
+.testing-report > * { flex-shrink:0; }
+.testing-report .tp-shot { height:150px; max-height:22vh; }
+.testing-report textarea, .testing-report .tp-k { font-family:var(--font); }
+.apbox.embedded { position:static; inset:auto; width:100%; max-height:none; overflow:visible; background:transparent; border-radius:0; box-shadow:none; }
+.apbox.embedded .aph { display:none; }
+.apbox.embedded .apb { padding:0; }
+.apbox .aph { cursor:default; }
+.audio-tray { overflow:auto; }
+.screen.title > .launch-progress { position:absolute; top:calc(env(safe-area-inset-top) + 12px); left:50%; transform:translateX(-50%); max-width:calc(100% - 96px); background:var(--panel2); border-radius:var(--r); font-size:14px; z-index:2; }
+.screen.title > .launch-progress progress { width:min(240px,50vw); }
+
+/* Latest owner Audio preference: only three small visual icons, with generous child hit areas. */
+.audio-tray { display:flex; flex-direction:row; gap:0; padding:0; border:0; border-radius:0; background:transparent; box-shadow:none; overflow:auto; }
+.audio-tray .ss-sw { position:relative; flex:none; display:flex; align-items:center; justify-content:center; width:64px; min-width:64px; height:64px; min-height:64px; padding:0; border:0; border-radius:0; background:transparent; box-shadow:none; }
+.audio-tray .ss-sw > span { position:relative; display:flex; align-items:center; justify-content:center; width:44px; height:44px; border:2px solid #fff; border-radius:50%; background:rgba(255,255,255,.92); box-shadow:var(--shadow); opacity:1; }
+.audio-tray .ss-sw.on > span { border-color:#8a5cf6; background:#eee6f7; }
+.audio-tray .ss-sw:not(.on) > span::after { content:""; position:absolute; width:28px; height:2px; border-radius:2px; background:#855071; transform:rotate(-45deg); }
+.audio-tray .ss-sw .art { width:28px; height:28px; }
+.audio-tray .ss-sw b, .audio-tray .ss-sw i { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip-path:inset(50%); white-space:nowrap; }
+.audio-tray .ss-sw:focus-visible > span { outline:3px solid #ffd23f; outline-offset:3px; }
+
+/* Reserve the measured navigation width, including the tester badge and active microphone. */
+.hud.small .zoom { flex-direction: column; max-width: 100%; }
+.hud.small .quest { max-width: calc(100% - var(--quest-nav-reserve, 122px)); }
+.hud.small.quest-below-nav .quest { top: var(--quest-below-top); max-width: calc(100% - 24px); }
+.hud .q-text { min-width: 0; overflow-wrap: anywhere; }
+
+/* Activity controls remain anchored; only the playing field scrolls when content is tall. */
+.gl { overflow: hidden; }
+.gl-head, .gl-help { flex-shrink: 0; }
+.gl-stage { min-height: 0; overflow: auto; justify-content: flex-start; justify-content: safe center; }
+.gl-status { display: flex; align-items: center; gap: 12px; flex: none; }
+.gl-head .gl-status .starbox { position: static; margin: 0; font-size: 20px; }
+@media (max-width: 480px) {
+  .gl-head .gl-status { display: flex; align-items: center; gap: 8px; order: 5; flex-basis: 100%; width: 100%; }
+  .gl-status .gl-dots { flex: 1; flex-basis: auto; order: 0; justify-content: center; }
+  .gl-head .gl-status .starbox { position: static; flex: none; font-size: 18px; margin: 0; }
+}
+
+.gl-title, .gl-title > span:last-child { min-width: 0; overflow-wrap: anywhere; }
+.gl-help { min-height: min(var(--gl-guide-height, 1.4em), 30vh); max-height: 30vh; overflow: auto; }
+.gl.little .gl-head .gl-x, .gl.little .gl-head .gl-how { width: 64px; height: 64px; }
+.gl.little .gl-head button { min-width: 64px; min-height: 64px; }
+.gl .choice.bt-piece { width: 64px; height: 64px; min-width: 64px; min-height: 64px; }
+.gl.little .choice.bt-piece { width: 80px; height: 80px; }
+.gl[data-game-id="shapebuilders"] .gl-stage { gap: 8px; padding: 8px; }
+@media (max-height: 480px) and (min-width: 640px) {
+  .gl[data-game-id="shapebuilders"] .gl-stage { flex-direction: row; }
+}
+/* (owner, 16 Oct AEDT: "explanations discrete, small but still understandable") a short explanation note: two lines
+   at most, in the band between the side buttons and above Jump and Run (nothing sits beside it there); the voice says it too */
+.htoast.explain { white-space: normal; overflow: hidden; text-overflow: clip; width: max-content; max-width: min(320px, calc(100% - 48px)); padding: 6px 12px; font-size: 16px; line-height: 1.3; border-radius: 12px; text-align: center; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+body.touch .htoast.explain { bottom: calc(env(safe-area-inset-bottom) + 184px); max-width: min(320px, calc(100% - 48px)); white-space: normal; overflow: hidden; }
+/* (owner, 16 Oct) Studio "A game's question line on screen" off: the line's space stays so nothing moves */
+.gl.no-help .gl-help { visibility: hidden; }
+/* (owner, 16 Oct AEDT: "captions in films are too big, they cover almost everything"; "the text in How to play should be
+   the same position as the film") the words in films are small and never over the picture: How to play has the story
+   films' layout, its title in a bar above the picture and its words in the same box under it; "big text"
+   (body.bigtext) still makes them bigger */
+.ht-top { display: flex; align-items: center; gap: 10px; padding: 0 4px 10px; color: #fff; }
+.ht-top .ht-title { flex: 1; font-size: clamp(17px, 3.4vw, 26px); line-height: 1.15; }
+.ht-cap { margin: 10px 0 0; background: #fffdf6; color: #3b2a4f; border-radius: 16px; padding: 8px 14px; min-height: 52px; display: flex; align-items: center; justify-content: flex-start; text-align: left; font-size: clamp(16px, 2.2vw, 20px); line-height: 1.35; }
+body.bigtext .ht-cap { font-size: clamp(20px, 3.2vw, 28px); }
+.film-help { bottom: 8px; gap: 6px; max-width: min(80%, 420px); padding: 5px 12px; font-size: clamp(15px, 2vw, 17px); }
+.film-help .fh-hand { width: 24px; height: 24px; }
+.th-text { min-height: 52px; padding: 8px 14px; border-radius: 16px; }
+.th-text p { font-size: clamp(16px, 2.2vw, 20px); }
+.th-text .th-more { font-size: clamp(15px, 1.9vw, 17px); }

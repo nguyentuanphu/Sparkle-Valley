@@ -337,27 +337,31 @@ export async function studioCheck(browser, open) {
     // 4b. offline play is not lost, and a send whose answer was lost is counted once
     {
       const ctx = await browser.newContext({ viewport: { width: 390, height: 760 }, hasTouch: true, isMobile: true });
-      await ctx.addInitScript(() => { window.__svHelloTest = 'manual'; localStorage.setItem('sv2_settings', JSON.stringify({ lang: 'vi', voice: false, sound: false, music: false, quality: 'low' })); });
+      await ctx.addInitScript(() => { window.__svHelloTest = 'manual'; localStorage.setItem('sv2_playerid','offline00001');localStorage.setItem('sv2_settings', JSON.stringify({ lang: 'vi', voice: false, sound: false, music: false, quality: 'low' })); });
       const pg = await ctx.newPage(); await pg.addInitScript(seedPlayers); await pg.goto(site + '/'); await start(pg);
       const ymd = t => { const d = new Date(t); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
       const today = ymd(Date.now()), yday = ymd(Date.now() - 864e5);
       await ctx.setOffline(true);
       const off = await pg.evaluate(async ([today, yday]) => { const P = await import('/js/players.js'); P.countPlay('game', 'caro'); P.countPlay('tale');
-        const o = JSON.parse(localStorage.getItem('sv2_hello_out')); o.days[today].m = 12; o.days[yday] = { m: 20, g: { oanquan: 1 }, t: 0, o: 0 }; localStorage.setItem('sv2_hello_out', JSON.stringify(o));
-        const sent = await P.flush(false); return { sent, out: JSON.parse(localStorage.getItem('sv2_hello_out')), me: localStorage.getItem('sv2_playerid') }; }, [today, yday]);
+        const { BUILD } = await import('/js/build.js');
+        const o = JSON.parse(localStorage.getItem('sv2_hello_out')); o.days[today+'|'+BUILD].m = 12;
+        // Deliberately retain an old date-only bucket to prove migration does not invent its originating build.
+        o.days[yday] = { m: 20, g: { oanquan: 1 }, t: 0, o: 0 }; localStorage.setItem('sv2_hello_out', JSON.stringify(o));
+        const sent = await P.flush(false); return { sent, out: JSON.parse(localStorage.getItem('sv2_hello_out')), me: localStorage.getItem('sv2_playerid'),build:BUILD }; }, [today, yday]);
       ok(!off.sent && off.out.pending && off.out.pending.days.length === 2, 'offline: the outbox did not keep the play: ' + JSON.stringify(off));
+      ok(off.out.pending.days.find(d=>d.d===today)?.build===off.build && off.out.pending.days.find(d=>d.d===yday)?.build==='?', 'offline: current build must be retained and a legacy build must stay unknown');
       const before = players._m.size;
       await ctx.setOffline(false);
       const on = await pg.evaluate(async () => { const P = await import('/js/players.js'); const sent = await P.flush(false); return { sent, out: JSON.parse(localStorage.getItem('sv2_hello_out')), me: localStorage.getItem('sv2_playerid') }; });
       const rec = d => JSON.parse(players._m.get(`d/${d}/${on.me}`) || 'null');
-      ok(players._m.size > before && on.sent && !on.out.pending && rec(yday) && rec(yday).mins === 20 && rec(yday).games.oanquan === 1 && rec(today).mins === 12 && rec(today).games.caro === 1 && rec(today).tales === 1, 'back online: the waiting play was not counted on its own days: ' + JSON.stringify({ on, y: rec(yday), t: rec(today) }));
+      ok(players._m.size > before && on.sent && !on.out.pending && on.me===off.me && rec(yday) && rec(yday).mins === 20 && rec(yday).games.oanquan === 1 && rec(today).mins === 12 && rec(today).games.caro === 1 && rec(today).tales === 1, 'back online: the waiting play was not counted on its own days/installation: ' + JSON.stringify({ on, y: rec(yday), t: rec(today) }));
       // the website gets it but the answer is lost: the device keeps the batch and sends the same one again
       await pg.route('**/api/hello', async route => { await route.fetch(); await route.fulfill({ status: 500, body: '' }); });
-      const lost = await pg.evaluate(async today => { const P = await import('/js/players.js'); const o = JSON.parse(localStorage.getItem('sv2_hello_out')); o.days[today] = { m: 5, g: {}, t: 0, o: 0 }; localStorage.setItem('sv2_hello_out', JSON.stringify(o)); return { sent: await P.flush(false), out: JSON.parse(localStorage.getItem('sv2_hello_out')) }; }, today);
+      const lost = await pg.evaluate(async today => { const P = await import('/js/players.js'), {BUILD}=await import('/js/build.js'); const o = JSON.parse(localStorage.getItem('sv2_hello_out')); o.days[today+'|'+BUILD] = { build:BUILD,m: 5, g: {}, t: 0, o: 0 }; localStorage.setItem('sv2_hello_out', JSON.stringify(o)); return { sent: await P.flush(false), out: JSON.parse(localStorage.getItem('sv2_hello_out')) }; }, today);
       ok(!lost.sent && lost.out.pending && rec(today).mins === 17, 'lost answer: ' + JSON.stringify({ lost, t: rec(today) }));
       await pg.unroute('**/api/hello');
-      const again = await pg.evaluate(async () => { const P = await import('/js/players.js'); return { sent: await P.flush(false), out: JSON.parse(localStorage.getItem('sv2_hello_out')) }; });
-      ok(again.sent && !again.out.pending && rec(today).mins === 17, 'the same batch was counted twice: ' + JSON.stringify({ again, t: rec(today) }));
+      const again = await pg.evaluate(async () => { const P = await import('/js/players.js'); const pending=JSON.parse(localStorage.getItem('sv2_hello_out')).pending;return { batch:pending.h,sent: await P.flush(false), out: JSON.parse(localStorage.getItem('sv2_hello_out')) }; });
+      ok(again.sent && again.batch===lost.out.pending.h && !again.out.pending && rec(today).mins === 17, 'the same batch was changed or counted twice: ' + JSON.stringify({ again, t: rec(today) }));
       await ctx.close();
       notes.push('offline play waits in an outbox and is counted on its own days; a re-sent batch counts once');
     }
@@ -398,7 +402,8 @@ export async function studioCheck(browser, open) {
     // (owner, 12 Oct: the exe's game folder was r38 while the website was r63) a folder older than the website cannot
     // save a draft (its old files would undo newer ones); the exe gets the newest game from GitHub by itself, and keeps a
     // content, voice or photo file changed here and not published yet
-    { const sw = fs.readFileSync(path.join(game, 'sw.js'), 'utf8'), newer = sw.replace(/-r\d+'/, "-r9998'");
+    { const sw = fs.readFileSync(path.join(game, 'sw.js'), 'utf8'), newer = sw.replace(/-r\d+(?:-[^']*)?'/, "-r9998'");
+      ok(newer!==sw && /-r9998'/.test(newer),'fixture must actually advance the remote build, including cache revisions');
       gh.commitOnMain('sw.js', newer, 'newer game'); gh.commitOnMain('voices/en/f/newline1.mp3', 'NEWV', 'a new line'); gh.commitOnMain('voices/en/f/0000aaaa.mp3', 'REMOTE', 'a changed line');
       fs.writeFileSync(path.join(game, 'voices/en/f/0000aaaa.mp3'), 'LOCAL');
       const old = await job('github/draft', {}); ok(old.error && /get the newest game first/.test(old.error), 'a draft from an older game folder was not refused: ' + JSON.stringify(old));
@@ -478,9 +483,9 @@ export async function studioCheck(browser, open) {
       finally { globalThis.fetch = real; fs.rmSync(d, { recursive: true, force: true }); }
       notes.push('a fetched photo over 1.5 MB is skipped for the next one'); }
     // 6. the dashboard in a browser: online (signed in) and in the exe, on a desktop and a phone
-    const pages = ['home', 'message', 'players', 'testers', 'publish', 'check', 'settings', 'photos', 'releases', 'festivals', 'familycode', 'missions', 'villagers', 'path', 'play', 'quiz', 'stories', 'looks', 'plots'], bad = [];
+    const pages = ['home', 'message', 'players', 'testers', 'publish', 'check', 'settings', 'photos', 'releases', 'lab', 'festivals', 'familycode', 'missions', 'villagers', 'path', 'play', 'quiz', 'stories', 'looks', 'plots'], bad = [];
     // (Studio review, owner 10 Oct) every button and box 44 px or more on a phone and a tablet: these pages
-    const TAPS = ['home', 'message', 'missions', 'album', 'quiz', 'stories', 'villagers', 'plots', 'looks', 'familycode', 'releases', 'festivals', 'path', 'music', 'map', 'photos', 'play', 'voices', 'ads', 'publish', 'site', 'check', 'settings', 'testers'];
+    const TAPS = ['home', 'message', 'missions', 'album', 'quiz', 'stories', 'villagers', 'plots', 'looks', 'familycode', 'releases', 'lab', 'festivals', 'path', 'music', 'map', 'photos', 'play', 'voices', 'ads', 'publish', 'site', 'check', 'settings', 'testers'];
     const SMALL = () => [...document.querySelectorAll('header button:not([hidden]), #crumb button, #page button, #page a.btn, #page select, #page textarea, #page input:not([type=checkbox]):not([type=radio]):not([type=hidden]), #page label:has(> input[type=checkbox]), #page label:has(> input[type=radio])')]
       .filter(e => { const r = e.getBoundingClientRect(); return r.width && r.height && (r.height < 43.5 || (e.tagName === 'BUTTON' && r.width < 43.5)); })
       .map(e => `${e.id || e.className || e.tagName} “${(e.innerText || e.value || '').trim().slice(0, 16)}” ${Math.round(e.getBoundingClientRect().width)}×${Math.round(e.getBoundingClientRect().height)}`);
@@ -524,19 +529,26 @@ export async function studioCheck(browser, open) {
         await pg.screenshot({ path: `out/studio-analytics-${w}.png`, fullPage: true }); }
       // (round R) Releases online: switch traffic off and Halloween to start in 3 days; the website hands it to every device
       if (!touch) {
+        let releasePlayerRequests = 0;
+        const countPlayers = req => { if (/\/studio\/api\/players(?:\?|$)/.test(req.url())) releasePlayerRequests++; };
+        pg.on('request', countPlayers);
         await pg.evaluate(() => { location.hash = 'game/releases'; }); await pg.waitForSelector('[data-id="traffic"]', { timeout: 15000 });
+        if (await pg.locator('[data-id="tester"], [data-id="autoplay"]').count()) bad.push('testing controls still appear in Releases');
+        if (releasePlayerRequests) bad.push('Releases waits on Analytics device data');
+        pg.off('request', countPlayers);
         await pg.evaluate(() => { document.querySelector('[data-id="traffic"] [data-r="on"]').checked = false; const t = document.querySelector('[data-id="fest_halloween"]'); t.querySelector('[data-in="3"]').click(); t.querySelector('[data-r="newDays"]').value = '5'; document.querySelector('#save').click(); });
         await pg.waitForTimeout(1200);
         const lv = await pg.evaluate(() => fetch('/api/live', { cache: 'no-store' }).then(r => r.json()));
         if (!(lv.releases && lv.releases.traffic && lv.releases.traffic.on === false && lv.releases.fest_halloween && lv.releases.fest_halloween.newDays === 5 && /^\d{4}-/.test(lv.releases.fest_halloween.start))) bad.push('releases did not reach /api/live: ' + JSON.stringify(lv));
         // (owner, 12 Oct) testers: tick a device at "auto reports only" with a sneak peek; it reports; the Tester reports page
         // shows the problem, marks it fixed in r67, and the device hears it
-        await pg.evaluate(() => { location.hash = 'game/releases'; }); await pg.waitForSelector('#tdev [data-tdev]', { timeout: 15000 }).catch(() => { });
+        await pg.evaluate(() => { location.hash = 'game/lab'; }); await pg.waitForSelector('#tdev [data-tdev]', { timeout: 15000 }).catch(() => { });
         const tid = await pg.evaluate(() => { const c = document.querySelector('#tdev [data-tdev]'); if (!c) return ''; c.checked = true; document.querySelector(`[data-tlv="${c.dataset.tdev}"]`).value = 'auto'; document.querySelector('#tdev [data-peek]').checked = true; document.querySelector('[data-id="tester"] [data-r="on"]').checked = true; document.querySelector('#tdev [data-trevert="autoplay"]').checked = true; document.querySelector('#save').click(); return c.dataset.tdev; });
         await pg.waitForTimeout(1200);
         const lt = await pg.evaluate(() => fetch('/api/live', { cache: 'no-store' }).then(r => r.json()));
         const tr = lt.releases && lt.releases.tester;
-        if (!tid || !tr || tr.on !== true || !(tr.devices || []).includes(tid) || (tr.levels || {})[tid] !== 'auto' || !(tr.peeks || []).length || tr.revert !== 'autoplay') bad.push('the Releases page did not save the testers (and what goes back): ' + JSON.stringify({ tid, tr }));
+        if (lt.releases?.traffic?.on !== false || lt.releases?.fest_halloween?.newDays !== 5) bad.push('saving Sparkle Lab changed unrelated release settings');
+        if (!tid || !tr || tr.on !== true || !(tr.devices || []).includes(tid) || (tr.levels || {})[tid] !== 'auto' || !(tr.peeks || []).length || tr.revert !== 'autoplay') bad.push('Sparkle Lab did not save the testers (and what goes back): ' + JSON.stringify({ tid, tr }));
         else {
           const rep = { id: tid, b: 'r66', kind: 'looks', note: 'The bridge floats', where: { area: 'village', x: 1, z: 2 }, dev: { os: 'iOS' }, players: [{ name: 'Na', age: 'little' }], shot: 'data:image/jpeg;base64,AAAA', log: [[-2, 'tap', 'Play']] };
           const sent = await pg.evaluate(b => fetch('/api/tester', { method: 'POST', body: JSON.stringify(b) }).then(r => r.status), rep);

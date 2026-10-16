@@ -11,7 +11,7 @@ export const TLIMITS = { size: 320000, device: 60, ip: 150, problems: 3000, keep
 const ID = /^[a-z0-9]{12}$/, KINDS = ['broken', 'looks', 'words', 'sound', 'idea', 'auto'], AUTOS = ['error', 'noopen', 'noclose', 'freeze', 'slow', 'offscreen', 'novoice', 'stuck', 'autoplay'];
 export const STATUSES = ['new', 'fixing', 'fixed', 'confirmed', 'back', 'notbug', 'dup'];
 const BUILD = /^r\d{1,4}$/, PK = /^[a-f0-9]{16}$/;
-const day = t => new Date(t).toISOString().slice(0, 10);
+const day = t => new Intl.DateTimeFormat('en-CA', { timeZone:'Australia/Sydney', year:'numeric', month:'2-digit', day:'2-digit' }).format(new Date(t));
 const txt = (v, n) => typeof v === 'string' ? v.replace(/[\u0000-\u001f<>]/g, ' ').trim().slice(0, n) : '';
 const num = (v, lo, hi) => Number.isFinite(+v) ? Math.max(lo, Math.min(hi, +v)) : undefined;
 const sha = s => createHash('sha1').update(s).digest('hex').slice(0, 16);
@@ -31,7 +31,7 @@ export function cleanReport(b, now = Date.now()) {
   const auto = kind === 'auto' ? (AUTOS.includes(b.auto) ? b.auto : null) : null; if (kind === 'auto' && !auto) return null;
   const w = b.where && typeof b.where === 'object' ? b.where : {};
   const r = {
-    id: b.id, at: now, b: BUILD.test(b.b || '') ? b.b : '', kind, auto, detail: txt(b.detail, 200), note: txt(b.note, TLIMITS.note), spoken: b.spoken === true,
+    clientId: /^[a-f0-9]{32}$/.test(b.clientId || '') ? b.clientId : '', id: b.id, at: now, b: BUILD.test(b.b || '') ? b.b : '', kind, auto, detail: txt(b.detail, 200), note: txt(b.note, TLIMITS.note), spoken: b.spoken === true,
     where: { area: txt(w.area, 60), place: txt(w.place, 60), game: txt(w.game, 60), window: txt(w.window, 80), x: num(w.x, -5000, 5000), z: num(w.z, -5000, 5000) },
     join: PK.test(b.join || '') ? b.join : '',
     errors: (Array.isArray(b.errors) ? b.errors : []).slice(-TLIMITS.errors).map(e => txt(e, 200)).filter(Boolean),
@@ -56,6 +56,8 @@ const titleOf = r => r.kind === 'auto' ? `${r.auto}: ${r.detail || r.where.game 
 export async function addReport(S, live, body, now = Date.now(), ipk = '') {
   const c = cleanReport(body, now); if (!c) return { error: 'bad report', status: 400 };
   const { r, shot } = c; if (!isTester(live, r.id)) return { error: 'not a tester', status: 403 };
+  const receiptKey = r.clientId ? `receipt/${r.id}/${r.clientId}` : '';
+  if (receiptKey) { const receipt = await S.get(receiptKey, { type: 'json' }); if (receipt) return receipt; }
   const d = day(now), qd = `q/${d}/d/${r.id}`, qi = `q/${d}/i/${ipk || 'x'}`;
   const nd = (+(await S.get(qd)) || 0) + 1, ni = (+(await S.get(qi)) || 0) + 1;
   if (nd > TLIMITS.device || ni > TLIMITS.ip) return { error: 'too many reports today', status: 429 };
@@ -78,7 +80,7 @@ export async function addReport(S, live, body, now = Date.now(), ipk = '') {
   if (!t.mine.includes(k)) t.mine = [...t.mine, k].slice(-300);
   t.kinds = t.kinds || {}; t.kinds[k] = r.kind;
   await S.setJSON(`t/${r.id}`, t);
-  return { ok: true, k, rid, status: p.status };
+  const receipt = { ok: true, k, rid, status: p.status, at:now }; if (receiptKey) await S.setJSON(receiptKey, receipt); return receipt;
 }
 
 const all = async (S, prefix, cap = 5000) => { const out = []; let cursor; do { const l = await S.list({ prefix, cursor }); for (const b of l.blobs) out.push(b.key); cursor = l.cursor; } while (cursor && out.length < cap); return out; };
@@ -158,5 +160,6 @@ export async function tidy(S, now = Date.now()) {
   const old = day(now - TLIMITS.keepDays * 864e5), q = day(now - 2 * 864e5); let n = 0;
   for (const k of await all(S, 'q/')) if (k.slice(2, 12) < q) { await S.delete(k); n++; }
   for (const k of await all(S, 'r/')) { const r = await S.get(k, { type: 'json' }); if (r && day(r.at) < old) { await S.delete(k); await S.delete('shot/' + r.rid); n++; } }
+  for (const key of await all(S, 'receipt/')) { const receipt = await S.get(key, { type:'json' }); if (!receipt?.at || day(receipt.at) < old) { await S.delete(key); n++; } }
   return n;
 }

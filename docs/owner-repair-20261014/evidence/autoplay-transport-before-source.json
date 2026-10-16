@@ -1,0 +1,5 @@
+{
+  "sourceCommit": "75313dc6",
+  "autoplaySha256": "9468fdd325be82e72802e6587945c6b8d4bfc874a03e8bd978531b8b0f6423b0",
+  "fixture": "Real bus boarding, pause immediately after boarding, hold normal station wait100sec to prevent incidental next-stop exit. Autoplay walking to a clear12m target; before stayed attached and12.67m away after futile path/jump/fly attempts."
+}

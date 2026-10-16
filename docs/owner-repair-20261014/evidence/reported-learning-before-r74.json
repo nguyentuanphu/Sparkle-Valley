@@ -1,0 +1,66 @@
+{
+  "url": "http://localhost:8766/",
+  "ids": [
+    "letters",
+    "numbers",
+    "counting",
+    "pattern",
+    "colors",
+    "shapes"
+  ],
+  "rows": [
+    {
+      "key": "game:pattern",
+      "ok": true,
+      "said": "won: 4 ✓, 4 ✗, 12 taps",
+      "problems": [],
+      "secs": 18.2
+    },
+    {
+      "key": "game:counting",
+      "ok": true,
+      "said": "won: 4 ✓, 1 ✗, 9 taps",
+      "problems": [],
+      "secs": 15.6
+    },
+    {
+      "key": "game:letters",
+      "ok": true,
+      "said": "won: 4 ✓, 1 ✗, 13 taps",
+      "problems": [],
+      "secs": 24.2
+    },
+    {
+      "key": "game:numbers",
+      "ok": true,
+      "said": "won: 4 ✓, 0 ✗, 9 taps",
+      "problems": [],
+      "secs": 13.6
+    },
+    {
+      "key": "game:shapes",
+      "ok": true,
+      "said": "won: 4 ✓, 1 ✗, 9 taps",
+      "problems": [],
+      "secs": 14.5
+    },
+    {
+      "key": "game:colors",
+      "ok": true,
+      "said": "won: 4 ✓, 0 ✗, 10 taps",
+      "problems": [],
+      "secs": 14.4
+    }
+  ],
+  "sent": [
+    {
+      "kind": "auto",
+      "detail": "5 frames a second"
+    },
+    {
+      "kind": "auto",
+      "detail": "14 frames a second"
+    }
+  ],
+  "errors": []
+}

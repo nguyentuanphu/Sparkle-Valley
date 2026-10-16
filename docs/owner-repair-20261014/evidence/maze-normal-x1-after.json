@@ -1,0 +1,17 @@
+[
+  {
+    "id": "maze",
+    "lang": "en",
+    "speed": "x1",
+    "g": "games",
+    "key": "game:maze",
+    "name": "Mountain Maze",
+    "ok": true,
+    "skipped": false,
+    "problems": [],
+    "notes": [],
+    "said": "won: 0 ✓, 0 ✗, 44 taps",
+    "secs": 112.8,
+    "fps": 60
+  }
+]

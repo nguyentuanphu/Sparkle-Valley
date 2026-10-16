@@ -1,0 +1,3 @@
+const net=require('node:net');
+const ready=port=>new Promise(resolve=>{const socket=net.connect({host:'127.0.0.1',port});socket.setTimeout(500);socket.once('connect',()=>{socket.destroy();resolve(true);});socket.once('error',()=>resolve(false));socket.once('timeout',()=>{socket.destroy();resolve(false);});});
+(async()=>{for(let attempt=0;attempt<40;attempt++){if((await Promise.all([ready(9000),ready(9001)])).every(Boolean)){console.log('Both local test ports are ready');return;}await new Promise(resolve=>setTimeout(resolve,250));}console.error('Local test services did not start');process.exitCode=1;})();
