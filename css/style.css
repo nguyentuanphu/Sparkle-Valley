@@ -3052,3 +3052,15 @@ body.calm .sv-press, body.calm .sv-spring, body.calm .sv-wiggle, body.calm .sv-j
 .adv-more[hidden] { display: none !important; }
 @media (max-width: 380px) { .advwin .adv-face { width: 72px; height: 72px; } .advwin .adv-face .art { width: 54px; height: 54px; } .adv-stamp span { width: 34px; height: 34px; } .advchest .adv-coins { grid-template-columns: repeat(4, 56px); } }
 body.calm .advchest .adv-bigchest.shut, body.calm .advchest .adv-bigchest { animation: none !important; transition: none; }
+
+/* (Welcome steady, owner 16-17 Oct AEDT: "windows, panels and the Pad must stay fixed"; the r79 sweep found the Start
+   button growing and shrinking on every device) the Start button keeps one box: it no longer scales (goPulse) but
+   invites a tap with a shine, a soft band of light that sweeps across it every few seconds inside its own edges, so no
+   size changes (owner, 17 Oct AEDT: "Shine"). Calm mode and "Reduce motion": no shine. */
+.sv2 .press { animation: none; position: relative; overflow: hidden; isolation: isolate; }
+.sv2 .press::after { content: ''; position: absolute; top: 0; bottom: 0; left: 0; width: 45%; pointer-events: none; z-index: 1;
+  background: linear-gradient(105deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, .55) 50%, rgba(255, 255, 255, 0) 100%);
+  transform: translateX(-120%) skewX(-18deg); animation: tt-shine 3.2s ease-in-out infinite; }
+@keyframes tt-shine { 0%, 45% { transform: translateX(-120%) skewX(-18deg); } 85%, 100% { transform: translateX(260%) skewX(-18deg); } }
+body.calm .sv2 .press::after { animation: none; display: none; }
+@media (prefers-reduced-motion: reduce) { .sv2 .press::after { animation: none; display: none; } }

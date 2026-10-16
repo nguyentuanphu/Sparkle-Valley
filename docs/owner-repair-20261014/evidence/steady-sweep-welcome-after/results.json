@@ -1,0 +1,13 @@
+{
+ "when": "2026-10-16T17:26:20.440Z",
+ "url": "http://localhost:8765/",
+ "tolerancePx": 2,
+ "devices": {
+  "phone": {
+   "panels": {},
+   "startup": null,
+   "bagIcons": null,
+   "errors": []
+  }
+ }
+}

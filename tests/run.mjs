@@ -6666,6 +6666,44 @@ await check('r79learning', async () => {
   fs.writeFileSync('out/r79-learning/results.json', JSON.stringify({ rows, e1, e3, e4, i2, mig, won, book, g2, mic }, null, 1));
   return notes.join('; ') + '; E1 E3 E4 I1 I2 I4 G2 mic pass';
 });
+await check('welcomesteady', async () => {
+  // (owner, 16 Oct AEDT: "windows, panels and the Pad must stay fixed: never move up and down, bounce or recentre as the
+  // content changes"; the r79 sweep found the Welcome screen's Start button growing and shrinking on every device) the
+  // Welcome screen holds still on a phone, a tablet and a computer, in English and in Vietnamese: the Start button, the
+  // cover, the logo and the language panel keep their boxes (within 2 px) for 2.5 s after it opens, after each language
+  // tap and the Chinese switch, and the Start button keeps one size in both languages
+  const PARTS = [['start', '.screen.title .press'], ['cover', '.screen.title .tt-cover'], ['logo', '.screen.title .logo'], ['languages', '.screen.title .tt-panel']];
+  const TAPS = [['Tieng Viet', '.screen.title .seg.lang button[data-l="vi"]'], ['English', '.screen.title .seg.lang button[data-l="en"]'],
+    ['learn Chinese on', '.screen.title .learnrow [data-learn="zh"]'], ['learn Chinese off', '.screen.title .learnrow [data-learn="zh"]']];
+  const moved = [], notes = [];
+  for (const [dev, w, h, touch] of [['phone', 390, 844, true], ['tablet', 820, 1180, true], ['computer', 1280, 800, false]]) for (const lang of ['en', 'vi']) {
+    const P = await open(b, { w, h, touch, lang, play: false, settings: { calm: false } });
+    const boxes = () => P.page.evaluate(parts => Object.fromEntries(parts.map(([k, sel]) => { const e = document.querySelector(sel); if (!e) return [k, null]; const r = e.getBoundingClientRect(); return [k, [r.left, r.top, r.width, r.height].map(v => Math.round(v * 10) / 10)]; })), PARTS);
+    const watch = async (what, ms) => {
+      const first = await boxes(), t0 = Date.now(); let n = 0;
+      while (Date.now() - t0 < ms) {
+        await P.page.waitForTimeout(100); const now = await boxes(); n++;
+        for (const [k] of PARTS) { if (!first[k] || !now[k]) continue; const d = Math.max(...now[k].map((v, i) => Math.abs(v - first[k][i]))); if (d > 2) { moved.push(`${dev} ${lang} ${what}: ${k} moved ${d.toFixed(1)} px`); return first; } }
+      }
+      return first;
+    };
+    const open0 = await watch('opening', 2500);
+    ok(PARTS.every(([k]) => open0[k]), `${dev} ${lang}: a part of the Welcome screen is missing ${JSON.stringify(open0)}`);
+    const sizes = {};
+    for (const [label, sel] of TAPS) {
+      const btn = await P.page.$(sel); if (!btn) continue;
+      await btn.click({ force: true }); const after = await watch(`after "${label}"`, 1500);
+      if (/Tieng|English/.test(label) && after.start) sizes[label] = after.start;
+    }
+    // the Start button is the same size in English and Vietnamese
+    if (sizes['Tieng Viet'] && sizes.English) { const d = Math.max(Math.abs(sizes['Tieng Viet'][2] - sizes.English[2]), Math.abs(sizes['Tieng Viet'][3] - sizes.English[3])); if (d > 2) moved.push(`${dev} ${lang}: the Start button is ${d.toFixed(1)} px bigger in one language`); }
+    ok(!P.errors.length, P.errors.join(' | '));
+    notes.push(`${dev} ${lang}`);
+    await P.ctx.close();
+  }
+  ok(!moved.length, 'the Welcome screen moved: ' + moved.slice(0, 8).join('; '));
+  return `Welcome screen still within 2 px (Start button, cover, logo, language panel) opening, after both language taps and the Chinese switch, one Start size in both languages: ${notes.join(', ')}`;
+});
 await b.close();
 const failed = results.filter(r => !r[1]);
 console.log(`\n${results.length - failed.length}/${results.length} checks passed`);
