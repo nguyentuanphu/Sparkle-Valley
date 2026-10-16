@@ -7,7 +7,7 @@
 //             is enough: no losing), a dish cooked (G.onCooked). Things to find appear near their spot and wait there
 //             until found, like the surprises, so they are never missed.
 //   goal card on the game screen (js/hud.js): the step, progress dots, hear-again; a tap opens the window (HUD-4);
-//             it takes turns with a family mission (owner, 16 Oct AEDT)
+//             under the goal row, which stays as it was (owner, 17 Oct AEDT: "show both")
 //   window    Grandpa Owl's (or the giver's) bubble, the 3 steps, the chest with the reward, the week stamps and one
 //             green "Let's go!" that closes it and shows the way with sparkles (ADV-1 to ADV-6)
 //   the end   the chest opens with chat A's confetti and ta-da (js/feel.js), the sticker through chat B's
@@ -340,26 +340,23 @@ export function createAdventure(G) {
     const h = H.hero, q = H.q('.quest'); if (!q) return;
     let card = H._adv; if (!card) {
       card = H._adv = el('div', 'advcard', `<button class="adv-open"><span class="adv-badge"></span><span class="adv-cx"><b class="adv-text"></b><span class="adv-dots"></span></span></button><button class="adv-hear" aria-label="${T('Hear it again', 'Nghe lại')}"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z" fill="#fff"/><path d="M17 8a5 5 0 0 1 0 8" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round"/></svg></button>`);
-      q.prepend(card);
-      card.querySelector('.adv-open').onclick = () => { if (card._fam) { G.openPad(H.i, 'log'); return; } openWindow(H.i); };
-      card.querySelector('.adv-hear').onclick = e => { e.stopPropagation(); if (card._fam) { say(card._fam.en, card._fam.vi); return; } const s = step(h), a = adv(h); if (s) sayL(stepText(s, h.profile.age)); else if (a) sayL(ADV_LINES.doneToday); };
+      q.appendChild(card);   // (owner, 17 Oct AEDT: "show both") under the goal row, which stays as it was
+      card.querySelector('.adv-open').onclick = () => openWindow(H.i);
+      card.querySelector('.adv-hear').onclick = e => { e.stopPropagation(); const s = step(h), a = adv(h); if (s) sayL(stepText(s, h.profile.age)); else if (a) sayL(ADV_LINES.doneToday); };
     }
     const r = on() ? today(h) : null, a = r && r.id ? BY_ID[r.id] : null, show = !!(a && !r.done);
-    // (owner, 16 Oct AEDT: "take turns") a family mission that has started shares the card, 8 seconds each
-    const P = G.parents, fm = show && P && P.openFor ? P.openFor(h.profile).find(x => (h.profile.missionsSeen || []).includes(x.id)) : null;
-    const fam = fm && Math.floor(performance.now() / 8000) % 2 === 1 ? fm : null;
-    const s = show ? a.steps[r.step] : null, txt = fam ? T(fm.en, fm.vi) : s ? tt(stepText(s, h.profile.age)) : '';
+    // (owner, 17 Oct AEDT: "show both") the goal row stays, with its family mission line, so the card shows only the adventure
+    const s = show ? a.steps[r.step] : null, txt = s ? tt(stepText(s, h.profile.age)) : '';
     const left = s && s.kind === 'find' ? ` ${r.got | 0}/${findCount(s, h.profile.age)}` : '';
     const timer = s && r.timer && r.timer > Date.now() ? ` · ${Math.ceil((r.timer - Date.now()) / 1000)}s` : '';
-    const key = [show, txt, left, timer, dots(h).join(), !!fam, T('e', 'v')].join('|');
-    if (card._key === key) return; card._key = key; card._fam = fam;
+    const key = [show, txt, left, timer, dots(h).join(), T('e', 'v')].join('|');
+    if (card._key === key) return; card._key = key;
     q.classList.toggle('adv', show); card.hidden = !show; H.root.classList.toggle('adv-on', show);
     if (!show) return;
-    card.querySelector('.adv-badge').innerHTML = pic(fam ? (fm.icon || '📝') : (GIVERS[a.giver] || GIVERS.owl).icon);
-    card.querySelector('.adv-text').textContent = (fam ? T('Family mission: ', 'Nhiệm vụ gia đình: ') : '') + txt + left + timer;
-    card.querySelector('.adv-dots').innerHTML = fam ? '' : dots(h).map(d => `<i class="${d}"></i>`).join('');
-    card.querySelector('.adv-open').setAttribute('aria-label', fam ? T('Family mission', 'Nhiệm vụ gia đình') : tt(ADV_LINES.title));
-    card.classList.toggle('fam', !!fam);
+    card.querySelector('.adv-badge').innerHTML = pic((GIVERS[a.giver] || GIVERS.owl).icon);
+    card.querySelector('.adv-text').textContent = txt + left + timer;
+    card.querySelector('.adv-dots').innerHTML = dots(h).map(d => `<i class="${d}"></i>`).join('');
+    card.querySelector('.adv-open').setAttribute('aria-label', tt(ADV_LINES.title));
   }
 
   // ---------- every frame: the things bob, the way moves on, the day turns, Owl remembers ----------

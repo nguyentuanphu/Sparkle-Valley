@@ -12,7 +12,7 @@ import { register, choiceButtons, untilRight, playWatch } from './frame.js';
 import { T, NUMBER_WORDS } from '../i18n.js';
 import { pic } from '../art.js';
 import { el, shuffle, wait } from '../util.js';
-import { sayAsync } from '../voice.js';
+import { sayAsync, spoken } from '../voice.js';
 import { settings } from '../state.js';
 import { canListen, listen, stopListening } from '../listen.js';
 import { GAME_INFO } from '../content/activities.js';
@@ -41,7 +41,9 @@ let talking = 0;
 async function talk(api, ...lines) {
   const my = ++talking;
   api.show(lines.map(l => l[0]).join(' '), lines.map(l => l[1] ?? l[0]).join(' '));
-  for (const [en, vi] of lines) { if (my !== talking || api.closed) return; await sayAsync(en, vi); }
+  // (r80) each line also goes to the captions, as say() does: sayAsync alone left these games without captions, and the
+  // a11y check (every game speaks its instruction to an under-5) heard nothing from First Sound Hunt
+  for (const [en, vi] of lines) { if (my !== talking || api.closed) return; const t = isVi() ? (vi ?? en) : en; spoken.forEach(f => { try { f(t); } catch (e) { } }); await sayAsync(en, vi); }
 }
 // a wrong tap: the frame's gentle "no" (sound, wiggle, Ông Cú), then the explanation, spoken and shown
 const wrongWhy = (api, e, ...lines) => { api.wrong(e, null); talk(api, ...lines); };

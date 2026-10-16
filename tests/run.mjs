@@ -6131,7 +6131,7 @@ await check('dailyadventure', async () => {
     // HUD-4: the goal card shows the step, 3 dots and hear-again; a tap opens the window
     const card = await P.page.evaluate(() => { const c = document.querySelector('.hud .advcard'); if (!c || c.hidden) return null; const r = c.getBoundingClientRect(), hear = c.querySelector('.adv-hear').getBoundingClientRect();
       return { text: c.querySelector('.adv-text').textContent, dots: c.querySelectorAll('.adv-dots i').length, now: c.querySelectorAll('.adv-dots i.now').length, hear: Math.min(hear.width, hear.height), right: r.right, quest: getComputedStyle(document.querySelector('.hud .q-say')).display }; });
-    ok(card && card.dots === 3 && card.now === 1 && card.hear >= 44 && card.right <= w + 1 && card.quest === 'none', `${tag}: goal card ${JSON.stringify(card)}`);
+    ok(card && card.dots === 3 && card.now === 1 && card.hear >= 44 && card.right <= w + 1 && card.quest !== 'none', `${tag}: goal card under the goal row, which stays (owner, 17 Oct AEDT: "show both") ${JSON.stringify(card)}`);
     ok(lang === 'vi' ? /Phố Hai Quê/.test(card.text) : /Two Homes Street/.test(card.text), `${tag}: the step in the language (${card.text})`);
     await P.page.click('.hud .advcard .adv-open'); await P.page.waitForTimeout(500);
     const win = await P.page.evaluate(() => { const m = document.querySelector('.modal.advwin'); if (!m) return null; const R = e => e.getBoundingClientRect();
