@@ -2810,3 +2810,5 @@ body:has(.modal:not(.out), .gl, .wardrobe, .audio-tray, .dialog:not(.out), .stor
   .mirror .wtabs { grid-area: tabs; justify-content: flex-start; } .mirror .wkind { grid-area: kind; text-align: left; } .mirror .wgrid { grid-area: grid; }
   .mirror .wbig { width: 100%; }
 }
+/* (r79, steady sweep: the mirror opened on its own grew and shrank with each tab) one fixed height, the clothes scroll inside */
+.wardrobe.kward.mirror { height: min(760px, calc(100dvh - 40px)); max-height: none; overflow-y: auto; box-sizing: border-box; }
