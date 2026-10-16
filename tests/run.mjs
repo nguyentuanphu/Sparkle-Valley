@@ -5942,6 +5942,117 @@ await check('reportstorage', async () => {
   const {execFileSync}=await import('node:child_process');
   return execFileSync(process.execPath,['owner-report-storage.mjs'],{encoding:'utf8',timeout:60000}).trim();
 });
+/* sticker book (chat B) */
+// (owner plan 16 Oct 2026 AEDT, chat B; STK-1 to STK-6) the Stickers tab of the Pad: earning (a place, talking to
+// someone, an animal, something an older system keeps), the New! badge on the Bag button and the tab, a page of 3 x 3
+// with a count and a progress bar, grey "?" shapes with a spoken hint, a full page's golden frame and prize, the
+// welcome sticker of an empty page, a shiny copy, both languages, an under-5 on a phone and a big kid on a computer;
+// and every way to earn a sticker exists in the running game
+await check('stickers', async () => {
+  const notes = [];
+  for (const [age, lang, w, h, touch] of [['little', 'en', 390, 844, true], ['big', 'vi', 1280, 800, false]]) {
+    const P = await open(b, { w, h, touch, lang }); await clear(P.page);
+    const r = await P.page.evaluate(async ([age, lang]) => {
+      const G = __sv, hero = G.heroes[0], p = hero.profile, wait = ms => new Promise(r => setTimeout(r, ms));
+      const SB = await import('/js/stickers.js'), C = await import('/js/content/stickers.js'), S = await import('/js/state.js'), V = await import('/js/voice.js'), A = await import('/js/audio.js');
+      const W = await import('/js/world.js'), R = await import('/js/regions.js'), GA = await import('/js/gather.js'), D = await import('/js/data.js'), SE = await import('/js/secrets.js'), PS = await import('/js/passport.js'), MH = await import('/js/myhouse.js'), FE = await import('/js/festivals.js'), SP = await import('/js/content/surprises.js');
+      const out = { age, lang };
+      // the ways to earn exist in the running game
+      const kinds = new Set(['duck', 'chicken', 'butterfly', 'bird', 'kitty']); G.scene.traverse(o => { if (o.userData && o.userData.rig) kinds.add(o.userData.rig.kind); });
+      const its = new Set(G.interactables.map(i => i.id)), lms = new Set(R.LANDMARKS.map(l => l.id)), recipes = new Set(D.RECIPES.map(x => x.id)), vend = new Set(R.VENDORS.map(v => v.id));
+      const bad = [];
+      for (const s of C.STICKERS) for (const w of s.earn) {
+        const [k, v] = Object.entries(w)[0];
+        const okk = k === 'act' ? (v.endsWith('*') ? [...its].some(x => x.startsWith(v.slice(0, -1))) : its.has(v)) : k === 'meet' ? kinds.has(v) : k === 'postcard' ? lms.has(v) : k === 'enter' ? !!W.REGION_NAMES[v]
+          : k === 'find' ? !!GA.WILD[v] : k === 'cook' ? recipes.has(v) : k === 'taste' ? vend.has(v) : k === 'secret' ? SE.SECRETS.some(x => x.id === v) : k === 'tower' ? W.TOWERS.some(x => x.id === v)
+          : k === 'stamp' ? PS.COUNTRIES.some(c => c.cc + '_full' === v) : k === 'fest' ? !!FE.FESTIVALS[v] : k === 'surprise' ? SP.SURPRISES.some(x => x.id === v) : k === 'prize' ? C.LEGACY_EMOJI.includes(v) : false;
+        if (!okk) bad.push(s.id + ':' + k + '=' + v);
+        if (typeof A.SFX[s.sound] !== 'function') bad.push(s.id + ' sound ' + s.sound);
+      }
+      for (const e of D.STICKERS) if (!C.fromEmoji(e)) bad.push('older sticker without a place ' + e);
+      for (const lm of R.LANDMARKS) if (!C.BY_ID['pc_' + lm.id]) bad.push('postcard without a sticker ' + lm.id);
+      for (const [k, w] of Object.entries(GA.WILD)) if (!C.STICKERS.some(s => s.earn.some(x => x.find === k))) bad.push('treasure without a sticker ' + k);
+      out.bad = bad;
+      // a child starting afresh
+      p.age = age; p.stickers = []; delete p.stickerBook; p.postcards = {}; p.found = {}; p.placeStickers = {}; p.visited = {}; p.keepsakes = [];
+      S.settings.voice = true; const said = []; window.__svVoiceLog = (l, t) => said.push(l + ':' + t); const sayRec = t => said.push('say:' + t); V.spoken.push(sayRec);
+      // a hen (the tap on an animal), Grandpa Owl (talking: main.js says InteractionStarted on the way), a place
+      SB.meet('chicken', hero);
+      const owl = G.interactables.find(i => i.id === 'npc_owl'); hero.place(owl.x + 1.2, owl.z); G.goAndDo(hero, owl);
+      for (let k = 0; k < 20 && !SB.has('owl', hero); k++) { await wait(200); if (k > 4) G.paused = false; }
+      document.querySelectorAll('.storybook, .dialog, .modal, .reward').forEach(e => e.remove()); G.paused = false;
+      hero.place(W.VILLAGE.x, W.VILLAGE.z + 6); for (let k = 0; k < 20 && !SB.has('place_village', hero); k++) { await wait(250); document.querySelectorAll('.storybook, .dialog, .modal, .reward').forEach(e => e.remove()); G.paused = false; }
+      document.querySelectorAll('.storybook, .dialog, .modal, .reward').forEach(e => e.remove()); G.paused = false;
+      // something an older system keeps (a postcard) is read within a few seconds and gets its New! badge
+      p.postcards.opera = true; for (let k = 0; k < 16 && !SB.has('pc_opera', hero); k++) await wait(250);
+      out.earned = ['hen', 'owl', 'place_village', 'pc_opera'].filter(id => SB.has(id, hero));
+      await wait(2300);
+      out.fresh = SB.freshIds(hero).sort(); out.bagBadge = document.querySelector('.dk.bag .stk-count')?.textContent || '';
+      // the book: Farm friends, 3 x 3
+      G.openPad(0, 'album'); await wait(500);
+      const q = s => document.querySelector(s), qa = s => [...document.querySelectorAll(s)];
+      const farmTab = q('.stk-tabs [data-th=farm]'); if (!farmTab.classList.contains('on')) { farmTab.click(); await wait(300); }
+      out.tabs = qa('.stk-tabs [data-th]').length; out.tiles = qa('.stk-grid .stk-tile').length;
+      out.count = q('.stk-got')?.textContent.trim(); out.bar = q('.stk-bar i')?.style.width; out.title = q('.stk-title')?.textContent.trim();
+      out.padTabBadge = q('.pad-tabs [data-t=album] .stk-count')?.textContent || '';
+      out.missing = qa('.stk-tile.miss').map(t => !!t.querySelector('.stk-q') && t.querySelector('.stk-hint').textContent.trim().length > 0).every(Boolean);
+      out.newOnHen = !!q('[data-sid=hen] .stk-new');
+      const rect = e => e.getBoundingClientRect(), minTab = Math.min(...qa('.stk-tabs button').map(e => Math.min(rect(e).width, rect(e).height)));
+      const minTile = Math.min(...qa('.stk-tile').map(e => Math.min(rect(e).width, rect(e).height)));
+      out.sizes = { minTab: Math.round(minTab), minTile: Math.round(minTile) };
+      out.inView = qa('.stk-tile').every(e => rect(e).left >= 0 && rect(e).right <= innerWidth + 1);
+      // tapping a sticker: its name (both languages: the chosen one and the other) and the New! badge goes
+      said.length = 0; q('[data-sid=hen]').click(); await wait(900);
+      out.henSaid = said.slice(); out.henSeen = !SB.freshIds(hero).includes('hen') && !q('[data-sid=hen] .stk-new');
+      // tapping a missing one says its hint
+      said.length = 0; const miss = q('.stk-tile.miss'); const missId = miss.dataset.miss; miss.click(); await wait(400);
+      const hint = C.BY_ID[missId].hint; out.hintSaid = said.some(t => t.includes(lang === 'vi' ? hint[1] : hint[0]));
+      // a full page: a golden frame, the song and a decoration for the house (once)
+      C.PAGES.find(x => x.key === 'farm.0').stickers.forEach(s => SB.give(s.id, hero, { quiet: true }));
+      farmTab.click(); await wait(500);
+      out.full = { won: !!q('.stk-page.won'), frame: !!q('.stk-prize.won .stk-frame'), song: !!q('.stk-song'), decor: (p.keepsakes || []).includes('sb_farm_0') && !!MH.DECOR.sb_farm_0, count: q('.stk-got')?.textContent.trim() };
+      // an empty page gets its welcome sticker (STK-3)
+      q('.stk-tabs [data-th=rare]').click(); await wait(500);
+      out.rareCount = q('.stk-got')?.textContent.trim(); out.rareStarter = SB.has(C.PAGES.find(x => x.key === 'rare.0').stickers.find(s => s.starter).id, hero);
+      // a page further on: the arrows (Places in Vietnam has 5 pages)
+      q('.stk-tabs [data-th=vietnam]').click(); await wait(400); q('.stk-next').click(); await wait(400);
+      out.page2 = q('.stk-title small')?.textContent.trim();
+      // a sticker earned again can turn shiny (1 in 20; here the dice says so)
+      SB.give('hen', hero, { rnd: () => 0, quiet: true }); q('.stk-tabs [data-th=farm]').click(); await wait(400);
+      out.shiny = !!q('[data-sid=hen].shiny');
+      out.lang = { tab: q('.stk-tabs [data-th=farm] small').textContent.trim(), title: q('.stk-title').textContent.trim() };
+      S.settings.voice = false; delete window.__svVoiceLog; V.spoken.splice(V.spoken.indexOf(sayRec), 1);
+      return out;
+    }, [age, lang]);
+    const errs = P.errors; await P.ctx.close();
+    const want = age === 'little' ? 64 : 56;
+    ok(!r.bad.length, 'ways to earn that do not exist: ' + r.bad.slice(0, 12).join(', '));
+    ok(r.earned.length === 4, 'earned: ' + JSON.stringify(r.earned));
+    ok(['hen', 'owl', 'pc_opera', 'place_village'].every(id => r.fresh.includes(id)) && +r.bagBadge >= 4 && +r.padTabBadge >= 4, 'New! badges: ' + JSON.stringify([r.fresh, r.bagBadge, r.padTabBadge]));
+    ok(r.tabs === 10 && r.tiles === 9 && /^\d \/ 9$/.test(r.count) && r.bar && r.missing && r.newOnHen, 'the page: ' + JSON.stringify(r));
+    ok(r.sizes.minTab >= want && r.sizes.minTile >= want && r.inView, `sizes (at least ${want} px): ` + JSON.stringify(r.sizes) + ' in view ' + r.inView);
+    const other = lang === 'vi' ? 'en:Hen' : 'vi:Gà mái', mine = lang === 'vi' ? 'vi:Gà mái' : 'en:Hen';
+    ok(r.henSaid.includes(mine) && r.henSaid.includes(other) && r.henSeen, 'tap: both names said and the badge gone: ' + JSON.stringify(r.henSaid));
+    ok(r.hintSaid, 'a missing sticker says its hint');
+    ok(r.full.won && r.full.frame && r.full.song && r.full.decor && r.full.count === '9 / 9', 'full page: ' + JSON.stringify(r.full));
+    ok(r.rareCount === '1 / 9' && r.rareStarter, 'empty page welcome: ' + r.rareCount);
+    ok(r.page2 === '2/5', 'page arrows: ' + r.page2);
+    ok(r.shiny, 'shiny copy');
+    ok(lang === 'vi' ? r.lang.tab === 'Nông trại' && r.lang.title.startsWith('Bạn nông trại') : r.lang.tab === 'Farm' && r.lang.title.startsWith('Farm friends'), 'language: ' + JSON.stringify(r.lang));
+    ok(!errs.length, errs.join(' | '));
+    notes.push(`${age === 'little' ? 'under-5 phone EN' : 'big kid computer VI'}: tabs ${r.sizes.minTab} px, tiles ${r.sizes.minTile} px`);
+  }
+  // (S6) a new child: Grandpa Owl's sticker and the place they start in within seconds, a hen by 3 minutes of play
+  { const P = await open(b, { w: 900, h: 700, pre: () => { try { const a = JSON.parse(localStorage.getItem('sv2_profiles') || '[]'); a.forEach(p => { delete p.stickerBook; }); localStorage.setItem('sv2_profiles', JSON.stringify(a)); } catch (e) { } } });
+    const r = await P.page.evaluate(async () => { const G = __sv, h = G.heroes[0], wait = ms => new Promise(r => setTimeout(r, ms)), SB = await import('/js/stickers.js'), C = await import('/js/content/stickers.js');
+      for (let k = 0; k < 40 && !SB.has('owl', h); k++) { await wait(500); document.querySelectorAll('.storybook, .dialog, .modal, .reward').forEach(e => e.remove()); G.paused = false; }
+      const soon = C.FIRST_THREE.filter(id => SB.has(id, h)); G.stickerFx().firstMinutes.played = 180; await wait(5600);
+      return { soon, later: C.FIRST_THREE.filter(id => SB.has(id, h)) }; });
+    const errs = P.errors; await P.ctx.close();
+    ok(r.soon.includes('owl') && r.soon.includes('place_plateau') && r.later.length === 3 && !errs.length, 'first minutes: ' + JSON.stringify(r) + errs.join(' | '));
+    notes.push('first minutes: ' + r.later.join(', ')); }
+  return 'earning (animal, talking, place, an older system), New! badges, 3 x 3 page, hints, both names, full page prize, welcome sticker, shiny; ' + notes.join('; ');
+});
 await b.close();
 const failed = results.filter(r => !r[1]);
 console.log(`\n${results.length - failed.length}/${results.length} checks passed`);

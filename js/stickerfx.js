@@ -90,27 +90,24 @@ export function createStickerFx(G, { BOOK_LINES, FIRST_THREE }) {
         G.save && G.save();
       }
       if (first) G.save && G.save();
-      badge(h); known.set(p, true);
+      badge(h); if (!known.has(p)) known.set(p, Date.now());
+      // (S6) about 8 seconds after a child starts playing: Grandpa Owl's welcome sticker, once per child
+      if (Date.now() - known.get(p) > 7000 && !G.paused) firstMinutes(h);
     }
   };
   setInterval(poll, 2000);
 
   // ---- the first minutes (S6, STK-3): Grandpa Owl's sticker, the first place, a hen ----
-  const firstMinutes = () => {
-    for (const h of G.heroes) {
-      const p = h.profile; if (!p || !p.stickerBook) continue;
-      const b = book(p); if (b.welcomed) continue;
-      b.welcomed = Date.now();
-      // a new child (nothing in the book yet): Grandpa Owl gives his own sticker as a welcome
-      if (!Object.keys(b.got).length || !b.got.owl) give(FIRST_THREE[0], h);
-    }
-  };
-  setTimeout(() => { poll(); firstMinutes(); }, 8000);
+  function firstMinutes(h) {
+    const p = h.profile, b = book(p); if (b.welcomed) return;
+    b.welcomed = Date.now();
+    if (!b.got[FIRST_THREE[0]]) give(FIRST_THREE[0], h); // Grandpa Owl gives his own sticker as a welcome
+  }
   // a hen comes to say hello near the start if the child has not met one after 3 minutes of play
-  let played = 0;
+  const fm = { played: 0 }; // (seconds of play; tests/run.mjs moves it on)
   setInterval(() => {
-    if (G.paused) return; played += 5;
-    if (played < 180 || played > 300) return;
+    if (G.paused) return; fm.played += 5;
+    if (fm.played < 180 || fm.played > 300) return;
     for (const h of G.heroes) if (h.profile && h.profile.stickerBook && !book(h.profile).got.hen && !book(h.profile).henCame) {
       book(h.profile).henCame = Date.now(); G.save && G.save();
       G.fx && G.fx(h.pos.x + 1.2, h.pos.y + 1, h.pos.z + 1.2, '🐔'); SFX.cluck && SFX.cluck();
@@ -118,6 +115,6 @@ export function createStickerFx(G, { BOOK_LINES, FIRST_THREE }) {
     }
   }, 5000);
 
-  return { earned, badges, poll };
+  return { earned, badges, poll, firstMinutes: fm };
 }
 export { STICKERS };

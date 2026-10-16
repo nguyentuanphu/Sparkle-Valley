@@ -116,6 +116,7 @@ export function attach(game) {
   G = game;
   if (typeof window === 'undefined') return;
   G.stickerBadges = () => fx && fx.badges(); // (the Pad calls it when a New! badge goes)
+  G.stickerFx = () => fx; // (tests)
   import('./stickerfx.js').then(m => { fx = m.createStickerFx(G, { BOOK_LINES, FIRST_THREE }); }).catch(e => console.warn('sticker effects', e));
 }
 /** a tap on an animal in the valley (js/fun.js): its kind from js/animals.js, or 'duck', 'chicken', 'butterfly', 'bird' */
@@ -125,7 +126,7 @@ export function meet(kind, hero, from) {
 /** something a child did at an interactable (InteractionStarted): talking to someone, a ferry, a hutch */
 export function acted(itId, hero) {
   if (!itId) return;
-  for (const s of STICKERS) if (s.earn.some(w => w.act === itId || (w.act.endsWith('*') && itId.startsWith(w.act.slice(0, -1))))) give(s.id, hero);
+  for (const s of STICKERS) if (s.earn.some(w => w.act && (w.act === itId || (w.act.endsWith('*') && itId.startsWith(w.act.slice(0, -1)))))) give(s.id, hero);
 }
 /** the pages, for the book's screen */
 export { PAGES, THEMES, BY_ID };

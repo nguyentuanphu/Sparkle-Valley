@@ -18,6 +18,7 @@ const SONG_KEYS = [...fs.readFileSync(new URL('../../js/content/songs.js', impor
 const both = a => Array.isArray(a) && a.length === 2 && a.every(x => typeof x === 'string' && x.trim().length > 0);
 
 test('the ten themes the owner named, each with a colour, a prize song and a house decoration', () => {
+  for (const t of THEMES) assert.ok(both(t.tab) && t.tab.every(w => w.length <= 10), t.id + ' a short tab word in both languages');
   assert.deepEqual(THEMES.map(t => t.id), ['farm', 'wild', 'dishes', 'fruit', 'treasure', 'vietnam', 'world', 'festivals', 'friends', 'rare']);
   for (const t of THEMES) {
     assert.match(t.color, /^#[0-9a-f]{6}$/i, t.id); assert.ok(hasArt(t.icon), t.id + ' tab picture');
@@ -115,4 +116,10 @@ test('a full page and its prize, and a page that would be empty gets its welcome
   const prize = book.claimPrize(page, p); assert.ok(prize && prize.decor && prize.song, 'a decoration and a song');
   assert.ok(p.keepsakes.includes(prize.decor), 'the decoration is in the house chooser');
   assert.equal(book.claimPrize(page, p), null, 'once');
+});
+test('talking to someone and tapping an animal give their stickers (acted, meet)', () => {
+  const p = kid();
+  book.acted('npc_owl', p); assert.equal(book.has('owl', p), true);
+  book.acted('nothing_here', p); book.meet('chicken', p); assert.equal(book.has('hen', p), true);
+  book.meet('duck', p); assert.equal(book.has('duck', p), true);
 });
