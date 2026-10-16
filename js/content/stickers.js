@@ -3,7 +3,7 @@
 // Rules (STK-1 to STK-6, docs/ui-redesign-20261016/README.md): pages of exactly 9 (3 x 3), one theme each. A theme may
 // have several pages (owner, 16 Oct: "nothing lost": 55 postcards and 22 places need more than one page of 9).
 //
-// THEMES   { id, color (the tab), icon, en, vi, song (a key of SONG_LIST, its prize song), decor [icon, en, vi] }
+// THEMES   { id, tab [en, vi] (the tab's short word), color (the tab), icon, en, vi, song (a key of SONG_LIST, its prize song), decor [icon, en, vi] }
 // STICKERS { id, theme, icon (a drawing in js/art.js), en, vi, hint [en, vi] (where to find it, spoken on tap),
 //            earn [ ...ways ], sound (an SFX name in js/audio.js), starter (the page's welcome sticker: STK-3) }
 // A way to earn one is something the game already does and keeps:
@@ -22,16 +22,16 @@
 //   { act: 'npc_owl' }    talking to someone or doing something there (InteractionStarted; 'ferry*' = any ferry)
 
 export const THEMES = [
-  { id: 'farm', color: '#43c463', icon: '🐃', en: 'Farm friends', vi: 'Bạn nông trại', song: 'farm', decor: ['🐃', 'Golden frame: farm friends', 'Khung vàng: bạn nông trại'] },
-  { id: 'wild', color: '#2e9e5b', icon: '🐼', en: 'Wild animals', vi: 'Thú hoang dã', song: 'folk', decor: ['🐼', 'Golden frame: wild animals', 'Khung vàng: thú hoang dã'] },
-  { id: 'dishes', color: '#ffb020', icon: '🍲', en: 'Yummy dishes', vi: 'Món ngon', song: 'village2', decor: ['🍲', 'Golden frame: yummy dishes', 'Khung vàng: món ngon'] },
-  { id: 'fruit', color: '#ff6fae', icon: '🌸', en: 'Fruit and flowers', vi: 'Hoa và quả', song: 'vn_sang', decor: ['🌸', 'Golden frame: fruit and flowers', 'Khung vàng: hoa và quả'] },
-  { id: 'treasure', color: '#c98a1a', icon: '💎', en: 'Treasures', vi: 'Báu vật', song: 'twinkle', decor: ['💎', 'Golden frame: treasures', 'Khung vàng: báu vật'] },
-  { id: 'vietnam', color: '#e8433a', icon: '🪷', en: 'Places in Vietnam', vi: 'Nơi chốn Việt Nam', song: 'village', decor: ['🪷', 'Golden frame: Vietnam', 'Khung vàng: Việt Nam'] },
-  { id: 'world', color: '#29b6f6', icon: '🦘', en: 'Australia and the world', vi: 'Nước Úc và thế giới', song: 'ausday', decor: ['🦘', 'Golden frame: Australia and the world', 'Khung vàng: nước Úc và thế giới'] },
-  { id: 'festivals', color: '#8a5cf6', icon: '🏮', en: 'Festivals', vi: 'Lễ hội', song: 'trungthu1', decor: ['🏮', 'Golden frame: festivals', 'Khung vàng: lễ hội'] },
-  { id: 'friends', color: '#ff8a3d', icon: '🦉', en: 'Friends and family', vi: 'Bạn bè và gia đình', song: 'pond', decor: ['🦉', 'Golden frame: friends and family', 'Khung vàng: bạn bè và gia đình'] },
-  { id: 'rare', color: '#5b6ee8', icon: '🌈', en: 'Rare and shiny', vi: 'Hiếm và lấp lánh', song: 'trungthu2', decor: ['🌈', 'Golden frame: rare and shiny', 'Khung vàng: hiếm và lấp lánh'] }
+  { id: 'farm', tab: ['Farm', 'Nông trại'], color: '#43c463', icon: '🐃', en: 'Farm friends', vi: 'Bạn nông trại', song: 'farm', decor: ['🐃', 'Golden frame: farm friends', 'Khung vàng: bạn nông trại'] },
+  { id: 'wild', tab: ['Wild', 'Hoang dã'], color: '#2e9e5b', icon: '🐼', en: 'Wild animals', vi: 'Thú hoang dã', song: 'folk', decor: ['🐼', 'Golden frame: wild animals', 'Khung vàng: thú hoang dã'] },
+  { id: 'dishes', tab: ['Food', 'Món ăn'], color: '#ffb020', icon: '🍲', en: 'Yummy dishes', vi: 'Món ngon', song: 'village2', decor: ['🍲', 'Golden frame: yummy dishes', 'Khung vàng: món ngon'] },
+  { id: 'fruit', tab: ['Fruit', 'Hoa quả'], color: '#ff6fae', icon: '🌸', en: 'Fruit and flowers', vi: 'Hoa và quả', song: 'vn_sang', decor: ['🌸', 'Golden frame: fruit and flowers', 'Khung vàng: hoa và quả'] },
+  { id: 'treasure', tab: ['Treasure', 'Báu vật'], color: '#c98a1a', icon: '💎', en: 'Treasures', vi: 'Báu vật', song: 'twinkle', decor: ['💎', 'Golden frame: treasures', 'Khung vàng: báu vật'] },
+  { id: 'vietnam', tab: ['Vietnam', 'Việt Nam'], color: '#e8433a', icon: '🪷', en: 'Places in Vietnam', vi: 'Nơi chốn Việt Nam', song: 'village', decor: ['🪷', 'Golden frame: Vietnam', 'Khung vàng: Việt Nam'] },
+  { id: 'world', tab: ['World', 'Thế giới'], color: '#29b6f6', icon: '🦘', en: 'Australia and the world', vi: 'Nước Úc và thế giới', song: 'ausday', decor: ['🦘', 'Golden frame: Australia and the world', 'Khung vàng: nước Úc và thế giới'] },
+  { id: 'festivals', tab: ['Festivals', 'Lễ hội'], color: '#8a5cf6', icon: '🏮', en: 'Festivals', vi: 'Lễ hội', song: 'trungthu1', decor: ['🏮', 'Golden frame: festivals', 'Khung vàng: lễ hội'] },
+  { id: 'friends', tab: ['Friends', 'Bạn bè'], color: '#ff8a3d', icon: '🦉', en: 'Friends and family', vi: 'Bạn bè và gia đình', song: 'pond', decor: ['🦉', 'Golden frame: friends and family', 'Khung vàng: bạn bè và gia đình'] },
+  { id: 'rare', tab: ['Rare', 'Hiếm'], color: '#5b6ee8', icon: '🌈', en: 'Rare and shiny', vi: 'Hiếm và lấp lánh', song: 'trungthu2', decor: ['🌈', 'Golden frame: rare and shiny', 'Khung vàng: hiếm và lấp lánh'] }
 ];
 
 // the hint every older reward sticker shares (one recorded line)

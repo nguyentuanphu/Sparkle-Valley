@@ -115,6 +115,7 @@ function save() { if (G && G.save) G.save(); }
 export function attach(game) {
   G = game;
   if (typeof window === 'undefined') return;
+  G.stickerBadges = () => fx && fx.badges(); // (the Pad calls it when a New! badge goes)
   import('./stickerfx.js').then(m => { fx = m.createStickerFx(G, { BOOK_LINES, FIRST_THREE }); }).catch(e => console.warn('sticker effects', e));
 }
 /** a tap on an animal in the valley (js/fun.js): its kind from js/animals.js, or 'duck', 'chicken', 'butterfly', 'bird' */

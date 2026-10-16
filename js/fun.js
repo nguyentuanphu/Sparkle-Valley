@@ -7,6 +7,7 @@ import { say } from './voice.js';
 import { SFX, noise } from './audio.js';
 import { settings, saveProfiles } from './state.js';
 import { STICKERS } from './data.js';
+import { meet } from './stickers.js'; // (the sticker book, chat B 16 Oct: tapping an animal)
 import { PLACES, placeStickers } from './placebook.js';
 import { el, esc, pick, flip } from './util.js';
 import { modal } from './popups.js';
@@ -34,11 +35,13 @@ export function createFun(G) {
     if (o.isInstancedMesh && hit.instanceId != null) {
       const k = o.userData.kind; wobbles.push({ im: o, i: hit.instanceId, t: 0 });
       noise(.35, { freq: 1800, vol: .06, q: .6 }); G.fx(hit.point.x, hit.point.y + .5, hit.point.z, LEAF[k] || '🍃');
-      if ((k === 'round' || k === 'pine') && Math.random() < .3) setTimeout(() => G.fx(hit.point.x, hit.point.y + 2, hit.point.z, '🐦'), 250);
+      if ((k === 'round' || k === 'pine') && Math.random() < .3) setTimeout(() => { G.fx(hit.point.x, hit.point.y + 2, hit.point.z, '🐦'); meet('bird', h); }, 250); // (a little bird: a sticker, js/stickers.js)
       return true;
     }
     // a duck, chicken or butterfly
-    if (o.userData.critter) { const c = o.userData.critter; c.boost = 1.4; (c.water ? SFX.quack : c.fly ? SFX.squeak : SFX.cluck)(); G.fx(o.position.x, o.position.y + .8, o.position.z, c.fly ? '✨' : '💨'); return true; }
+    if (o.userData.critter) { const c = o.userData.critter; c.boost = 1.4; meet(c.water ? 'duck' : c.fly ? 'butterfly' : 'chicken', h); (c.water ? SFX.quack : c.fly ? SFX.squeak : SFX.cluck)(); G.fx(o.position.x, o.position.y + .8, o.position.z, c.fly ? '✨' : '💨'); return true; }
+    // an animal of js/animals.js: its sticker (the sticker book, js/stickers.js)
+    { let r = hit.object; while (r && !r.userData.rig && r.parent) r = r.parent; if (r && r.userData.rig) meet(r.userData.rig.kind, h); }
     while (o && !o.userData.react && !o.userData.avatar && o.parent && o.parent !== scene) o = o.parent;
     if (o && o.userData.react) { o.userData.react(h, hit); return true; }
     if (o && o.userData.avatar) {
