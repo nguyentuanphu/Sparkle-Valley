@@ -274,6 +274,12 @@ async function sweepDevice(b, dev) {
     ['tap answer 1', '.gl .gl-stage button >> nth=0'], ['tap answer 2', '.gl .gl-stage button >> nth=1'], ['tap answer 3', '.gl .gl-stage button >> nth=2'], ['tap answer 1 again', '.gl .gl-stage button >> nth=0']], { waitFor: '.gl:not(.out)' });
   if (R.panels['game-frame']) R.panels['game-frame'].game = gameId;
   await reset();
+  // (r79 learning) SV_GAMES=sayfind,marketcount sweeps those games' screens too: three taps, then a wrong-answer explanation
+  for (const id of (process.env.SV_GAMES || '').split(',').filter(Boolean)) {
+    await panel('game-' + id, [['layer', '.gl'], ['head', '.gl .gl-head'], ['guidance line', '.gl .gl-help'], ['stage', '.gl .gl-stage']], () => G(id => { window.__sv.playGame(0, id, 'hub'); }, id), [
+      ['tap 1', '.gl .gl-stage button >> nth=0'], ['tap 2', '.gl .gl-stage button >> nth=1'], ['tap 3', '.gl .gl-stage button >> nth=2'], ['tap 4', '.gl .gl-stage button >> nth=3'], ['hear again', '.gl .bt-repeat']], { waitFor: '.gl:not(.out)' });
+    await reset();
+  }
   // ---------- How to play ----------
   await panel('how-to-play', [['film', '.howto .ht-film'], ['controls', '.howto .ht-ctl'], ['words', '.howto .ht-cap'], ['close', '.howto .ht-x']], () => G(async id => { (await import('/js/howto.js')).openHowTo(id, {}); }, gameId), [
     ['next', '.howto .ht-next'], ['next 2', '.howto .ht-next'], ['pause', '.howto .ht-pp'], ['play', '.howto .ht-pp'], ['back', '.howto .ht-prev'], ['next 3', '.howto .ht-next']]);

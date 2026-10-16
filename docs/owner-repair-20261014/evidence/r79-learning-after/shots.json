@@ -1,0 +1,646 @@
+[
+  {
+    "file": "phone-en-rulefinder-under5.png",
+    "choices": 3,
+    "help": "These belong together. Find another picture that follows the same rule."
+  },
+  {
+    "file": "phone-en-rulefinder-easy.png",
+    "choices": 4,
+    "help": "These belong together. Find another picture that follows the same rule."
+  },
+  {
+    "file": "phone-en-rulefinder-hard.png",
+    "choices": 5,
+    "help": "These belong together. Find another picture that follows the same rule."
+  },
+  {
+    "file": "phone-en-gardenorder-under5.png",
+    "choices": 5,
+    "help": "What happens first?"
+  },
+  {
+    "file": "phone-en-gardenorder-easy.png",
+    "choices": 6,
+    "help": "What happens first?"
+  },
+  {
+    "file": "phone-en-gardenorder-hard.png",
+    "choices": 7,
+    "help": "What happens first?"
+  },
+  {
+    "file": "phone-en-steppingpath-under5.png",
+    "choices": 3,
+    "help": "Follow neighbouring flowers to reach the flag. Avoid the puddles."
+  },
+  {
+    "file": "phone-en-steppingpath-easy.png",
+    "choices": 3,
+    "help": "Follow neighbouring flowers to reach the flag. Avoid the puddles."
+  },
+  {
+    "file": "phone-en-steppingpath-hard.png",
+    "choices": 3,
+    "help": "Some flowers stop at a puddle. Find the flowers that go all the way to the flag."
+  },
+  {
+    "file": "phone-en-remembergarden-under5.png",
+    "choices": 5,
+    "help": "Look at the garden pictures. Put them back in the same order. You can see them again whenever you need."
+  },
+  {
+    "file": "phone-en-remembergarden-easy.png",
+    "choices": 2,
+    "help": "Look at the garden pictures. Put them back in the same order. You can see them again whenever you need."
+  },
+  {
+    "file": "phone-en-remembergarden-hard.png",
+    "choices": 2,
+    "help": "Look at the garden pictures. Put them back in the same order. You can see them again whenever you need."
+  },
+  {
+    "file": "phone-en-patternpicnic-under5.png",
+    "choices": 3,
+    "help": "Listen and look at the pattern. Choose the picture that comes next."
+  },
+  {
+    "file": "phone-en-patternpicnic-easy.png",
+    "choices": 4,
+    "help": "Listen and look at the pattern. Choose the picture that comes next."
+  },
+  {
+    "file": "phone-en-patternpicnic-hard.png",
+    "choices": 5,
+    "help": "Listen and look at the pattern. Choose the picture that comes next."
+  },
+  {
+    "file": "phone-en-shapebuilders-under5.png",
+    "choices": 5,
+    "help": "Choose the shape that matches the outline."
+  },
+  {
+    "file": "phone-en-shapebuilders-easy.png",
+    "choices": 6,
+    "help": "Choose the shape that matches the outline."
+  },
+  {
+    "file": "phone-en-shapebuilders-hard.png",
+    "choices": 6,
+    "help": "Choose the shape that matches the outline."
+  },
+  {
+    "file": "phone-en-sayfind-under5.png",
+    "choices": 4,
+    "help": "Where is the fish?"
+  },
+  {
+    "file": "phone-en-sayfind-easy.png",
+    "choices": 6,
+    "help": "Where is the bicycle?"
+  },
+  {
+    "file": "phone-en-sayfind-hard.png",
+    "choices": 8,
+    "help": "Where is the big dog?"
+  },
+  {
+    "file": "phone-en-marketcount-under5.png",
+    "choices": 8,
+    "help": "Put 3 oranges in the basket."
+  },
+  {
+    "file": "phone-en-marketcount-easy.png",
+    "choices": 7,
+    "help": "Put 2 strawberries in the basket."
+  },
+  {
+    "file": "phone-en-marketcount-hard.png",
+    "choices": 8,
+    "help": "There are 3 apples. Add 2 more."
+  },
+  {
+    "file": "phone-en-feelings-under5.png",
+    "choices": 3,
+    "help": "Someone knocked down Lá’s tower. How does Lá feel?"
+  },
+  {
+    "file": "phone-en-feelings-easy.png",
+    "choices": 5,
+    "help": "Lá’s balloon flew away. How does Lá feel?"
+  },
+  {
+    "file": "phone-en-feelings-hard.png",
+    "choices": 5,
+    "help": "Lá’s brother took her toy without asking. How does Lá feel?"
+  },
+  {
+    "file": "phone-en-soundhunt-under5.png",
+    "choices": 3,
+    "help": "s… star! Find every picture that starts like star."
+  },
+  {
+    "file": "phone-en-soundhunt-easy.png",
+    "choices": 5,
+    "help": "s… sock! Find every picture that starts like sock."
+  },
+  {
+    "file": "phone-en-soundhunt-hard.png",
+    "choices": 5,
+    "help": "…g: dog! Find every picture that ends like dog."
+  },
+  {
+    "file": "phone-en-reward-banner.png",
+    "banners": 1
+  },
+  {
+    "file": "phone-en-win.png"
+  },
+  {
+    "layout": "phone-en",
+    "errors": []
+  },
+  {
+    "file": "phone-vi-rulefinder-under5.png",
+    "choices": 3,
+    "help": "Các hình này cùng một nhóm. Tìm thêm hình theo cùng quy luật."
+  },
+  {
+    "file": "phone-vi-rulefinder-easy.png",
+    "choices": 4,
+    "help": "Các hình này cùng một nhóm. Tìm thêm hình theo cùng quy luật."
+  },
+  {
+    "file": "phone-vi-rulefinder-hard.png",
+    "choices": 5,
+    "help": "Các hình này cùng một nhóm. Tìm thêm hình theo cùng quy luật."
+  },
+  {
+    "file": "phone-vi-gardenorder-under5.png",
+    "choices": 5,
+    "help": "Việc gì xảy ra trước tiên?"
+  },
+  {
+    "file": "phone-vi-gardenorder-easy.png",
+    "choices": 6,
+    "help": "Việc gì xảy ra trước tiên?"
+  },
+  {
+    "file": "phone-vi-gardenorder-hard.png",
+    "choices": 7,
+    "help": "Việc gì xảy ra trước tiên?"
+  },
+  {
+    "file": "phone-vi-steppingpath-under5.png",
+    "choices": 3,
+    "help": "Theo những bông hoa cạnh nhau đến lá cờ. Tránh vũng nước."
+  },
+  {
+    "file": "phone-vi-steppingpath-easy.png",
+    "choices": 3,
+    "help": "Theo những bông hoa cạnh nhau đến lá cờ. Tránh vũng nước."
+  },
+  {
+    "file": "phone-vi-steppingpath-hard.png",
+    "choices": 3,
+    "help": "Có hoa dẫn đến vũng nước. Tìm đường hoa đi đến tận lá cờ."
+  },
+  {
+    "file": "phone-vi-remembergarden-under5.png",
+    "choices": 5,
+    "help": "Nhìn các hình trong vườn. Chọn lại theo đúng thứ tự. Con có thể xem lại bất cứ lúc nào."
+  },
+  {
+    "file": "phone-vi-remembergarden-easy.png",
+    "choices": 2,
+    "help": "Nhìn các hình trong vườn. Chọn lại theo đúng thứ tự. Con có thể xem lại bất cứ lúc nào."
+  },
+  {
+    "file": "phone-vi-remembergarden-hard.png",
+    "choices": 2,
+    "help": "Nhìn các hình trong vườn. Chọn lại theo đúng thứ tự. Con có thể xem lại bất cứ lúc nào."
+  },
+  {
+    "file": "phone-vi-patternpicnic-under5.png",
+    "choices": 3,
+    "help": "Nghe và nhìn quy luật. Chọn hình tiếp theo."
+  },
+  {
+    "file": "phone-vi-patternpicnic-easy.png",
+    "choices": 4,
+    "help": "Nghe và nhìn quy luật. Chọn hình tiếp theo."
+  },
+  {
+    "file": "phone-vi-patternpicnic-hard.png",
+    "choices": 5,
+    "help": "Nghe và nhìn quy luật. Chọn hình tiếp theo."
+  },
+  {
+    "file": "phone-vi-shapebuilders-under5.png",
+    "choices": 5,
+    "help": "Chọn hình khối giống nét viền."
+  },
+  {
+    "file": "phone-vi-shapebuilders-easy.png",
+    "choices": 6,
+    "help": "Chọn hình khối giống nét viền."
+  },
+  {
+    "file": "phone-vi-shapebuilders-hard.png",
+    "choices": 6,
+    "help": "Chọn hình khối giống nét viền."
+  },
+  {
+    "file": "phone-vi-sayfind-under5.png",
+    "choices": 4,
+    "help": "Con cá ở đâu?"
+  },
+  {
+    "file": "phone-vi-sayfind-easy.png",
+    "choices": 6,
+    "help": "Cái ô ở đâu?"
+  },
+  {
+    "file": "phone-vi-sayfind-hard.png",
+    "choices": 8,
+    "help": "Quả bóng to ở đâu?"
+  },
+  {
+    "file": "phone-vi-marketcount-under5.png",
+    "choices": 8,
+    "help": "Bỏ ba quả cam vào giỏ."
+  },
+  {
+    "file": "phone-vi-marketcount-easy.png",
+    "choices": 9,
+    "help": "Bỏ bốn quả xoài vào giỏ."
+  },
+  {
+    "file": "phone-vi-marketcount-hard.png",
+    "choices": 9,
+    "help": "Có bốn quả dâu. Bỏ thêm hai quả nữa."
+  },
+  {
+    "file": "phone-vi-feelings-under5.png",
+    "choices": 3,
+    "help": "Bóng bay của Lá bay mất rồi. Lá cảm thấy thế nào?"
+  },
+  {
+    "file": "phone-vi-feelings-easy.png",
+    "choices": 5,
+    "help": "Cún con liếm mặt Lá. Lá cảm thấy thế nào?"
+  },
+  {
+    "file": "phone-vi-feelings-hard.png",
+    "choices": 5,
+    "help": "Cầu vồng hiện ra sau cơn mưa. Lá cảm thấy thế nào?"
+  },
+  {
+    "file": "phone-vi-soundhunt-under5.png",
+    "choices": 3,
+    "help": "t… tivi! Tìm những hình bắt đầu giống “tivi”."
+  },
+  {
+    "file": "phone-vi-soundhunt-easy.png",
+    "choices": 5,
+    "help": "h… hoa! Tìm những hình bắt đầu giống “hoa”."
+  },
+  {
+    "file": "phone-vi-soundhunt-hard.png",
+    "choices": 5,
+    "help": "dừa… dấu huyền! Tìm những hình có dấu huyền như “dừa”."
+  },
+  {
+    "file": "phone-vi-reward-banner.png",
+    "banners": 1
+  },
+  {
+    "file": "phone-vi-win.png"
+  },
+  {
+    "layout": "phone-vi",
+    "errors": []
+  },
+  {
+    "file": "tablet-en-rulefinder-under5.png",
+    "choices": 3,
+    "help": "These belong together. Find another picture that follows the same rule."
+  },
+  {
+    "file": "tablet-en-rulefinder-easy.png",
+    "choices": 4,
+    "help": "These belong together. Find another picture that follows the same rule."
+  },
+  {
+    "file": "tablet-en-rulefinder-hard.png",
+    "choices": 5,
+    "help": "These belong together. Find another picture that follows the same rule."
+  },
+  {
+    "file": "tablet-en-gardenorder-under5.png",
+    "choices": 5,
+    "help": "What happens first?"
+  },
+  {
+    "file": "tablet-en-gardenorder-easy.png",
+    "choices": 6,
+    "help": "What happens first?"
+  },
+  {
+    "file": "tablet-en-gardenorder-hard.png",
+    "choices": 7,
+    "help": "What happens first?"
+  },
+  {
+    "file": "tablet-en-steppingpath-under5.png",
+    "choices": 3,
+    "help": "Follow neighbouring flowers to reach the flag. Avoid the puddles."
+  },
+  {
+    "file": "tablet-en-steppingpath-easy.png",
+    "choices": 3,
+    "help": "Follow neighbouring flowers to reach the flag. Avoid the puddles."
+  },
+  {
+    "file": "tablet-en-steppingpath-hard.png",
+    "choices": 3,
+    "help": "Some flowers stop at a puddle. Find the flowers that go all the way to the flag."
+  },
+  {
+    "file": "tablet-en-remembergarden-under5.png",
+    "choices": 5,
+    "help": "Look at the garden pictures. Put them back in the same order. You can see them again whenever you need."
+  },
+  {
+    "file": "tablet-en-remembergarden-easy.png",
+    "choices": 2,
+    "help": "Look at the garden pictures. Put them back in the same order. You can see them again whenever you need."
+  },
+  {
+    "file": "tablet-en-remembergarden-hard.png",
+    "choices": 2,
+    "help": "Look at the garden pictures. Put them back in the same order. You can see them again whenever you need."
+  },
+  {
+    "file": "tablet-en-patternpicnic-under5.png",
+    "choices": 3,
+    "help": "Listen and look at the pattern. Choose the picture that comes next."
+  },
+  {
+    "file": "tablet-en-patternpicnic-easy.png",
+    "choices": 4,
+    "help": "Listen and look at the pattern. Choose the picture that comes next."
+  },
+  {
+    "file": "tablet-en-patternpicnic-hard.png",
+    "choices": 5,
+    "help": "Listen and look at the pattern. Choose the picture that comes next."
+  },
+  {
+    "file": "tablet-en-shapebuilders-under5.png",
+    "choices": 5,
+    "help": "Choose the shape that matches the outline."
+  },
+  {
+    "file": "tablet-en-shapebuilders-easy.png",
+    "choices": 6,
+    "help": "Choose the shape that matches the outline."
+  },
+  {
+    "file": "tablet-en-shapebuilders-hard.png",
+    "choices": 6,
+    "help": "Choose the shape that matches the outline."
+  },
+  {
+    "file": "tablet-en-sayfind-under5.png",
+    "choices": 4,
+    "help": "Where is the balloon?"
+  },
+  {
+    "file": "tablet-en-sayfind-easy.png",
+    "choices": 6,
+    "help": "Where is the bicycle?"
+  },
+  {
+    "file": "tablet-en-sayfind-hard.png",
+    "choices": 8,
+    "help": "Where is the big banana?"
+  },
+  {
+    "file": "tablet-en-marketcount-under5.png",
+    "choices": 8,
+    "help": "Put 3 bananas in the basket."
+  },
+  {
+    "file": "tablet-en-marketcount-easy.png",
+    "choices": 9,
+    "help": "Put 4 mangoes in the basket."
+  },
+  {
+    "file": "tablet-en-marketcount-hard.png",
+    "choices": 10,
+    "help": "There are 5 apples. Add 2 more."
+  },
+  {
+    "file": "tablet-en-feelings-under5.png",
+    "choices": 3,
+    "help": "Lá found a present on the doorstep. How does Lá feel?"
+  },
+  {
+    "file": "tablet-en-feelings-easy.png",
+    "choices": 5,
+    "help": "Grandma gave Lá a big hug. How does Lá feel?"
+  },
+  {
+    "file": "tablet-en-feelings-hard.png",
+    "choices": 5,
+    "help": "Lá dropped her ice cream. How does Lá feel?"
+  },
+  {
+    "file": "tablet-en-soundhunt-under5.png",
+    "choices": 3,
+    "help": "c… cow! Find every picture that starts like cow."
+  },
+  {
+    "file": "tablet-en-soundhunt-easy.png",
+    "choices": 5,
+    "help": "b… ball! Find every picture that starts like ball."
+  },
+  {
+    "file": "tablet-en-soundhunt-hard.png",
+    "choices": 5,
+    "help": "…n: train! Find every picture that ends like train."
+  },
+  {
+    "file": "tablet-en-reward-banner.png",
+    "banners": 1
+  },
+  {
+    "file": "tablet-en-win.png"
+  },
+  {
+    "layout": "tablet-en",
+    "errors": []
+  },
+  {
+    "file": "computer-en-rulefinder-under5.png",
+    "choices": 3,
+    "help": "These belong together. Find another picture that follows the same rule."
+  },
+  {
+    "file": "computer-en-rulefinder-easy.png",
+    "choices": 4,
+    "help": "These belong together. Find another picture that follows the same rule."
+  },
+  {
+    "file": "computer-en-rulefinder-hard.png",
+    "choices": 5,
+    "help": "These belong together. Find another picture that follows the same rule."
+  },
+  {
+    "file": "computer-en-gardenorder-under5.png",
+    "choices": 5,
+    "help": "What happens first?"
+  },
+  {
+    "file": "computer-en-gardenorder-easy.png",
+    "choices": 6,
+    "help": "What happens first?"
+  },
+  {
+    "file": "computer-en-gardenorder-hard.png",
+    "choices": 7,
+    "help": "What happens first?"
+  },
+  {
+    "file": "computer-en-steppingpath-under5.png",
+    "choices": 3,
+    "help": "Follow neighbouring flowers to reach the flag. Avoid the puddles."
+  },
+  {
+    "file": "computer-en-steppingpath-easy.png",
+    "choices": 3,
+    "help": "Follow neighbouring flowers to reach the flag. Avoid the puddles."
+  },
+  {
+    "file": "computer-en-steppingpath-hard.png",
+    "choices": 3,
+    "help": "Some flowers stop at a puddle. Find the flowers that go all the way to the flag."
+  },
+  {
+    "file": "computer-en-remembergarden-under5.png",
+    "choices": 5,
+    "help": "Look at the garden pictures. Put them back in the same order. You can see them again whenever you need."
+  },
+  {
+    "file": "computer-en-remembergarden-easy.png",
+    "choices": 2,
+    "help": "Look at the garden pictures. Put them back in the same order. You can see them again whenever you need."
+  },
+  {
+    "file": "computer-en-remembergarden-hard.png",
+    "choices": 2,
+    "help": "Look at the garden pictures. Put them back in the same order. You can see them again whenever you need."
+  },
+  {
+    "file": "computer-en-patternpicnic-under5.png",
+    "choices": 3,
+    "help": "Listen and look at the pattern. Choose the picture that comes next."
+  },
+  {
+    "file": "computer-en-patternpicnic-easy.png",
+    "choices": 4,
+    "help": "Listen and look at the pattern. Choose the picture that comes next."
+  },
+  {
+    "file": "computer-en-patternpicnic-hard.png",
+    "choices": 5,
+    "help": "Listen and look at the pattern. Choose the picture that comes next."
+  },
+  {
+    "file": "computer-en-shapebuilders-under5.png",
+    "choices": 5,
+    "help": "Choose the shape that matches the outline."
+  },
+  {
+    "file": "computer-en-shapebuilders-easy.png",
+    "choices": 6,
+    "help": "Choose the shape that matches the outline."
+  },
+  {
+    "file": "computer-en-shapebuilders-hard.png",
+    "choices": 6,
+    "help": "Choose the shape that matches the outline."
+  },
+  {
+    "file": "computer-en-sayfind-under5.png",
+    "choices": 4,
+    "help": "Where is the bunch of grapes?"
+  },
+  {
+    "file": "computer-en-sayfind-easy.png",
+    "choices": 6,
+    "help": "Where is the fish?"
+  },
+  {
+    "file": "computer-en-sayfind-hard.png",
+    "choices": 8,
+    "help": "Where is the big turtle?"
+  },
+  {
+    "file": "computer-en-marketcount-under5.png",
+    "choices": 6,
+    "help": "Put 1 orange in the basket."
+  },
+  {
+    "file": "computer-en-marketcount-easy.png",
+    "choices": 7,
+    "help": "Put 2 mangoes in the basket."
+  },
+  {
+    "file": "computer-en-marketcount-hard.png",
+    "choices": 10,
+    "help": "There are 5 apples. Add 2 more."
+  },
+  {
+    "file": "computer-en-feelings-under5.png",
+    "choices": 3,
+    "help": "Grandma gave Lá a big hug. How does Lá feel?"
+  },
+  {
+    "file": "computer-en-feelings-easy.png",
+    "choices": 5,
+    "help": "Lá dropped her ice cream. How does Lá feel?"
+  },
+  {
+    "file": "computer-en-feelings-hard.png",
+    "choices": 5,
+    "help": "A rainbow came out after the rain. How does Lá feel?"
+  },
+  {
+    "file": "computer-en-soundhunt-under5.png",
+    "choices": 3,
+    "help": "m… mango! Find every picture that starts like mango."
+  },
+  {
+    "file": "computer-en-soundhunt-easy.png",
+    "choices": 5,
+    "help": "d… drum! Find every picture that starts like drum."
+  },
+  {
+    "file": "computer-en-soundhunt-hard.png",
+    "choices": 5,
+    "help": "…g: dog! Find every picture that ends like dog."
+  },
+  {
+    "file": "computer-en-reward-banner.png",
+    "banners": 1
+  },
+  {
+    "file": "computer-en-win.png"
+  },
+  {
+    "layout": "computer-en",
+    "errors": []
+  }
+]
