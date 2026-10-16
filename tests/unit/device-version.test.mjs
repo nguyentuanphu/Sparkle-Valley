@@ -47,3 +47,10 @@ test('analytics reads paginated lifetime count while daily totals are still load
  assert.equal(overlapped,true,'lifetime count must not wait for all daily reads');
  assert.equal(R.allTime,3,'all pages still count'); assert.equal(R.perDay.length,30);
 });
+test('(r80) installations not seen for 30 days or more are listed by the version they last had', async () => {
+ const S = memory(), OLD = NOW - 40 * 864e5;
+ await hello(S, message({ id: 'device000002', b: 'r75', days: [{ d: new Date(OLD).toISOString().slice(0, 10), build: 'r75', m: 4 }] }), OLD);
+ await hello(S, message({ h: 'batch00000000009', b: 'r79', days: [{ d: '2026-10-14', build: 'r79', m: 6 }] }), NOW);
+ const R = await report(S, NOW);
+ assert.deepEqual(R.away30, { r75: 1 }); assert.deepEqual(R.latestBuilds, { r79: 1 });
+});

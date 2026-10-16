@@ -309,6 +309,13 @@ function bindPackStatus(card, redraw) {
   const pc = card.querySelector('#gPackCell'); if (pc) pc.onchange = () => allowMobilePack(pc.checked);
 }
 // ---------- Grown-ups ----------
+// (r80, owner 17 Oct AEDT) a game that has not reached the website for 30 days or more says so, for grown-ups only
+// (js/launch.js keeps the time): it cannot update until it has internet once
+function staleHTML() {
+  let t = 0; try { t = +localStorage.getItem('sv2_updCheck') || 0; } catch (e) { }
+  const d = t ? Math.floor((Date.now() - t) / 864e5) : 0; if (d < 30) return '';
+  return `<p class="g-stale" role="note">${T(`This game is version ${BUILD} and has not checked for a new version for ${d} days. Connect to the internet once to update. Progress stays saved.`, `Trò chơi đang là bản ${BUILD} và đã ${d} ngày chưa kiểm tra bản mới. Hãy kết nối mạng một lần để cập nhật. Tiến trình vẫn được giữ.`)}</p>`;
+}
 export function openGrownups(after) {
   // (round P, owner: arrange it so it makes sense) everything in groups that open and close; which are open is kept
   // while the page redraws
@@ -319,7 +326,7 @@ export function openGrownups(after) {
     card.innerHTML = `
       <button class="x" aria-label="${T('Close', 'Đóng')}">✕</button>
       <h2>${T('Grown-ups', 'Phụ huynh')} <small class="buildtag">${T('Build', 'Bản')} ${BUILD}</small></h2>
-      <div class="grownups-body"><div class="g-install"></div>
+      <div class="grownups-body">${staleHTML()}<div class="g-install"></div>
       ${privacyHTML()}
       ${familyTrialOn() ? familyDevicesHTML() : ''}
       <div class="toggles gcaprow">

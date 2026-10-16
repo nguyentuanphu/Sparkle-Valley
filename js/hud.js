@@ -126,7 +126,7 @@ export class Hud {
     EMOTES.forEach(e => { const b = el('button', 'em', `<span>${e.icon}</span><small>${esc(T(e.en, e.vi))}</small>`); b.onclick = () => { this.toggleEmotes(false); game.emote(i, e.id); }; em.appendChild(b); });
     this.regionT = 0; this.toastT = 0; this.last = {};
     this.refreshWho();
-    this.navWatch = new ResizeObserver(() => this.fitQuest()); this.navWatch.observe(this.q('.hud-tr'));
+    this.navWatch = new ResizeObserver(() => this.fitQuest()); this.navWatch.observe(this.q('.hud-tr')); this.navWatch.observe(this.q('.hud-tl')); this.navWatch.observe(this.q('.quest')); // (r80: the adventure card and the language change their widths)
     // (daily adventure, chat C, 16 Oct AEDT) the goal card: js/adventure.js is loaded once, for every player's HUD
     if (!game.adventure && !game._advLoad) game._advLoad = import('./adventure.js').then(m => m.createAdventure(game)).catch(e => console.warn('daily adventure', e));
   }
@@ -137,7 +137,17 @@ export class Hud {
   foldQuest() { const f = !!this.hero.profile.questFold, q = this.q('.quest'); q.classList.toggle('fold', f); this.q('.q-say').setAttribute('aria-label', f ? T('Show the goal', 'Hiện nhiệm vụ') : T('Hide the goal', 'Ẩn nhiệm vụ')); this.fitQuest(); }
   fitQuest() {
     const root = this.root, nav = this.q('.hud-tr'), quest = this.q('.quest');
-    if (!root.classList.contains('small')) { root.classList.remove('quest-below-nav'); return; }
+    // (r80, GitHub run 66: on a tablet in Vietnamese the goal row, made wider by the adventure card, sat over the Leafy
+    // chip) bigger screens: the goal row stays centred, unless that would reach the corners: then it fills the space
+    // between them (the coins and the player card on the left, the map and buttons on the right)
+    if (!root.classList.contains('small')) {
+      root.classList.remove('quest-below-nav', 'quest-gap');
+      // (its width from the layout, not from the screen: the goal row's arrival animation scales it)
+      const rr = root.getBoundingClientRect(), tl = this.q('.hud-tl').getBoundingClientRect(), tr = nav.getBoundingClientRect(), w = quest.offsetWidth, mid = root.clientWidth / 2;
+      const L = tl.right - rr.left + 12, R = tr.left - rr.left - 12;
+      if (w && (mid - w / 2 < L || mid + w / 2 > R)) { root.style.setProperty('--quest-x', Math.round((L + R) / 2) + 'px'); root.style.setProperty('--quest-gap-w', Math.max(200, Math.round(R - L)) + 'px'); root.classList.add('quest-gap'); }
+      return;
+    }
     const reserve = nav.offsetWidth + (parseFloat(getComputedStyle(nav).right) || 0) + (parseFloat(getComputedStyle(quest).left) || 0) + 14;
     root.style.setProperty('--quest-nav-reserve', reserve + 'px');
     root.style.setProperty('--quest-below-top', (nav.offsetTop + nav.offsetHeight + 12) + 'px');

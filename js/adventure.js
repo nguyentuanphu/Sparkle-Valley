@@ -352,11 +352,12 @@ export function createAdventure(G) {
     const key = [show, txt, left, timer, dots(h).join(), T('e', 'v')].join('|');
     if (card._key === key) return; card._key = key;
     q.classList.toggle('adv', show); card.hidden = !show; H.root.classList.toggle('adv-on', show);
-    if (!show) return;
+    if (!show) { H.fitQuest?.(); return; }   // (r80) the goal row's width changed: it stays clear of the corners
     card.querySelector('.adv-badge').innerHTML = pic((GIVERS[a.giver] || GIVERS.owl).icon);
     card.querySelector('.adv-text').textContent = txt + left + timer;
     card.querySelector('.adv-dots').innerHTML = dots(h).map(d => `<i class="${d}"></i>`).join('');
     card.querySelector('.adv-open').setAttribute('aria-label', tt(ADV_LINES.title));
+    H.fitQuest?.();
   }
 
   // ---------- every frame: the things bob, the way moves on, the day turns, Owl remembers ----------

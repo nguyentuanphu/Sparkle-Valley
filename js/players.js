@@ -43,7 +43,10 @@ const today = () => { const d = new Date(); return `${d.getFullYear()}-${String(
 
 // the outbox: { days: { 'YYYY-MM-DD': { m, g: {game: n}, t, o } }, pending?: { h, days[], v[] } }, kept on the device until the website has it
 const readOut = () => { try { const o = JSON.parse(localStorage.getItem(OUT) || '{}'); return o && o.days ? o : { days: {} }; } catch (e) { return { days: {} }; } };
-const writeOut = o => { const dates=[...new Set(Object.keys(o.days).map(k=>k.slice(0,10)))].sort(); const keep=new Set(dates.slice(-14));for(const k of Object.keys(o.days))if(!keep.has(k.slice(0,10)))delete o.days[k];try { localStorage.setItem(OUT, JSON.stringify(o)); } catch (e) { } };
+// (r80, owner 17 Oct AEDT: devices offline for a long time) the last 30 days played are kept until sent (was 14: a
+// device away for 3 weeks lost its first week), as many as the website takes (netlify/lib/hello-clean.mjs, 30 days);
+// they go in batches of 42 (flush)
+const writeOut = o => { const dates=[...new Set(Object.keys(o.days).map(k=>k.slice(0,10)))].sort(); const keep=new Set(dates.slice(-30));for(const k of Object.keys(o.days))if(!keep.has(k.slice(0,10)))delete o.days[k];try { localStorage.setItem(OUT, JSON.stringify(o)); } catch (e) { } };
 const bump = f => { if (settings.countPlayers === false) return; const o = readOut(), key=today()+'|'+BUILD, d = o.days[key] = o.days[key] || { build:BUILD, m: 0, g: {}, t: 0, o: 0 }; for (const k of ['h', 'c', 'e', 's', 'q']) d[k] = d[k] || {}; d.f = d.f || [0, 0, 0]; f(d); writeOut(o); };
 // one child's bucket for the day (by profile; the first name only when the family allows it)
 const kidOf = (d, p) => { const k = String(p.id || p.name || 'guest').replace(/[^\w-]/g, '').slice(0, 24) || 'guest'; const c = d.c[k] = d.c[k] || { n: '', a: '', m: 0, g: {}, p: {}, t: 0, sm: 0 }; c.n = settings.reportNames === false ? '' : String(p.name || '').trim().split(/\s+/)[0].slice(0, 20); c.a = p.age === 'big' ? 'big' : 'little'; return c; };
