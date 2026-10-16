@@ -726,7 +726,7 @@ function dressStory(S) {
       // Distant sandbars and a readable white surf line, not extra buildings.
       for(let i=0;i<3;i++){const x=-24+i*24,z=-42-i%2*12;ball(5,'#f4dfac',x,-.6,z,[1.8,.2,1]);}
       for(let i=0;i<12;i++)ball(.16,'#fff6e4',-11+i*2,-.15,12.6+Math.sin(i)*.2,[2,.3,1]);
-      if(kind!=='sea'){flowers(-8,-2,'#ffb5a0',5);rocks(7,-3,'#e8d4b3',3);} break;
+      if(kind!=='sea'){flowers(-8,kind==='coast'?9:-2,'#ffb5a0',5);rocks(7,kind==='coast'?8:-3,'#e8d4b3',3);} break;
     case 'bamboo':
       // Batch the additional bamboo into the dressing mesh: no extra draw call per leaf.
       for (const x of [-6, 7]) for (let i=0;i<5;i++) { const px=x+i*.25,h=5+i*.45; post(.075,h,'#69be70',px,h/2,-10); for(let j=1;j<5;j++) { post(.095,.06,'#a0d18a',px,j*h/5,-10); parts.push(P(Cone(.2,1.1,4),'#87cb6b',[px+.3,j*h/5+.4,-10],[0,0,-.9],[1,1,.3])); } }
