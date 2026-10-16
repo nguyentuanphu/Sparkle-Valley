@@ -1,6 +1,6 @@
 # Repair changes and verification
 
-Candidate R76, based on rejected R75, compared with approved R74. These are repair checkpoints, not completion of all 59 points.
+Candidate R77 (was R76), based on rejected R75, compared with approved R74. These are repair checkpoints, not completion of all 59 points.
 
 | Contract | Prior defect / risk | Repair | Verification |
 |---|---|---|---|
@@ -15,8 +15,19 @@ Candidate R76, based on rejected R75, compared with approved R74. These are repa
 | Screenshot privacy | Input.value could reveal masked passwords/codes | Password/file/pair-code/private fields masked in DOM and fallback | focused detector assertions; capture visible-panel test20s |
 | Retest | Done marked before pause guard actually performed test | Mark only after test runs | testerreport72s; passive error silence is still insufficient diagnosis |
 | Device builds | Offline days retagged on upload; device-days labelled devices; delayed tabs overwrite | Date/build buckets, migration unknown build, session ordering, per-tab live versions, latestBuilds | six device backend tests included in 94 unit; production/cross-tab storage races pending |
+| Update notice (point 10) | Update notice could cover an activity; two tabs could play at once | One tab plays at a time; notice small and never over an activity (662e8e3f); tab channel no longer keeps Node checks running (1abd5814) | ownerupdatenotice; unit (16 Oct, local) |
+| Gone module (point 11) | A tab open across a deploy lost later-loading parts ("Importing a module script failed"); cause traced to r74 deleting r73's files | A part that has gone offers the update: js/launch.js svModuleGone from story film and festival loaders and any uncaught import failure (8ff68b52) | ownerupdatenotice gone-module step; boot (16 Oct, local) |
+| Freeze cause (#261) | Freeze report did not say why | Report says whether the game's code ran long or the window stopped drawing (5a4d574a); rule over 1000 ms after the browser measured the 2.6 s test freeze as 1912 ms (098b5535) | testerreport, tester; Full run 40 testerreport failed, fixed in 098b5535, passed locally |
+| Daily gift ground | Gift could stand where a child cannot reach (Full run 37 solid) | Gift always on reachable ground for every day's landmark (8c182b82) | solid (16 Oct, local) |
+| Vietnamese hearts voice | Hearts line not marked Vietnamese, so the core voice pack was incomplete (Full run 37 voicearea) | Line marked Vietnamese; check every pack file is where the game looks (c67f85d2) | voicearea, voicecover (16 Oct, local) |
+| Explanations and Studio switches | Explanation boxes too big; no way to turn them off | Short notes and short voices (EN/VI), each kind with its own Studio switch for note and voice, each saying what Off does; voice question small and low (31a9996f); explain.js offline and preloaded (eaa7522d) | ownerexplainswitches, ownerheartstap, offline, preload, types; Full run 39 passed at eaa7522d; pictures evidence/explain-now-c67f85d2, evidence/explain-after |
+| Film words and How to play | Film captions too big; How to play words in a different place | Words small at the edges of the picture (d32f8795); How to play uses the story films' layout, title bar above and words in the same box under (440c7330) | films, filmstart, filmtails, filmmusic, tales, story, a11y, phone (16 Oct, local); pictures evidence/film-text-before-eaa7522d, evidence/film-text-after |
+| Family trial switch (points 39-45) | Family devices draft not ready for every family | Ships behind Studio switch familyDevices, off; on for tester devices only (608b156b); ten-step pictures (3ae10550); test taps Check approval only while shown (a1752cf8); ownerround switches the trial on (098b5535) | ownerfamily (off and on), ownerround; Full run 40 ownerround failed, fixed in 098b5535, passed locally; design pass and real Netlify test pending |
+| Daily voices | Daily recordings 14-16 Oct not in the release | Merged additively, 156 lines, 308 files; the release's own lines kept (5e876456) | voicecover, voicearea (16 Oct, local) |
 
-Last focused run: suite.mjs --only unit,rules,types,arch,bilingual,reportdetectors,ownercapture,testerreport,autoplay --jobs 1: 9/9, 5 minutes.
+Last focused run (16 Oct 2026 AEDT, local): films, filmstart, filmtails, filmmusic, tales, story, a11y, phone, contract, boot, ownerfamily, ownerheartstap, ownerexplainswitches, ownerupdatenotice, studio, tester, testerreport, solid, voicearea, voicecover, types, preload, offline, unit, ownerround: all passed. perf and startup blocked locally (npm registry).
+GitHub Full: run 39 passed all checks at eaa7522d; run 40 at 3ae10550 185/187 (ownerround, testerreport; both fixed in 098b5535, 2/2 locally); run 41 at 098b5535 started 11:43 AEDT, pending.
+Earlier focused run (historical): suite.mjs --only unit,rules,types,arch,bilingual,reportdetectors,ownercapture,testerreport,autoplay --jobs 1: 9/9, 5 minutes.
 No checks skipped in that selected run; it is not the full suite.
 Earlier focused run boot/shop/wearbag/bagitems/reportdetectors/testerreport/ownerround: 5/7; failures investigated and rerun 4/4.
 
