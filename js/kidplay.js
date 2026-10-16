@@ -111,6 +111,9 @@ export function createKidPlay(G, { say, save }) {
       if (showFeed) { c.feed.innerHTML = fedToday ? (level(h) >= 3 ? pic('✨') + `<small>${T('Trick', 'Biểu diễn')}</small>` : pic('😊') + `<small>${T('Full', 'No rồi')}</small>`) : pic('🍓') + `<small>${T('Feed', 'Cho ăn')}</small>`;
         c.feed.setAttribute('aria-label', fedToday ? T('Do a trick', 'Biểu diễn') : T('Feed your friend', 'Cho bạn ăn')); c.feed.classList.toggle('ready', !fedToday); }
       if (showGoal) { c.goal.innerHTML = pic('🎯') + `<small>${narrow ? '' : T(x.en, x.vi) + ' '}${Math.min(farm.coins, x.price)}/${x.price}</small>`; c.goal.classList.toggle('ready', !!can); c.goal.setAttribute('aria-label', T('About your companion hat goal', 'Về mục tiêu mũ cho bạn đồng hành')); }
+      // (r79 A6) on a phone the chips sit on the player card's level: the goal chip steps aside when the mini-map has no
+      // room for it (it never slides under the map)
+      if (narrow && !c.goal.hidden) requestAnimationFrame(() => { const mm = G.huds[h.i]?.root.querySelector('.mini-wrap'), g = c.goal.getBoundingClientRect(); if (mm && g.width && g.right > mm.getBoundingClientRect().left - 4) c.goal.hidden = true; });
     }
   }
 

@@ -25,7 +25,8 @@ export const ICONS = {
   zoomIn: svg(`<circle cx="21" cy="21" r="13" fill="#fff6d8" ${W}/><path d="M31 31l10 10" stroke="${O}" stroke-width="5" stroke-linecap="round"/><path d="M21 15v12M15 21h12" ${W}/>`),
   zoomOut: svg(`<circle cx="21" cy="21" r="13" fill="#fff6d8" ${W}/><path d="M31 31l10 10" stroke="${O}" stroke-width="5" stroke-linecap="round"/><path d="M15 21h12" ${W}/>`),
   // (owner, 13 Oct AEDT) the View button: zoom, camera view and Where is folded behind one eye
-  view: svg(`<path d="M5 24c5-9 12-13 19-13s14 4 19 13c-5 9-12 13-19 13S10 33 5 24z" fill="#fff6d8" ${W}/><circle cx="24" cy="24" r="7" fill="#5fd3ff" ${W}/><circle cx="24" cy="24" r="2.6" fill="${O}"/>`),
+  // (r79 A8, owner 16 Oct: the eye "looks very scary") a little round camera in the game's style, like the Pad's Camera tab
+  view: svg(`<rect x="16" y="9" width="13" height="8" rx="3" fill="#c9bfff" ${W}/><rect x="5" y="14" width="38" height="26" rx="9" fill="#9a8cff" ${W}/><circle cx="24" cy="27" r="9.5" fill="#dff4ff" ${W}/><circle cx="24" cy="27" r="5" fill="#5fd3ff"/><circle cx="21.5" cy="24.5" r="2" fill="#fff"/><circle cx="36" cy="20" r="2.2" fill="#ffd23f"/>`),
   gear: svg(`<path d="M24 8l3 4 5-1 1 5 5 1-1 5 4 3-4 3 1 5-5 1-1 5-5-1-3 4-3-4-5 1-1-5-5-1 1-5-4-3 4-3-1-5 5-1 1-5 5 1z" fill="#ffd23f" ${W}/><circle cx="24" cy="24" r="5" fill="#fff" ${W}/>`),
   info: svg(`<circle cx="24" cy="24" r="19" fill="#5fd3ff" ${W}/><circle cx="24" cy="15" r="3" fill="${O}"/><path d="M24 22v13" stroke="${O}" stroke-width="5" stroke-linecap="round"/>`)
 };

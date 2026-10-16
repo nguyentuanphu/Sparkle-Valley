@@ -2732,6 +2732,79 @@ body.bigtext .theatre .th-text { --thp: clamp(20px, 3.2vw, 28px); --thm: clamp(1
 .sv2 .tt-l:nth-child(2) { font-family: 'Baloo 2', 'Segoe UI', system-ui, -apple-system, sans-serif; }
 .sv2 .tt-panel .seg.lang button { height: 48px; display: inline-flex; align-items: center; gap: 6px; }
 .sv2 .tt-panel .learnrow { height: 36px; display: flex; align-items: center; justify-content: center; gap: 6px; }
+/* ---- r79 screens (chat 1) ---- */
+/* (r79 A1, owner 16 Oct: names ran over their pictures, icons off centre, long names squeezed) every Bag tile: the
+   picture centred in a fixed 64 px box at the top, the name under it in its own space, two lines at most then "..."
+   (the whole name is said and shown when the tile is tapped); tiles in a row share one height */
+.pad .slots { align-items: stretch; }
+.pad .slot { justify-content: flex-start; padding: 10px 6px 8px; overflow: hidden; }
+.pad .slot > span:not(.sw), .pad .slot > svg, .pad .slot > .kpic, .pad .slot > .art { flex: none; width: 64px; height: 64px; min-height: 64px; margin: 4px auto 8px; display: flex; align-items: center; justify-content: center; overflow: visible; }
+.pad .slot > span:not(.sw) > svg, .pad .slot > span:not(.sw) > .art, .pad .slot > span:not(.sw) > .kpic { width: 56px; height: 56px; }
+.pad .slot > small { flex: none; width: 100%; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; text-overflow: ellipsis; overflow-wrap: anywhere; line-height: 1.2; max-height: 2.4em; }
+/* (r79 A2, owner 16 Oct: "Getting the voices ready..." floated over the Pad) the voices note stays behind every window,
+   panel and game (they start at layer 25) and fades while one is open, so it never covers their words or buttons */
+.packbar { z-index: 24; }
+body:has(.modal:not(.out), .gl, .wardrobe, .audio-tray, .dialog:not(.out), .storybook, .howto) .packbar { opacity: 0; }
+/* (r79 A3) Album "Words I learned": one tidy row per word, the picture, the words and the hear-again button inside it */
+.wordlist .wl-row { display: flex; align-items: center; gap: 10px; min-height: 56px; padding: 6px 6px 6px 10px; background: #fff; border-radius: 14px; box-shadow: 0 1px 4px rgba(80,40,140,.1); font-size: 15px; }
+.wordlist .wl-pic { flex: none; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; background: none; box-shadow: none; padding: 0; }
+.wordlist .wl-pic svg, .wordlist .wl-pic .art { width: 36px; height: 36px; }
+.wordlist .wl-txt { flex: 1 1 auto; min-width: 0; line-height: 1.3; background: none; box-shadow: none; padding: 0; }
+.wordlist .wl-flag { font-style: normal; display: inline-flex; vertical-align: -3px; }
+.wordlist .wl-flag svg, .wordlist .wl-flag .art { width: 20px; height: 20px; }
+.wordlist .wl-say { flex: none; width: 44px; height: 44px; border: 2px solid #e9def5; border-radius: 50%; background: #fff; display: flex; align-items: center; justify-content: center; padding: 0; }
+.wordlist .wl-say svg, .wordlist .wl-say .art { width: 24px; height: 24px; }
+.wordlist .wl-row span { background: none; border-radius: 0; padding: 0; box-shadow: none; font-size: inherit; }
+.wordlist .wl-pic .arti, .wordlist .wl-say .arti { display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; }
+.wordlist .wl-flag .flagi { display: inline-flex; } .wordlist .wl-flag .flag { width: 22px; height: 15px; }
+/* (r79 A6, owner 16 Oct: "Big pictures" and "Trick" sat lower than the player card and off centre) on a phone they sit
+   on the same level as the player card, centred on it, and "Big pictures" keeps its whole name */
+.hud.small .hud-tl { align-items: center; }
+.hud.small .hud-tl > .simplesw, .hud.small .hud-tl > .kidrow { align-self: center; margin-top: 0; }
+.hud.small .hud-tl > .kidrow { flex-wrap: nowrap; }
+.hud.small .simplesw { width: auto; min-width: 56px; min-height: 48px; padding: 4px 8px; }
+/* (r79 A7, owner 16 Oct: zoom in, zoom out and camera view sat in a column to the LEFT of the View button) they open in
+   one straight column directly ABOVE the View button, centred on it (the camera view button nearest) */
+.zoomer .ztray { right: auto; left: 50%; top: auto; bottom: calc(100% + 8px); transform: translateX(-50%); flex-direction: column; align-items: center; gap: 8px; }
+@media (max-height: 480px) { .zoomer .ztray { left: auto; right: calc(100% + 10px); bottom: 0; transform: none; flex-direction: row-reverse; } }
+/* (r79 A7) on a tablet or computer the View button sits a little lower, so the column above it stays clear of the speaker */
+.hud:not(.small) .zoomer, .hud:not(.small) .zoomer:has(.z-lb) { top: 60%; }
+@media (max-height: 480px) { .hud:not(.small) .zoomer, .hud:not(.small) .zoomer:has(.z-lb) { top: auto; } }
+/* (r79, owner point 14) "Eat it?" is one small row at the bottom of the Bag: picture, name, "Eat it?", Eat and Not now */
+.bag-help.bag-ask { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 16px; font-size: 14px; max-width: 520px; margin: 0 auto; width: 100%; box-sizing: border-box; }
+.bag-help.bag-ask > .art, .bag-help.bag-ask > .arti, .bag-help.bag-ask > svg, .bag-help.bag-ask > .kpic { flex: none; width: 36px; height: 36px; }
+.bag-help.bag-ask > b { flex: 1 1 auto; min-width: 0; line-height: 1.2; overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+.bag-help.bag-ask > b small { display: block; font-weight: 600; color: #6a4aa0; }
+.bag-help.bag-ask button { flex: none; min-height: 44px; min-width: 64px; padding: 0 12px; }
+.bag-help.bag-ask.little button { min-height: 64px; }
+/* (r79 A4, points 17 and 18) the mirror: a big picture of the child, a tab for each kind of thing, the child's own clothes
+   in a grid (tap to wear, tap again to take off: a tick shows what is on); the shop marks the other collection as gifts */
+.mirror .whead { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.mirror .whead h2 { margin: 0; display: flex; align-items: center; gap: 8px; } .mirror .whead h2 .art { width: 36px; height: 36px; }
+.mirror .whead .x { position: static; min-width: 64px; min-height: 48px; font-size: 16px; }
+.mirror .wmirror { display: flex; justify-content: center; margin: 4px 0; }
+.mirror .wbig { width: min(240px, 60vw); aspect-ratio: 3 / 4; object-fit: contain; border-radius: 24px; background: linear-gradient(180deg, #f3ecff, #e9def5); box-shadow: inset 0 0 0 4px #fff, 0 4px 14px rgba(90, 60, 130, .15); }
+.mirror .whow { text-align: center; margin: 4px 0 8px; }
+.mirror .wtabs { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+.mirror .wtabs .ktab { position: relative; width: 56px; height: 56px; min-width: 56px; }
+.mirror .wtabs .ktab .art { width: 34px; height: 34px; }
+.mirror .wtabs .wn { position: absolute; top: -4px; right: -4px; min-width: 20px; height: 20px; border-radius: 10px; background: #8a5cf6; color: #fff; font-size: 12px; line-height: 20px; text-align: center; padding: 0 4px; }
+.mirror .wkind { text-align: center; margin: 10px 0 6px; color: #6a4aa0; }
+.mirror .wgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 10px; }
+.mirror .wit { position: relative; display: flex; flex-direction: column; align-items: center; gap: 4px; min-height: 108px; padding: 10px 6px 8px; border: 0; border-radius: 18px; background: #fff; box-shadow: 0 3px 0 rgba(90, 60, 130, .1), 0 0 0 2px rgba(90, 60, 130, .06); font: inherit; color: inherit; cursor: pointer; }
+.mirror .wit .kpic, .mirror .wit .art { width: 56px; height: 56px; flex: none; }
+.mirror .wit small { font-size: 13px; line-height: 1.2; text-align: center; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+.mirror .wit.on { box-shadow: 0 0 0 3px #8a5cf6, 0 3px 0 rgba(90, 60, 130, .1); background: #f6f0ff; }
+.mirror .wit .ktick { position: absolute; top: 6px; right: 6px; } .mirror .wit .ktick .art { width: 22px; height: 22px; }
+.mirror.little .wit { min-height: 120px; } .mirror.little .wtabs .ktab { width: 64px; height: 64px; min-width: 64px; }
+.mirror .wnone { grid-column: 1 / -1; text-align: center; }
+.kitem.gift { position: relative; } .kitem .kgift { position: absolute; top: 4px; left: 4px; } .kitem .kgift .art { width: 22px; height: 22px; }
+.kask .kgiftnote { display: flex; align-items: center; gap: 6px; font-size: 14px; color: #6a4aa0; } .kask .kgiftnote .art { width: 24px; height: 24px; }
+.mirror .whead .x { white-space: nowrap; padding: 0 16px; }
+.bag-help.bag-ask > b { display: flex; flex-direction: column; -webkit-line-clamp: unset; }
+.bag-help.bag-ask > b > span.nm { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@media (max-width: 600px) { .mirror .wbig { width: min(170px, 44vw); } }
+
 
 /* r79 learning (chat 2) */
 /* (owner, 16 Oct AEDT, E1) learning games: one small reward banner under the top bar, never stacked over the puzzle;

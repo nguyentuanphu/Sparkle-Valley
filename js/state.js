@@ -2,6 +2,7 @@
 // Settings, player profiles and saving. Everything lives in localStorage on this device;
 // grown-ups can export/import a backup file to move progress between devices.
 import { BUILD } from './build.js';
+import { sortClothes } from './content/shop.js';
 const KEY_SETTINGS = 'sv2_settings', KEY_PROFILES = 'sv2_profiles';
 
 const store = {
@@ -163,6 +164,9 @@ export function normalizeProfile(p) {
   for (const k of ['leafies', 'shrines', 'towers', 'discovered', 'inv', 'levels', 'wins', 'quests', 'dishes', 'stats']) o[k] = Object.assign({}, d[k], p[k] || {});
   o.owned = Object.assign({ hats: ['none'], gliders: [0] }, p.owned || {});
   if (!o.owned.hats.includes(o.look.hat)) o.owned.hats.push(o.look.hat);
+  // (r79, owner 16 Oct: "boy wears boys clothes") clothes of the other set come off and are wrapped as gift boxes; things
+  // that were for both sets become the child's own set's version (js/content/shop.js)
+  sortClothes(o);
   if (!Array.isArray(o.stickers)) o.stickers = [];
   if (!Array.isArray(o.album)) o.album = [];
   o.learn = normalizeLearn(p.learn); // (r79 learning, chat 2) what each child missed most, games that showed the hand

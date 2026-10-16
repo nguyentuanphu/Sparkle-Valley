@@ -2,7 +2,7 @@
 import { THREE, toon, glow, blobShadow, outline, P, merge, toonSmooth } from './gfx.js';
 import { GLIDERS, settings } from './state.js';
 import { customFace, familyOwnFace, onFamilyPhotos } from './custom.js';
-import { wearing } from './content/shop.js';
+import { wearing, BOY_OF } from './content/shop.js';
 
 const G = {
   head: new THREE.SphereGeometry(.5, 32, 24),
@@ -235,10 +235,12 @@ export function buildAvatar(look, photo) {
   if (look.hairStyle === 'spiky') for (let i = 0; i < 6; i++) { const sp = new THREE.Mesh(G.spike, hairM); sp.position.set((i - 2.5) * .15, .5, -.06 - Math.abs(i - 2.5) * .04); sp.rotation.set(-.3, 0, (2.5 - i) * .22); head.add(sp); }
   // hats
   const hat = new THREE.Group(); head.add(hat);
-  if (look.hat === 'nonla') { const n = new THREE.Mesh(G.nonla, toon('#ecd9a0', { roughness: .95 })); n.position.y = .62; hat.add(n); const st = new THREE.Mesh(new THREE.TorusGeometry(.5, .015, 4, 24), toon('#c94a4a')); st.rotation.x = Math.PI / 2; st.position.y = .44; hat.add(st); }
+  // (r79) the girls' versions of the old shared hats (nonla_g, crown_g, bunny_g) are drawn like the old ones in their own colour
+  const hid = BOY_OF[look.hat] || look.hat, hcol = (fallback) => (W.hat && W.hat.color) || fallback;
+  if (hid === 'nonla') { const n = new THREE.Mesh(G.nonla, toon(hcol('#ecd9a0'), { roughness: .95 })); n.position.y = .62; hat.add(n); const st = new THREE.Mesh(new THREE.TorusGeometry(.5, .015, 4, 24), toon('#c94a4a')); st.rotation.x = Math.PI / 2; st.position.y = .44; hat.add(st); }
   if (look.hat === 'cap') { const c = new THREE.Mesh(G.cap, toon('#e8434a')); c.position.y = .08; hat.add(c); const b = new THREE.Mesh(G.brim, toon('#e8434a')); b.position.set(0, .24, .42); b.scale.set(1.2, 1, 1.6); hat.add(b); }
-  if (look.hat === 'crown') { const c = new THREE.Mesh(G.crown, toon('#ffcf3a', { side: THREE.DoubleSide, metalness: .7, roughness: .25 })); c.position.y = .6; hat.add(c); [0, 1, 2, 3, 4].forEach(i => { const g = new THREE.Mesh(new THREE.OctahedronGeometry(.045), toon(['#e8434a', '#3cc7e8', '#5fd39a'][i % 3], { metalness: .3, roughness: .2 })); g.position.set(Math.cos(i * 1.256) * .28, .62, Math.sin(i * 1.256) * .28); hat.add(g); }); }
-  if (look.hat === 'bunny') [-1, 1].forEach(s => { const e = new THREE.Mesh(G.ear, toon('#ffffff')); e.position.set(s * .22, .78, -.05); e.rotation.z = -s * .2; hat.add(e); const inner = new THREE.Mesh(G.ear, toon('#ffb3cf')); inner.scale.set(.55, .85, .5); inner.position.set(s * .22, .78, -.01); inner.rotation.z = -s * .2; hat.add(inner); });
+  if (hid === 'crown') { const c = new THREE.Mesh(G.crown, toon(hcol('#ffcf3a'), { side: THREE.DoubleSide, metalness: .7, roughness: .25 })); c.position.y = .6; hat.add(c); [0, 1, 2, 3, 4].forEach(i => { const g = new THREE.Mesh(new THREE.OctahedronGeometry(.045), toon(['#e8434a', '#3cc7e8', '#5fd39a'][i % 3], { metalness: .3, roughness: .2 })); g.position.set(Math.cos(i * 1.256) * .28, .62, Math.sin(i * 1.256) * .28); hat.add(g); }); }
+  if (hid === 'bunny') [-1, 1].forEach(s => { const e = new THREE.Mesh(G.ear, toon(hcol('#ffffff'))); e.position.set(s * .22, .78, -.05); e.rotation.z = -s * .2; hat.add(e); const inner = new THREE.Mesh(G.ear, toon('#ffb3cf')); inner.scale.set(.55, .85, .5); inner.position.set(s * .22, .78, -.01); inner.rotation.z = -s * .2; hat.add(inner); });
   if (look.hat === 'flower') { for (let i = 0; i < 6; i++) { const p = new THREE.Mesh(G.petal, toon(i % 2 ? '#ff7eb8' : '#ffd1e6')); p.position.set(.36 + Math.cos(i) * .1, .4 + Math.sin(i) * .1, .14); hat.add(p); } const c = new THREE.Mesh(new THREE.SphereGeometry(.06, 8, 6), toon('#ffd23f')); c.position.set(.36, .4, .18); hat.add(c); }
   if (look.hat === 'akubra') { const felt = toon('#8a5a32', { roughness: .9 }); const br = new THREE.Mesh(new THREE.CylinderGeometry(.66, .68, .05, 24), felt); br.position.y = .44; hat.add(br); const cr = new THREE.Mesh(new THREE.CylinderGeometry(.33, .38, .32, 20), felt); cr.position.y = .6; hat.add(cr); const band = new THREE.Mesh(new THREE.CylinderGeometry(.385, .39, .07, 20), toon('#3a2618')); band.position.y = .5; hat.add(band); }
   if (look.hat === 'khanran') { const band = new THREE.Mesh(new THREE.TorusGeometry(.43, .07, 8, 24), toon('#2b2238')); band.rotation.x = Math.PI / 2 - .15; band.position.y = .3; hat.add(band); for (let i = 0; i < 12; i++) { const a = i / 12 * Math.PI * 2, d = new THREE.Mesh(new THREE.BoxGeometry(.06, .06, .06), toon('#ffffff')); d.position.set(Math.cos(a) * .44, .3 + Math.sin(a) * .066, Math.sin(a) * .44); hat.add(d); } [-1, 1].forEach(s => { const tail = new THREE.Mesh(new THREE.BoxGeometry(.08, .28, .03), toon('#2b2238')); tail.position.set(s * .07, .2, -.44); tail.rotation.z = s * .3; hat.add(tail); }); }
