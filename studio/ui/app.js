@@ -582,7 +582,8 @@ PAGES.quiz = async P => {
 };
 // ---------- the Simple screen's areas (round J): which area each game sits in, and which ones under-5s see ----------
 PAGES.path = async P => {
-  await import(GAME + 'js/games/all.js');
+  // (r81) the reading games too: the game registers them (js/games/readingmenu.js) only while the readingTrial switch is on
+  await import(GAME + 'js/games/all.js'); await import(GAME + 'js/games/readingmenu.js').catch(() => { });
   const { GAMES } = await import(GAME + 'js/games/registry.js'), A = await import(GAME + 'js/content/activities.js'), I18 = await import(GAME + 'js/i18n.js');
   void I18; await gameLang(); const nm = f => typeof f === 'function' ? f() : f;
   CONTENT.activities = CONTENT.activities || {};
@@ -592,7 +593,7 @@ PAGES.path = async P => {
     const rows = A.AREAS.map(a => {
       const ids = Object.keys(GAMES).filter(id => info(id).area === a.key);
       return `<div class="card"><h3>${a.icon} ${esc(nm(a.name))} <span class="sub">(${ids.length})</span></h3><table><tbody>${ids.map(id => { const g = info(id), base = g.base;
-        return `<tr data-id="${id}"><td>${GAMES[id].icon} ${esc(nm(GAMES[id].name))}</td>
+        return `<tr data-id="${id}"><td>${GAMES[id].icon} ${esc(nm(GAMES[id].name))}${/^rd_/.test(id) ? ` <span class="sub">(${T('only while the reading trial is on', 'chỉ khi bật thử nghiệm đọc')})</span>` : ''}</td>
           <td><select data-f="area">${A.AREAS.map(b => `<option value="${b.key}" ${g.area === b.key ? 'selected' : ''}>${b.icon} ${esc(nm(b.name))}</option>`).join('')}</select></td>
           <td><label><input type="checkbox" data-f="little" ${g.little ? 'checked' : ''}> ${T('Under 5', 'Dưới 5 tuổi')}</label>${!g.changed ? '' : ` <span class="sub">(${T('changed', 'đã đổi')}; ${T('usual', 'mặc định')}: ${base[1] < 5 ? '✓' : '✗'})</span>`}</td>
           <td><label><input type="checkbox" data-f="hide" ${g.hide ? 'checked' : ''}> ${T('Hide', 'Ẩn')}</label></td></tr>`; }).join('')}</tbody></table></div>`;

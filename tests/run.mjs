@@ -4471,12 +4471,20 @@ await check('studiolive', async () => {
     await clear(P.page); const on = await read(P.page);
     // no internet: the website does not answer; the game opens again with the copy it kept
     await P.ctx.unroute('**/api/live**'); await P.ctx.route('**/api/live**', r => r.abort()); await P.page.reload(); await P.page.waitForSelector('.screen.title', { timeout: 90000 });
-    const off = await read(P.page), errs = P.errors; await P.ctx.close();
+    const off = await read(P.page);
+    // (r81) the page's own update-notice switch (js/launch.js, used before the game's switch reader is ready) follows a
+    // live Defaults value kept on this device, not only content/custom.json
+    const notice = async () => P.page.evaluate(() => { document.querySelector('.update-notice')?.remove(); delete window.svFeatureOn; svOfferUpdate(); const n = !!document.querySelector('.update-notice'); document.querySelector('.update-notice')?.remove(); return n; });
+    const noticeBefore = await notice();
+    await P.page.evaluate(() => { const l = JSON.parse(localStorage.getItem('sv2_live') || '{}'); l.content = { ...(l.content || {}), features: { explain_updateNotice: false } }; localStorage.setItem('sv2_live', JSON.stringify(l)); });
+    await P.page.reload(); await P.page.waitForSelector('.screen.title', { timeout: 90000 });
+    const noticeLiveOff = await notice(), errs = P.errors; await P.ctx.close();
+    off.noticeBefore = noticeBefore; off.noticeLiveOff = noticeLiveOff;
     const good = x => x.message === want.message && x.quiz === want.quiz && x.name === want.name && x.calm === true && String(x.rest) === '45' && x.kept;
     rows.push({ lang, shown: shown.slice(0, 80), on, off });
-    ok(shown.includes(want.message) && !/file|tệp/i.test(shown) && good(on) && on.mission === want.mission && good(off) && !errs.length, JSON.stringify({ lang, shown, on, off, errs }));
+    ok(shown.includes(want.message) && !/file|tệp/i.test(shown) && good(on) && on.mission === want.mission && good(off) && off.noticeBefore === true && off.noticeLiveOff === false && !errs.length, JSON.stringify({ lang, shown, on, off, errs }));
   }
-  return 'live Message shown, Mission, Quiz question and Defaults in English and Vietnamese with no Publish; live wins over custom.json, names fall back to it; offline the kept copy: ' + JSON.stringify(rows.map(r => [r.lang, r.on.message, r.off.quiz]));
+  return 'live Message shown, Mission, Quiz question and Defaults in English and Vietnamese with no Publish; live wins over custom.json, names fall back to it; offline the kept copy; a kept live update-notice switch reaches js/launch.js: ' + JSON.stringify(rows.map(r => [r.lang, r.on.message, r.off.quiz, r.off.noticeLiveOff]));
 });
 
 await check('mictest', async () => {
