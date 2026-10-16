@@ -732,8 +732,8 @@ function dressStory(S) {
       for (const x of [-6, 7]) for (let i=0;i<5;i++) { const px=x+i*.25,h=5+i*.45; post(.075,h,'#69be70',px,h/2,-10); for(let j=1;j<5;j++) { post(.095,.06,'#a0d18a',px,j*h/5,-10); parts.push(P(Cone(.2,1.1,4),'#87cb6b',[px+.3,j*h/5+.4,-10],[0,0,-.9],[1,1,.3])); } }
       B(4,.18,1,'#cda56b',-6,.12,-2);for(let i=0;i<5;i++)post(.065,1.3,'#e8ce91',-7.5+i*.7,.75,-2);flowers(7,-3);break;
     case 'tet': case 'newyear': case 'festival': case 'wedding': case 'moonfestival':
-      bunting();L.blossom(S,-7,-6);L.blossom(S,7,-7);
-      [-6,-3,3,6].forEach((x,i)=>L.lantern(S,x,3.7,-4,i%2?'#ffd764':c));
+      bunting();SETS.blossom(S,-7,-6);SETS.blossom(S,7,-7);
+      [-6,-3,3,6].forEach((x,i)=>SETS.lantern(S,x,3.7,-4,i%2?'#ffd764':c));
       if(kind==='tet'){B(1.2,.4,1.2,'#63b869',-5,.2,-2);B(.06,.42,1.22,'#fff0d0',-5,.21,-2);B(1.22,.42,.06,'#fff0d0',-5,.21,-2);}
       break;
     case 'palace': case 'cloudcourt':
@@ -741,7 +741,7 @@ function dressStory(S) {
       [-10,10].forEach(x=>{post(.25,3,'#dc7661',x,1.5,-8);parts.push(P(Cone(1.6,1.2,4),c,[x,3.4,-8],[0,Math.PI/4,0],[1.2,1,.8]));ball(.22,'#ffd764',x,4.1,-8);});
       flowers(-7,-3,'#ff6fae');flowers(7,-3,'#ffd764');break;
     case 'rice': case 'farm':
-      L.paddy(S,-11,-7,6,5);B(2,.22,1,'#cda56b',6,.12,-3);for(let i=0;i<3;i++)ball(.45,'#e7c776',5.3+i*.65,.45,-3,[.65,1,1]);break;
+      SETS.paddy(S,-11,-7,6,5);B(2,.22,1,'#cda56b',6,.12,-3);for(let i=0;i<3;i++)ball(.45,'#e7c776',5.3+i*.65,.45,-3,[.65,1,1]);break;
     case 'kitchen': case 'pantry': case 'study': case 'art': case 'indigo':
       // Interior dressing close enough for the mice's low camera as well as a human-height shot.
       shelves(kind==='pantry'?-3:-5,kind==='pantry'?-2.65:-4);
@@ -766,14 +766,14 @@ function dressStory(S) {
       [-9,9].forEach((x,i)=>{ball(3.6,i?'#b7b3ca':'#b4c5bc',x,1.3,-10,[1,1.3,1]);rocks(x-2,-7,'#c9c4d8',3);});
       if(kind==='cave'){ball(3,'#998b9e',0,1,-13,[1.8,1.4,.7]);ball(2,'#766a85',0,.8,-10.8,[1,1,.18]);}
       if(kind==='treasure')for(let i=0;i<7;i++)parts.push(P(new THREE.OctahedronGeometry(.35),['#ffd764','#ffb020','#8a5cf6'][i%3],[-6+i*.6,.4,-3],[.4,i,0]));
-      if(kind==='mountain')L.clouds(S,[[-12,3,-24,1.2],[13,4,-30,1.6]]);break;
+      if(kind==='mountain')SETS.clouds(S,[[-12,3,-24,1.2],[13,4,-30,1.6]]);break;
     case 'lotus': case 'lake': case 'river': case 'tropicalriver': case 'falls':
       // Bank-side reeds and flowers; leave the boats, fish, waterfall and crossing channel open.
       const bankZ=kind==='lake'?-29:kind==='falls'?-9:-12;
       if(kind==='falls')[-10,10].forEach(x=>ball(3.5,'#bacad0',x,-.85,-9,[1,.3,1]));
       for(const x of (kind==='falls'?[-10,10]:[-8,8])){for(let i=0;i<6;i++)post(.03,.8+i%3*.2,'#63b869',x+i*.16,.4,bankZ);flowers(x,bankZ-1,kind==='lotus'?'#ff6fae':'#ffd764',5);}
-      if(kind==='lake'){L.blossom(S,-12,-30);B(5,.15,1.5,'#d8c7a5',10,.05,-24.7);[7.7,12.3].forEach(x=>post(.08,.8,'#ae8054',x,-.3,-24.2));}
-      if(kind==='tropicalriver'){tree(-9,-16,'#83c96b','#ffb020');L.palm(S,12,-18,.2);if(S.look.islet)ball(3.4,'#b7cf8a',0,-.7,-3,[1,.25,1]);}
+      if(kind==='lake'){SETS.blossom(S,-12,-30);B(5,.15,1.5,'#d8c7a5',10,.05,-24.7);[7.7,12.3].forEach(x=>post(.08,.8,'#ae8054',x,-.3,-24.2));}
+      if(kind==='tropicalriver'){tree(-9,-16,'#83c96b','#ffb020');SETS.palm(S,12,-18,.2);if(S.look.islet)ball(3.4,'#b7cf8a',0,-.7,-3,[1,.25,1]);}
       if(kind==='falls')rocks(-11,-9,'#bacad0',5);
       break;
     case 'coral':
