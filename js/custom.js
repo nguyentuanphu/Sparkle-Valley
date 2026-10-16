@@ -18,6 +18,7 @@
 //   plots    { <plot id>: { type, name: [en, vi], owner: { name, line: [en, vi] }, color } }   Studio's Memory Villages page: a
 //                                         home the family remembers on a garden plot, by the plot's id (PLOTS in js/content/map.js,
 //                                         or a spare plot sp_<city>_<n>); not built by the game yet (asked of World)
+//   (r81) every section Studio's content pages save live (LIVE_SECTIONS below) may come from /api/live instead, and wins
 //   features { id: true|false }           things in the valley switched on or off from Studio (owner, round R: kept in the game,
 //                                         shown only when switched on). powerPoles: Phố Hai Quê's power poles and wires (off)
 let data = {};
@@ -30,6 +31,18 @@ try {
   clearTimeout(t);
 } catch (e) { /* offline and never saved, or no answer: no content pack */ }
 export const CUSTOM = data && typeof data === 'object' ? data : {};
+const LIVE_KEY = 'sv2_live', liveFns = [];
+let LIVE = {}; try { LIVE = JSON.parse(localStorage.getItem(LIVE_KEY) || '{}') || {}; } catch (e) { LIVE = {}; }
+export const onLive = f => liveFns.push(f);
+// (r81, owner 17 Oct AEDT) the content pages are live too: LIVE.content's sections (Message, Missions, Quiz, Our stories,
+// Villagers, Story characters, Memory Villages, Simple screen, Defaults, Ads settings, photo links) take the place of the
+// same ones in content/custom.json, which stays the fallback for a section Studio never saved live. The copy kept on this
+// device is used before any screen reads them; the website's answer replaces it as soon as it comes (screens that read
+// once at start get it the next time the game opens; Message and Missions follow onLive).
+export const LIVE_SECTIONS = ['message', 'missions', 'quiz', 'tales', 'names', 'genders', 'faces', 'looks', 'plots', 'activities', 'defaults', 'features', 'ads', 'album'];
+const BASE = { ...CUSTOM };
+const useContent = c => { for (const k of LIVE_SECTIONS) { const v = c && typeof c === 'object' ? c[k] : undefined; if (v && typeof v === 'object') CUSTOM[k] = v; else if (k in BASE) CUSTOM[k] = BASE[k]; else delete CUSTOM[k]; } };
+useContent(LIVE.content);
 const str = v => typeof v === 'string' ? v.slice(0, 600) : '';
 // only well-formed pieces are used, so a hand-edited file can't break the game
 export const customTales = () => (Array.isArray(CUSTOM.tales) ? CUSTOM.tales : []).filter(t => t && t.id && Array.isArray(t.pages) && t.pages.length)
@@ -98,19 +111,17 @@ if (inGame && familyRefs().length && (familyCode() || fromExe())) {
   await Promise.race([famFromCache(familyRefs()), new Promise(r => setTimeout(r, 1500))]).catch(() => { });
   setTimeout(() => refreshFamilyPhotos().catch(() => { }), 2500);
 }
-// ---------- Releases and festivals, live from the website (round R, owner: "instant, no deploy") ----------
+// ---------- Releases, festivals and (r81) the content pages, live from the website (round R, owner: "instant, no deploy") ----------
 // Sparkle Studio's Ra mắt (Releases) and Festivals pages save to the website (Netlify Blobs, /api/live). The game asks
 // for them when it opens, without waiting (a slow or missing connection never delays the start), keeps a copy for
 // offline days, and uses the copy straight away next time; festivals change as soon as the answer arrives.
 // A release rule: { on: true|false, start: 'YYYY-MM-DD' (from this day), days: N (on for N days only), newDays: N (a
 // "New" badge and a "New!" moment for N days) }. A rule from the website wins over one in content/custom.json.
 // (Switching something off never takes away what a child already has: games played and places found stay theirs.)
-const LIVE_KEY = 'sv2_live', liveFns = [];
-let LIVE = {}; try { LIVE = JSON.parse(localStorage.getItem(LIVE_KEY) || '{}') || {}; } catch (e) { LIVE = {}; }
-export const onLive = f => liveFns.push(f);
 if (typeof fetch === 'function' && typeof location !== 'undefined' && /^https?:/.test(location.protocol) && !/\/studio\//.test(location.pathname) && document.title !== 'Sparkle Studio') {   // (the game only, not Studio's pages that borrow its modules)
   fetch('api/live', { cache: 'no-store' }).then(r => r.ok && /json/.test(r.headers.get('content-type') || '') ? r.json() : null).then(j => {
-    if (!j || typeof j !== 'object') return; const was = JSON.stringify(LIVE); LIVE = j;
+    if (!j || typeof j !== 'object') return; const was = JSON.stringify(LIVE), wasC = JSON.stringify(LIVE.content || null); LIVE = j; useContent(j.content);
+    if (wasC !== JSON.stringify(j.content || null) && inGame && familyRefs().length && (familyCode() || fromExe())) refreshFamilyPhotos().catch(() => { }); // (r81) a photo link that came live
     try { localStorage.setItem(LIVE_KEY, JSON.stringify(j)); } catch (e) { }
     if (JSON.stringify(j) !== was) liveFns.forEach(f => { try { f(); } catch (e) { } });
   }).catch(() => { });

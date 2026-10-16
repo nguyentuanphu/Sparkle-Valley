@@ -49,6 +49,7 @@ export function gameEndAd() {
   d.n++; try { localStorage.setItem(DAY, JSON.stringify(d)); } catch (e) { }
   const c = el('div', 'gl-ad', `<small>${T('Ad', 'Quảng cáo')}${ad.by ? ' · ' + esc(ad.by) : ''}</small><img src="${esc(ad.image)}" alt=""><span>${esc(T(ad.en, ad.vi))}</span>`);
   if (ad.link) c.onclick = e => { e.stopPropagation(); openAd(ad); };
+  c.querySelector('img').onerror = () => c.remove(); // (r81) a picture not published yet
   return c;
 }
 
@@ -64,8 +65,10 @@ export function createAds(G) {
     if (!at) return;
     const [x, z] = at, y = heightAt(x, z), face = Math.atan2(gx - x, gz - z);
     const frame = new THREE.Mesh(merge([P(new THREE.BoxGeometry(.18, 3.2, .18), '#7a5236', [-1.6, 1.6, 0]), P(new THREE.BoxGeometry(.18, 3.2, .18), '#7a5236', [1.6, 1.6, 0]), P(new THREE.BoxGeometry(3.6, 2.2, .14), '#fff8e8', [0, 2.6, -.04])]), toonVC());
-    frame.position.set(x, y, z); frame.rotation.y = face; scene.add(frame); world.colliders.push({ x, z, r: 1.8 });
-    const img = new THREE.Mesh(new THREE.PlaneGeometry(3.3, 1.9), new THREE.MeshBasicMaterial({ map: loader.load(ad.image) })); img.position.set(0, 2.6, .05); frame.add(img); const back = img.clone(); back.position.z = -.13; back.rotation.y = Math.PI; frame.add(back); // (seen from both sides)
+    // (r81) the ad's words can come live from Studio before its new picture is published: no picture, no signboard
+    const col = { x, z, r: 1.8 }, gone = () => { scene.remove(frame); const ci = world.colliders.indexOf(col); if (ci >= 0) world.colliders.splice(ci, 1); const i = G.interactables.findIndex(o => o.id === 'ad' + k); if (i >= 0) G.interactables.splice(i, 1); };
+    frame.position.set(x, y, z); frame.rotation.y = face; scene.add(frame); world.colliders.push(col);
+    const img = new THREE.Mesh(new THREE.PlaneGeometry(3.3, 1.9), new THREE.MeshBasicMaterial({ map: loader.load(ad.image, undefined, undefined, gone) })); img.position.set(0, 2.6, .05); frame.add(img); const back = img.clone(); back.position.z = -.13; back.rotation.y = Math.PI; frame.add(back); // (seen from both sides)
     const lab = document.createElement('canvas'); lab.width = 128; lab.height = 40; const g = lab.getContext('2d'); g.fillStyle = '#3b2a4f'; g.fillRect(0, 0, 128, 40); g.fillStyle = '#fff'; g.font = 'bold 24px Fredoka, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(T('Ad', 'Quảng cáo'), 64, 21);
     const tag = new THREE.Mesh(new THREE.PlaneGeometry(.8, .25), new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(lab) })); tag.position.set(1.15, 3.55, .06); frame.add(tag); const tb = tag.clone(); tb.position.set(-1.15, 3.55, -.14); tb.rotation.y = Math.PI; frame.add(tb);
     if (ad.link) G.interactables.push({ id: 'ad' + k, x: x + Math.sin(face) * 2, z: z + Math.cos(face) * 2, r: 2.4, icon: 'ℹ️', label: () => T('About this sign', 'Về tấm biển này'), act: () => openAd(ad) });

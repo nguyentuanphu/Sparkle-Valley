@@ -20,7 +20,7 @@ import * as admins from '../lib/admins.mjs';
 import * as family from '../lib/family.mjs';
 import * as accessLog from '../lib/accesslog.mjs';
 import { ipOf, ipKey, locked, failed, cleared, tidy } from '../lib/guard.mjs';
-import { readLive, saveLive } from '../lib/live.mjs';
+import { readLive, saveLive, readContent as readLiveContent, saveContent as saveLiveContent, LiveError } from '../lib/live.mjs';
 import * as tester from '../lib/tester.mjs';
 const { createStudio, githubStore, makeToken, checkToken, samePassword } = core;
 
@@ -42,6 +42,7 @@ const tokenExp = ck => { const parts = String(ck || '').split('.'); return +(ck.
 
 // Netlify Blobs on the website (tests hand in their own)
 const store = name => () => import('@netlify/blobs').then(m => m.getStore({ name, consistency: 'strong' }));
+const LIVE_PART = { message: 'Message', missions: 'Missions', quiz: 'Quiz', tales: 'Our stories', names: 'Villagers', plots: 'Memory Villages', looks: 'Story characters', ads: 'Ads', album: 'Family album' };
 const blobs = store('players'), adminBlobs = store('studio-admins'), liveBlobs = store('live'), heldBlobs = store('studio-pending');
 const familyBlobs = store('family-photos'), guardBlobs = store('guard'), logBlobs = store('studio-log'), testerBlobs = store('testers');
 // (round R privacy) what signs a cookie: the owner's with the password, the sign-out generation and part of the two-step
@@ -196,6 +197,14 @@ export const makeStudio = ({ playersStore = blobs, adminStore = adminBlobs, held
   if (p === '/studio/api/family/remove' && post) { const b = await body(); await family.remove(await familyStore(), b.name); return json({ ok: true }); }
   if (p.startsWith('/studio/api/familyphoto/')) { const b = await family.get(await familyStore(), p.slice('/studio/api/familyphoto/'.length)); return b ? new Response(b, { status: 200, headers: { 'Content-Type': 'image/jpeg', 'Cache-Control': 'private, no-store' } }) : json({ error: 'not found' }, 404); }
   // (round R) Releases and Festivals: saved straight to the website, so they reach the devices at once, no Publish
+  // (r81, owner 17 Oct AEDT) the content pages (Message, Missions, Quiz, Stories, Villagers, Defaults…): live at once too,
+  // only the sections sent change; needs "Change pages" (admins.needs), and SparkleStudio.exe's key may send them
+  if (p === '/studio/api/live/content') {
+    if (!post) return json(await readLiveContent(await liveStore()));
+    try { const v = await saveLiveContent(await liveStore(), await body(), me.name); return json({ ok: true, at: v.at, content: v.content }); }
+    catch (e) { if (!(e instanceof LiveError)) throw e;
+      return json({ error: e.why === 'big' ? `Too much to go live at once (${e.n} KB; 200 KB at most): make the stories or the quiz shorter, then Save again.` : `Some words are too long to go live (${LIVE_PART[e.where] || e.where}: ${e.n} letters at most): make them shorter, then Save again.` }, 400); }
+  }
   if (p === '/studio/api/live') return json(post ? await saveLive(await liveStore(), await req.json().catch(() => ({})), me.name) : await readLive(await liveStore()));
   const players = async () => report(await playersStore());
   if (p === '/studio/api/players') { await log(me.name, me.role, 'analytics'); return json(await players()); }

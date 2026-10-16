@@ -549,6 +549,8 @@ function createStudio({ store, conf, online = false, local = {}, family = null }
     if (api === 'players/label' && post) { if (!local.label) return bad('Set the website address and the Studio password in Settings first.'); return ok(await local.label(b)); }
     if (api === 'players') { if (!local.players) return bad('Set the website address and the Studio password in Settings to see the players.'); return ok(await local.players(b)); }
     // (owner, 12 Oct) tester reports: on the website (the exe asks it with its Studio key)
+    // (r81, owner 17 Oct AEDT) the content pages' live sections: the exe sends them to the website with its Studio key
+    if (api === 'live/content') { if (!local.live) return bad('Set the website and a Studio key in Settings to put these pages live at once.'); try { return ok(await local.live(post ? b : null)); } catch (e) { return bad(String(e.message || e)); } }
     if (/^testers(\/(set|problem\/[a-f0-9]{16}|shot\/[a-f0-9]{16}))?$/.test(api)) { if (!local.testers) return bad('Set the website address and the Studio password in Settings to see the tester reports.'); try { return ok(await local.testers(api, post ? b : null)); } catch (e) { return bad(String(e.message || e)); } }
     if (api === 'check') return ok(await check());
     if (local.api) { const r = await local.api(api, method, b); if (r) return r; }
