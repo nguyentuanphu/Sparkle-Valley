@@ -5942,6 +5942,9 @@ await check('reportstorage', async () => {
   const {execFileSync}=await import('node:child_process');
   return execFileSync(process.execPath,['owner-report-storage.mjs'],{encoding:'utf8',timeout:60000}).trim();
 });
+// r79 learning (chat 2)
+// (owner, 16 Oct AEDT) E1, E3, E4, I1, I2, I4, G2 and the four talk-and-touch games: tests/owner-r79-learning-check.mjs
+await check('r79learning', async () => (await import('./owner-r79-learning-check.mjs')).default(b, { open, clear, ok }));
 await b.close();
 const failed = results.filter(r => !r[1]);
 console.log(`\n${results.length - failed.length}/${results.length} checks passed`);
