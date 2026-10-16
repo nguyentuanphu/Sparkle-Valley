@@ -6107,6 +6107,105 @@ await check('feel', async () => {
   }
   return notes.join('; ');
 });
+/* daily adventure (chat C) */
+// (owner plan 16 Oct AEDT; js/adventure.js, js/content/adventures.js) the goal card, the window (ADV-1 to ADV-6), every
+// step's spot really in the valley, one adventure played from start to end by an under-5 on a phone in English and a
+// big kid on a computer in Vietnamese (counting, D12), talk, play and cook steps, a missed day keeping its stamps,
+// Grandpa Owl remembering yesterday (D11), the week chest (D10), the Tricky timer only for 5 and over, and the switch
+await check('dailyadventure', async () => {
+  for (const [w, h, touch, age, lang] of [[390, 844, true, 'little', 'en'], [1280, 800, false, 'big', 'vi']]) {
+    const P = await open(b, { w, h, touch, lang }); await clear(P.page);
+    await P.page.waitForFunction(() => window.__sv && __sv.adventure, null, { timeout: 30000 });
+    await P.page.addStyleTag({ content: '.htoast { display: none !important; }' });
+    const tag = `${w} ${age} ${lang}`;
+    // every spot the adventures use is in this valley
+    const miss = await P.page.evaluate(async () => { const { ADVENTURES } = await import('/js/content/adventures.js'), out = [];
+      for (const a of ADVENTURES) for (const s of a.steps) if (s.at && !__sv.adventure.where(s.at)) out.push(a.id + ':' + s.at); return out; });
+    ok(!miss.length, `${tag}: spots not in the valley: ${miss.join(', ')}`);
+    await P.page.evaluate(age => { __sv.heroes[0].profile.age = age; __sv.adventure.force(0, 'house'); }, age);
+    await P.page.waitForTimeout(600);
+    // HUD-4: the goal card shows the step, 3 dots and hear-again; a tap opens the window
+    const card = await P.page.evaluate(() => { const c = document.querySelector('.hud .advcard'); if (!c || c.hidden) return null; const r = c.getBoundingClientRect(), hear = c.querySelector('.adv-hear').getBoundingClientRect();
+      return { text: c.querySelector('.adv-text').textContent, dots: c.querySelectorAll('.adv-dots i').length, now: c.querySelectorAll('.adv-dots i.now').length, hear: Math.min(hear.width, hear.height), right: r.right, quest: getComputedStyle(document.querySelector('.hud .q-say')).display }; });
+    ok(card && card.dots === 3 && card.now === 1 && card.hear >= 44 && card.right <= w + 1 && card.quest === 'none', `${tag}: goal card ${JSON.stringify(card)}`);
+    ok(lang === 'vi' ? /Phố Hai Quê/.test(card.text) : /Two Homes Street/.test(card.text), `${tag}: the step in the language (${card.text})`);
+    await P.page.click('.hud .advcard .adv-open'); await P.page.waitForTimeout(500);
+    const win = await P.page.evaluate(() => { const m = document.querySelector('.modal.advwin'); if (!m) return null; const R = e => e.getBoundingClientRect();
+      const go = m.querySelector('.adv-go'), x = m.querySelector('.x');
+      return { steps: m.querySelectorAll('.adv-step').length, stamps: m.querySelectorAll('.adv-stamp').length, chest: !!m.querySelector('.adv-chestrow .adv-rew'), mains: m.querySelectorAll('.adv-go').length, go: R(go).height, x: R(x).width, goBottom: R(go).bottom, wide: [...m.querySelectorAll('*')].some(e => R(e).right > innerWidth + 1), txt: m.innerText }; });
+    ok(win && win.steps === 3 && win.stamps === 7 && win.chest && win.mains === 1, `${tag}: window ${JSON.stringify(win && { ...win, txt: '' })}`);
+    ok(win.go >= 64 && win.x >= 56 && win.goBottom <= h + 1 && !win.wide, `${tag}: big buttons, all on screen (${win.go}, ${win.x}, ${win.goBottom})`);
+    ok(lang === 'vi' ? win.txt.includes('Phiêu lưu hôm nay') && !win.txt.includes("Today's adventure") : win.txt.includes("Today's adventure"), `${tag}: the window in the language`);
+    await P.page.screenshot({ path: `out/dailyadventure-window-${w}.png` });
+    await P.page.click('.modal.advwin .adv-go'); await P.page.waitForTimeout(500);
+    ok(await P.page.evaluate(() => !document.querySelector('.modal.advwin') && __sv.adventure.trails.size === 1), `${tag}: Let's go closes the window and shows the way`);
+    // play it: walk in, find, give (big kids count first), the chest
+    const coins0 = await P.page.evaluate(async () => { const S = await import('/js/state.js'); return S.farm.coins; });
+    await P.page.evaluate(async () => { const G = __sv, h = G.heroes[0], V = (await import('/js/content/map.js')).anchorOf('town'); h.pos.x = V[0]; h.pos.z = V[1] + 4; h.pos.y = (await import('/js/world.js')).heightAt(h.pos.x, h.pos.z); });
+    await P.page.waitForFunction(() => __sv.adventure.today(__sv.heroes[0]).step === 1, null, { timeout: 15000 });
+    const things = await P.page.evaluate(() => { const G = __sv, h = G.heroes[0], L = G.adventure.live(h); const n = L.things.length; L.things.forEach(t => t.it.act(h)); return n; });
+    ok(things === (age === 'big' ? 5 : 3), `${tag}: ${things} things to find (D12: 3 for under-5s, 5 for big kids)`);
+    ok(await P.page.evaluate(() => __sv.adventure.today(__sv.heroes[0]).step === 2), `${tag}: finding them all moves on`);
+    await P.page.evaluate(() => { const G = __sv, it = G.interactables.find(i => i.id === 'adv_give'); it.act(G.heroes[0]); });
+    await P.page.waitForTimeout(700);
+    const counting = await P.page.evaluate(() => !!document.querySelector('.modal.advcount'));
+    ok(counting === (age === 'big'), `${tag}: big kids count what they bring, under-5s do not (${counting})`);
+    if (counting) {
+      await P.page.click('.adv-num:not([data-k="5"])'); await P.page.waitForTimeout(400);
+      ok(await P.page.evaluate(() => !!document.querySelector('.modal.advcount')), `${tag}: a wrong number is never a loss: count again`);
+      await P.page.click('.adv-num[data-k="5"]');
+    }
+    await P.page.waitForSelector('.modal.advchest', { timeout: 10000 }); await P.page.waitForTimeout(1500);
+    if (age === 'big') { const n = await P.page.$$eval('.adv-coin', c => c.length); for (let k = 0; k < n; k++) await P.page.click(`.adv-coin[data-k="${k}"]`); }
+    await P.page.waitForSelector('.advchest .adv-go:not([hidden])', { timeout: 5000 });
+    await P.page.screenshot({ path: `out/dailyadventure-chest-${w}.png` });
+    await P.page.click('.advchest .adv-go'); await P.page.waitForTimeout(500);
+    const end = await P.page.evaluate(async () => { const S = await import('/js/state.js'), p = __sv.heroes[0].profile; return { coins: S.farm.coins, sticker: !!(p.stickerBook && p.stickerBook.got.hue), r: p.adventure, card: !document.querySelector('.hud .advcard')?.hidden }; });
+    ok(end.r.done && end.r.stamps.length === 1 && end.sticker && end.coins - coins0 === 10, `${tag}: the chest gives the sticker and 10 coins and a stamp (${end.coins - coins0}, ${end.sticker}, ${end.r.stamps})`);
+    ok(!end.card, `${tag}: done for today: the usual goal row comes back`);
+    // talk, play and cook steps listen for what already happens
+    const kinds = await P.page.evaluate(async () => { const G = __sv, h = G.heroes[0], A = G.adventure, { events } = await import('/js/core/events.js'), { id } = await import('/js/core/ids.js'), me = id('player', h.profile.id || 'guest'), out = {};
+      const pause = ms => new Promise(r => setTimeout(r, ms));
+      // close each chest the way a child does (coins counted, Hooray); one may still be on its way (it waits until the child is free)
+      const chests = async () => { for (let k = 0; k < 16; k++) { await pause(500); document.querySelectorAll('.advchest .adv-coin:not(.on)').forEach(c => c.click()); document.querySelectorAll('.advchest .adv-go:not([hidden])').forEach(b => b.click()); } };
+      A.force(0, 'bunny'); events.emit('InteractionStarted', { playerId: me, entityId: 'interaction:bear', action: 'act', it: 'bear' }); await new Promise(r => setTimeout(r, 700)); out.talk = A.today(h).step;
+      A.force(0, 'kite'); A.today(h).step = 2; A.sync(h); events.emit('InteractionStarted', { playerId: me, entityId: 'interaction:g-kite', action: 'act', it: 'g_kite' }); await new Promise(r => setTimeout(r, 500));
+      events.emit('ActivityStarted', { activityId: 'act:kite/1', kind: 'game', defId: 'game:kite', players: [me], source: 'folk' }); events.emit('ActivityCompleted', { activityId: 'act:kite/1', defId: 'game:kite', players: [me], result: { won: true } }); out.play = A.today(h).done; await chests();
+      A.force(0, 'supper'); A.today(h).step = 1; A.sync(h); const before = (h.profile.inv || {}).mushroom || 0; A.live(h).things.forEach(t => t.it.act(h)); out.bag = ((h.profile.inv || {}).mushroom || 0) - before;
+      G.onCooked(h, { id: 'nam' }); out.cook = A.today(h).done; await chests(); out.paused = G.paused;
+      return out; });
+    ok(kinds.talk === 1 && kinds.play === true && kinds.bag >= 3 && kinds.cook === true && !kinds.paused, `${tag}: talk, play and cook steps ${JSON.stringify(kinds)}`);
+    // the Tricky timer: only for 5 and over (ADV-5)
+    const timer = await P.page.evaluate(async () => { const G = __sv, h = G.heroes[0], A = G.adventure, S = await import('/js/state.js'); S.settings.advLevel = 'tricky';
+      A.force(0, 'house'); A.next(h); const t = A.today(h).timer; S.settings.advLevel = 'gentle'; return !!t; });
+    ok(timer === (age === 'big'), `${tag}: a Tricky timer only for 5 and over (${timer})`);
+    // a missed day keeps its stamps; Grandpa Owl remembers yesterday's (D11); 7 stamps open the week chest (D10)
+    const days = await P.page.evaluate(async () => { const G = __sv, h = G.heroes[0], A = G.adventure, r = A.today(h), d = r.day;
+      Object.assign(r, { day: d - 1, stamps: [d - 5, d - 3], last: 'house', lastDay: d - 1, done: true, told: false });
+      const r2 = A.today(h); const kept = r2.stamps.length, fresh = r2.id && !r2.done && r2.day === d;
+      await new Promise(res => setTimeout(res, 1600)); const told = r2.told === d;
+      r2.stamps = [d - 6, d - 5, d - 4, d - 3, d - 2, d - 1]; const pet = h.profile.lanterns = h.profile.lanterns || {}; pet.pet = pet.pet || {}; pet.pet.hats = [];
+      r2.prizes = []; A.finish(h); await new Promise(res => setTimeout(res, 2500)); document.querySelectorAll('.advchest .adv-coin').forEach(c => c.click());
+      for (let k = 0; k < 20 && document.querySelector('.modal.advchest'); k++) { document.querySelectorAll('.advchest .adv-go:not([hidden])').forEach(b => b.click()); await new Promise(res => setTimeout(res, 500)); }
+      return { kept, fresh, told, chests: r2.chests, stamps: r2.stamps.length, hat: (h.profile.lanterns.pet.hats || []).includes('party') }; });
+    ok(days.kept === 2 && days.fresh, `${tag}: a missed day takes no stamp away; a new adventure today ${JSON.stringify(days)}`);
+    ok(days.told, `${tag}: Grandpa Owl remembers yesterday's adventure`);
+    ok(days.chests === 1 && days.stamps === 0 && days.hat, `${tag}: seven stamps open the week chest: a hat ${JSON.stringify(days)}`);
+    // the Adventures tab: today's on top, the rest behind "More adventures"; the switch off: as before
+    await P.page.evaluate(() => __sv.openPad(0, 'log')); await P.page.waitForTimeout(500);
+    const tab = await P.page.evaluate(() => ({ log: !!document.querySelector('.pad-body .adv-log'), more: !!document.querySelector('.adv-morebtn'), hidden: !!document.querySelector('.adv-more[hidden]') }));
+    ok(tab.log && tab.more && tab.hidden, `${tag}: Adventures tab ${JSON.stringify(tab)}`);
+    await P.page.screenshot({ path: `out/dailyadventure-tab-${w}.png` });
+    await P.page.click('.adv-morebtn'); ok(await P.page.evaluate(() => !document.querySelector('.adv-more[hidden]')), `${tag}: More adventures opens the older lists`);
+    await P.page.evaluate(async () => { (await import('/js/state.js')).settings.dailyAdventure = false; document.querySelector('.modal.pad .x').click(); });
+    await P.page.waitForTimeout(500); await P.page.evaluate(() => __sv.openPad(0, 'log')); await P.page.waitForTimeout(500);
+    const off = await P.page.evaluate(() => ({ tab: !!document.querySelector('.adv-log, .adv-morebtn'), card: !document.querySelector('.hud .advcard')?.hidden }));
+    ok(!off.tab && !off.card, `${tag}: switched off in Grown-ups: no card, the tab as before ${JSON.stringify(off)}`);
+    await P.page.evaluate(async () => { (await import('/js/state.js')).settings.dailyAdventure = true; });
+    ok(!P.errors.length, `${tag}: ${P.errors.join(' | ')}`);
+    await P.ctx.close();
+  }
+});
 await b.close();
 const failed = results.filter(r => !r[1]);
 console.log(`\n${results.length - failed.length}/${results.length} checks passed`);

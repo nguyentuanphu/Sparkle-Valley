@@ -90,7 +90,7 @@ const FIRST = [
     ['Grandma Hai sold all her mangoes. Thank you!', 'Bà Hai bán hết xoài rồi. Cảm ơn con!'],
     [go('market', '🏮', 'Walk to the market', 'Đi đến chợ'),
       find('v_bahai', { icon: '🥭', en: 'mangoes', vi: 'quả xoài' }, 'Pick up {n} mangoes', 'Nhặt {n} quả xoài'),
-      give('v_bahai', '🧑', 'Give them to Grandma Hai', 'Đưa cho Bà Hai', { coins: true })], 'mango'),
+      give('v_bahai', '🧑', 'Give them to Grandma Hai', 'Đưa cho Bà Hai')], 'mango'),
   A('kite', 'haikite', '🪁', 'Kite day', 'Ngày thả diều', ['vungtau'],
     ['The wind is perfect for kites today! Bring the ribbons and we will fly.', 'Hôm nay gió thả diều đẹp lắm! Mang dải ruy băng tới, mình cùng thả nhé.'],
     ['Your kite is still flying over the sea!', 'Diều của con vẫn còn bay trên biển đó!'],
@@ -126,7 +126,7 @@ const FIRST = [
     ['Grandpa Owl loved his bánh mì!', 'Ông Cú thích bánh mì lắm đó!'],
     [find('npc_ongnghi', { icon: '🥖', en: 'bánh mì', vi: 'ổ bánh mì' }, 'Pack {n} bánh mì', 'Gói {n} ổ bánh mì'),
       go('plateau', '🦉', 'Climb up to Grandpa Owl', 'Leo lên chỗ Ông Cú'),
-      give('npc_owl', '🦉', 'Give them to Grandpa Owl', 'Đưa cho Ông Cú', { coins: true })], 'banhmi'),
+      give('npc_owl', '🦉', 'Give them to Grandpa Owl', 'Đưa cho Ông Cú')], 'banhmi'),
   A('lanterns', 'teo', '🏮', 'Lantern night', 'Đêm hội đèn lồng', ['village'],
     ['It is lantern night! Help me find lanterns for the parade.', 'Đêm hội đèn lồng rồi! Giúp tớ tìm đèn lồng cho đoàn rước nhé.'],
     ['The lanterns are still shining for you!', 'Đèn lồng vẫn còn sáng cho con đó!'],
@@ -396,11 +396,13 @@ export function pickAdventure(ctx = {}) {
 // The day number is the Sydney date (AEST or AEDT). 'first' (the owner's choice): the adventure of the day the child
 // first plays stays all through that play, even past midnight; '6am' and 'midnight' turn over at that hour.
 const TZ = 'Australia/Sydney';
+let FMT = null;
 /** the Sydney date of a moment as a day number (days since 1970-01-01); shift = hours the day starts late (6 for '6am') */
 export function sydneyDay(ms = Date.now(), shift = 0) {
   const t = ms - shift * 36e5;
   try {
-    const p = Object.fromEntries(new Intl.DateTimeFormat('en-AU', { timeZone: TZ, year: 'numeric', month: 'numeric', day: 'numeric' }).formatToParts(new Date(t)).map(x => [x.type, x.value]));
+    FMT = FMT || new Intl.DateTimeFormat('en-AU', { timeZone: TZ, year: 'numeric', month: 'numeric', day: 'numeric' });
+    const p = Object.fromEntries(FMT.formatToParts(new Date(t)).map(x => [x.type, x.value]));
     return Math.floor(Date.UTC(+p.year, +p.month - 1, +p.day) / 864e5);
   } catch (e) { return Math.floor((t + 10 * 36e5) / 864e5); }
 }

@@ -127,6 +127,8 @@ export class Hud {
     this.regionT = 0; this.toastT = 0; this.last = {};
     this.refreshWho();
     this.navWatch = new ResizeObserver(() => this.fitQuest()); this.navWatch.observe(this.q('.hud-tr'));
+    // (daily adventure, chat C, 16 Oct AEDT) the goal card: js/adventure.js is loaded once, for every player's HUD
+    if (!game.adventure && !game._advLoad) game._advLoad = import('./adventure.js').then(m => m.createAdventure(game)).catch(e => console.warn('daily adventure', e));
   }
   refreshAudio() {
     const s = this.game.settings, m = this.q('.dk.mus'), d = this.q('.dk.snd');
@@ -201,6 +203,7 @@ export class Hud {
     const obj = this.game.objective(h), qi = this.game.objectiveIcon(h);
     if (this.last.o !== obj) { this.q('.q-text').textContent = obj || ''; this.q('.q-icon').textContent = qi || '📍'; this.q('.quest').hidden = !obj; this.last.o = obj; this.q('.quest').classList.remove('new'); void this.q('.quest').offsetWidth; this.q('.quest').classList.add('new'); this.foldQuest(); }
     this.q('.q-go').hidden = !this.game.questTarget(h);
+    if (this.game.adventure) this.game.adventure.hud(this);   // (daily adventure) the goal card takes the goal row while today's adventure is on
     // (Round V, owner 13 Oct) a family mission that has started (told to the child, not done yet) shows under the quest too
     const P = this.game.parents, fm = P && P.openFor ? P.openFor(p).find(m => (p.missionsSeen || []).includes(m.id)) : null, fk = fm ? fm.id + ':' + T('e', 'v') : '';
     if (this.last.fm !== fk) { this.last.fm = fk; const b = this.q('.q-fam'); b.hidden = !fm; if (fm) { b.innerHTML = `${pic(fm.icon || '📝')}<span><b>${esc(T('Family mission', 'Nhiệm vụ gia đình'))}</b> ${esc(T(fm.en, fm.vi))}</span>`; b.setAttribute('aria-label', T('Family mission: ', 'Nhiệm vụ gia đình: ') + T(fm.en, fm.vi)); } }

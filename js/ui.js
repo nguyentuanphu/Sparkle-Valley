@@ -381,6 +381,12 @@ export function openGrownups(after) {
 <h3>🌙 ${T('Rest time', 'Giờ nghỉ')}</h3>
       <p class="note">${T('After this much play in a day, the explorer yawns and says goodnight. A grown-up can hold a button for 10 more minutes. Counted on this device only.', 'Sau khoảng thời gian chơi này trong ngày, nhà thám hiểm sẽ ngáp và chúc ngủ ngon. Người lớn có thể giữ nút để chơi thêm 10 phút. Chỉ tính trên máy này.')} ${T('Today', 'Hôm nay')}: ${Math.round(settings.playDay === new Date().toDateString() ? settings.playMins || 0 : 0)} ${T('min', 'phút')}</p>
       <div class="seg rest">${['0', '15', '30', '45', '60'].map(k => `<button data-r="${k}" class="${String(settings.restMins || '0') === k ? 'on' : ''}">${k === '0' ? T('Off', 'Tắt') : k + ' ' + T('min', 'phút')}</button>`).join('')}</div>
+      <h3>🧭 ${T('Daily adventure', 'Phiêu lưu mỗi ngày')}</h3>
+      <div class="toggles"><label class="tog"><input type="checkbox" id="gAdv" ${settings.dailyAdventure === false ? '' : 'checked'}> ${T('A new three-step adventure every day, with a chest at the end', 'Mỗi ngày một chuyến phiêu lưu ba bước, cuối cùng có rương báu')}</label></div>
+      <p class="note">${T('A new adventure starts:', 'Phiêu lưu mới bắt đầu:')}</p>
+      <div class="seg advday">${[['first', T('When the child first plays', 'Khi bé chơi lần đầu trong ngày')], ['6am', T('At 6 am', 'Lúc 6 giờ sáng')], ['midnight', T('At midnight', 'Lúc nửa đêm')]].map(([k, l]) => `<button data-d="${k}" class="${(settings.advDay || 'first') === k ? 'on' : ''}">${l}</button>`).join('')}</div>
+      <p class="note">${T('For children 5 and over. Tricky adds a sand timer for bonus coins (never a loss); under-5s never have a timer.', 'Cho bé từ 5 tuổi. Thử thách thêm đồng hồ cát để được thưởng thêm (không bao giờ bị thua); bé dưới 5 tuổi không có đồng hồ.')}</p>
+      <div class="seg advlvl">${[['gentle', T('Gentle', 'Nhẹ nhàng')], ['tricky', T('Tricky', 'Thử thách')]].map(([k, l]) => `<button data-l="${k}" class="${(settings.advLevel || 'gentle') === k ? 'on' : ''}">${l}</button>`).join('')}</div>
       
       </div></details>
       <details class="gsec" data-sec="money" ${gOpen.has('money') ? 'open' : ''}><summary><span class="gi">💰</span><b>${T('Money and farm', 'Tiền và nông trại')}</b></summary><div class="gbody">
@@ -484,6 +490,10 @@ export function openGrownups(after) {
     card.querySelectorAll('.seg.tview button').forEach(b => b.onclick = () => { settings.twoView = b.dataset.tv; saveSettings(); dispatchEvent(new Event('resize')); const y = m.scrollTop; draw(); m.scrollTop = y; });
     card.querySelectorAll('.seg.tsize button').forEach(b => b.onclick = () => { settings.textSize = +b.dataset.ts; saveSettings(); applyComfort(); const y = m.scrollTop; draw(); m.scrollTop = y; });
     card.querySelectorAll('.seg.rest button').forEach(b => b.onclick = () => { settings.restMins = b.dataset.r; saveSettings(); const y = m.scrollTop; draw(); m.scrollTop = y; });
+    // (daily adventure, chat C) on or off, when a new day starts, Gentle or Tricky
+    chk('#gAdv', 'dailyAdventure');
+    card.querySelectorAll('.seg.advday button').forEach(b => b.onclick = () => { settings.advDay = b.dataset.d; saveSettings(); const y = m.scrollTop; draw(); m.scrollTop = y; });
+    card.querySelectorAll('.seg.advlvl button').forEach(b => b.onclick = () => { settings.advLevel = b.dataset.l; saveSettings(); const y = m.scrollTop; draw(); m.scrollTop = y; });
     chk('#gBil', 'bilingual'); chk('#gVoice', 'voice'); chk('#gMusic', 'music', () => settings.music ? Music.refresh() : Music.stop()); chk('#gSound', 'sound'); chk('#gTapSnd', 'tapSounds'); chk('#gDay', 'alwaysDay');
     card.querySelector('#vEn').onchange = e => { settings.voiceEn = e.target.value; saveSettings(); };
     card.querySelector('#vVi').onchange = e => { settings.voiceVi = e.target.value; saveSettings(); };
@@ -963,9 +973,16 @@ export function openPad(game, i, tab) {
     return `<i class="${have ? 'have' : 'miss'}">${ITEMS[n].icon}${have ? '<b class="tick">✅</b>' : ''}</i>`; }).join(' + ');
   function drawLog(body) {
     const next = game.currentQuest(p);
-    body.innerHTML = (game.parents ? game.parents.logHTML(p) : '') + sideHTML() + (game.coop ? game.coop.html() : '') + (game.chests ? game.chests.html(p) : '') + `<h3>${T('Main adventure', 'Cuộc phiêu lưu chính')}</h3><ol class="quests">${QUESTS.map(q => { const done = !!p.quests[q.id] || (q.check && q.check(p)); return `<li class="${done ? 'done' : q === next ? 'now' : ''}"><span>${done ? '✅' : q.icon}</span>${esc(q.title())}</li>`; }).join('')}</ol>
+    // (daily adventure, chat C, 16 Oct AEDT; ADV-1) today's adventure on top; everything else behind "More adventures"
+    const advTop = game.adventure ? game.adventure.logHTML(p) : '';
+    body.innerHTML = (advTop ? advTop + `<button class="adv-morebtn" aria-expanded="false">${esc(T('More adventures', 'Thêm phiêu lưu'))}</button><div class="adv-more" hidden>` : '') + (game.parents ? game.parents.logHTML(p) : '') + sideHTML() + (game.coop ? game.coop.html() : '') + (game.chests ? game.chests.html(p) : '') + `<h3>${T('Main adventure', 'Cuộc phiêu lưu chính')}</h3><ol class="quests">${QUESTS.map(q => { const done = !!p.quests[q.id] || (q.check && q.check(p)); return `<li class="${done ? 'done' : q === next ? 'now' : ''}"><span>${done ? '✅' : q.icon}</span>${esc(q.title())}</li>`; }).join('')}</ol>
       <p class="note">✨ ${T('Shrines solved', 'Đền đã giải')}: ${Object.keys(p.shrines).length}/12 · 🗼 ${T('Towers', 'Tháp')}: ${Object.keys(p.towers).length}/4 · 🍳 ${T('Recipes', 'Công thức')}: ${Object.keys(p.dishes).length}/${RECIPES.length}</p>
-      <h3>🍳 ${T('Cooking recipes', 'Sổ công thức nấu ăn')}</h3><div class="recipes">${RECIPES.map(r => { const known = p.dishes[r.id] != null; return `<div class="rec ${known ? '' : 'unk'}"><span>${known ? r.icon : '❔'}</span><small>${known ? esc(r.name()) : recNeed(r)}</small></div>`; }).join('')}</div>`;
+      <h3>🍳 ${T('Cooking recipes', 'Sổ công thức nấu ăn')}</h3><div class="recipes">${RECIPES.map(r => { const known = p.dishes[r.id] != null; return `<div class="rec ${known ? '' : 'unk'}"><span>${known ? r.icon : '❔'}</span><small>${known ? esc(r.name()) : recNeed(r)}</small></div>`; }).join('')}</div>${advTop ? '</div>' : ''}`;
+    if (advTop) {
+      const more = body.querySelector('.adv-more'), mb = body.querySelector('.adv-morebtn');
+      mb.onclick = () => { more.hidden = !more.hidden; mb.setAttribute('aria-expanded', String(!more.hidden)); };
+      body.querySelector('[data-advopen]').onclick = () => { close(); game.adventure.openWindow(i); };
+    }
     body.querySelectorAll('[data-follow]').forEach(b => b.onclick = () => { p.follow = p.follow === b.dataset.follow ? null : b.dataset.follow; saveProfiles(); SFX.ok(); game.checkQuests && game.checkQuests(hero); draw(); });
     game.parents && game.parents.bindLog(body, hero, draw); // (round S) a grown-up holds ✓ on a family mission
   }

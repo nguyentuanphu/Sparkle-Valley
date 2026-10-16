@@ -2811,3 +2811,101 @@ body.calm .stkbook .stk-tile.shiny .stk-pic::after { animation: none; }
 .hud.little .act .ai { animation: sv-breathe 2.4s ease-in-out infinite; }
 @keyframes sv-breathe { 50% { scale: 1.08; } }
 body.calm .sv-press, body.calm .sv-spring, body.calm .sv-wiggle, body.calm .sv-jiggle, body.calm .hud.little .act .ai { animation: none !important; scale: none !important; rotate: none !important; }
+/* daily adventure (chat C) — owner plan 16 Oct AEDT; js/adventure.js; design: docs/ui-redesign-20261016/canvas/Adventure.dc.html
+   and HUD.dc.html. The kit: paper panels, 3 px ink outline, solid shadows, green = go, gold = earned, pink = close,
+   sky = hear again (UI-1 to UI-10). Calm mode: nothing moves. */
+.quest.adv > :not(.advcard) { display: none !important; }
+.quest.adv.fold { max-width: min(56%, 520px) !important; }
+.quest.adv { background: none; box-shadow: none; padding: 0; }
+.advcard { flex-basis: 100%; display: flex; align-items: center; gap: 8px; min-width: 0; background: var(--paper); border: 3px solid var(--ink); border-radius: 22px; box-shadow: 0 4px 0 var(--ink); padding: 6px 8px 6px 6px; color: var(--ink); }
+.advcard[hidden] { display: none !important; }
+.advcard .adv-open { flex: 1; min-width: 0; min-height: 56px; display: flex; align-items: center; gap: 10px; border: 0; background: none; padding: 0; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.advcard .adv-badge { flex: none; width: 48px; height: 48px; box-sizing: border-box; border-radius: 50%; background: #8a5cf6; border: 3px solid var(--ink); display: flex; align-items: center; justify-content: center; }
+.advcard.fam .adv-badge { background: #ffe7a8; }
+.advcard .adv-badge .art { width: 32px; height: 32px; }
+.advcard .adv-cx { min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.advcard .adv-text { font: 600 17px/1.15 var(--font); overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.adv-dots { display: flex; gap: 6px; }
+.adv-dots i { width: 22px; height: 22px; box-sizing: border-box; border-radius: 50%; border: 3px solid var(--ink); background: #fff; }
+.adv-dots i.done { background: #43c463; }
+.adv-dots i.now { background: #ffb020; box-shadow: 0 0 0 4px rgba(255, 176, 32, .4); }
+.adv-dots i.todo { border-style: dashed; }
+.advcard .adv-hear { flex: none; width: 48px; height: 48px; border-radius: 50%; background: #29b6f6; border: 3px solid var(--ink); box-shadow: 0 3px 0 #1a7fb0; display: flex; align-items: center; justify-content: center; padding: 0; cursor: pointer; }
+.hud.small .advcard .adv-text { font-size: 15px; }
+.hud.small .advcard .adv-badge, .hud.small .advcard .adv-hear { width: 44px; height: 44px; }
+.hud.small .adv-dots i { width: 18px; height: 18px; border-width: 2.5px; }
+.hud.small .advcard .adv-open { min-height: 48px; }
+/* the window */
+.modal.advwin .card { background: #8a5cf6; color: var(--ink); border: 3px solid var(--ink); border-radius: 28px; box-shadow: 0 6px 0 var(--ink); max-width: 460px; gap: 14px; padding: 18px 14px; }
+.modal.advwin .card h2 { margin: 0; font: 800 28px/1.05 'Baloo 2', var(--font); color: #fff; }
+.modal.advwin .x { position: static; flex: none; width: 56px; height: 56px; border-radius: 50%; background: #ff6fae; color: #fff; border: 3px solid var(--ink); box-shadow: 0 5px 0 #c2407e; font-size: 24px; }
+.modal.advwin .card > .x { position: absolute; top: 12px; right: 12px; }
+.advwin .adv-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.advwin .adv-giver { display: flex; align-items: flex-end; gap: 10px; }
+.advwin .adv-face { flex: none; width: 96px; height: 96px; display: flex; align-items: center; justify-content: center; background: #ffe7a8; border: 3px solid var(--ink); border-radius: 50%; }
+.advwin .adv-face .art { width: 72px; height: 72px; }
+.advwin .adv-bubble { flex: 1; margin-bottom: 26px; background: #fff; border: 3px solid var(--ink); border-radius: 22px 22px 22px 6px; padding: 10px 14px; font: 500 18px/1.3 var(--font); color: var(--ink); text-align: left; min-height: 56px; cursor: pointer; }
+.advwin .adv-bubble small { display: block; font: 600 15px var(--font); color: #8a5cf6; }
+.advwin .adv-steps { background: var(--paper); border: 3px solid var(--ink); border-radius: 28px; box-shadow: 0 6px 0 var(--ink); padding: 16px; display: flex; flex-direction: column; }
+.advwin .adv-step { display: flex; align-items: center; gap: 12px; }
+.advwin .adv-line { width: 4px; height: 14px; background: var(--ink); margin-left: 20px; border-radius: 2px; }
+.advwin .adv-dot { flex: none; width: 44px; height: 44px; box-sizing: border-box; border-radius: 50%; border: 3px solid var(--ink); background: #fff; display: flex; align-items: center; justify-content: center; font: 800 22px 'Baloo 2', var(--font); }
+.advwin .adv-step.done .adv-dot { background: #43c463; }
+.advwin .adv-step.now .adv-dot { background: #ffb020; box-shadow: 0 0 0 5px rgba(255, 176, 32, .4); }
+.advwin .adv-step.todo .adv-dot { border-style: dashed; }
+.advwin .adv-st { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.advwin .adv-pic .art { width: 34px; height: 34px; }
+.advwin .adv-tx { display: flex; flex-direction: column; gap: 4px; }
+.advwin .adv-tx b { font: 600 19px/1.2 var(--font); }
+.advwin .adv-found { display: flex; flex-wrap: wrap; gap: 4px; }
+.advwin .adv-found i { width: 28px; height: 28px; display: flex; }
+.advwin .adv-found i .art { width: 100%; height: 100%; }
+.advwin .adv-found i.miss { opacity: .35; filter: grayscale(1); outline: 2px dashed var(--ink); outline-offset: -2px; border-radius: 50%; }
+.advwin .adv-chestrow { background: #ffe7a8; border: 3px solid var(--ink); border-radius: 24px; padding: 10px 12px; display: flex; align-items: center; gap: 10px; }
+.advwin .adv-chesticon .art { width: 56px; height: 56px; }
+.advwin .adv-cx { flex: 1; display: flex; flex-direction: column; gap: 2px; }
+.advwin .adv-cx b { font: 600 18px/1.2 var(--font); } .advwin .adv-cx small { font: 500 15px/1.2 var(--font); color: #5a4636; }
+.advwin .adv-rew { flex: none; display: flex; align-items: center; gap: 2px; font: 800 22px 'Baloo 2', var(--font); }
+.advwin .adv-rew .art { width: 34px; height: 34px; }
+.adv-week { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; }
+.adv-stamp { display: flex; flex-direction: column; align-items: center; gap: 4px; color: #e5dbff; font: 600 15px var(--font); }
+.adv-stamp span { width: 40px; height: 40px; box-sizing: border-box; border-radius: 50%; background: #a98bf8; border: 3px dashed var(--ink); display: flex; align-items: center; justify-content: center; }
+.adv-stamp.got { color: #fff; } .adv-stamp.got span { background: #ffb020; border-style: solid; }
+.adv-stamp.got .art { width: 26px; height: 26px; }
+.adv-stamp.now { color: #fff; } .adv-stamp.now span { background: #fff; border-style: solid; box-shadow: 0 0 0 4px #ffe7a8; }
+.advwin .adv-go { min-height: 68px; font: 600 24px var(--font); color: #fff; background: #43c463; border: 3px solid var(--ink); border-radius: 24px; box-shadow: 0 6px 0 #2a8a40; cursor: pointer; }
+/* the chest and counting */
+.advchest .card { align-items: center; text-align: center; }
+.advchest .adv-bigchest { width: 150px; height: 150px; cursor: pointer; transition: transform .2s; }
+.advchest .adv-bigchest .art { width: 100%; height: 100%; }
+.advchest .adv-bigchest.shut { animation: adv-wobble 1.2s ease-in-out infinite; }
+.advchest .adv-bigchest.open { transform: scale(1.08); filter: drop-shadow(0 0 18px #ffe7a8); }
+@keyframes adv-wobble { 50% { rotate: -4deg; } }
+.advchest .adv-prize { display: flex; align-items: center; gap: 10px; background: var(--paper); border: 3px solid var(--ink); border-radius: 24px; padding: 8px 16px; font: 600 22px var(--font); }
+.advchest .adv-prize .art { width: 64px; height: 64px; }
+.advchest .adv-coins { display: grid; grid-template-columns: repeat(5, 56px); gap: 8px; justify-content: center; }
+.advchest .adv-coin { position: relative; width: 56px; height: 56px; border-radius: 50%; border: 3px solid var(--ink); background: var(--paper); padding: 6px; cursor: pointer; }
+.advchest .adv-coin .art { width: 100%; height: 100%; }
+.advchest .adv-coin.on { background: #ffb020; }
+.advchest .adv-coin i { position: absolute; right: -6px; top: -8px; min-width: 22px; font: 800 18px 'Baloo 2', var(--font); color: #fff; text-shadow: 0 2px 0 var(--ink); font-style: normal; }
+.advchest .adv-coins.auto .adv-coin { pointer-events: none; background: #ffb020; }
+.advchest .adv-countline { margin: 0; color: #fff; font: 600 18px var(--font); }
+.advchest .adv-go { width: 100%; }
+.advcount .card { align-items: center; text-align: center; }
+.advcount .card h2 { padding-right: 60px; }
+.advcount .adv-pile { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; background: var(--paper); border: 3px solid var(--ink); border-radius: 24px; padding: 12px; }
+.advcount .adv-pile .art { width: 48px; height: 48px; }
+.advcount .adv-nums { display: flex; gap: 12px; }
+.advcount .adv-num { width: 72px; height: 72px; border-radius: 22px; border: 3px solid var(--ink); background: var(--paper); box-shadow: 0 5px 0 var(--ink); font: 800 34px 'Baloo 2', var(--font); color: var(--ink); cursor: pointer; }
+/* the Adventures tab: today's adventure first, the rest behind one "More adventures" button (ADV-1) */
+.adv-log { display: flex; flex-direction: column; gap: 8px; background: #8a5cf6; border: 3px solid var(--ink); border-radius: 24px; padding: 10px; margin-bottom: 10px; }
+.adv-log .adv-logcard { display: flex; align-items: center; gap: 10px; min-height: 64px; background: var(--paper); border: 3px solid var(--ink); border-radius: 20px; box-shadow: 0 4px 0 var(--ink); padding: 8px 10px; color: var(--ink); text-align: left; font: inherit; cursor: pointer; }
+.adv-log .adv-face { flex: none; width: 52px; height: 52px; border-radius: 50%; background: #ffe7a8; border: 3px solid var(--ink); display: flex; align-items: center; justify-content: center; }
+.adv-log .adv-face .art { width: 36px; height: 36px; }
+.adv-log .adv-cx { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.adv-log .adv-cx b { font: 600 17px/1.2 var(--font); } .adv-log .adv-cx small { font: 500 15px/1.2 var(--font); color: #5a4636; }
+.adv-week.mini .adv-stamp span { width: 32px; height: 32px; } .adv-week.mini .adv-stamp .art { width: 20px; height: 20px; }
+.adv-morebtn { width: 100%; min-height: 56px; margin: 4px 0 8px; background: var(--paper); color: var(--ink); border: 3px solid var(--ink); border-radius: 20px; box-shadow: 0 4px 0 var(--ink); font: 600 18px var(--font); cursor: pointer; }
+.adv-more[hidden] { display: none !important; }
+@media (max-width: 380px) { .advwin .adv-face { width: 72px; height: 72px; } .advwin .adv-face .art { width: 54px; height: 54px; } .adv-stamp span { width: 34px; height: 34px; } .advchest .adv-coins { grid-template-columns: repeat(4, 56px); } }
+body.calm .advchest .adv-bigchest.shut, body.calm .advchest .adv-bigchest { animation: none !important; transition: none; }
