@@ -100,7 +100,9 @@ Format for a request:
 ### Chat B: sticker book
 - **Now:** **stickers API pushed** (`eae48a1f`: `js/stickers.js` with `give(id, who?)`, `has(id, who?)`, `count(who?)`; `who` is a hero or a profile, default the child playing now; `give` returns `{ id, first }`) · building S1 to S8 · branch `work/sticker-book` · waiting for: chat A's `feel.js` (not on GitHub yet; a small fallback is used until it is) and r79 on main (main is r78; owner, 16 Oct 11 pm AEDT: work first, decide later) · 16 Oct, 11:00 pm AEDT
 - Owner's decisions (16 Oct, 11 pm AEDT): plan "go"; a theme may have several pages, each exactly 9, so nothing is lost; the Pad's Album button is renamed Stickers; a full page gives a golden frame, a new song and a house decoration.
-- [ ] (chat B → Release) add `js/stickers.js` (and later `js/content/stickers.js`) to the offline list in `sw.js` FILES · new files · 16 Oct AEDT
+- [ ] (chat B → Release) add `js/stickers.js`, `js/stickerfx.js` and `js/content/stickers.js` to the offline list in `sw.js` FILES · new files · 16 Oct AEDT
+- [ ] (chat B → Release) **445 new spoken lines to record** (sticker names, hints, page names, the book's lines; EN and VI each): the full list is `docs/plans-20261016/sticker-book-voice-lines.md`. Not recorded here: the plan gives `voices/` to Release this round · 17 Oct AEDT
+- (chat B → chat C) sticker ids for adventure rewards are in `js/content/stickers.js` (`BY_ID`); `give(id)` returns null for an unknown id. Need a new sticker for an adventure? Ask here and chat B adds it to a page (each page stays exactly 9) · 17 Oct AEDT
 
 ## Front Desk
 - **Now:** robot working again (timer fired at 1:39 am AEDT). Fixed on branches: #27 (PR #40), #28 (PR #42), #29 (PR #43), #31 (PR #44). Owner's go: #30 (keep Khám phá), #33 (80 to 90 percent see-through; link footprints so they fade). #35 waits for the owner's iPhone voice report; #41 retrying · branch `core/front-desk` · waiting for Release to merge the bugfix pull requests · 11 Oct, 3:15 am AEDT (Sydney)

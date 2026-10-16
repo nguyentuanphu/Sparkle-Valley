@@ -5942,13 +5942,13 @@ await check('reportstorage', async () => {
   const {execFileSync}=await import('node:child_process');
   return execFileSync(process.execPath,['owner-report-storage.mjs'],{encoding:'utf8',timeout:60000}).trim();
 });
-/* sticker book (chat B) */
-// (owner plan 16 Oct 2026 AEDT, chat B; STK-1 to STK-6) the Stickers tab of the Pad: earning (a place, talking to
-// someone, an animal, something an older system keeps), the New! badge on the Bag button and the tab, a page of 3 x 3
-// with a count and a progress bar, grey "?" shapes with a spoken hint, a full page's golden frame and prize, the
-// welcome sticker of an empty page, a shiny copy, both languages, an under-5 on a phone and a big kid on a computer;
-// and every way to earn a sticker exists in the running game
 await check('stickers', async () => {
+  /* sticker book (chat B) */
+  // (owner plan 16 Oct 2026 AEDT, chat B; STK-1 to STK-6) the Stickers tab of the Pad: earning (a place, talking to
+  // someone, an animal, something an older system keeps), the New! badge on the Bag button and the tab, a page of 3 x 3
+  // with a count and a progress bar, grey "?" shapes with a spoken hint, a full page's golden frame and prize, the
+  // welcome sticker of an empty page, a shiny copy, both languages, an under-5 on a phone and a big kid on a computer;
+  // and every way to earn a sticker exists in the running game
   const notes = [];
   for (const [age, lang, w, h, touch] of [['little', 'en', 390, 844, true], ['big', 'vi', 1280, 800, false]]) {
     const P = await open(b, { w, h, touch, lang }); await clear(P.page);
