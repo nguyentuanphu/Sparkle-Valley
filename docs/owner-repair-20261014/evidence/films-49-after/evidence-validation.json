@@ -1,0 +1,18 @@
+{
+  "matched_compositions": 777,
+  "nonblank_browser_pngs": 2010,
+  "stories": 38,
+  "devices": [
+    "phone",
+    "tablet",
+    "computer"
+  ],
+  "languages": [
+    "en",
+    "vi"
+  ],
+  "css_unchanged": true,
+  "title_text_stage_bounds_within_one_pixel": true,
+  "actor_counts_unchanged": true,
+  "served_sources_match_commits": true
+}

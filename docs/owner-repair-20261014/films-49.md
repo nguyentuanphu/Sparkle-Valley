@@ -20,15 +20,25 @@ BEFORE is the supplied checkpoint, not a reconstructed R74 claim. AFTER source h
 
 ## Progress and limits
 
-The first complete AFTER capture pass was superseded: the focused check found undefined `L` calls in seven scenery helper call sites. The film renderer catches page-building exceptions as warnings, so browser page-error checks alone had missed them. This left some new props absent. Replaced those calls with the defined `SETS` helper, retained the initial failure log, and added film-page-warning rejection to the capture helper. The corrected source must pass the focused check before fresh AFTER captures replace the previous set. Before pictures remain the original checkpoint. Several earlier capture jobs were interrupted between chat turns and resumed from completed-story manifests. The helper refuses to resume across different game-source fingerprints.
+The first complete AFTER capture pass was superseded: the focused check found undefined `L` calls in seven scenery helper call sites. The film renderer catches page-building exceptions as warnings, so browser page-error checks alone had missed them. This left some new props absent. Replaced those calls with the defined `SETS` helper, retained the initial failure log, and added film-page-warning rejection to the capture helper. The corrected source passed the focused check twice, and fresh AFTER captures replaced the entire previous set. Final capture source: `7f953ae3000d2c9c1a1cd8b071d63005070dacaa` (runtime fix `fa62bd8ec`). Before pictures remain the original checkpoint. Several earlier capture jobs were interrupted between chat turns and resumed from completed-story manifests. The helper refuses to resume across different game-source fingerprints.
 
 ## Checks
 
-Pending: full visual review, focused scenery/lifecycle regression, selected changed checks and GitHub Full suite. A default main-based changed selection includes inherited checkpoint changes and selects Full because of an unrelated unmapped file. Local changed selection therefore uses the supplied checkpoint as its explicit base; full coverage runs on GitHub as required.
+| Check | Result |
+|---|---|
+| Focused regression on BEFORE | Expected failure: 38 missing new art directions and four animal-size failures. [Result](evidence/films-49-before/focused-result.json). |
+| Initial focused AFTER regression | Failed: undefined scenery helper calls. Fixed in `fa62bd8ec`; [failure log](evidence/films-49-after/focused-initial-failure.log) retained. All initial AFTER pictures were replaced. |
+| Corrected focused regression, before and after replacement capture | Passed twice: 38 tales, 221 pages, no warnings, four authored animal scales retained, 266 scenery geometries disposed, night fill readable, guide lighting unchanged, added scenery still in Calm. [Result](evidence/films-49-after/focused-result.json). |
+| Evidence validator | Passed: 2,010 nonblank PNGs, 777 matched views, source hashes match recorded commits and served files, CSS unchanged, title/text/stage bounds within 1 pixel, actor counts unchanged. [Result](evidence/films-49-after/evidence-validation.json). |
+| Visual review | Completed: all 42 labelled contact sheets (7 per device per phase), covering every English page of every tale on phone/tablet/computer. Corrected AFTER sheets were regenerated and reviewed again. Full shells also inspected in EN and VI, including phone Nian, tablet cake palace, computer watermelon and monkey. |
+| Selected local suite | Running: `cd tests && SV_URL=http://localhost:8766 node suite.mjs --changed --base c0bcd0bf2da10d394396b108d6c217bf0899ad87 --jobs 1` (65/190 selected). |
+| GitHub Full suite | Pending local results and helper-branch push. |
+
+A default main-based changed selection includes inherited checkpoint changes and selects Full because of unrelated unmapped `netlify/functions/family-devices.mjs`. Local changed selection therefore uses the supplied checkpoint as its explicit base; full coverage runs on GitHub as required. [Default selection](evidence/films-49-after/default-main-selection.txt) and [scoped selection](evidence/films-49-after/local-check-selection.txt) are retained. No check was weakened or skipped to pass this repair. Generated check-time and daily-voice files will be restored after the run.
 
 ## Story inventory
 
-Each story's full shell is captured at all three sizes. [Open the comparison gallery](films-49-gallery.html). The matching `*-p1.png` through `*-pN.png` files record every page. The gallery indexes the matching page pictures; final completeness validation is pending.
+Each story's full shell is captured at all three sizes. [Open the comparison gallery](films-49-gallery.html). The matching `*-p1.png` through `*-pN.png` files record every page. The gallery indexes the matching page pictures; the complete capture set has passed source and layout validation.
 
 | Story | Scene direction | BEFORE | AFTER |
 |---|---|---|---|
