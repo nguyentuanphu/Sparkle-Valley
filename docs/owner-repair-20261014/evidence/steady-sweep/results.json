@@ -9792,8 +9792,540 @@
          "gone": false
         }
        }
+      },
+      {
+       "action": "open wardrobe (mirror)",
+       "moved": false,
+       "parts": {
+        "card": {
+         "base": [
+          360,
+          20,
+          560,
+          760
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        }
+       }
+      },
+      {
+       "action": "wardrobe item 1",
+       "moved": false,
+       "parts": {
+        "card": {
+         "base": [
+          360,
+          20,
+          560,
+          760
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        }
+       }
+      },
+      {
+       "action": "wardrobe remove",
+       "moved": false,
+       "parts": {
+        "card": {
+         "base": [
+          360,
+          20,
+          560,
+          760
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        }
+       }
+      },
+      {
+       "action": "wardrobe done",
+       "moved": false,
+       "parts": {
+        "card": {
+         "base": [
+          360,
+          20,
+          560,
+          760
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        }
+       }
       }
      ]
+    },
+    "wardrobe": {
+     "shell": ".wardrobe",
+     "parts": {
+      "wardrobe": ".wardrobe"
+     },
+     "opened": true,
+     "open": {
+      "appearedAtMs": 688,
+      "baselineAtMs": 1389,
+      "samples": 10,
+      "moved": false,
+      "parts": {
+       "wardrobe": {
+        "base": [
+         0,
+         128,
+         1280,
+         672
+        ],
+        "maxChange": {
+         "left": 0,
+         "top": 0,
+         "width": 0,
+         "height": 0
+        },
+        "moved": false,
+        "firstMoveAtMs": null,
+        "gone": false
+       }
+      },
+      "shot": "computer-022-wardrobe-open.png"
+     },
+     "actions": [
+      {
+       "action": "row 1 item",
+       "moved": false,
+       "parts": {
+        "wardrobe": {
+         "base": [
+          0,
+          128,
+          1280,
+          672
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        }
+       }
+      },
+      {
+       "action": "row 1 remove",
+       "moved": false,
+       "parts": {
+        "wardrobe": {
+         "base": [
+          0,
+          128,
+          1280,
+          672
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        }
+       }
+      },
+      {
+       "action": "row 2 item",
+       "moved": false,
+       "parts": {
+        "wardrobe": {
+         "base": [
+          0,
+          128,
+          1280,
+          672
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        }
+       }
+      },
+      {
+       "action": "row 3 item",
+       "skipped": "not on screen: .wardrobe .wrow >> nth=2 >> [data-k]:not([data-v=\"none\"]) >> nth=0"
+      },
+      {
+       "action": "row 2 remove",
+       "moved": false,
+       "parts": {
+        "wardrobe": {
+         "base": [
+          0,
+          128,
+          1280,
+          672
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        }
+       }
+      }
+     ]
+    },
+    "ladybird-tester": {
+     "shell": ".modal.tpanel .card",
+     "opened": true,
+     "actions": [
+      {
+       "action": "kind broken",
+       "moved": false,
+       "parts": {
+        "card": {
+         "base": [
+          360,
+          80,
+          560,
+          640
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        }
+       }
+      },
+      {
+       "action": "kind looks",
+       "moved": false,
+       "parts": {
+        "card": {
+         "base": [
+          360,
+          80,
+          560,
+          640
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        }
+       }
+      },
+      {
+       "action": "kind words",
+       "moved": false,
+       "parts": {
+        "card": {
+         "base": [
+          360,
+          80,
+          560,
+          640
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        }
+       }
+      },
+      {
+       "action": "kind sound",
+       "moved": false,
+       "parts": {
+        "card": {
+         "base": [
+          360,
+          80,
+          560,
+          640
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        }
+       }
+      },
+      {
+       "action": "kind idea",
+       "moved": false,
+       "parts": {
+        "card": {
+         "base": [
+          360,
+          80,
+          560,
+          640
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        }
+       }
+      },
+      {
+       "action": "type a note",
+       "moved": false,
+       "parts": {
+        "card": {
+         "base": [
+          360,
+          80,
+          560,
+          640
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        }
+       }
+      },
+      {
+       "action": "picture: scene only",
+       "moved": false,
+       "parts": {
+        "card": {
+         "base": [
+          360,
+          80,
+          560,
+          640
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        }
+       }
+      },
+      {
+       "action": "picture: whole interface",
+       "moved": false,
+       "parts": {
+        "card": {
+         "base": [
+          360,
+          80,
+          560,
+          640
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        }
+       }
+      },
+      {
+       "action": "Auto play tab",
+       "moved": false,
+       "parts": {
+        "card": {
+         "base": [
+          360,
+          80,
+          560,
+          640
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        }
+       },
+       "autoplayShot": "computer-024-ladybird-autoplay-tab.png"
+      },
+      {
+       "action": "wait in Auto play",
+       "moved": false,
+       "parts": {
+        "card": {
+         "base": [
+          360,
+          80,
+          560,
+          640
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        }
+       }
+      },
+      {
+       "action": "Tester tab",
+       "moved": false,
+       "parts": {
+        "card": {
+         "base": [
+          360,
+          80,
+          560,
+          640
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        }
+       }
+      },
+      {
+       "action": "Auto play tab again",
+       "moved": false,
+       "parts": {
+        "card": {
+         "base": [
+          360,
+          80,
+          560,
+          640
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        }
+       }
+      }
+     ],
+     "open": {
+      "appearedAtMs": 7904,
+      "baselineAtMs": 8600,
+      "samples": 44,
+      "moved": false,
+      "parts": {
+       "card": {
+        "base": [
+         360,
+         80,
+         560,
+         640
+        ],
+        "maxChange": {
+         "left": 0,
+         "top": 0,
+         "width": 0,
+         "height": 0
+        },
+        "moved": false,
+        "firstMoveAtMs": null,
+        "gone": false
+       }
+      },
+      "shot": "computer-023-ladybird-open.png"
+     }
     }
    },
    "startup": {

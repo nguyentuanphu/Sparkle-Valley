@@ -9,7 +9,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { launch, start, seedPlayers, URL as GAME_URL } from './harness.mjs';
-const root = fileURLToPath(new URL('../', import.meta.url)), out = path.join(root, 'docs/owner-repair-20261014/evidence/steady-sweep');
+const root = fileURLToPath(new URL('../', import.meta.url)), out = path.join(root, 'docs/owner-repair-20261014/evidence', process.env.SV_OUT || 'steady-sweep');
 fs.mkdirSync(out, { recursive: true });
 const SIZES = { phone: [390, 844, true], tablet: [820, 1180, true], computer: [1280, 800, false] };
 const want = (process.argv[2] || 'phone,tablet,computer').split(',');

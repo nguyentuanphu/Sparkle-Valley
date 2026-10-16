@@ -2717,3 +2717,7 @@ body.bigtext .theatre .th-text { --thp: clamp(20px, 3.2vw, 28px); --thm: clamp(1
 }
 /* (review R5) a note that is still longer than two lines ends with "…", never cut mid-word */
 .htoast.explain { text-overflow: ellipsis; }
+/* (r78, owner: no overlaps) some Bag pictures are drawn a little past their 64 px box (the apple, the rice), so their
+   name sat on the picture: the picture keeps 10 px clear below it, and the name stays above the drawing */
+.pad .slot > span:not(.sw) { margin-bottom: 10px; }
+.pad .slot > small { position: relative; z-index: 1; }
