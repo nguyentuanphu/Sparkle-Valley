@@ -1,7 +1,7 @@
 # Plan: TypeScript everywhere, and a lighter, faster load (16 Oct 2026 AEDT)
 
 Status: **plan only, nothing built.** Owner, 16 Oct AEDT (pop-up answers): "TS everywhere and plan to make loading
-lighter", "go all at once". This replaces the 13 Oct AEDT decision "stay with plain JavaScript"
+lighter"; then "in batches, one core at a time" (replaces "go all at once"). This replaces the 13 Oct AEDT decision "stay with plain JavaScript"
 (`docs/cores/release.md`, `docs/SO-TAY-THIET-KE.md` §14.2). Building starts only after the owner's "go" on this plan.
 
 **Plain words:** TypeScript is JavaScript plus notes saying what kind each value is. Phones only run JavaScript, so the
@@ -49,36 +49,42 @@ make the game load or run faster. Part 2 is the speed work, and it is separate.
 | iPhone debugging | the phone's file is the repo's file | source maps (`.map` files) beside the built files point Safari at the `.ts` lines |
 | Check map | `tests/check-map.json` names `.js` | names `.ts`; refreshed from the GitHub run |
 
-## Order: all at once (owner), in one freeze window
-"All at once" works only if nobody else changes the same files at the same time, so:
-1. **Freeze.** Release asks every core to finish, push and write "ready for Release"; Release merges everything into
-   `main` in the usual round. Then the cores stop changing code until step 5 (docs and voices can go on).
-2. **Groundwork (step A):** `tools/build.mjs`, `tsconfig.base.json`, `types/`, the build in Netlify, the zip, tests,
-   GitHub workflows and the Studio `site` branch, all working on today's `.js` files first, with the full suite green.
-3. **Rename (step B):** one script renames every file and fixes paths in tests, docs, `check-map.json` and the exe
-   script, in one commit, with no other change. The full suite must be green on it.
-4. **Fix types (step C), in this order:** server and Studio engine (small, most already typed) → saves and network
-   (Round W part 2's list) → the shared game object type (clears most of the 2,030 at once) → every remaining file
-   until the light check shows **0 errors**. Then **strict, file by file**, with a ratchet list like
+## Order: in batches, one core at a time (owner, 16 Oct AEDT)
+esbuild builds `.js` and `.ts` side by side and `tsc` checks both (`allowJs`), so the game works with some files
+converted and some not. No full freeze: only the core being converted pauses its code work, for its batch.
+1. **Batch 0, groundwork (Release, nobody pauses):** `tools/build.mjs`, `tsconfig.base.json`, `types/`, the build in
+   Netlify, the zip, the tests, the GitHub workflows and the Studio `site` branch, all working on today's `.js` files,
+   full suite green.
+2. **Each later batch, two commits:** (a) rename only, no other change, so git follows the rename and other branches'
+   edits still land in the renamed file; (b) type notes and fixes until the light check shows 0 errors for that batch.
+   Paths in tests, docs, `check-map.json` and the exe script change in the same batch.
+3. **Batches, in this order:**
+   1. Server (`netlify/`) and Studio engine (`studio/*.cjs`): smallest, already partly typed
+   2. Tools (`tools/`)
+   3. Saves and network (Round W part 2's list: state, netmsg, net, trade, shop, parents, save code)
+   4. Online and Voice & Audio cores' game files
+   5. Play core's files (games, films, stories)
+   6. Kid UI core's files and `studio/ui/app.js`
+   7. World core's files, including Round T's map files (owner allowed, 16 Oct AEDT: no positions move)
+   8. `js/main.js`, `js/ui.js`, `sw.js` and whatever is left (shared most, so last)
+4. Before a batch, Release tells that core on `docs/cores/BOARD.md` ("pause code in these files"); the board lists
+   which files are `.ts` so far. Each batch is its own round: full suite on GitHub, screenshots on phone, tablet and
+   computer, "yes, deploy".
+5. **Strict, file by file** after each batch's light check is clean, with a ratchet list like
    `tests/perf-baseline.json`: the number of files not yet strict may only go down. No broad `any`, casts or
    `@ts-ignore` to make a number go down (owner repair rules, 14 Oct).
-5. **Unfreeze:** each core merges `main` into its branch and carries on in `.ts`. Helper rules in `CLAUDE.md`,
-   `HANDOFF.md` and `docs/cores/*.md` say "`.ts`" where they say "`.js`".
-- **Map files:** Round T froze `js/world.js`, `js/roads.js`, `js/regions.js` and the rest of its list. The rename and
-  type notes do not move anything, but the owner must allow these files to be touched (decision 2 below).
-- Each step is its own round with the full suite on GitHub, screenshots on phone, tablet and computer, and "yes,
-  deploy". Nothing a child sees or hears changes, so `contract` and every screenshot must stay the same.
+- Nothing a child sees or hears changes, so `contract` and every screenshot must stay the same.
 
 ## Size
-Step A about 2 sessions; step B 1 session; step C light errors about 3 to 5 sessions; strict about 4 to 6 more rounds
-(can run after the unfreeze, file by file). The freeze lasts for steps A to C light: roughly one to two weeks of
-Release work. Estimates; the first session of step C will show the real pace.
+Batch 0 about 2 sessions; batches 1 to 3 about 1 session each; batches 4 to 8 about 1 to 2 sessions each; strict
+about 4 to 6 more rounds, file by file. Longer in total than one big push, but each core pauses only for its own batch.
+Estimates; batch 3 will show the real pace.
 
 ## Risks
 - A build failure stops a deploy; today's fallback hid that. The build runs on every pull request first.
-- Every open branch conflicts after the rename: the freeze in step 1 is what prevents that.
+- Edits on other branches to a renamed file: the rename-only commit lets git follow it; the paused core has none.
 - The Studio exe needs the `site` branch to exist before it can update; old exes keep their last copy until rebuilt.
-- Undo: revert the rename merge; step A's build keeps working on `.js` files.
+- Undo: revert one batch; the build keeps working with that batch back in `.js`.
 
 # Part 2: a lighter, faster load
 
@@ -97,7 +103,6 @@ Order: S1 and S5 first (no code risk, big saving), then S4, then S2 and S3 once 
 number in `tests/perf-baseline.json` (the ratchet) and is checked by `perf`, `startup` and `battery`.
 Part 2 can start now; it does not wait for Part 1, and S1 and S5 do not touch game code.
 
-## Owner decisions needed
-1. "Go" on this plan (Part 1 with the freeze, Part 2 alongside).
-2. May the rename and type notes touch Round T's frozen map files?
-3. Push this plan to GitHub so the other chats can read it?
+## Owner decisions
+- Done 16 Oct AEDT: TypeScript everywhere; in batches, one core at a time; map files may be renamed; push this plan.
+- Still needed: "go" on batch 0; the photos question (Part 2, S1).
