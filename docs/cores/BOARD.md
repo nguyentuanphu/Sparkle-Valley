@@ -92,6 +92,11 @@ Format for a request:
 - "That one comes later. Which picture was before it?" / "Hình đó ở sau. Hình nào đứng trước nó?"
 - "That picture was not in the garden row. Tap Show again to look." / "Hình đó không có trong hàng. Chạm Xem lại để nhìn nhé."
 
+
+## Owner plan: feel and sound, sticker book, daily adventure (16 Oct AEDT)
+- **Now:** plan docs only (no game code) · branch `work/plans-20261016` · three chat prompts in `docs/plans-20261016/` (chat A feel and sound `work/feel-sound`, chat B sticker book `work/sticker-book`, chat C daily adventure `work/daily-adventure`) and the owner's UI redesign mockups and rules in `docs/ui-redesign-20261016/` · ready for Release (docs only) · 16 Oct AEDT
+- [ ] (owner plan → Release) merge `work/plans-20261016` with the next round; then merge A, then B, then C as each says "ready for Release" · the three chats depend on each other in that order · docs only · 16 Oct AEDT
+
 ## Front Desk
 - **Now:** robot working again (timer fired at 1:39 am AEDT). Fixed on branches: #27 (PR #40), #28 (PR #42), #29 (PR #43), #31 (PR #44). Owner's go: #30 (keep Khám phá), #33 (80 to 90 percent see-through; link footprints so they fade). #35 waits for the owner's iPhone voice report; #41 retrying · branch `core/front-desk` · waiting for Release to merge the bugfix pull requests · 11 Oct, 3:15 am AEDT (Sydney)
 - [x] (Front Desk → Release) **Owner, 11 Oct 3 am AEDT: the robot should use the spare GitHub capacity.** Raise `MAX_PER_RUN` in `.github/workflows/bug-fixer.yml` (3 now; the work jobs already run side by side) to e.g. 8, so every waiting bug starts at once instead of 3 per run. Also: the robots' fixes report that the `parents` check fails on "bedtime" on `main` too (#28, #29), please look at it in the round · `.github/workflows/bug-fixer.yml`, `tests/run.mjs` · 11 Oct, 3:15 am AEDT · done by Release (robot chat, `claude/peaceful-hopper-un7oym`): `MAX_PER_RUN` 8, 4 bugs worked on at once; the `parents` bedtime failure was fixed on main (2fa7043f) · 11 Oct, 3:30 am AEDT

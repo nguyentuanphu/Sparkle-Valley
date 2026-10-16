@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Bag: now vs mockup</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&amp;family=Fredoka:wght@500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#5b34c4}a:hover{color:#3a2a20}
+</style>
+</helmet>
+<div style="width: 1460px; height: 1080px; box-sizing: border-box; padding: 40px 48px; background: #fff6e4; color: #3a2a20; font-family: 'Fredoka', sans-serif; display: flex; flex-direction: column; gap: 18px">
+<div style="font-family: 'Baloo 2', sans-serif; font-weight: 800; font-size: 38px; line-height: 1">Bag · Ba lô</div>
+<div style="display: flex; gap: 40px; align-items: flex-start">
+<div style="display: flex; flex-direction: column; gap: 10px; flex: none">
+<span style="align-self: flex-start; background: #ffffff; border: 3px solid #3a2a20; border-radius: 999px; padding: 4px 14px; font-weight: 600; font-size: 17px">Now · r79</span>
+<img src="/_blob/20a95de9d24d558b1f70a8543ccfd5d4" alt="The Bag now on a phone" style="width: 390px; height: 844px; border: 3px solid #3a2a20; border-radius: 20px; display: block; box-sizing: border-box">
+</div>
+<div style="display: flex; flex-direction: column; gap: 10px; flex: none">
+<span style="align-self: flex-start; background: #43c463; color: #ffffff; border: 3px solid #3a2a20; border-radius: 999px; padding: 4px 14px; font-weight: 600; font-size: 17px">Mockup · tap the items</span>
+<div style="width: 390px; height: 844px; border: 3px solid #3a2a20; border-radius: 20px; overflow: hidden; box-sizing: content-box"><dc-import name="Bag" hint-size="390px,844px"></dc-import></div>
+</div>
+<div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 16px">
+<section style="background: #ffffff; border: 3px solid #3a2a20; border-radius: 22px; padding: 18px 20px; display: flex; flex-direction: column; gap: 8px">
+<h2 style="margin: 0; font-family: 'Baloo 2', sans-serif; font-size: 24px">What changes</h2>
+<ul style="margin: 0; padding-left: 20px; font-size: 16px; line-height: 1.4; display: flex; flex-direction: column; gap: 6px">
+<li>Before the first item, the screen stacks a pets bar, 3 counters, category chips, a "Food" heading with "Cook at a cooking pot…", and another heading. The items start halfway down.</li>
+<li>Item names are small (about 12 px) and include prices ("Red ruby · $25"), which a 4-year-old can't read.</li>
+<li>Sections fold open and closed with small ▼ arrows, which is a grown-up pattern. The mockup puts the items straight on screen in a 3 × 3 grid of big tiles.</li>
+<li>Tapping a tile selects it and shows one card with what it's for and two big buttons ("Give", "Eat it?"). This fits the r79 "Bag things explain themselves" work.</li>
+<li>Coins, orbs and leafies already sit in the top counters (game screen), so they don't need repeating here.</li>
+</ul>
+</section>
+<section style="background: #ffffff; border: 3px solid #3a2a20; border-radius: 22px; padding: 18px 20px; display: flex; flex-direction: column; gap: 10px">
+<h2 style="margin: 0; font-family: 'Baloo 2', sans-serif; font-size: 24px">Rules for this screen</h2>
+<div style="display: flex; gap: 12px; font-size: 16px; line-height: 1.35"><b style="color: #8a5cf6; flex: none; width: 52px">BAG-1</b><span>Items are the first thing under the title. 3 tiles per row on a phone, picture 60 px centred, name at most 2 lines and at least 15 px, count badge bottom-right.</span></div>
+<div style="display: flex; gap: 12px; font-size: 16px; line-height: 1.35"><b style="color: #8a5cf6; flex: none; width: 52px">BAG-2</b><span>Tapping a tile only selects it (gold ring). Nothing is eaten, given or sold by one tap.</span></div>
+<div style="display: flex; gap: 12px; font-size: 16px; line-height: 1.35"><b style="color: #8a5cf6; flex: none; width: 52px">BAG-3</b><span>The action card shows the picture, name, one line on what it's for, and at most 2 buttons (green main and paper second).</span></div>
+<div style="display: flex; gap: 12px; font-size: 16px; line-height: 1.35"><b style="color: #8a5cf6; flex: none; width: 52px">BAG-4</b><span>Kinds of things (food, treasures, toys, gifts) are tabs, never folding sections.</span></div>
+<div style="display: flex; gap: 12px; font-size: 16px; line-height: 1.35"><b style="color: #8a5cf6; flex: none; width: 52px">BAG-5</b><span>No prices on children's tiles. Prices show only in the Shop and in the action card for big kids.</span></div>
+<div style="display: flex; gap: 12px; font-size: 16px; line-height: 1.35"><b style="color: #8a5cf6; flex: none; width: 52px">BAG-6</b><span>Gift boxes look like wrapped gifts, and their main button is always "Give it".</span></div>
+</section>
+</div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1460,"height":1080}}'>
+class Component extends DCLogic {
+renderVals() { return {}; }
+}
+</script>
+</body>
+</html>
