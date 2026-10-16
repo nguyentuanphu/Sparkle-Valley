@@ -5827,6 +5827,29 @@ await check('ownerupdatenotice', async () => {
   return await ownerSmoke('owner-update-notice.mjs');
 });
 
+await check('ownertabclaim', async () => {
+  // (third AI's review R1, 16 Oct AEDT) only the game page claims the tab: another page of the same site that loads the
+  // game's state.js (Studio online does, for the game's words and areas) and Studio's hidden copy of the game
+  // (index.html?studio=1) leave a child's game playing; a second real game tab still takes over
+  const P = await open(b, { w: 1180, h: 820, play: false });
+  try {
+    await start(P.page); await clear(P.page);
+    const heldNow = () => P.page.evaluate(() => !!document.querySelector('.tab-held'));
+    const other = await P.ctx.newPage(); await other.goto(URL + 'css/fonts.css');
+    await other.evaluate(u => import(u + 'js/state.js?studio'), URL); await P.page.waitForTimeout(1500);
+    const afterState = await heldNow(); await other.close();
+    const hidden = await P.ctx.newPage(); await hidden.goto(URL + 'index.html?studio=1'); await hidden.waitForFunction(() => window.__sv?.bootTimes, null, { timeout: 120000 }).catch(() => { }); await P.page.waitForTimeout(1500);
+    const afterStudioCopy = await heldNow(); await hidden.close();
+    ok(!afterState, 'a same-site page that loads the game\'s state.js stopped the game');
+    ok(!afterStudioCopy, 'Studio\'s hidden copy of the game (index.html?studio=1) stopped the game');
+    const second = await P.ctx.newPage(); await second.goto(URL); await P.page.waitForSelector('.tab-held', { timeout: 60000 }).catch(() => { });
+    const afterGame = await heldNow(); await second.close();
+    ok(afterGame, 'a second game tab no longer takes over from the older one');
+    ok(!P.errors.length, P.errors.join(' | '));
+    return 'a page loading state.js and Studio\'s hidden game copy leave the child\'s game playing; a second game tab still takes over';
+  } finally { await P.ctx.close(); }
+});
+
 await check('ownertheatreapproach', async () => {
   process.env.SV_FAR = '1';
   try { return await ownerSmoke('owner-theatre-walk.mjs', ['out/theatre-walk.json', '4']); } finally { delete process.env.SV_FAR; }

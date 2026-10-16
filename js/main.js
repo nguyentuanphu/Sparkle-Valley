@@ -4,7 +4,7 @@ import { THREE, sprite, P, merge, toonVC } from './gfx.js';
 import { createSeeThrough } from './seethrough.js';
 import { withRideView } from './rideview.js';
 import { RoomEnvironment } from '../vendor/RoomEnvironment.js';
-import { settings, saveSettings, saveProfiles, farm, profiles } from './state.js';
+import { settings, saveSettings, saveProfiles, farm, profiles, claimTab } from './state.js';
 import { T, nm, onLang, registerName } from './i18n.js';
 import { say, hush, loadClips, setVoiceGenders } from './voice.js';
 import { SFX, Music, ac } from './audio.js';
@@ -99,6 +99,8 @@ import { setupTrading, openTrade } from './trade.js';
 import { createSecrets, SECRETS } from './secrets.js';
 import { PROLOGUE, showStory, storyCheck, showQuestTale, QUEST_TALES } from './story.js';
 import { openWardrobe, openGamesHub, openQuick, nextGameAfter } from './ui.js';
+// (owner point 10) this page is the game: it claims the tab, so an older game tab stops saving (js/state.js)
+claimTab();
 
 // ---------- renderer & world ----------
 // (battery round, owner 12 Oct AEDT) Graphics: Fast, Auto, Pretty (60 frames a second) and Pretty+ ('max': the same

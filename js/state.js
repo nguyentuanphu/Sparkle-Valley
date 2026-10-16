@@ -6,7 +6,9 @@ const KEY_SETTINGS = 'sv2_settings', KEY_PROFILES = 'sv2_profiles';
 
 const store = {
   get(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch (e) { return d; } },
-  set(k, v) { if (held) return false; try { localStorage.setItem(k, JSON.stringify(v)); mirrorSoon(); return true; } catch (e) { mirrorSoon(); return false; } }
+  /** @returns {boolean | 'held'} true when saved; 'held' when a newer game tab has taken over (nothing is written,
+   * and that is not a full storage); false when the browser's storage is full or blocked */
+  set(k, v) { if (held) return 'held'; try { localStorage.setItem(k, JSON.stringify(v)); mirrorSoon(); return true; } catch (e) { mirrorSoon(); return false; } }
 };
 
 // ---------- keeping progress safe on this device ----------
@@ -41,11 +43,18 @@ let mirrorT = null;
 let held = false;
 /** @returns {boolean} true once a newer tab of the game has taken over */
 export const heldByOtherTab = () => held;
-try {
-  const tabs = new BroadcastChannel('sv-tabs'), me = Math.random().toString(36).slice(2);
-  tabs.onmessage = e => { if (e.data?.claim && e.data.claim !== me && !held) { held = true; if (mirrorT) clearTimeout(mirrorT); mirrorT = null; dispatchEvent(new CustomEvent('sv-held')); } };
-  tabs.postMessage({ claim: me }); /** @type {any} */ (tabs).unref?.(); // (Node, for the checks and tools that read the game's words: an open channel must not keep them running)
-} catch (e) { }
+// (third AI's review R1, 16 Oct AEDT) only the game page claims the tab (js/main.js calls this): Studio online and any
+// other page of the site that loads this file for the game's words or areas must not stop a child's game, and neither
+// does the hidden copy of the game Studio opens (index.html?studio=1) to read the valley's buildings
+let claimed = false;
+export function claimTab() {
+  if (claimed || /[?&]studio=1/.test(location.search)) return; claimed = true;
+  try {
+    const tabs = new BroadcastChannel('sv-tabs'), me = Math.random().toString(36).slice(2);
+    tabs.onmessage = e => { if (e.data?.claim && e.data.claim !== me && !held) { held = true; if (mirrorT) clearTimeout(mirrorT); mirrorT = null; dispatchEvent(new CustomEvent('sv-held')); } };
+    tabs.postMessage({ claim: me }); /** @type {any} */ (tabs).unref?.(); // (Node: an open channel must not keep a check running)
+  } catch (e) { }
+}
 // (at most 2.5 s after a change, with whatever is newest then: a timer that restarted on every save could be put
 // off again and again by frequent saves, and the copy fell behind)
 function mirrorSoon() { if (mirrorT || held) return; mirrorT = setTimeout(() => { mirrorT = null; writeMirror(); }, 2500); }
@@ -189,7 +198,8 @@ export function saveProfiles(now) {
   clearTimeout(saveTimer);
   const go = () => {
     saveFarm();
-    if (store.set(KEY_PROFILES, profiles)) return;
+    const saved = store.set(KEY_PROFILES, profiles);
+    if (saved === true || saved === 'held') return;
     // Out of room: drop the oldest album photos and try again.
     for (const p of profiles) if (p.album.length) p.album.shift();
     store.set(KEY_PROFILES, profiles);
