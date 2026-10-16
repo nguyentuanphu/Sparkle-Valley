@@ -3068,4 +3068,3 @@ body.calm .sv2 .press::after { animation: none; display: none; }
 /* (r80, GitHub run 66: on a phone held sideways the goal row and the adventure card under it covered the middle of the
    view, where the road signs stand) short screens: the goal row keeps to the left side */
 @media (max-height: 480px) and (orientation: landscape) { .hud.small.adv-on .quest, .hud.small.adv-on.quest-below-nav .quest { max-width: min(46%, 380px); } }
-.grownups .g-stale { margin: 0 0 10px; padding: 10px 12px; border-radius: 12px; background: #fff4e0; border: 2px solid #ffb020; color: var(--text, #3b2558); font-size: 15px; line-height: 1.35; }

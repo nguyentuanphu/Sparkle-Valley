@@ -61,10 +61,7 @@ window.svWatchUpdates = reg => {
   if (reg.waiting) { if (playing()) window.svOfferUpdate(); else reg.waiting.postMessage({ type: 'SKIP_WAITING' }); }
   reg.addEventListener('updatefound', () => { const next = reg.installing; next?.addEventListener('statechange', () => { if (next.state === 'installed' && navigator.serviceWorker.controller && playing()) window.svOfferUpdate(); }); });
   navigator.serviceWorker.addEventListener('controllerchange', () => { const was = had; had = true; if (!was) return; if (playing()) window.svOfferUpdate(); else location.reload(); });
-  // (r80, owner 17 Oct AEDT) when the website last answered, for the grown-ups' note after 30 days without it (js/ui.js)
-  const mark = () => { try { localStorage.setItem('sv2_updCheck', String(Date.now())); } catch (e) { } };
-  let last = Date.now(); const check = force => { if (!force && Date.now() - last < (window.svUpdateGap ?? 60000)) return; last = Date.now(); reg.update().then(mark, () => { }); };
-  check(true);
+  let last = Date.now(); const check = force => { if (!force && Date.now() - last < (window.svUpdateGap ?? 60000)) return; last = Date.now(); reg.update().catch(() => { }); };
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') check(); });
   addEventListener('online', () => check());
   setInterval(() => check(true), 30 * 60000);

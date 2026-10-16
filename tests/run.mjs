@@ -6762,23 +6762,6 @@ await check('swupdate', async () => {
     return `the new version's files after an update (not the copy kept beside it); a stopped update kept ${partial} files and fetched only the rest; start screens: took over and reloaded by itself; playing: no reload, the notice offered it; back on screen: asked the website again`;
   } finally { srv.closeAllConnections(); srv.close(); }
 });
-await check('stalenote', async () => {
-  // (r80, owner 17 Oct AEDT: devices offline for more than 30 days) Grown-ups says when the game has not reached the
-  // website for 30 days or more (its version, how long, connect once to update), in English and Vietnamese; not before
-  const out = {};
-  for (const [lang, days] of [['en', 31], ['vi', 45], ['en', 2]]) {
-    const P = await open(b, { w: 820, h: 1180, touch: true, lang, play: false });
-    await P.page.evaluate(d => localStorage.setItem('sv2_updCheck', String(Date.now() - d * 864e5)), days);
-    out[lang + days] = await P.page.evaluate(async () => { const { openGrownups } = await import('/js/ui.js'); const { BUILD } = await import('/js/build.js'); openGrownups(() => { }); await new Promise(r => setTimeout(r, 500));
-      const n = document.querySelector('.modal.grownups .g-stale'), r = n?.getBoundingClientRect(); return { text: n?.textContent || '', build: BUILD, w: Math.round(r?.width || 0) }; });
-    out[lang + days].errs = P.errors; await P.ctx.close();
-  }
-  const en = out.en31, vi = out.vi45, fresh = out.en2;
-  ok(en.text.includes(en.build) && /31 days/.test(en.text) && /Connect to the internet/.test(en.text) && en.w > 200 && !en.errs.length, 'English, 31 days: ' + JSON.stringify(en));
-  ok(vi.text.includes(vi.build) && /45 ngày/.test(vi.text) && /kết nối mạng/.test(vi.text) && !vi.errs.length, 'Vietnamese, 45 days: ' + JSON.stringify(vi));
-  ok(!fresh.text && !fresh.errs.length, 'not after 2 days: ' + JSON.stringify(fresh));
-  return `Grown-ups: "${en.text.slice(0, 90)}..." after 31 days (and in Vietnamese); nothing after 2 days`;
-});
 await b.close();
 const failed = results.filter(r => !r[1]);
 console.log(`\n${results.length - failed.length}/${results.length} checks passed`);
