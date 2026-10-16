@@ -684,9 +684,9 @@ export async function studioCheck(browser, open) {
         const vi = await names('vi'), en = await names('en'); await names('vi');
         if (!(/Cho Thỏ Ăn/.test(vi) && !/Feed the Bunny/.test(vi) && /Feed the Bunny/.test(en))) bad.push('the Simple screen page does not follow Studio\'s language: ' + vi.slice(0, 200) + ' / ' + en.slice(0, 200));
         // (r81) the reading games are listed too (the game registers them only while the readingTrial switch is on), in the Reading corner
-        await names('en'); const rd = await pe.evaluate(() => [...document.querySelectorAll('tr[data-id^="rd_"]')].map(r => ({ id: r.dataset.id, area: r.querySelector('[data-f="area"]').value, txt: r.textContent })));
+        await names('en'); const rd = await pe.evaluate(() => [...document.querySelectorAll('tr[data-id^="rd_"]')].map(r => ({ id: r.dataset.id, area: r.querySelector('[data-f="area"]').value, txt: r.textContent, head: r.closest('.card').querySelector('h3').textContent })));
         await names('vi'); const rdVi = await pe.evaluate(() => (document.querySelector('tr[data-id="rd_trace"]') || {}).textContent || '');
-        if (!(rd.length >= 10 && rd.every(r => r.area === 'reading') && /Lantern Letters/.test((rd.find(r => r.id === 'rd_trace') || {}).txt || '') && /reading trial/.test(rd[0].txt) && /Đèn Lồng Chữ Cái/.test(rdVi))) bad.push('the Simple screen page does not list the reading games: ' + JSON.stringify({ rd: rd.slice(0, 3), n: rd.length, rdVi }));
+        if (!(rd.length >= 10 && rd.every(r => r.area === 'reading') && /Lantern Letters/.test((rd.find(r => r.id === 'rd_trace') || {}).txt || '') && /reading trial/.test(rd[0].head) && /Đèn Lồng Chữ Cái/.test(rdVi))) bad.push('the Simple screen page does not list the reading games: ' + JSON.stringify({ rd: rd.slice(0, 3), n: rd.length, rdVi }));
         else notes.push(`Simple screen: ${rd.length} reading games listed`);
       }
       await pe.screenshot({ path: `out/studio-exe-${w}.png` });

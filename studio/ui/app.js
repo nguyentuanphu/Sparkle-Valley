@@ -592,8 +592,8 @@ PAGES.path = async P => {
   const draw = () => {
     const rows = A.AREAS.map(a => {
       const ids = Object.keys(GAMES).filter(id => info(id).area === a.key);
-      return `<div class="card"><h3>${a.icon} ${esc(nm(a.name))} <span class="sub">(${ids.length})</span></h3><table><tbody>${ids.map(id => { const g = info(id), base = g.base;
-        return `<tr data-id="${id}"><td>${GAMES[id].icon} ${esc(nm(GAMES[id].name))}${/^rd_/.test(id) ? ` <span class="sub">(${T('only while the reading trial is on', 'chỉ khi bật thử nghiệm đọc')})</span>` : ''}</td>
+      return `<div class="card"><h3>${a.icon} ${esc(nm(a.name))} <span class="sub">(${ids.length})${a.key === 'reading' ? ' · ' + T('only while the reading trial is on', 'chỉ khi bật thử nghiệm đọc') : ''}</span></h3><table><tbody>${ids.map(id => { const g = info(id), base = g.base;
+        return `<tr data-id="${id}"><td>${GAMES[id].icon} ${esc(nm(GAMES[id].name))}</td>
           <td><select data-f="area">${A.AREAS.map(b => `<option value="${b.key}" ${g.area === b.key ? 'selected' : ''}>${b.icon} ${esc(nm(b.name))}</option>`).join('')}</select></td>
           <td><label><input type="checkbox" data-f="little" ${g.little ? 'checked' : ''}> ${T('Under 5', 'Dưới 5 tuổi')}</label>${!g.changed ? '' : ` <span class="sub">(${T('changed', 'đã đổi')}; ${T('usual', 'mặc định')}: ${base[1] < 5 ? '✓' : '✗'})</span>`}</td>
           <td><label><input type="checkbox" data-f="hide" ${g.hide ? 'checked' : ''}> ${T('Hide', 'Ẩn')}</label></td></tr>`; }).join('')}</tbody></table></div>`;
