@@ -1879,6 +1879,7 @@
 {"lang":"en","text":"That is 30c. You gave me 50c. Let's count your change: 40c, 50c. Your change is 20c!"},
 {"lang":"en","text":"That is 40c. You gave me 50c. Let's count your change: 50c. Your change is 10c!"},
 {"lang":"en","text":"That is 60c. You gave me $1. Let's count your change: 70c, 80c, 90c, $1. Your change is 40c!"},
+{"lang":"en","text":"That is 80c. You gave me $1. Let's count your change: 90c, $1. Your change is 20c!"},
 {"lang":"en","text":"That is a puddle. Step on a flower."},
 {"lang":"en","text":"That is just right for me. Thank you!"},
 {"lang":"en","text":"That is not on our list."},
