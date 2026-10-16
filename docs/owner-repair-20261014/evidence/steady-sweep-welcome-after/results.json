@@ -6331,8 +6331,602 @@
          "gone": false
         }
        }
+      },
+      {
+       "action": "view side by side",
+       "moved": false,
+       "parts": {
+        "card": {
+         "base": [
+          280,
+          126.4,
+          720,
+          483.3
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        },
+        "go button": {
+         "base": [
+          535.3,
+          520.1,
+          209.4,
+          62.5
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        },
+        "grown-ups button": {
+         "base": [
+          16,
+          744,
+          207,
+          40
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        }
+       }
+      },
+      {
+       "action": "view face to face",
+       "moved": false,
+       "parts": {
+        "card": {
+         "base": [
+          280,
+          126.4,
+          720,
+          483.3
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        },
+        "go button": {
+         "base": [
+          535.3,
+          520.1,
+          209.4,
+          62.5
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        },
+        "grown-ups button": {
+         "base": [
+          16,
+          744,
+          207,
+          40
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        }
+       }
+      },
+      {
+       "action": "mode friend far away",
+       "moved": false,
+       "parts": {
+        "card": {
+         "base": [
+          280,
+          126.4,
+          720,
+          483.3
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        },
+        "go button": {
+         "base": [
+          535.3,
+          520.1,
+          209.4,
+          62.5
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        },
+        "grown-ups button": {
+         "base": [
+          16,
+          744,
+          207,
+          40
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        }
+       }
+      },
+      {
+       "action": "mode play alone",
+       "moved": false,
+       "parts": {
+        "card": {
+         "base": [
+          280,
+          126.4,
+          720,
+          483.3
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        },
+        "go button": {
+         "base": [
+          535.3,
+          520.1,
+          209.4,
+          62.5
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        },
+        "grown-ups button": {
+         "base": [
+          16,
+          744,
+          207,
+          40
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        }
+       }
+      },
+      {
+       "action": "pick player 1 again",
+       "moved": false,
+       "parts": {
+        "card": {
+         "base": [
+          280,
+          126.4,
+          720,
+          483.3
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        },
+        "go button": {
+         "base": [
+          535.3,
+          520.1,
+          209.4,
+          62.5
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        },
+        "grown-ups button": {
+         "base": [
+          16,
+          744,
+          207,
+          40
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        }
+       }
       }
      ]
+    },
+    "ladybird-tester": {
+     "shell": ".modal.tpanel .card",
+     "opened": true,
+     "actions": [
+      {
+       "action": "kind broken",
+       "moved": false,
+       "parts": {
+        "card": {
+         "base": [
+          360,
+          80,
+          560,
+          640
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        }
+       }
+      },
+      {
+       "action": "kind looks",
+       "moved": false,
+       "parts": {
+        "card": {
+         "base": [
+          360,
+          80,
+          560,
+          640
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        }
+       }
+      },
+      {
+       "action": "kind words",
+       "moved": false,
+       "parts": {
+        "card": {
+         "base": [
+          360,
+          80,
+          560,
+          640
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        }
+       }
+      },
+      {
+       "action": "kind sound",
+       "moved": false,
+       "parts": {
+        "card": {
+         "base": [
+          360,
+          80,
+          560,
+          640
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        }
+       }
+      },
+      {
+       "action": "kind idea",
+       "moved": false,
+       "parts": {
+        "card": {
+         "base": [
+          360,
+          80,
+          560,
+          640
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        }
+       }
+      },
+      {
+       "action": "type a note",
+       "moved": false,
+       "parts": {
+        "card": {
+         "base": [
+          360,
+          80,
+          560,
+          640
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        }
+       }
+      },
+      {
+       "action": "picture: scene only",
+       "moved": false,
+       "parts": {
+        "card": {
+         "base": [
+          360,
+          80,
+          560,
+          640
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        }
+       }
+      },
+      {
+       "action": "picture: whole interface",
+       "moved": false,
+       "parts": {
+        "card": {
+         "base": [
+          360,
+          80,
+          560,
+          640
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        }
+       }
+      },
+      {
+       "action": "Auto play tab",
+       "moved": false,
+       "parts": {
+        "card": {
+         "base": [
+          360,
+          80,
+          560,
+          640
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        }
+       },
+       "autoplayShot": "computer-013-ladybird-autoplay-tab.png"
+      },
+      {
+       "action": "wait in Auto play",
+       "moved": false,
+       "parts": {
+        "card": {
+         "base": [
+          360,
+          80,
+          560,
+          640
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        }
+       }
+      },
+      {
+       "action": "Tester tab",
+       "moved": false,
+       "parts": {
+        "card": {
+         "base": [
+          360,
+          80,
+          560,
+          640
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        }
+       }
+      },
+      {
+       "action": "Auto play tab again",
+       "moved": false,
+       "parts": {
+        "card": {
+         "base": [
+          360,
+          80,
+          560,
+          640
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        }
+       }
+      }
+     ],
+     "open": {
+      "appearedAtMs": 7641,
+      "baselineAtMs": 8300,
+      "samples": 44,
+      "moved": false,
+      "parts": {
+       "card": {
+        "base": [
+         360,
+         80,
+         560,
+         640
+        ],
+        "maxChange": {
+         "left": 0,
+         "top": 0,
+         "width": 0,
+         "height": 0
+        },
+        "moved": false,
+        "firstMoveAtMs": null,
+        "gone": false
+       }
+      },
+      "shot": "computer-012-ladybird-open.png"
+     }
     }
    },
    "startup": {
@@ -6423,7 +7017,1460 @@
      }
     }
    },
-   "bagIcons": null,
+   "bagIcons": {
+    "count": 89,
+    "medianPx": 64,
+    "limitPx": 38.4,
+    "tiny": [
+     {
+      "id": "gl=0",
+      "section": "Glider",
+      "label": "",
+      "kind": null,
+      "tile": [
+       97,
+       92
+      ],
+      "icon": null,
+      "size": 0,
+      "ofTile": 0
+     }
+    ],
+    "items": [
+     {
+      "id": "eat=pho",
+      "section": "Food tap to eat",
+      "label": "Phở (noodle soup)",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       122
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "eat=banhchung",
+      "section": "Food tap to eat",
+      "label": "Bánh chưng (square rice cake)",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       122
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "eat=xoixoai",
+      "section": "Food tap to eat",
+      "label": "Xôi xoài (mango sticky rice)",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       122
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "eat=chechuoi",
+      "section": "Food tap to eat",
+      "label": "Chè chuối (banana sweet soup)",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       122
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "eat=canhchua",
+      "section": "Food tap to eat",
+      "label": "Canh chua (sour fish soup)",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       122
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "eat=comchien",
+      "section": "Food tap to eat",
+      "label": "Egg fried rice",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       122
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "eat=comnam",
+      "section": "Food tap to eat",
+      "label": "Mushroom rice",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       122
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "eat=cakho",
+      "section": "Food tap to eat",
+      "label": "Cá kho (braised fish) with rice",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       122
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "eat=taonuong",
+      "section": "Food tap to eat",
+      "label": "Baked apples",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       122
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "eat=chuoinuong",
+      "section": "Food tap to eat",
+      "label": "Grilled banana",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       122
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "eat=nam",
+      "section": "Food tap to eat",
+      "label": "Mushroom skewer",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       122
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "eat=fruit",
+      "section": "Food tap to eat",
+      "label": "Rainbow fruit salad",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       122
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "eat=raumuong",
+      "section": "Food tap to eat",
+      "label": "Rau muống xào (stir-fried water spinach)",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       122
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "eat=khoainuong",
+      "section": "Food tap to eat",
+      "label": "Grilled sweet potato",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       122
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "eat=chedua",
+      "section": "Food tap to eat",
+      "label": "Chè đậu xanh (coconut and mung bean swee",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       122
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "eat=chemit",
+      "section": "Food tap to eat",
+      "label": "Chè mít (jackfruit and coconut dessert)",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       122
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "eat=macbread",
+      "section": "Food tap to eat",
+      "label": "Banana macadamia bread",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       122
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "eat=quandongpie",
+      "section": "Food tap to eat",
+      "label": "Quandong pie",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       122
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "eat=limefish",
+      "section": "Food tap to eat",
+      "label": "Fish with finger lime",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       122
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "eat=damper",
+      "section": "Food tap to eat",
+      "label": "Damper bread with bush tomato",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       122
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "eat=dumplings",
+      "section": "Food tap to eat",
+      "label": "Bok choy dumplings",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       122
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "eat=peachbun",
+      "section": "Food tap to eat",
+      "label": "Longevity peach buns",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       122
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "eat=peafried",
+      "section": "Food tap to eat",
+      "label": "Snow pea fried rice",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       122
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "eat=mandarins",
+      "section": "Food tap to eat",
+      "label": "Mandarin segments",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       122
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "eat=aampanna",
+      "section": "Food tap to eat",
+      "label": "Mango and ginger drink (aam panna)",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       122
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "eat=bharta",
+      "section": "Food tap to eat",
+      "label": "Smoky brinjal (baingan bharta)",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       122
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "eat=dal",
+      "section": "Food tap to eat",
+      "label": "Dal and rice",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       122
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "snack=bahai",
+      "section": "From shops and stalls tap to eat",
+      "label": "a bowl of phở (noodle soup)",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       122
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "snack=cothu",
+      "section": "From shops and stalls tap to eat",
+      "label": "green rice flakes (cốm)",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       122
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "snack=olai",
+      "section": "From shops and stalls tap to eat",
+      "label": "bánh bèo (little steamed rice cakes)",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       122
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "snack=chunam",
+      "section": "From shops and stalls tap to eat",
+      "label": "a Hội An silk lantern",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       122
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "snack=chutam",
+      "section": "From shops and stalls tap to eat",
+      "label": "a bánh mì (crunchy bread roll)",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       122
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "snack=cout",
+      "section": "From shops and stalls tap to eat",
+      "label": "a cold coconut",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       122
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "sellgem=crown",
+      "section": "Treasures tap for help",
+      "label": "Lost golden crown · $100",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       122
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "sellgem=diamond",
+      "section": "Treasures tap for help",
+      "label": "Sparkling diamond · $50",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       122
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "sellgem=ruby",
+      "section": "Treasures tap for help",
+      "label": "Red ruby · $25",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       122
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "sellgem=jade",
+      "section": "Treasures tap for help",
+      "label": "Green jade · $15",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       122
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "sellgem=gem",
+      "section": "Treasures tap for help",
+      "label": "Blue gem · $10",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       122
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "sellgem=gold",
+      "section": "Treasures tap for help",
+      "label": "Gold nugget · $6",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       122
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "sellgem=oldcoin",
+      "section": "Treasures tap for help",
+      "label": "Old bronze coin · $4",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       122
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "sellgem=crystal",
+      "section": "Treasures tap for help",
+      "label": "Purple crystal · $3",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       122
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "sellgem=fossil",
+      "section": "Treasures tap for help",
+      "label": "Fossil shell · $2",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       122
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "sellgem=bone",
+      "section": "Treasures tap for help",
+      "label": "Dinosaur bone · $1.50",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       122
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "sellgem=pebble",
+      "section": "Treasures tap for help",
+      "label": "Pretty pebble · 50c",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       122
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "ing=apple",
+      "section": "Ingredients",
+      "label": "Apple",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       109
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "ing=rice",
+      "section": "Ingredients",
+      "label": "Rice",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       109
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "ing=banana",
+      "section": "Ingredients",
+      "label": "Banana",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       109
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "ing=mango",
+      "section": "Ingredients",
+      "label": "Mango",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       109
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "ing=egg",
+      "section": "Ingredients",
+      "label": "Egg",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       109
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "ing=fish",
+      "section": "Ingredients",
+      "label": "Fish",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       109
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "ing=herb",
+      "section": "Ingredients",
+      "label": "Herbs",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       109
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "ing=mushroom",
+      "section": "Ingredients",
+      "label": "Mushroom",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       109
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "ing=noodles",
+      "section": "Ingredients",
+      "label": "Rice noodles",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       122
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "ing=leaf",
+      "section": "Ingredients",
+      "label": "Banana leaf",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       122
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "ing=bean",
+      "section": "Ingredients",
+      "label": "Mung beans",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       122
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "ing=mulberry",
+      "section": "Ingredients",
+      "label": "Mulberries",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       122
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "ing=guava",
+      "section": "Ingredients",
+      "label": "Guava",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       122
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "ing=strawberry",
+      "section": "Ingredients",
+      "label": "Wild strawberries",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       122
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "ing=lime",
+      "section": "Ingredients",
+      "label": "Wild lemon",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       122
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "ing=peach",
+      "section": "Ingredients",
+      "label": "Peach blossom",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       122
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "ing=apricot",
+      "section": "Ingredients",
+      "label": "Yellow apricot blossom",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       122
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "ing=wattle",
+      "section": "Ingredients",
+      "label": "Golden wattle",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       122
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "ing=hibiscus",
+      "section": "Ingredients",
+      "label": "Hibiscus",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       122
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "ing=coconut",
+      "section": "Ingredients",
+      "label": "Coconut",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       122
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "ing=jackfruit",
+      "section": "Ingredients",
+      "label": "Jackfruit",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       122
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "ing=chilli",
+      "section": "Ingredients",
+      "label": "Chilli",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       122
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "ing=waterspinach",
+      "section": "Ingredients",
+      "label": "Water spinach",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       122
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "ing=sweetpotato",
+      "section": "Ingredients",
+      "label": "Sweet potato",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       122
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "ing=macadamia",
+      "section": "Ingredients",
+      "label": "Macadamia nuts",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       122
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "ing=quandong",
+      "section": "Ingredients",
+      "label": "Quandong (desert peach)",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       122
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "ing=fingerlime",
+      "section": "Ingredients",
+      "label": "Finger lime",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       122
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "ing=bushtomato",
+      "section": "Ingredients",
+      "label": "Bush tomato",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       122
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "ing=cnpeach",
+      "section": "Ingredients",
+      "label": "Longevity peach",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       122
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "ing=mandarin",
+      "section": "Ingredients",
+      "label": "Mandarin",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       122
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "ing=bokchoy",
+      "section": "Ingredients",
+      "label": "Bok choy",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       122
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "ing=snowpea",
+      "section": "Ingredients",
+      "label": "Snow peas",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       122
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "ing=brinjal",
+      "section": "Ingredients",
+      "label": "Brinjal (eggplant)",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       122
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "ing=ginger",
+      "section": "Ingredients",
+      "label": "Ginger",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       122
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "ing=marigold",
+      "section": "Ingredients",
+      "label": "Marigold flowers",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       122
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "wear=flower",
+      "section": "Clothes and accessories tap to wear",
+      "label": "Flower clip",
+      "kind": "svg.art.kpic",
+      "tile": [
+       97,
+       122
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "wear=bunny_g",
+      "section": "Clothes and accessories tap to wear",
+      "label": "Pink bunny ears",
+      "kind": "svg.art.kpic",
+      "tile": [
+       97,
+       122
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "wear=nonla_g",
+      "section": "Clothes and accessories tap to wear",
+      "label": "Nón lá with a pink ribbon",
+      "kind": "svg.art.kpic",
+      "tile": [
+       97,
+       122
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "wear=crown_g",
+      "section": "Clothes and accessories tap to wear",
+      "label": "Rose-gold crown",
+      "kind": "svg.art.kpic",
+      "tile": [
+       97,
+       122
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "wear=sunhat",
+      "section": "Clothes and accessories tap to wear",
+      "label": "Straw sun hat",
+      "kind": "svg.art.kpic",
+      "tile": [
+       97,
+       122
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "wear=tiara",
+      "section": "Clothes and accessories tap to wear",
+      "label": "Sparkly tiara",
+      "kind": "svg.art.kpic",
+      "tile": [
+       97,
+       122
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "unwear=hat",
+      "section": "Wearing now tap to take off",
+      "label": "Hair bow",
+      "kind": "svg.art.kpic",
+      "tile": [
+       97,
+       109
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "kite=1",
+      "section": "Whistling kite",
+      "label": "Flying",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       109
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "whistle=1",
+      "section": "Whistling kite",
+      "label": "Whistle!",
+      "kind": "svg.art..",
+      "tile": [
+       97,
+       109
+      ],
+      "icon": [
+       64,
+       64
+      ],
+      "size": 64,
+      "ofTile": 66
+     },
+     {
+      "id": "gl=0",
+      "section": "Glider",
+      "label": "",
+      "kind": null,
+      "tile": [
+       97,
+       92
+      ],
+      "icon": null,
+      "size": 0,
+      "ofTile": 0
+     }
+    ],
+    "shots": [
+     "computer-003-bag-tabs-top.png",
+     "computer-004-bag-tabs-section-1.png",
+     "computer-005-bag-tabs-section-2.png",
+     "computer-006-bag-tabs-section-3.png",
+     "computer-007-bag-tabs-section-4.png",
+     "computer-008-bag-tabs-section-5.png",
+     "computer-009-bag-tabs-section-6.png",
+     "computer-010-bag-tabs-section-7.png",
+     "computer-011-bag-tabs-section-8.png"
+    ]
+   },
    "errors": []
   }
  }
