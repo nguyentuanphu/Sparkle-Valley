@@ -13,6 +13,7 @@ const sources = ['js/film.js', 'js/content/films.js', 'js/content/talefilms.js',
 const fresh = { commit: execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8', cwd:sourceRoot }).trim(), capturedAt: new Date().toISOString(), phase, sources: Object.fromEntries(sources.map(f => [f, crypto.createHash('sha256').update(fs.readFileSync(path.join(sourceRoot,f))).digest('hex')])), cases: [] };
 const resultPath=path.join(out,lang==='en'?'results.json':'results-vi.json');
 const result=!process.env.REDO&&fs.existsSync(resultPath)?JSON.parse(fs.readFileSync(resultPath,'utf8')):fresh;
+if (JSON.stringify(result.sources) !== JSON.stringify(fresh.sources)) throw Error('Capture source changed; use a fresh evidence directory or REDO=1 rather than mixing versions');
 const b = await launch();
 try {
  for (const [device, w, h, touch] of [['phone',390,844,true],['tablet',820,1180,true],['computer',1280,800,false]]) {

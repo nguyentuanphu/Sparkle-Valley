@@ -18,13 +18,17 @@ BEFORE is the supplied checkpoint, not a reconstructed R74 claim. AFTER source h
 
 `capture-films-49.mjs` reproduces the pictures; `make-film-review.py` creates labelled contact sheets from the PNGs. An early direct-WebGL export produced cleared black buffers; those captures were discarded and replaced with actual browser stage screenshots. No black buffer is accepted as visual evidence.
 
+## Progress and limits
+
+Phone and tablet AFTER English captures and their page contact sheets have been reviewed for all 38 tales. Computer AFTER and Vietnamese shell captures are still running. Several earlier capture jobs were interrupted between chat turns; they resumed from completed-story manifests. No game-source edits were made during the final capture pass. The capture helper now refuses to resume if its recorded source fingerprints differ from the files being served.
+
 ## Checks
 
 Pending: full visual review, focused scenery/lifecycle regression, selected changed checks and GitHub Full suite. A default main-based changed selection includes inherited checkpoint changes and selects Full because of an unrelated unmapped file. Local changed selection therefore uses the supplied checkpoint as its explicit base; full coverage runs on GitHub as required.
 
 ## Story inventory
 
-Each story's full shell is captured at all three sizes. [Open the comparison gallery](films-49-gallery.html). The matching `*-p1.png` through `*-pN.png` files record every page. Links will be indexed after the complete capture is validated.
+Each story's full shell is captured at all three sizes. [Open the comparison gallery](films-49-gallery.html). The matching `*-p1.png` through `*-pN.png` files record every page. The gallery indexes the matching page pictures; final completeness validation is pending.
 
 | Story | Scene direction | BEFORE | AFTER |
 |---|---|---|---|
