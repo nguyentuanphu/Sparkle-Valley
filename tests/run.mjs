@@ -6285,7 +6285,7 @@ await check('r79learning', async () => {
   await P.page.evaluate(PLAY, { rightsOnly: true }); await finishWin(P);
   const after = await prof(() => __sv.heroes[0].profile.learn.miss.rulefinder || {});
   ok(!after.clothes, 'I2 a clean answer counts the miss down: ' + JSON.stringify(after));
-  // old saves of any shape (UX-009) and the record kept after a reload
+  // old saves of any shape (stable saved data) and the record kept after a reload
   const mig = await P.page.evaluate(async () => {
     const S = await import('/js/state.js');
     const a = S.normalizeProfile({ name: 'Old', stickers: ['🦄'], levels: { counting: 3 } });

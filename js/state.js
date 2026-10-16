@@ -251,7 +251,7 @@ export async function importBackup(file) {
 }
 
 // r79 learning (chat 2)
-// (r79 learning, I2 and G2) a child's small learning record, from any age of save (UX-009): what they missed most in
+// (r79 learning, I2 and G2) a child's small learning record, from any age of save (stable data, owner rule on saves): what they missed most in
 // each game, and which games already showed the hand. Anything odd is dropped, never the profile.
 export function normalizeLearn(v) {
   const o = v && typeof v === 'object' && !Array.isArray(v) ? v : {};
