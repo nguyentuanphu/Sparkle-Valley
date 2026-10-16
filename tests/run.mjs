@@ -6704,6 +6704,64 @@ await check('welcomesteady', async () => {
   ok(!moved.length, 'the Welcome screen moved: ' + moved.slice(0, 8).join('; '));
   return `Welcome screen still within 2 px (Start button, cover, logo, language panel) opening, after both language taps and the Chinese switch, one Start size in both languages: ${notes.join(', ')}`;
 });
+await check('swupdate', async () => {
+  // (r80, owner 17 Oct AEDT: "users must have the latest r") on its own small server (the game's files, its service
+  // worker made version A, B or C, js/build.js saying which): (1) after an update the page gets the NEW version's files,
+  // never the older copy kept for open games (r78 ran r77's files); (2) a file failing part way keeps what was saved and
+  // the next try fetches only what is missing; (3) on the start screens the new version takes over and the page reloads
+  // by itself, no tap; (4) while playing it takes over without a reload and the notice offers it; (5) the game coming
+  // back to the screen asks the website for a newer version
+  const http = await import('http'), path = await import('path');
+  const root = path.resolve(process.env.SV_ROOT || '..'), TY = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.webmanifest': 'application/manifest+json', '.png': 'image/png', '.woff2': 'font/woff2', '.mp3': 'audio/mpeg' };
+  let ver = 'a'; const fail = new Set(), asked = {};
+  const srv = http.createServer((q, r) => {
+    let u = decodeURIComponent(q.url.split('?')[0]); if (u.endsWith('/')) u += 'index.html'; asked[u] = (asked[u] || 0) + 1;
+    if (fail.has(u)) { fail.delete(u); r.writeHead(500); return r.end(); }
+    const f = path.join(root, u); if (!f.startsWith(root) || !fs.existsSync(f) || !fs.statSync(f).isFile()) { r.writeHead(404); return r.end(); }
+    let body = fs.readFileSync(f);
+    if (u === '/sw.js') body = String(body).replace(/const VERSION = '[^']+'/, `const VERSION = 'sv-2099-swtest-${ver}'`);
+    if (u === '/js/build.js') body = String(body).replace(/BUILD = '[^']+'/, `BUILD = 'sw${ver}'`);
+    r.writeHead(200, { 'Content-Type': TY[path.extname(f)] || 'application/octet-stream', 'Cache-Control': 'no-cache' }); r.end(body);
+  });
+  await new Promise(res => srv.listen(0, '127.0.0.2', res));
+  try {
+    const url = `http://127.0.0.2:${srv.address().port}/`;
+    const P = await open(b, { w: 390, h: 760, touch: true, url, play: false });
+    const active = v => P.page.waitForFunction(async v => { const r = await navigator.serviceWorker.getRegistration(); return !!r?.active && navigator.serviceWorker.controller && (await caches.keys()).includes('sv-2099-swtest-' + v) && !r.installing && !r.waiting; }, v, { timeout: 120000 });
+    const build = () => P.page.evaluate(() => fetch('/js/build.js').then(r => r.text()).then(t => /BUILD = '([^']+)'/.exec(t)?.[1]));
+    const update = () => P.page.evaluate(() => navigator.serviceWorker.getRegistration().then(r => r.update()).catch(e => String(e)));
+    await active('a'); await P.page.waitForTimeout(500);
+    const first = await build();
+    // (2) version B, one file failing the first time
+    ver = 'b'; fail.add('/js/main.js'); await update(); await P.page.waitForTimeout(4000);
+    const partial = await P.page.evaluate(() => caches.open('sv-2099-swtest-b').then(c => c.keys()).then(k => k.length));
+    const before = { ...asked };
+    await P.page.evaluate(() => { window.__same = 1; });
+    await update();
+    // (3) the start screens: B takes over by itself and the page reloads into it
+    await P.page.waitForFunction(() => !window.__same, null, { timeout: 120000 }).catch(() => { });
+    await active('b'); await P.page.waitForSelector('.screen.title', { timeout: 60000 });
+    const refetched = Object.keys(before).filter(u => u.startsWith('/js/') && u !== '/js/main.js' && u !== '/js/build.js' && (asked[u] || 0) > before[u] && before[u] >= 1 && !/launch|custom|sw\.js/.test(u)).length;
+    const second = await build(), reloaded = await P.page.evaluate(() => !window.__same);
+    const keys = await P.page.evaluate(() => caches.keys());
+    // (4) playing: C takes over without a reload; the notice offers it
+    await start(P.page); await P.page.evaluate(() => { window.__same = 1; });
+    ver = 'c'; await update(); await active('c'); await P.page.waitForTimeout(1500);
+    const playing = await P.page.evaluate(() => ({ same: window.__same === 1, notice: !!document.querySelector('.update-notice'), heroes: window.__sv.heroes.length }));
+    const third = await build();
+    // (5) back on the screen: it asks for sw.js again
+    const n0 = asked['/sw.js'] || 0; await P.page.evaluate(() => { window.svUpdateGap = 0; document.dispatchEvent(new Event('visibilitychange')); }); await P.page.waitForTimeout(1500);
+    const asks = (asked['/sw.js'] || 0) - n0;
+    const errs = P.errors.filter(e => !/Failed to fetch|NetworkError|aborted|500/i.test(e)); await P.ctx.close();
+    const r = { first, partial, refetched, second, reloaded, keys, playing, third, asks, errs };
+    ok(first === 'swa', 'version A: ' + JSON.stringify(r));
+    ok(partial > 0 && refetched === 0, 'an update stopped part way keeps what it saved and fetches only the rest: ' + JSON.stringify(r));
+    ok(second === 'swb' && reloaded && keys.includes('sv-2099-swtest-a'), 'the new version, not the older copy kept beside it, on the start screens with no tap: ' + JSON.stringify(r));
+    ok(playing.same && playing.notice && playing.heroes === 1 && third === 'swc', 'while playing: no reload, the notice offers it: ' + JSON.stringify(r));
+    ok(asks >= 1 && !errs.length, 'coming back to the screen asks for a newer version: ' + JSON.stringify(r));
+    return `the new version's files after an update (not the copy kept beside it); a stopped update kept ${partial} files and fetched only the rest; start screens: took over and reloaded by itself; playing: no reload, the notice offered it; back on screen: asked the website again`;
+  } finally { srv.closeAllConnections(); srv.close(); }
+});
 await b.close();
 const failed = results.filter(r => !r[1]);
 console.log(`\n${results.length - failed.length}/${results.length} checks passed`);

@@ -33,8 +33,23 @@ function quick(e, cacheName, req, fallback) {
   });
 }
 const emptyJSON = () => new Response('{}', { headers: { 'Content-Type': 'application/json' } });
-self.addEventListener('install', e => { e.waitUntil(caches.open(VERSION).then(c => c.addAll(FILES))); });
+// (r80, owner 17 Oct AEDT: "users must have the latest r") the update saves each file as it arrives, so a game closed
+// part way through goes on from there the next time instead of starting again; always the website's copy, never one the
+// browser kept; a file that fails stops this try (the next one fetches only what is still missing). When every file is
+// in, the new version takes over at once on every device, whatever version it had: no tap and no closing every window
+// (a game already open is told, js/launch.js). Saves and the voice pack are never touched.
+async function fill() {
+  const c = await caches.open(VERSION), have = new Set((await c.keys()).map(r => new URL(r.url).pathname));
+  const todo = FILES.filter(f => !have.has(new URL(f, self.location).pathname));
+  let i = 0;
+  const one = async () => { while (i < todo.length) { const f = todo[i++]; const r = await fetch(new Request(f, { cache: 'reload' })); if (!r.ok) throw new Error(f + ': ' + r.status); await c.put(f, r); } };
+  await Promise.all([one(), one(), one(), one(), one(), one()]);
+}
+self.addEventListener('install', e => { e.waitUntil(fill().then(() => self.skipWaiting())); });
 self.addEventListener('message', e => { if (e.data?.type === 'SKIP_WAITING') self.skipWaiting(); });
+// (r80) this version's own copy first: the one older copy kept below is only for a game still open from before (its
+// lazy parts); answering from it first had every updated device running the version before (r78 ran r77's files)
+const saved = req => caches.open(VERSION).then(c => c.match(req, { ignoreSearch: true })).then(hit => hit || caches.match(req, { ignoreSearch: true }));
 self.addEventListener('activate', e => { e.waitUntil(caches.keys().then(keys => { const old = keys.filter(k => k !== 'sv-family' && /^sv-20/.test(k) && k !== VERSION); const keep = old.slice(-1); return Promise.all(old.filter(k => !keep.includes(k)).map(k => caches.delete(k))); }).then(() => self.clients.claim())); });
 self.addEventListener('fetch', e => {
   const req = e.request;
@@ -45,7 +60,7 @@ self.addEventListener('fetch', e => {
   // game keeps its own copy in the "sv-family" cache); nor anything else under api/
   if (url.pathname.includes('/api/')) return;
   // Hashed chunks are immutable. An open previous-version game may still need its own lazy chunks.
-  if (url.pathname.includes('/bundle/')) { e.respondWith(caches.match(req).then(hit => hit || fetch(req).then(r => { if (r.ok) e.waitUntil(caches.open(VERSION).then(c => c.put(req, r.clone()))); return r; }))); return; }
+  if (url.pathname.includes('/bundle/')) { e.respondWith(saved(req).then(hit => hit || fetch(req).then(r => { if (r.ok) e.waitUntil(caches.open(VERSION).then(c => c.put(req, r.clone()))); return r; }))); return; }
   // the voice pack: kept in its own cache (it survives game updates) and stored as lines are played
   if (url.pathname.endsWith('/voices/manifest.json')) { // the saved list at once (slow phone data must never mean the phone's voice), refreshed behind
     e.respondWith(caches.open('sv-voices').then(c => c.match(req).then(hit => {
@@ -87,5 +102,5 @@ self.addEventListener('fetch', e => {
     e.respondWith(caches.open('sv-voices').then(c => c.match(req).then(hit => hit || fetch(req).then(r => { if (r.ok) c.put(req, r.clone()); return r; }))));
     return;
   }
-  e.respondWith(caches.match(req, { ignoreSearch: true }).then(hit => hit || fetch(req)));
+  e.respondWith(saved(req).then(hit => hit || fetch(req)));
 });
