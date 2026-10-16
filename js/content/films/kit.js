@@ -250,7 +250,8 @@ export const pond = (S, x, z, r = 3, c = '#5ab0d0') => S.add(mesh([P(Cyl(r, r, .
 // a Chinese village: houses with red doors and curved roofs, a willow, lanterns
 export function chinaVillage(S) {
   S.sky('#86cdf0', '#f4f6ff'); L.ground(S, '#9ad07a'); L.mountains(S, -110, '#7a98a8'); L.sun(S, -50, 50, -170, 8);
-  [[-7, -7, .2], [7, -7, -.2]].forEach(([x, z, ry]) => S.add(mesh([P(Box(5, 2.4, 3.4), '#f2e6d0', [0, 1.2, 0]), P(Box(1.2, 1.8, .1), '#c62f2f', [0, .9, 1.71]), P(Box(6.4, .3, 4.6), '#3a4a5a', [0, 2.55, 0]),
+  if (S.look) L.house(S, -7, -7, .2);
+  else [[-7, -7, .2], [7, -7, -.2]].forEach(([x, z, ry]) => S.add(mesh([P(Box(5, 2.4, 3.4), '#f2e6d0', [0, 1.2, 0]), P(Box(1.2, 1.8, .1), '#c62f2f', [0, .9, 1.71]), P(Box(6.4, .3, 4.6), '#3a4a5a', [0, 2.55, 0]),
     P(Cone(4, 1.4, 4), '#3a4a5a', [0, 3.3, 0], [0, PI / 4, 0], [1.25, 1, .85]), ...[-1, 1].map(s => P(Cone(.25, 1, 5), '#3a4a5a', [s * 3.2, 2.7, 2.2], [-.5, 0, s * -.9]))]), x, 0, z, ry));
   L.lantern(S, -3, 2.6, -4.6); L.lantern(S, 3, 2.6, -4.6); L.banyan(S, -13, -2, .8); L.bamboo(S, 12, -2);
   S.add(flat(60, 3, '#d8c8a0'), 0, .005, 4);
@@ -258,7 +259,8 @@ export function chinaVillage(S) {
 // an Indian village: a white house with a flat roof, palms, a banyan, a well
 export function indiaVillage(S, { well = true } = {}) {
   S.sky('#6ab8f0', '#fff4dc'); L.sun(S, 50, 50, -160, 10, '#fff0a0'); L.ground(S, '#c8b878');
-  S.add(mesh([P(Box(5, 2.6, 3.6), '#f4ece0', [0, 1.3, 0]), P(Box(5.4, .3, 4), '#e8a85a', [0, 2.7, 0]), P(Box(1.1, 1.8, .1), '#3a6ab0', [0, .9, 1.81]), P(Box(.8, .7, .1), '#3a6ab0', [-1.6, 1.5, 1.81])]), -6, 0, -7, .2);
+  if (S.look) L.house(S, -6, -7, .2);
+  else S.add(mesh([P(Box(5, 2.6, 3.6), '#f4ece0', [0, 1.3, 0]), P(Box(5.4, .3, 4), '#e8a85a', [0, 2.7, 0]), P(Box(1.1, 1.8, .1), '#3a6ab0', [0, .9, 1.81]), P(Box(.8, .7, .1), '#3a6ab0', [-1.6, 1.5, 1.81])]), -6, 0, -7, .2);
   L.palm(S, 8, -6, .3); L.palm(S, 11, -2, .4, 1); L.banyan(S, -13, -2, .9); L.mountains(S, -110, '#a8b0a0');
   if (well) S.add(mesh([P(Cyl(.9, .9, .9, 14), '#b8a890', [0, .45, 0]), P(Cyl(.7, .7, .92, 14), '#3a5a6a', [0, .46, 0]), ...[-1, 1].map(s => P(Cyl(.06, .06, 1.6, 6), '#7a5236', [s * .8, 1.2, 0])), P(Cyl(.05, .05, 1.8, 6), '#7a5236', [0, 1.95, 0], [0, 0, H])]), 4, 0, -3);
 }
