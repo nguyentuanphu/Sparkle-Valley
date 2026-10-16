@@ -639,8 +639,29 @@ await check('ownerwificard', async () => {
     await P.page.evaluate(async()=>{(await import('/js/voicepack.js')).askCard(139);});
     ok(!(await P.page.locator('.packask').count()),'a delayed mobile prompt must not reopen on Wi-Fi');
     ok(!P.errors.length,P.errors.join(' | '));
-    return 'Bounded two-file fixture: Wi-Fi automatically completes remaining voices, dismisses the old mobile permission card and rejects delayed prompts without granting mobile consent';
   } finally {await P.ctx.close();}
+  // (owner, 16 Oct: each explanation can be switched off in Studio) with explain_voiceAsk off, the same phone on mobile
+  // data never asks and never fetches past the core voices: the rest waits for Wi-Fi
+  let rest=0;
+  const Q=await open(b,{w:390,h:844,touch:true,settings:{autoPack:false,lang:'en',bilingual:false},pre:()=>{
+    const c=new EventTarget();c.type='cellular';c.saveData=false;Object.defineProperty(navigator,'connection',{get:()=>c,configurable:true});
+  },route:async ctx=>{
+    await ctx.route('**/content/custom.json*',async r=>{let j={};try{j=await(await r.fetch()).json();}catch(e){}j.features={...(j.features||{}),explain_voiceAsk:false};await r.fulfill({contentType:'application/json',body:JSON.stringify(j)});});
+    await ctx.route('**/voices/areas.json',r=>r.fulfill({json:{groups:{core:'en_core_wifi',world:'en_world_wifi'},size:{core:{en:1024},world:{en:2048}}}}));
+    await ctx.route('**/voices/en/f/*_wifi.mp3',r=>{if(/world/.test(r.request().url()))rest++;r.fulfill({contentType:'audio/mpeg',body:Buffer.from([0xff,0xfb,0x90,0])});});
+  }});
+  try {
+    await clear(Q.page);
+    const asked=await Q.page.evaluate(async()=>{
+      const S=await import('/js/state.js'),V=await import('/js/voicepack.js');S.settings.autoPack=true;S.settings.packCell=false;delete S.settings.packAskAt;
+      const ev=[];V.startPack({lines:{en_core_wifi:'f',en_world_wifi:'f'},langOf:{en_core_wifi:'en',en_world_wifi:'en'},areas:true,version:998,made:'owner-wifi-card-off'},e=>{ev.push(e.state);if(e.state==='ask')V.askCard(e.mb);},()=>null);
+      await new Promise(r=>setTimeout(r,6000));return ev;
+    });
+    ok(asked.includes('ready')&&!asked.includes('ask')&&!(await Q.page.locator('.packask').count()),'switched off, the phone still asked: '+asked.join(','));
+    ok(!rest,`switched off, ${rest} voice files past the core came over mobile data`);
+    ok(!Q.errors.length,Q.errors.join(' | '));
+  } finally {await Q.ctx.close();}
+  return 'Bounded two-file fixture: Wi-Fi automatically completes remaining voices, dismisses the old mobile permission card and rejects delayed prompts without granting mobile consent; with Studio\'s explain_voiceAsk off, no question and nothing past the core on mobile data';
 });
 
 await check('ownervoicewifi', async () => {
