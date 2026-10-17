@@ -9,19 +9,20 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const { launch, open, clear } = await import(path.join(ROOT, 'tests/harness.mjs'));
-const arg = (k, d) => { const i = process.argv.indexOf(k); return i > 0 ? process.argv[i + 1] : d; };
+const arg = <D = undefined,>(k: string, d?: D): string | D => { const i = process.argv.indexOf(k); return i > 0 ? process.argv[i + 1] : d; };
 const PASSES = +arg('--passes', 3), WORLD = !process.argv.includes('--no-world');
 const OUT = path.join(ROOT, 'tools/voice-extra.json');
 const found = new Map(); // lang|text -> {lang, text}
 try { for (const l of JSON.parse(fs.readFileSync(OUT, 'utf8'))) found.set(l.lang + '|' + l.text, l); } catch (e) { }
 const WHERE = path.join(ROOT, 'tools/voice-where.json');
-let where = {}; try { where = JSON.parse(fs.readFileSync(WHERE, 'utf8')); } catch (e) { }
+// where each line was heard: { 'lang|words': { g: { game: times }, a: { place: times } } }
+let where: Record<string, Record<string, Record<string, number>>> = {}; try { where = JSON.parse(fs.readFileSync(WHERE, 'utf8')); } catch (e) { }
 const tag = (k, kind, id) => { const w = where[k] = where[k] || {}; const m = w[kind] = w[kind] || {}; m[id] = (m[id] || 0) + 1; };
 const saveWhere = () => fs.writeFileSync(WHERE, JSON.stringify(Object.fromEntries(Object.entries(where).sort((a, b) => a[0].localeCompare(b[0]))), null, 0).replace(/\},"/g, '},\n"') + '\n');
-const save = () => saveWhere() || fs.writeFileSync(OUT, JSON.stringify([...found.values()].sort((a, b) => (a.lang + a.text).localeCompare(b.lang + b.text)), null, 0).replace(/\},\{/g, '},\n{') + '\n');
-const pre = () => { window.__svHeard = []; window.__svVoiceLog = (lang, text) => window.__svHeard.push([lang, text]); speechSynthesis.speak = u => setTimeout(() => { try { u.onend && u.onend(); } catch (e) { } }, 20); };
+const save = () => { saveWhere(); fs.writeFileSync(OUT, JSON.stringify([...found.values()].sort((a, b) => (a.lang + a.text).localeCompare(b.lang + b.text)), null, 0).replace(/\},\{/g, '},\n{') + '\n'); };
+const pre = () => { window.__svHeard = []; window.__svVoiceLog = (lang, text) => window.__svHeard.push([lang, text]); speechSynthesis.speak = u => setTimeout(() => { try { u.onend && u.onend(undefined); } catch (e) { } }, 20); };
 // kind 'g' = heard in a game (id), 'a' = heard from something standing in an area (place id)
-const collect = async (page, kind, id) => { const h = await page.evaluate(() => window.__svHeard.splice(0)); let n = 0; for (const [lang, text] of h) { const k = lang + '|' + text; if (!text) continue; if (kind) tag(k, kind, id); if (!found.has(k)) { found.set(k, { lang, text }); n++; } } return n; };
+const collect = async (page, kind?: string, id?: string) => { const h = await page.evaluate(() => window.__svHeard.splice(0)); let n = 0; for (const [lang, text] of h) { const k = lang + '|' + text; if (!text) continue; if (kind) tag(k, kind, id); if (!found.has(k)) { found.set(k, { lang, text }); n++; } } return n; };
 let b = await launch();
 const start = async lang => {
   try { await b.contexts()[0]?.close(); } catch (e) { }
@@ -41,8 +42,8 @@ for (const lang of arg('--lang') ? [arg('--lang')] : ['en', 'vi']) { // --lang v
     for (const id of ids) {
       await step(async page => {
         await page.evaluate(id => { __sv.playGame(0, id, 'replay'); }, id); await page.waitForTimeout(500);
-        for (let k = 0; k < 25; k++) { await page.evaluate(() => { const bs = [...document.querySelectorAll('.gl button, .gl [data-i], .gl .card, .gl .opt, .gl .tile, .gl .cell')].filter(b => !b.closest('.gl-top') && !/gl-x|gl-next/.test(b.className) && !b.disabled); bs.length && bs[Math.floor(Math.random() * bs.length)].click(); }); await page.waitForTimeout(90); }
-        await page.evaluate(() => { document.querySelectorAll('.gl .gl-x').forEach(x => x.click()); }); await page.waitForTimeout(150);
+        for (let k = 0; k < 25; k++) { await page.evaluate(() => { const bs = [...document.querySelectorAll<HTMLElement>('.gl button, .gl [data-i], .gl .card, .gl .opt, .gl .tile, .gl .cell')].filter(b => !b.closest('.gl-top') && !/gl-x|gl-next/.test(b.className) && !('disabled' in b && b.disabled)); bs.length && bs[Math.floor(Math.random() * bs.length)].click(); }); await page.waitForTimeout(90); }
+        await page.evaluate(() => { document.querySelectorAll<HTMLElement>('.gl .gl-x').forEach(x => x.click()); }); await page.waitForTimeout(150);
         await page.evaluate(() => { document.querySelectorAll('.gl, .storybook, .dialog, .modal, .reward').forEach(e => e.remove()); __sv.paused = false; });
         added += await collect(page, 'g', id);
       });
@@ -57,7 +58,7 @@ for (const lang of arg('--lang') ? [arg('--lang')] : ['en', 'vi']) { // --lang v
         added += await collect(page); // (lines still coming from the step before are kept, but not counted as this one's area)
         const area = await page.evaluate(async i => { const G = __sv, it = G.interactables[i], h = G.heroes[0]; if (!it || /^g\d|^lf|tower|^pot/.test(it.id || '')) return null; const { regionAt } = await import('/js/world.js'); try { const r = it.act(h, G); r && r.catch && r.catch(() => { }); } catch (e) { } return regionAt(it.x, it.z); }, i);
         await page.waitForTimeout(120);
-        for (let k = 0; k < 2; k++) { await page.evaluate(() => { const bs = [...document.querySelectorAll('.dialog button, .modal button')].filter(b => !/close|✕|×|photo|360|street/i.test(b.className + b.textContent)); bs.length && bs[Math.floor(Math.random() * bs.length)].click(); }); await page.waitForTimeout(80); }
+        for (let k = 0; k < 2; k++) { await page.evaluate(() => { const bs = [...document.querySelectorAll<HTMLElement>('.dialog button, .modal button')].filter(b => !/close|✕|×|photo|360|street/i.test(b.className + b.textContent)); bs.length && bs[Math.floor(Math.random() * bs.length)].click(); }); await page.waitForTimeout(80); }
         await page.evaluate(() => { document.querySelectorAll('.storybook, .dialog, .modal, .vc-pop, .reward, .realview, .gl').forEach(e => e.remove()); __sv.paused = false; });
         added += await collect(page, area ? 'a' : null, area);
         if (i % 25 === 24) { save(); console.log(lang, 'world', i + 1, '/', n, 'total', found.size); }

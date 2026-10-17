@@ -23,8 +23,9 @@ const srv = http.createServer((q, r) => {
   r.writeHead(200, { 'Content-Type': type, 'Cache-Control': 'no-cache', ...(zip ? { 'Content-Encoding': 'gzip' } : {}) });
   (zip ? fs.createReadStream(f).pipe(zlib.createGzip()) : fs.createReadStream(f)).pipe(r);
 });
-await new Promise(res => srv.listen(0, '127.0.0.2', res));
-const url = `http://127.0.0.2:${srv.address().port}/`;
+await new Promise<void>(res => srv.listen(0, '127.0.0.2', res));
+const addr = srv.address(); if (!addr || typeof addr === 'string') throw new Error('the test server has no port');
+const url = `http://127.0.0.2:${addr.port}/`;
 const b = await launch();
 const prep = async ctx => { await ctx.addInitScript(seedPlayers); return ctx.addInitScript(() => { try { localStorage.setItem('sv2_settings', JSON.stringify({ voice: false, sound: false, music: false, quality: 'low', autoPack: false })); } catch (e) { } }); };
 // from tapping the title to walking in the valley (a child already made; the story's first film skipped)
@@ -39,10 +40,14 @@ async function first(ctx, page, { slow = false } = {}) {
   if (slow) { const c = await ctx.newCDPSession(page); await c.send('Network.enable'); await c.send('Network.emulateNetworkConditions', { offline: false, latency: 150, downloadThroughput: 1.6e6 / 8, uploadThroughput: 750e3 / 8 }); }
   const t0 = Date.now(); await page.goto(url); await page.waitForSelector('.screen.title', { timeout: 180000 });
   const ms = Date.now() - t0;
-  const mb = await page.evaluate(() => performance.getEntriesByType('resource').concat(performance.getEntriesByType('navigation')).reduce((a, e) => a + (e.encodedBodySize || e.transferSize || 0), 0) / 1e6);
+  const mb = await page.evaluate(() => performance.getEntriesByType('resource').concat(performance.getEntriesByType('navigation')).filter(e => e instanceof PerformanceResourceTiming).reduce((a, e) => a + (e.encodedBodySize || e.transferSize || 0), 0) / 1e6);
   return { ms, mb: +mb.toFixed(2) };
 }
-const out = {};
+// what each kind of start took: from the network (fresh, slow 4G), from the saved copy, offline, and with no answer
+type Load = { ms: number, mb: number, enterMs?: number };
+// (a start from the saved copy: ms to the title screen, or how long it waited without one)
+type Again = number | string;
+const out: { fresh?: Load, slow4g?: Load, saved?: Again, offline?: Again, noAnswer?: Again } = {};
 { const ctx = await b.newContext(); await prep(ctx); const p = await ctx.newPage(); out.fresh = await first(ctx, p); out.fresh.enterMs = await enter(p); await ctx.close(); }
 { const ctx = await b.newContext(); await prep(ctx); const p = await ctx.newPage(); out.slow4g = await first(ctx, p, { slow: true }); await ctx.close(); }
 {

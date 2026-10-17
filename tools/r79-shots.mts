@@ -29,12 +29,12 @@ const SEED = async page => page.evaluate(async () => {
 const SCREENS = {
   bag: async page => { await page.evaluate(() => window.__sv.openPad(0, 'bag')); await page.waitForTimeout(1200); },
   album: async page => { await page.evaluate(() => window.__sv.openPad(0, 'album')); await page.waitForTimeout(1200); await page.evaluate(() => document.querySelector('.wordlist')?.scrollIntoView({ block: 'center' })); await page.waitForTimeout(500); },
-  wardrobe: async page => { await page.evaluate(() => window.__sv.openPad(0, 'shop')); await page.waitForTimeout(1000); await page.evaluate(() => { const b = document.querySelector('[data-go="wardrobe"]'); b && b.click(); }); await page.waitForTimeout(1000); },
+  wardrobe: async page => { await page.evaluate(() => window.__sv.openPad(0, 'shop')); await page.waitForTimeout(1000); await page.evaluate(() => { const b = document.querySelector<HTMLElement>('[data-go="wardrobe"]'); b && b.click(); }); await page.waitForTimeout(1000); },
   shop: async page => { await page.evaluate(() => window.__sv.openPad(0, 'shop')); await page.waitForTimeout(1200); },
-  gifts: async page => { await page.evaluate(() => window.__sv.openPad(0, 'bag')); await page.waitForTimeout(1200); await page.evaluate(() => { const g = document.querySelector('[data-gift]'); g && g.scrollIntoView({ block: 'center' }); g && g.click(); }); await page.waitForTimeout(600); },
-  eat: async page => { await page.evaluate(() => window.__sv.openPad(0, 'bag')); await page.waitForTimeout(1200); await page.evaluate(() => document.querySelector('[data-snack]')?.click()); await page.waitForTimeout(600); },
-  hud: async page => { await page.evaluate(() => { const b = document.querySelector('.dk.snd'); b && b.click(); }); await page.waitForTimeout(800); },
-  camera: async page => { await page.evaluate(() => { const b = document.querySelector('.z-tray'); b && b.click(); }); await page.waitForTimeout(800); },
+  gifts: async page => { await page.evaluate(() => window.__sv.openPad(0, 'bag')); await page.waitForTimeout(1200); await page.evaluate(() => { const g = document.querySelector<HTMLElement>('[data-gift]'); g && g.scrollIntoView({ block: 'center' }); g && g.click(); }); await page.waitForTimeout(600); },
+  eat: async page => { await page.evaluate(() => window.__sv.openPad(0, 'bag')); await page.waitForTimeout(1200); await page.evaluate(() => document.querySelector<HTMLElement>('[data-snack]')?.click()); await page.waitForTimeout(600); },
+  hud: async page => { await page.evaluate(() => { const b = document.querySelector<HTMLElement>('.dk.snd'); b && b.click(); }); await page.waitForTimeout(800); },
+  camera: async page => { await page.evaluate(() => { const b = document.querySelector<HTMLElement>('.z-tray'); b && b.click(); }); await page.waitForTimeout(800); },
 };
 const b = await launch();
 for (const dev of devices) {

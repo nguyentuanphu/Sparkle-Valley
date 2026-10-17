@@ -47,3 +47,10 @@ test('build: only type notes are allowed (no enum), and the error names the file
   assert.ok(!fs.existsSync(path.join(d, 'js/e.js')));
   fs.rmSync(d, { recursive: true, force: true });
 });
+test('build: a list written by tools/build.mjs (before the rename) is taken over, not kept twice', () => {
+  const d = game(); fs.writeFileSync(path.join(d, 'js/a.ts'), TS); fs.writeFileSync(path.join(d, 'js/b.js'), "export const b = '!';\n");
+  fs.writeFileSync(path.join(d, '.gitignore'), 'node_modules\n# --- made by tools/build.mjs from .ts files (never committed; do not edit by hand) ---\n/js/old.js\n# --- end of tools/build.mjs ---\n');
+  assert.equal(run(d).code, 0);
+  assert.match(fs.readFileSync(path.join(d, '.gitignore'), 'utf8'), /^node_modules\n# --- made by tools\/build\.mts[^\n]*\n\/js\/a\.js\n# --- end of tools\/build\.mts ---\n$/);
+  fs.rmSync(d, { recursive: true, force: true });
+});

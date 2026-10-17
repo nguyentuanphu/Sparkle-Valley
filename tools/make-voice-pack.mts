@@ -28,16 +28,19 @@ import fs from 'fs';
 import path from 'path';
 import manifests from './voice-manifests.cts';
 import { collectLines, collectTemplates, partText, NUMBERS, areaOfLine, areaOfFile, readWhere, GROUPS, dynamicSays, corePri, nonCoreArea } from './voice-lines.mts';
+// (TypeScript sees nothing of a CommonJS file's module.exports: checked once here, then it has its own type)
+const isVoiceManifests = (m: unknown): m is VoiceManifests => typeof m === 'object' && m !== null && 'splitManifest' in m;
+if (!isVoiceManifests(manifests)) throw new Error('tools/voice-manifests.cts did not load');
+const { splitManifest } = manifests;
 
-globalThis.document = { documentElement: {} };            // i18n.js expects a browser
-globalThis.localStorage = { getItem: () => null, setItem: () => { } };
+Object.assign(globalThis, { document: { documentElement: {} }, localStorage: { getItem: () => null, setItem: () => { } } }); // i18n.js expects a browser
 const { swapNames } = await import('../js/i18n.js');
 const { LEARN } = await import('../js/words2.js');
 const { packHash, lineHash } = await import('../js/packhash.js');
 const { viRuns, mixed, mixedSsml } = await import('../js/viwords.js');
 
 const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..');
-const arg = (k, d) => { const i = process.argv.indexOf('--' + k); return i > 0 ? process.argv[i + 1] : d; };
+const arg = <D = undefined,>(k: string, d?: D): string | D => { const i = process.argv.indexOf('--' + k); return i > 0 ? process.argv[i + 1] : d; };
 const flag = k => process.argv.includes('--' + k);
 const ENGINE = arg('engine', 'eleven');
 const KEY = arg('key', ENGINE === 'azure' ? process.env.AZURE_SPEECH_KEY : (process.env.ELEVEN_KEY || process.env.ELEVENLABS_API_KEY));
@@ -60,7 +63,7 @@ const jobs = [], where = readWhere(), heard = (lang, text) => where[lang + '|' +
 // (within a few screens of code: the places' lines are written together), else with 'world'.
 const pairs = collectLines().map(l => {
   const from = l.from.split(','), en = swapNames(l.en, 'en'), vi = swapNames(l.vi, 'vi');
-  const areas = [areaOfLine(from, heard('en', en)), areaOfLine(from, heard('vi', vi))].sort((a, b) => (a === 'core' ? -1 : b === 'core' ? 1 : 0) || (GROUPS.includes(a) - GROUPS.includes(b)));
+  const areas = [areaOfLine(from, heard('en', en)), areaOfLine(from, heard('vi', vi))].sort((a, b) => (a === 'core' ? -1 : b === 'core' ? 1 : 0) || (+GROUPS.includes(a) - +GROUPS.includes(b)));
   return { l, from, en, vi, area: areas[0] };
 });
 {
@@ -132,11 +135,11 @@ const list = [...uniq.entries()];
 const PACK_DIR = path.join(ROOT, 'voices'), MAN = path.join(PACK_DIR, 'manifest.json');
 function saveManifest(man) {
   fs.mkdirSync(PACK_DIR, { recursive: true });
-  for (const [lang, shard] of Object.entries(manifests.splitManifest(man))) fs.writeFileSync(path.join(PACK_DIR, `manifest-${lang}.json`), JSON.stringify(shard));
+  for (const [lang, shard] of Object.entries(splitManifest(man))) fs.writeFileSync(path.join(PACK_DIR, `manifest-${lang}.json`), JSON.stringify(shard));
   fs.writeFileSync(MAN, JSON.stringify(man));
 }
 // the manifest's `other`: { vi: 'hash hash …', zh: …, hi: … } for every line not in English (English is the default)
-const otherOf = list => { const o = {}; for (const [h, j] of list) if (j.lang !== 'en') (o[j.lang] = o[j.lang] || []).push(h); return Object.fromEntries(Object.entries(o).map(([L, hs]) => [L, hs.join(' ')])); };
+const otherOf = list => { const o: Record<string, string[]> = {}; for (const [h, j] of list) if (j.lang !== 'en') (o[j.lang] = o[j.lang] || []).push(h); return Object.fromEntries(Object.entries(o).map(([L, hs]) => [L, hs.join(' ')])); };
 const files = list.flatMap(([h, j]) => CAST[j.lang].map(s => [s, h, j]));
 const chars = files.reduce((a, [, , j]) => a + j.text.length, 0);
 const missing = files.filter(([s, h, j]) => !fs.existsSync(path.join(PACK_DIR, j.lang, s, h + '.mp3')));
@@ -159,7 +162,7 @@ console.log(`  Size: about ${Math.round(chars * 0.075 * 4 / 1024)} MB of MP3 (32
 // voices/areas.json: which lines download with which area (place ids, plus core, games, stories, festivals, world) and
 // how big each area is per language, so the game can download the core first and the rest area by area on Wi-Fi.
 // It is read only while the pack is downloading, so the list fetched at start-up (manifest.json) stays small.
-function writeAreas(man, dry) {
+function writeAreas(man, dry?: boolean) {
   const groups = {}, size = {};
   for (const [h, j] of list) {
     if (!man.lines[h]) continue;
@@ -233,7 +236,7 @@ async function pickVoice(lang, gender) {
   if (best[0] < 20 && lang !== 'en') console.warn(`  (no voice in your library is marked as ${LANG_NAME[lang]}; using ${best[1].name}. For a native speaker, add one from the ElevenLabs Voice Library and pass --voice-${lang}-${gender} <id>.)`);
   return { id: best[1].voice_id, name: best[1].name };
 }
-const voices = {};
+const voices: Record<string, Record<string, { id: string, name: string }>> = {};
 for (const [L, slots] of Object.entries(CAST)) { voices[L] = {}; for (const s of slots) voices[L][s] = await pickVoice(L, s); }
 console.log('Voices:'); for (const [L, v] of Object.entries(voices)) console.log(`  ${LANG_NAME[L]}: ` + Object.entries(v).map(([s, x]) => `${s === 'f' ? 'woman' : 'man'} ${x.name} (${x.id})`).join(', '));
 
@@ -272,7 +275,7 @@ async function azure() {
   if (!REGION) { console.error('Add the region too: --region <the Location/Region of your Speech resource, e.g. australiaeast or southeastasia>.'); process.exit(1); }
   const AZ = arg('api', `https://${REGION}.tts.speech.microsoft.com`), perMin = +arg('per-minute', 18);
   // check the key and region with one short line
-  const voices = {}; for (const [L, slots] of Object.entries(CAST)) { voices[L] = {}; for (const sl of slots) voices[L][sl] = { id: arg(`voice-${L}-${sl}`, AZ_VOICES[L][sl]), name: arg(`voice-${L}-${sl}`, AZ_VOICES[L][sl]) }; }
+  const voices: Record<string, Record<string, { id: string, name: string }>> = {}; for (const [L, slots] of Object.entries(CAST)) { voices[L] = {}; for (const sl of slots) voices[L][sl] = { id: arg(`voice-${L}-${sl}`, AZ_VOICES[L][sl]), name: arg(`voice-${L}-${sl}`, AZ_VOICES[L][sl]) }; }
   console.log('Voices:'); for (const [L, v] of Object.entries(voices)) console.log(`  ${LANG_NAME[L]}: ` + Object.entries(v).map(([sl, x]) => `${sl === 'f' ? 'woman' : 'man'} ${x.id}`).join(', '));
   const xml = t => t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   const LOCALE = { en: 'en-AU', vi: 'vi-VN', zh: 'zh-CN', hi: 'hi-IN' };

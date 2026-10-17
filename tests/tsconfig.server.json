@@ -4,7 +4,7 @@
   "compilerOptions": {
     "module": "nodenext", "moduleResolution": "nodenext", "allowImportingTsExtensions": true, "noEmit": true,
     "strict": false, "noImplicitAny": false, "checkJs": false, "types": ["node"], "typeRoots": ["./node_modules/@types"],
-    "paths": { "@netlify/blobs": ["./node_modules/@netlify/blobs/dist/main.d.ts"] }
+    "paths": { "@netlify/blobs": ["./node_modules/@netlify/blobs/dist/main.d.ts"], "/js/*": ["../js/*"] }
   },
-  "include": ["../netlify/**/*.mts", "../studio/*.cts"]
+  "include": ["../netlify/**/*.mts", "../studio/*.cts", "../tools/*.mts", "../tools/*.cts", "../tools/*.d.ts"]
 }

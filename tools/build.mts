@@ -51,7 +51,9 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
   }
   // .gitignore: the list of made files, between the two marker lines (an old one whose .ts is gone is deleted too)
   const gi = path.join(ROOT, '.gitignore'), text = fs.existsSync(gi) ? fs.readFileSync(gi, 'utf8') : '';
-  const re = new RegExp(`${START.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\n([\\s\\S]*?)${END.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\n?`);
+  // (a list written before the tool was renamed, by tools/build.mjs, is taken over, not kept twice)
+  const mark = (m: string) => m.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace('build\\.mts', 'build\\.m[jt]s');
+  const re = new RegExp(`${mark(START)}\\n([\\s\\S]*?)${mark(END)}\\n?`);
   const old = ((re.exec(text) || [])[1] || '').split('\n').filter(Boolean).map(l => l.replace(/^\//, ''));
   const block = outs.length ? `${START}\n${outs.map(o => '/' + o).join('\n')}\n${END}\n` : '';
   const next = re.test(text) ? text.replace(re, block) : text + (block && !text.endsWith('\n') && text ? '\n' : '') + block;

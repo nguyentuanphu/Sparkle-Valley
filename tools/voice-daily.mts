@@ -13,12 +13,11 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { collectLines } from './voice-lines.mts';
 
-globalThis.document = { documentElement: {} }; // i18n.js expects a browser
-globalThis.localStorage = { getItem: () => null, setItem: () => { } };
+Object.assign(globalThis, { document: { documentElement: {} }, localStorage: { getItem: () => null, setItem: () => { } } }); // i18n.js expects a browser
 const { swapNames } = await import('../js/i18n.js');
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const arg = (k, d) => { const i = process.argv.indexOf('--' + k); return i > 0 ? process.argv[i + 1] : d; };
+const arg = <D = undefined,>(k: string, d?: D): string | D => { const i = process.argv.indexOf('--' + k); return i > 0 ? process.argv[i + 1] : d; };
 const SITE = String(arg('site', process.env.SV_SITE || 'https://sparklevalley.netlify.app')).replace(/\/$/, '');
 const EXTRA = path.join(ROOT, 'tools/voice-extra.json'), SUMMARY = path.join(ROOT, 'tools/voice-daily.json');
 const LANGS = ['en', 'vi'];
@@ -36,7 +35,7 @@ async function readInbox() {
 }
 
 // ---------- everything the game itself says ----------
-const known = new Set(), put = (lang, text) => { const t = norm(text); if (t) known.add(lang + '|' + t); };
+const known = new Set<string>(), put = (lang, text) => { const t = norm(text); if (t) known.add(lang + '|' + t); };
 for (const l of collectLines()) { put('en', swapNames(l.en, 'en')); put('vi', swapNames(l.vi, 'vi')); put('en', l.en); put('vi', l.vi); }
 const inCode = new Set(known); // already recorded by tools/make-voice-pack.mts, nothing to add
 let extra = []; try { extra = JSON.parse(fs.readFileSync(EXTRA, 'utf8')); } catch (e) { }

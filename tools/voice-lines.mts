@@ -72,7 +72,9 @@ return [...seen.values()].map(l => ({ en: l.en, vi: l.vi, from: [...l.files].joi
 // The game finds the template a line was made from (manifest `tpl`) and plays the pieces in order; a gap filled with a
 // child's, friend's or pet's name is never recorded, so it is left out of what is spoken (HANDOFF rule 11).
 // read a JS string or template literal starting at src[i]: { end, pieces, exprs } (pieces.length = exprs.length + 1)
-function readLit(src, i) {
+// a string in the code: where it ends, its fixed pieces and the ${…} between them
+type Lit = { end: number, pieces: string[], exprs: string[] };
+function readLit(src: string, i: number): Lit | null {
   const q = src[i]; if (q !== "'" && q !== '"' && q !== '`') return null;
   let j = i + 1, cur = ''; const pieces = [], exprs = [];
   while (j < src.length) {
@@ -109,7 +111,8 @@ export function collectTemplates() {
       let k = a.end; while (/\s/.test(src[k])) k++; if (src[k] !== ',') continue; k++; while (/\s/.test(src[k])) k++;
       const b = readLit(src, k); if (!b) continue;
       if (!a.exprs.length && !b.exprs.length) continue; // a plain line: collectLines() has it
-      for (const [lang, L] of [['en', a], ['vi', b]]) {
+      const both: [string, Lit][] = [['en', a], ['vi', b]];
+      for (const [lang, L] of both) {
         if (!L.pieces.some(p => /\p{L}/u.test(p))) continue;
         const key = lang + '\u0000' + L.pieces.join('\u0001');
         if (seen.has(key)) continue; seen.add(key);
@@ -157,12 +160,13 @@ const AREA_OF = new Map(Object.entries(FILE_AREA).flatMap(([a, fs]) => fs.map(f 
 // last ones go to their own area instead (tools/make-voice-pack.mts CORE_MB); 40 = a line said in many games
 export const corePri = fromFiles => Math.min(40, ...fromFiles.map(f => { const i = FILE_AREA.core.indexOf(f); return i < 0 ? 40 : i; }));
 // where a core line goes if the core is full: the area of its other files, else the games or the world
-export const nonCoreArea = fromFiles => { const a = [...new Set(fromFiles.map(areaOfFile))].filter(x => x !== 'core').sort((x, y) => (x === 'world') - (y === 'world'))[0]; return a || (fromFiles.some(f => f.startsWith('js/games/')) ? 'games' : 'world'); };
+export const nonCoreArea = fromFiles => { const a = [...new Set(fromFiles.map(areaOfFile))].filter(x => x !== 'core').sort((x, y) => +(x === 'world') - +(y === 'world'))[0]; return a || (fromFiles.some(f => f.startsWith('js/games/')) ? 'games' : 'world'); };
 export const areaOfFile = f => AREA_OF.get(f) || (f.startsWith('js/games/') || f.startsWith('js/content/films/') ? 'games' : 'world'); // (the tale films go with the other films)
 // the area of a line: the core wins (wherever else it is used), then where it was heard (the area most often, or a
 // game), then its file
 const RANK = a => a === 'core' ? 0 : a === 'world' ? 3 : GROUPS.includes(a) ? 2 : 1;
-export function areaOfLine(fromFiles, heard) {
+// heard: where it was heard while playing (tools/voice-where.json): in which games (g) and areas (a), how often
+export function areaOfLine(fromFiles: string[], heard?: { g?: Record<string, number>, a?: Record<string, number> }): string {
   const byFile = [...new Set(fromFiles.map(areaOfFile))].sort((a, b) => RANK(a) - RANK(b));
   if (byFile[0] === 'core') return 'core';
   if (heard) {

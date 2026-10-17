@@ -35,13 +35,14 @@ const readJSON = (rel, def) => { try { return JSON.parse(fs.readFileSync(path.jo
 
 // ---------- the places, read from the game's own files (no browser modules are loaded) ----------
 const src = rel => fs.readFileSync(path.join(ROOT, rel), 'utf8');
-const literal = (text, start, close) => { const a = text.indexOf(start); if (a < 0) return {}; const b = text.indexOf(close, a); return Function(`return (${text.slice(a + start.length - 1, b + close.indexOf('}') + 1)})`)(); };
+// an object written in a game file (its text), read as it is: its values as the caller says they are
+const literal = <T,>(text: string, start: string, close: string): Record<string, T> => { const a = text.indexOf(start); if (a < 0) return {}; const b = text.indexOf(close, a); return Function(`return (${text.slice(a + start.length - 1, b + close.indexOf('}') + 1)})`)(); };
 function places() {
   const real = { ...literal(src('js/realworld.js'), 'export const REAL = {', '\n};'), ...literal(src('js/regionsites.js'), 'Object.assign(REAL, {', '\n});') };
   const out = new Map();
   for (const [id, r] of Object.entries(real)) if (!ONLY || ONLY.has(id)) out.set(photoKey(r[0]), { id, sources: r[0] });
   if (KINDS && !ONLY) {
-    for (const [kind, s] of Object.entries(literal(src('js/realworld.js'), 'export const REAL_KINDS = {', '\n};'))) if (s && s.length && !out.has(photoKey(s))) out.set(photoKey(s), { id: kind, sources: s });
+    for (const [kind, s] of Object.entries(literal<string[]>(src('js/realworld.js'), 'export const REAL_KINDS = {', '\n};'))) if (s && s.length && !out.has(photoKey(s))) out.set(photoKey(s), { id: kind, sources: s });
     const sym = src('js/symbols.js'), block = sym.slice(sym.indexOf('const SYMBOLS = ['), sym.indexOf('\n];', sym.indexOf('const SYMBOLS = [')));
     for (const m of block.matchAll(/\[((?:'(?:en|vi):[^']+'(?:,\s*)?)+)\]\]/g)) { const s = Function(`return [${m[1]}]`)(); if (!out.has(photoKey(s))) out.set(photoKey(s), { id: 'symbol', sources: s }); }
   }

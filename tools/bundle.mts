@@ -50,7 +50,9 @@ const res = await esbuild.build({
   metafile: true, logLevel: 'error', preserveSymlinks: true // (a copy with linked folders, as the checks build it, keeps its own paths)
 });
 const rel = f => path.relative(dir, path.resolve(f)).split(path.sep).join('/');
-const outputs = res.metafile.outputs, files = Object.keys(outputs).map(rel).filter(f => f.endsWith('.js')).sort();
+// esbuild's account of each file it wrote (its metafile)
+type Output = { entryPoint?: string, imports?: { path: string, kind: string, external?: boolean }[], inputs: Record<string, { bytesInOutput: number }>, bytes: number };
+const outputs: Record<string, Output> = res.metafile.outputs, files = Object.keys(outputs).map(rel).filter(f => f.endsWith('.js')).sort();
 const entry = Object.keys(outputs).find(k => outputs[k].entryPoint && rel(outputs[k].entryPoint) === 'js/launch.js' && k.endsWith('.js'));
 if (!entry) throw new Error('bundle: no output for js/launch.js');
 // the chunks the start needs (static imports from the entry, all the way down)
@@ -89,7 +91,7 @@ const kb = f => fs.statSync(path.join(dir, f)).size / 1024, startKB = [rel(entry
 console.log(`bundle: ${inputs.size} scripts → ${files.length} files in bundle/ (start ${1 + start.size} files, ${(startKB / 1024).toFixed(2)} MB before gzip); index.html and sw.js updated${cssOut ? `; stylesheet ${cssOut}` : ''}`);
 
 // A launcher may dynamically import main before the title: report both closures, not just modulepreload.
-const initial = new Set();
+const initial = new Set<string>();
 const include = k => {
   if (initial.has(k)) return;
   initial.add(k);
@@ -97,7 +99,7 @@ const include = k => {
 };
 include(entry);
 for (const [k, o] of Object.entries(outputs)) if (o.entryPoint && rel(o.entryPoint) === 'js/main.js') include(k);
-const contributions = {};
+const contributions: Record<string, number> = {};
 for (const k of initial) for (const [file, value] of Object.entries(outputs[k].inputs)) contributions[rel(file)] = (contributions[rel(file)] || 0) + value.bytesInOutput;
 const sizes = list => list.reduce((sum, f) => {
   const data = fs.readFileSync(path.resolve(f));
