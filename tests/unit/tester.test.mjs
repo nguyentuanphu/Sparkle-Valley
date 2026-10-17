@@ -89,6 +89,13 @@ test('each problem goes to the core it most likely belongs to (tools/tester-issu
   assert.equal(coreOf({ title: 'x', where: {}, auto: 'slow', kind: 'auto' }, null), 'analytics-infra');
   assert.equal(coreOf({ title: 'button off the screen', where: { window: 'modal pad' } }, null), 'kid-ui');
 });
+test('a new issue only for a problem seen on the live build or the one before it (owner, 17 Oct AEDT)', async () => {
+  const { recentEnough } = await import('../../tools/tester-issues.mts');
+  assert.equal(recentEnough(['r69', 'r74'], 83), false, 'a device left on r69 to r74 files nothing new');
+  assert.equal(recentEnough(['r74', 'r82'], 83), true); assert.equal(recentEnough(['r83'], 83), true);
+  assert.equal(recentEnough([], 83), false); assert.equal(recentEnough(['?'], 83), false);
+  assert.equal(recentEnough(['r40'], 0), true, 'no live build known: every problem as before');
+});
 
 
 test('a report retry with its client ID returns the receipt without counting another report', async () => {

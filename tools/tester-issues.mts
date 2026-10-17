@@ -5,7 +5,10 @@
 //     clear code problem or `big` otherwise; an idea gets `idea` and no `bug`, so the bug robot leaves it to the owner);
 //   - the issue's count line is kept up to date ("seen 7 times on 3 devices, r66, r67");
 //   - a problem marked fixed (Studio, or a pull request that names it) closes its issue with the version;
-//   - lines with no recording are left to the daily voices job (.github/workflows/voices-daily.yml), not filed.
+//   - lines with no recording are left to the daily voices job (.github/workflows/voices-daily.yml), not filed;
+//   - (owner, 17 Oct AEDT) only a problem seen on the version the website serves now, or the one before it, gets a new
+//     issue: a device left on an old version cannot flood the list (r69 to r74 filed about 190 issues the newer game no
+//     longer has); its reports stay in Studio, and an issue already made is kept up to date as before.
 // Once a day (the run after 9 am AEDT) it also updates one issue "Tester daily summary" (label `tester-summary`).
 //   STUDIO_KEY=… GITHUB_TOKEN=… GITHUB_REPOSITORY=owner/repo node tools/tester-issues.mts [--site https://…] [--dry]
 const arg = k => { const i = process.argv.indexOf(k); return i > 0 ? process.argv[i + 1] : ''; };
@@ -27,6 +30,15 @@ export function coreOf(p, d) {
   if (/players\.js|startup|slow|freeze/i.test(text) || ['slow', 'freeze'].includes(p.auto)) return 'analytics-infra';
   return 'kid-ui';
 }
+// the number of a build ('r83' → 83; anything else → 0)
+const num = (b: unknown) => { const m = /^r(\d+)$/.exec(String(b || '')); return m ? +m[1] : 0; };
+// a problem is recent when one of its builds is the live one or the one before it (no live build known: every problem is)
+export const recentEnough = (builds: string[] | undefined, live: number) => !live || (builds || []).some(b => num(b) >= live - 1);
+// the build the website serves now (js/build.js), else the newest build any tester sent
+async function liveBuild(problems: { builds?: string[] }[]) {
+  try { const r = await fetch(`${SITE}/js/build.js`); const n = num((/BUILD = '([^']+)'/.exec(await r.text()) || [])[1]); if (r.ok && n) return n; } catch (e) { }
+  return Math.max(0, ...problems.flatMap(p => (p.builds || []).map(num)));
+}
 const sizeOf = p => p.kind === 'auto' && ['error', 'noopen', 'noclose', 'offscreen'].includes(p.auto) ? 'small' : 'big';
 const countLine = p => `Seen ${p.n} time${p.n === 1 ? '' : 's'} on ${p.devices} device${p.devices === 1 ? '' : 's'} (${(p.builds || []).join(', ') || 'version unknown'}); last ${new Date(p.lastAt).toISOString().slice(0, 16).replace('T', ' ')} UTC.`;
 function bodyOf(p, d) {
@@ -42,10 +54,12 @@ function bodyOf(p, d) {
 
 async function main() {
   if (!KEY) { console.log('No STUDIO_KEY: nothing to do.'); return; }
-  const { problems, summary } = await site('testers'); let made = 0, closed = 0, updated = 0;
+  const { problems, summary } = await site('testers'); let made = 0, closed = 0, updated = 0, old = 0;
+  const live = await liveBuild(problems);
   for (const p of problems) {
     if (p.auto === 'novoice' || p.status === 'dup' || p.status === 'notbug') continue;
     const open = ['new', 'fixing', 'back'].includes(p.status);
+    if (!p.issue && open && !recentEnough(p.builds, live)) { old++; continue; }
     if (!p.issue && open) {
       const d = await site('testers/problem/' + p.k).catch(() => null), idea = p.kind === 'idea';
       const labels = idea ? ['idea', 'tester'] : ['bug', 'tester', coreOf(p, d), sizeOf(p)];
@@ -65,6 +79,6 @@ async function main() {
     const found = (await gh('issues?state=open&labels=tester-summary&per_page=1'))[0];
     if (found) await gh(`issues/${found.number}`, 'PATCH', { body: text }); else await gh('issues', 'POST', { title: 'Tester daily summary', body: text, labels: ['tester-summary'] });
   }
-  console.log(`Issues: ${made} new, ${updated} counts updated, ${closed} closed.`);
+  console.log(`Issues: ${made} new, ${updated} counts updated, ${closed} closed; ${old} problems seen only before r${live - 1} not filed.`);
 }
 if (import.meta.url === `file://${process.argv[1]}`) main().catch(e => { console.error(e.message); process.exit(1); });
