@@ -4174,8 +4174,10 @@ await check('ride', async () => {
       // is far away (70 m)
       const sl = G.traffic.slots.find(x => x.v && x.v.o === h.riding.mesh), home = sl ? [sl.x, sl.z] : null; h.pos.x += 30; h.riding.mesh.position.x += 30; h.dismount(); out.off = !h.riding;
       const atHome = () => !!home && Math.hypot(sl.v.o.position.x - home[0], sl.v.o.position.z - home[1]) < 1, left = [sl.v.o.position.x, sl.v.o.position.z];
-      h.place(left[0] + 40, left[1]); await new Promise(r => setTimeout(r, 1200)); out.carStays = !atHome() && Math.hypot(sl.v.o.position.x - left[0], sl.v.o.position.z - left[1]) < .5;
-      h.place(left[0] + 70, left[1]); await new Promise(r => setTimeout(r, 1200)); out.carBack = atHome(); }
+      // (r84: the scan runs every 0.4 s of game time, and a slow machine gives the game few frames in a second) it is
+      // watched for 3 s at 40 m (still where it was left) and for up to 8 s at 70 m (back at its spot)
+      h.place(left[0] + 40, left[1]); await new Promise(r => setTimeout(r, 3000)); out.carStays = !atHome() && Math.hypot(sl.v.o.position.x - left[0], sl.v.o.position.z - left[1]) < .5;
+      h.place(left[0] + 70, left[1]); for (let k = 0; k < 32 && !atHome(); k++) await new Promise(r => setTimeout(r, 250)); out.carBack = atHome(); }
     // (#354, owner 17 Oct AEDT: "all animals and vehicles can travel anywhere") a bicycle rides over every bridge, end to
     // end, on its deck (the Dragon Bridge in a lane beside the dragon); before, every ride stopped at the first plank
     { const w = await import('/js/world.js'), bike = I.find(i => /^bike_/.test(i.id)), pad = { cdx: 0, cdy: 0, mx: 0, mz: 1, jump: () => false, act: () => false, run: false };
@@ -4201,7 +4203,8 @@ await check('ride', async () => {
     const picks = document.querySelectorAll('.stoppick .wp-pick').length, first = document.querySelector('.stoppick .wp-pick'); const name = first ? first.getAttribute('aria-label') : '';
     const dest = (G.world.busStops || []).find(b => b.name() === name); first && first.click();
     await p; const on = !!h.carry, paid = c0 - farm.coins;
-    let arrived = false; for (let k = 0; k < 60 && !arrived; k++) { await new Promise(r => setTimeout(r, 250)); arrived = !h.carry && !!dest && Math.hypot(h.pos.x - dest.x, h.pos.z - dest.z) < 4; }
+    // (owner, 18 Oct AEDT: a trip takes about a minute, at most about 65 s: js/traffic.js tripTo) up to 80 s to arrive
+    let arrived = false; for (let k = 0; k < 320 && !arrived; k++) { await new Promise(r => setTimeout(r, 250)); arrived = !h.carry && !!dest && Math.hypot(h.pos.x - dest.x, h.pos.z - dest.z) < 4; }
     h.carry = null; G.traffic.slots.forEach(s => { if (s.passenger === h) s.passenger = null; });
     return { on, paid, picks, arrived };
   }, age);
