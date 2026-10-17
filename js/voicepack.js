@@ -95,6 +95,7 @@ async function checkPack() {
   const manifest = PACK, langs = packLangs(), languageChanged = () => manifest !== PACK || langs.join() !== packLangs().join();
   try {
     await valleyBuilt();
+    if (PACK.signatures && langs.some(L => !PACK.signatures[L])) return; // Wait for every selected index before marking it saved.
     const cache = await caches.open('sv-voices');
     // (round O, owner: "does it load the voice pack every time? it should be once, unless there are new voices") once
     // the whole pack is on the device, a start only looks at 16 files picked at random, says nothing and downloads
@@ -164,7 +165,7 @@ async function askRest() {
   let bytes = 0; for (const g of rest) for (const L of packLangs().concat(['zh', 'hi'])) bytes += (AREAS && AREAS.size && AREAS.size[g] && AREAS.size[g][L]) || 0;
   packEmit({ state: 'ask', mb: Math.max(1, Math.round(bytes * miss / all.length / 1048576)) });
 }
-const packSig = () => Object.keys(PACK.lines).length + ':' + (PACK.version || 1) + ':' + (PACK.made || '');
+const packSig = () => PACK.signatures ? packLangs().map(L => L + ':' + (PACK.signatures[L] || 'pending')).join('|') : Object.keys(PACK.lines).length + ':' + (PACK.version || 1) + ':' + (PACK.made || '');
 // the files of the pack in these areas (all areas when none are named), in the children's own languages (Chinese and
 // Hindi only come with the places and games that speak them)
 function packFiles(groups, mine = packLangs()) {

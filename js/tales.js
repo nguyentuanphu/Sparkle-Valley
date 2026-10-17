@@ -34,7 +34,11 @@ const STAGES = [
 export const stageOf = en => (STAGES.find(([re]) => re.test(en)) || [0, 'meadow'])[1];
 
 // sync (round H, reading together online): { send(page), listen(fn) } — a page turned here turns for every friend reading
-export function openTheatre(tale, { name = '', onDone, startPage = 0, sync = null } = {}) {
+export async function openTheatre(tale, { name = '', onDone, startPage = 0, sync = null } = {}) {
+  if (tale.load) {
+    try { tale = await tale.load(); } catch (e) { window.svModuleGone?.(e); return false; }
+    if (!tale) return false;
+  }
   return new Promise(resolve => {
     let k = startPage, auto = true, alive = true, token = 0;
     let displayed = false;

@@ -53,7 +53,7 @@ addEventListener('sv-held', () => {
   p.textContent = text[6]; b.textContent = text[7]; b.onclick = () => location.reload();
   card.append(p, b); n.append(card); document.body.appendChild(n); b.focus();
 });
-// Begin saving the shell and assets while the world builds, rather than waiting for it to finish.
+// The complete offline save starts after main finishes building the valley (below).
 // (r80, owner 17 Oct AEDT: "users must have the latest r") a new version takes over as soon as it is saved (sw.js). Before
 // a child has started playing (the start screens) the game reloads into it at once; while playing, the notice offers
 // it (or, with Studio's switch off, it starts the next time). A game coming back to the screen (a Home Screen app is
@@ -70,9 +70,6 @@ window.svWatchUpdates = reg => {
   addEventListener('online', () => check());
   setInterval(() => check(true), 30 * 60000);
 };
-if ('serviceWorker' in navigator && location.protocol.startsWith('http') && !/localhost|127\.0\.0\.1/.test(location.hostname)) {
-  navigator.serviceWorker.register('sw.js').then(reg => window.svWatchUpdates(reg)).catch(() => {});
-}
 // (owner point 11, #140 #141 #184-#193) a part of the game that loads later (a story's film, a festival's decorations)
 // can be gone: this page is an older version whose files were replaced since it opened. Offer the update instead of a
 // broken activity. Code that catches its own import failure passes it here too.
@@ -83,4 +80,9 @@ try { await import('./main.js'); }
 catch (error) {
   console.error(error); document.body.appendChild(shell); shell.hidden = false; shell.querySelector('p').textContent = text[2];
   shell.querySelector('progress').removeAttribute('value'); const retry = document.createElement('button'); retry.textContent = text[3]; retry.onclick = () => location.reload(); shell.appendChild(retry);
+}
+
+// Save the complete offline game after startup, so optional chunks do not compete with it.
+if ('serviceWorker' in navigator && location.protocol.startsWith('http') && !/localhost|127\.0\.0\.1/.test(location.hostname)) {
+  navigator.serviceWorker.register('sw.js').then(reg => window.svWatchUpdates(reg)).catch(() => {});
 }

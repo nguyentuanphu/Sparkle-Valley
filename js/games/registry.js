@@ -2,7 +2,7 @@
 // (the frame that plays them, the how-to films, the Pad's game list) reads it here. Moved out of frame.js so the
 // how-to films (js/howto.js), which frame.js opens, no longer import frame.js back (an import circle).
 export const GAMES = {};
-export const register = def => { GAMES[def.id] = def; };
+export const register = def => { GAMES[def.id] = Object.assign(GAMES[def.id] || {}, def); };
 // (r79 learning, owner 16 Oct AEDT, I4) a skill sticker for finishing Hard in each reasoning game, drawn in js/art.js
 export const SKILLS = {
   rulefinder: { key: 'skill:rulefinder', en: 'Rule finder', vi: 'Tìm quy luật' },
