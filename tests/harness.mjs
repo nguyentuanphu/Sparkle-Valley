@@ -63,6 +63,13 @@ export async function clear(page) {
   await page.waitForTimeout(150);
 }
 
+// (r83 full suites) Grandpa Owl's welcome sticker shows "A new sticker for your book!" for 4 s, a few seconds after a
+// fresh child starts playing; a check that looks for its own caption at a set time counts the welcome as given first.
+// The sticker checks leave the welcome alone.
+export async function noWelcome(page) {
+  await page.evaluate(() => import('/js/stickers.js').then(S => { for (const h of window.__sv.heroes) S.book(h.profile).welcomed = Date.now(); }));
+}
+
 // ---- which game code a check ran (SV_COVER=1; tests/suite.mjs builds tests/check-map.json from it) ----
 // Every function of the game's own files (js/…) that ran at least once, as [start, end] character offsets ("did it run"
 // only: counting every call made checks 3 to 4 times slower). A window is
