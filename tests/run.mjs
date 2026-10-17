@@ -6841,6 +6841,34 @@ await check('welcomesteady', async () => {
   ok(!moved.length, 'the Welcome screen moved: ' + moved.slice(0, 8).join('; '));
   return `Welcome screen still within 2 px (Start button, cover, logo, language panel) opening, after both language taps and the Chinese switch, one Start size in both languages: ${notes.join(', ')}`;
 });
+await check('animalvoices', async () => {
+  // (owner, 17 Oct AEDT: "the animal voice games, the voice is not real, need real voice for animals") every animal a
+  // child is asked to tell apart in "Who Says That?" plays its real recording (sounds/animals/, a decoded file, not the
+  // drawn-out tone), in the game and from the animals' sounds elsewhere; each file is in the offline list
+  const sw = fs.readFileSync('../sw.js', 'utf8'), names = ['cow', 'sheep', 'pig', 'dog', 'cat', 'duck', 'hen', 'horse', 'frog', 'owl'];
+  const offline = names.filter(n => !sw.includes(`'sounds/animals/${n}.mp3'`));
+  const pre = `window.__rec = []; window.__osc = 0;
+    const st = AudioBufferSourceNode.prototype.start; AudioBufferSourceNode.prototype.start = function (...a) { if (this.buffer && this.buffer.duration > .5) window.__rec.push(+this.buffer.duration.toFixed(2)); return st.apply(this, a); };
+    const os = OscillatorNode.prototype.start; OscillatorNode.prototype.start = function (...a) { window.__osc++; return os.apply(this, a); };`;
+  const P = await open(b, { w: 390, h: 844, touch: true, pre, settings: { sound: true, music: false } }); await clear(P.page);
+  await P.page.mouse.click(195, 420); await P.page.waitForTimeout(300); // (sound starts after a first tap, as on a phone)
+  const r = await P.page.evaluate(async () => {
+    const A = await import('/js/audio.js'), wait = ms => new Promise(r => setTimeout(r, ms)), out = {};
+    await A.loadAnimalCalls(8000); __sv.paused = true; await wait(600); // (the valley's own ducks and frogs stay quiet while it listens)
+    for (const call of ['moo', 'baa', 'oink', 'woof', 'meow', 'quack', 'cluck', 'neigh', 'ribbit', 'hoot']) {
+      window.__rec.length = 0; window.__osc = 0; A.animalCall(call); await wait(150);
+      out[call] = { rec: window.__rec.slice(), tones: window.__osc, len: A.animalRecording(call) ? +A.animalRecording(call).duration.toFixed(2) : 0 };
+    }
+    return out;
+  });
+  // in the game itself: the first round's sound is a recording
+  const g = await P.page.evaluate(async () => { const wait = ms => new Promise(r => setTimeout(r, ms)); window.__rec.length = 0; window.__osc = 0; __sv.playGame(0, 'animalsounds', 'replay'); for (let i = 0; i < 40 && !window.__rec.length; i++) await wait(250); return { rec: window.__rec.slice(), tones: window.__osc }; });
+  const errs = P.errors; await P.ctx.close();
+  const bad = Object.entries(r).filter(([, v]) => !(v.rec.length === 1 && v.len >= .6 && v.len <= 3 && !v.tones)).map(([k, v]) => k + ' ' + JSON.stringify(v));
+  ok(!offline.length && !bad.length && g.rec.length >= 1 && !errs.length, JSON.stringify({ offline, bad, game: g, errs }));
+  return `10 animals play their real recordings (${Object.entries(r).map(([k, v]) => `${k} ${v.len} s`).join(', ')}), none drawn as tones; "Who Says That?" starts with a recording; all 10 files in the offline list`;
+});
+
 await check('swupdate', async () => {
   // (r80, owner 17 Oct AEDT: "users must have the latest r") on its own small server (the game's files, its service
   // worker made version A, B or C, js/build.js saying which): (1) after an update the page gets the NEW version's files,
