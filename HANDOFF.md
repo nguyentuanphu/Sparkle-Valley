@@ -139,7 +139,8 @@ In each phase: run the suite before and after, take before/after screenshots fro
 | `chips` | (Round U) coins, Sparkle Orbs and Leafies say what they are on hover and on tap, in the top bar and the Backpack (`js/chipinfo.js`) |
 | `soundsw` | (Round U) the Sound button (valley dock and Simple screen) opens three switches: music, sounds, voice, each on its own (`js/soundsheet.js`) |
 | `joins` | (Round U) ROAD-015: no step over 25 cm along a road, 3 m into a joining road, or 6 m through a gate, bridge ends included |
-| `ride` | (Round U) every parked car and motorbike can be driven; buses, trams, taxis and the tourist cart take a fare (free for under-5s and an empty purse); bus stops with a timetable (`js/traffic.js`) |
+| `ride` | (Round U) every parked car and motorbike can be driven; buses, trams, taxis and the tourist cart take a fare (free for under-5s and an empty purse); bus stops with a timetable (`js/traffic.js`); (#354, owner 17 Oct AEDT) a bicycle rides over all 13 bridges on their decks, and a vehicle left behind stays where it was left until every child is far away |
+| `gameends` | (#355, owner 17 Oct AEDT) while a child plays on the screen the device keeps a small note (area, what is open, memory, build; never a name), cleared on a normal close; a game the browser ended, or the game's own reload after the 3D picture was lost, is noted for Studio's report with where it happened |
 | `signs` | (Round U) a picture signpost at every junction, off the road, each board a place's name and picture in both languages (`js/signposts.js`) |
 | `familymissions` | (Round U) 15 ready-made family missions (day, week, bedtime) a grown-up turns on in Grown-ups, and the short guide (`js/content/familymissions.js`, `js/parents.js`) |
 | `wearbag` | (Round U) bought clothes wait in the Backpack's "Clothes and accessories" until worn; the shop shows the clothes for the child first, "More" shows the rest |

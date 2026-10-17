@@ -84,7 +84,7 @@ import { CUSTOM } from './custom.js';
 import { createFolkShow } from './folkshow.js';
 import { createAds } from './ads.js';
 import { buildSolids } from './solids.js';
-import { startCounting, countPlay, watchHero } from './players.js';
+import { startCounting, countPlay, watchHero, noteReload } from './players.js';
 import { startPackBar } from './packbar.js';
 import { codeHTML, bindCode, padHTML, boxHTML, animalSay } from './roomcode.js';
 // the family's defaults from Sparkle Studio: applied once each time they change there (a grown-up can still change
@@ -127,7 +127,7 @@ document.getElementById('stage').appendChild(renderer.domElement);
   renderer.domElement.addEventListener('webglcontextlost', e => {
     e.preventDefault(); try { G.heroes.forEach(h => { if (h.profile && h.onGround && !h.towerClimb && !h.indoors) { h.profile.pos = { x: +h.lastSafe.x.toFixed(1), z: +h.lastSafe.z.toFixed(1) }; h.profile.posMap = MAP_VERSION; } }); saveProfiles(true); } catch (err) { }
     if (!document.querySelector('.ctxlost')) document.body.appendChild(el('div', 'ctxlost', `<div>🌈</div><p>${T('One moment, the valley is coming back…', 'Chờ một chút, thung lũng đang trở lại…')}</p>`));
-    clearTimeout(lostT); lostT = setTimeout(() => location.reload(), 4000);
+    clearTimeout(lostT); lostT = setTimeout(() => { noteReload('3D picture lost', G); location.reload(); }, 4000); // (#355: noted for Studio's report)
   });
   renderer.domElement.addEventListener('webglcontextrestored', () => { clearTimeout(lostT); document.querySelectorAll('.ctxlost').forEach(e => e.remove()); });
 }

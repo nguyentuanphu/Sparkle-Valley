@@ -4179,6 +4179,27 @@ await check('ride', async () => {
   return `${r.drive} parked cars and motorbikes to drive, ${r.bike} bicycles, ${r.rides} buses, trams and taxis to ride (big kid paid ${r.big.paid}, under-5 free), ${r.stops} bus stops, each stop a choice of ${r.big.picks} places and the child arrives there; the camera rides at the child's eyes; a car left behind waits where it was left and goes back to its spot once every child is far away; a buffalo runs home; a bicycle rides over all ${r.bridgeCount} bridges; no lifts from strangers`;
 });
 
+await check('gameends', async () => {
+  // (#355, owner 17 Oct AEDT: "the game restarts itself or just goes straight to a white screen") while a child plays
+  // with the game on the screen, the device keeps a small note (area, what is open, memory, build; never a name); a
+  // normal close clears it; a start that finds it left behind (the browser ended the game) or a note from the game's own
+  // reload (the 3D picture lost) is noted as a problem for Studio's report, with where it happened
+  const P = await open(b, { w: 900, h: 640 }); await clear(P.page);
+  const live = await P.page.evaluate(async () => { const { BUILD } = await import('/js/build.js'); await new Promise(r => setTimeout(r, 5600));
+    const a = JSON.parse(localStorage.getItem('sv2_alive') || 'null'), names = (__sv.heroes || []).map(h => h.profile && h.profile.name).filter(Boolean);
+    dispatchEvent(new Event('pagehide')); return { a, build: BUILD, named: !!a && names.some(n => JSON.stringify(a).includes(n)), cleared: localStorage.getItem('sv2_alive') === null }; });
+  const errs = [...P.errors]; await P.ctx.close();
+  const after = async note => { const Q = await open(b, { w: 900, h: 640, pre: `try { localStorage.setItem(${JSON.stringify(note[0])}, ${JSON.stringify(JSON.stringify(note[1]))}); } catch (e) { }` }); await clear(Q.page);
+    const e = await Q.page.evaluate(() => { const o = JSON.parse(localStorage.getItem('sv2_hello_out') || '{"days":{}}'); return Object.values(o.days).flatMap(d => Object.keys(d.e || {})); });
+    errs.push(...Q.errors); await Q.ctx.close(); return e; };
+  const killed = await after(['sv2_alive', { w: 'village', mb: 310, b: 'r83' }]), reloaded = await after(['sv2_reload', { why: '3D picture lost', w: 'hanoi bag', mb: 290, b: 'r83' }]);
+  ok(live.a && live.a.b === live.build && typeof live.a.w === 'string' && live.a.w.length && !live.named && live.cleared, 'the note while playing: ' + JSON.stringify(live));
+  ok(killed.some(k => /^ended by the browser while playing in village, 310 MB, r83/.test(k)), 'a game the browser ended was not noted: ' + JSON.stringify(killed));
+  ok(reloaded.some(k => /^reloaded: 3D picture lost in hanoi bag, 290 MB, r83/.test(k)) && !reloaded.some(k => /^ended by the browser/.test(k)), 'a reload after the 3D picture was lost: ' + JSON.stringify(reloaded));
+  ok(!errs.length, errs.join(' | '));
+  return `a note while playing (${live.a.w}, ${live.a.mb} MB, ${live.a.b}; no name), cleared on a normal close; a game the browser ended and a reload after the 3D picture was lost are each noted for Studio's report with where they happened`;
+});
+
 await check('familymissions', async () => {
   // (Round U, owner 11 Oct: 15 tasks for family missions, week and bedtime, and a short guide) Grown-ups → Family lists 15
   // ready-made missions (day, week, bedtime) with switches and the family-play guide; the ones turned on (one of each kind
