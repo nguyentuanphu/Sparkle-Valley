@@ -3,7 +3,7 @@
 // for children learning to read at school in Australia (sounds in the order s a t p i n…, "zed", mum, ute, lolly), and
 // Vietnamese follows real Vietnamese reading steps (letters with their marks, the six tones, vần, tiếng, đánh vần).
 // Loaded only when a reading game opens (js/games/reading.js). Every word has a drawing in js/art.js (check `reading`).
-// No imports: tools/make-voice-pack.mjs reads readingLines() to record every word, sound and sentence.
+// No imports: tools/make-voice-pack.mts reads readingLines() to record every word, sound and sentence.
 
 // ---------- letters: [letter, keyword, picture] in teaching order; SOUND says how each sound is said ----------
 const EN_LETTERS = [['s', 'sun', '☀️'], ['a', 'apple', '🍎'], ['t', 'turtle', '🐢'], ['p', 'pig', '🐷'], ['i', 'insect', '🐞'], ['n', 'nest', '🪺'],
@@ -15,7 +15,7 @@ const VI_LETTERS = [['a', 'áo', '👕'], ['o', 'ong', '🐝'], ['ô', 'ô', '�
   ['i', 'mì', '🍜'], ['k', 'kem', '🍦'], ['l', 'lá', '🍃'], ['m', 'mèo', '🐱'], ['n', 'nón', '👒'], ['p', 'pin', '🔋'], ['q', 'quạt', '🪭'], ['r', 'rùa', '🐢'],
   ['s', 'sao', '⭐'], ['t', 'táo', '🍎'], ['u', 'cú', '🦉'], ['ư', 'sư tử', '🦁'], ['v', 'voi', '🐘'], ['x', 'xe', '🚗'], ['y', 'yêu', '❤️']];
 // English sounds are recorded from their phonetic spelling (owner 11 Oct: "exact sounds"); the line the game says is
-// "/s/" and tools/make-voice-pack.mjs records it from SOUND_IPA. Vietnamese letters are read by their sound already.
+// "/s/" and tools/make-voice-pack.mts records it from SOUND_IPA. Vietnamese letters are read by their sound already.
 export const SOUND_IPA = { s: 'sːː', a: 'æ', t: 'tʰ', p: 'pʰ', i: 'ɪ', n: 'nːː', m: 'mːː', d: 'd', g: 'ɡ', o: 'ɒ', c: 'kʰ', k: 'kʰ', e: 'e', u: 'ɐ',
   r: 'ɹːː', h: 'h', b: 'b', f: 'fːː', l: 'lːː', j: 'dʒ', v: 'vːː', w: 'w', x: 'ks', y: 'j', z: 'zːː', q: 'kw', ck: 'kʰ', sh: 'ʃːː', ch: 'tʃ', th: 'θːː', ee: 'iː', oo: 'ʉː', ll: 'lːː' };
 const VI_NAME = { a: 'a', 'ă': 'á', 'â': 'ớ', b: 'bờ', c: 'cờ', d: 'dờ', 'đ': 'đờ', e: 'e', 'ê': 'ê', g: 'gờ', h: 'hờ', i: 'i', k: 'ca', l: 'lờ', m: 'mờ', n: 'nờ',

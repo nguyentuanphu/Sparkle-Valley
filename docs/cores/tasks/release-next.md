@@ -70,7 +70,7 @@ Also: any `bugfix/…` pull requests from the bug robot, and the Studio online f
 ## Must do in r71
 1. **Record 3 voice lines** (the `voicecover` check found them): "▶ Play Tiến Lên (southern rules)", "▶ Play Tiến Lên (northern
    rules)", "Tiến Lên, northern rules (cards)" (English; r70 gave the Tiến Lên variants English words). With `AZURE_SPEECH_KEY`:
-   `node tools/make-voice-pack.mjs --engine azure --key "$AZURE_SPEECH_KEY" --region "$AZURE_SPEECH_REGION"` (never print the key).
+   `node tools/make-voice-pack.mts --engine azure --key "$AZURE_SPEECH_KEY" --region "$AZURE_SPEECH_REGION"` (never print the key).
 2. **The full suite with `tests/suite.mjs`** (rules in CLAUDE.md). Warning from its first trial on 13 Oct: **3 at once
    overloaded the 4-processor machine** (load about 14: each test browser draws the 3D valley on every processor), so checks
    ran slowly and `solid`, `nametags`, `migrate`, `voicearea`, `testerreport` failed from overload. Until that is tuned, run

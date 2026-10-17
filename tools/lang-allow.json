@@ -1,5 +1,5 @@
 {
- "_why": "English slots that stay Vietnamese on purpose (names, song and chant words, sayings in their own language). tools/lang-audit.mjs skips these; anything else in Vietnamese in an English slot fails the bilingual check.",
+ "_why": "English slots that stay Vietnamese on purpose (names, song and chant words, sayings in their own language). tools/lang-audit.mts skips these; anything else in Vietnamese in an English slot fails the bilingual check.",
  "names": [
   "Bút Tháp Pagoda",
   "Nhà Tròn, the Round House (Bà Rịa)",

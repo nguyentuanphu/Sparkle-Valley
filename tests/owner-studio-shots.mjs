@@ -10,7 +10,7 @@ const repo = 'family/shots', password = 'shots-fixture-password-123', site = 'ht
 const gh = fakeGitHub(repo, { 'content/custom.json': '{}', 'js/build.js': fs.readFileSync(path.join(root, 'js/build.js')) }), unroute = routeGitHub(gh);
 const players = memoryBlobs();
 // two synthetic devices checked in through the server's own hello handler (no names, synthetic ids)
-{ const { hello } = await import(path.join(root, 'netlify/lib/players.mjs')), now = Date.now(), day = new Date(now).toISOString().slice(0, 10);
+{ const { hello } = await import(path.join(root, 'netlify/lib/players.mts')), now = Date.now(), day = new Date(now).toISOString().slice(0, 10);
   for (const [id, d] of [['labdevice0001', 'phone'], ['labdevice0002', 'tablet']]) await hello(players, { id, b: 'r76', l: 'en', d, os: d === 'phone' ? 'iOS' : 'Android', br: 'Safari', sc: '390x844', k: 1, days: [{ d: day, build: 'r76', m: 12, g: {} }] }, now); }
 const server = await fakeNetlify({ port: 8797, players, env: { STUDIO_PASSWORD: password, GITHUB_TOKEN: 'fixture-token', GITHUB_REPO: repo, URL: site } });
 const browser = await launch(), notes = [];

@@ -9,6 +9,6 @@ export function packHash(lang, text) {
 // (round R) an English line with Vietnamese words is recorded with both voices (js/viwords.js) under its own name, so a
 // device that kept the old all-English recording fetches the new one instead of playing the old file it has saved
 export const lineHash = (lang, text) => lang === 'en' && mixed(text) ? packHash('en+vi', text) : packHash(lang, text);
-// (round R item 12) a line with changing words is recorded as parts (tools/voice-lines.mjs): the words of a fixed piece
+// (round R item 12) a line with changing words is recorded as parts (tools/voice-lines.mts): the words of a fixed piece
 // worth saying on their own, with no leading punctuation; '' when it has no letter (the same in the game and the tools)
 export const partText = p => { const t = String(p).replace(/\s+/g, ' ').replace(/^[\s.,!?:;…'"“”()\-–—]+/, '').trim(); return /\p{L}/u.test(t) ? t : ''; };

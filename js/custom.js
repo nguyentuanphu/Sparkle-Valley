@@ -30,6 +30,7 @@ try {
   if (r.ok) data = await r.json();
   clearTimeout(t);
 } catch (e) { /* offline and never saved, or no answer: no content pack */ }
+/** @type {Record<string, any>} the family's content pack (content/custom.json), checked field by field where it is used */
 export const CUSTOM = data && typeof data === 'object' ? data : {};
 const LIVE_KEY = 'sv2_live', liveFns = [];
 let LIVE = {}; try { LIVE = JSON.parse(localStorage.getItem(LIVE_KEY) || '{}') || {}; } catch (e) { LIVE = {}; }

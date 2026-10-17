@@ -9,7 +9,7 @@ keeps `docs/cores/play.md` and `core/play`; this file holds this chat's notes an
 - Same answer: little ones' Tone Marks game uses friendly pictures (cá / cà / ca and others), not "ma" (ghost) and
   "mả" (grave); big kids still hear the six tones on "ma" as sounds only, with no pictures.
 - Same time: English letter sounds (/s/, /a/, /t/…) are recorded as exact sounds from their phonetic spelling (IPA)
-  with Azure, through a small added block in `tools/make-voice-pack.mjs` (Voice & Audio's, noted on the board).
+  with Azure, through a small added block in `tools/make-voice-pack.mts` (Voice & Audio's, noted on the board).
   Vietnamese sounds are real Vietnamese syllables ("bờ", "mờ", "á").
 
 - 12 Oct, about 1:35 pm AEDT: "you push, and I will get Release core to run full suite": this chat pushes

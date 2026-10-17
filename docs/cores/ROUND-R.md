@@ -3,7 +3,7 @@
 One big round, in two parts. Nothing is pushed until the owner says "yes, push", and Netlify needs its own "yes, deploy".
 
 ## Part 1 (first, about 3–4 days): festival calendar and Halloween
-**Built (8 Oct, r48):** `js/lunar.js`, `js/content/festcal.js` (24 festivals in four groups), `js/festivals.js` (3D decorations that grow over 3 weeks, each festival in its own places, the day's timetable, the evening show on the real clock, Halloween trick-or-treat and the pumpkin-lantern keepsake), the calendar in the Pad, the Play hub, the Festivals screen and the Simple screen; Studio Ra mắt (Releases) and Festivals pages saving live to `/api/live` (`netlify/functions/live.mjs`); checks `festcal`, `studio`, unit tests.
+**Built (8 Oct, r48):** `js/lunar.js`, `js/content/festcal.js` (24 festivals in four groups), `js/festivals.js` (3D decorations that grow over 3 weeks, each festival in its own places, the day's timetable, the evening show on the real clock, Halloween trick-or-treat and the pumpkin-lantern keepsake), the calendar in the Pad, the Play hub, the Festivals screen and the Simple screen; Studio Ra mắt (Releases) and Festivals pages saving live to `/api/live` (`netlify/functions/live.mts`); checks `festcal`, `studio`, unit tests.
 Reported to the owner on its own, so Halloween can go live around 12–14 Oct.
 - **Lịch lễ hội** (Festival calendar) in the Pad and on the Simple screen: the next festivals with a countdown, today's timetable, and a "come back at 18:30" reminder.
 - **Dates work themselves out:** lunar dates use Hồ Ngọc Đức's Vietnamese calendar (UTC+7), plus Easter and "nth Sunday" rules, so there is no yearly table to update.
@@ -121,7 +121,7 @@ Measured in the test browser (390 px phone; the slow-phone figures use a 4x slow
 - **Title on screen: 4.5 s → 1.8 s; slow phone 17 s → 2.7 s.** The title and "Who's playing?" now show first; the valley is built behind them in steps with a breath between steps, so taps are answered. Pressing Go before the valley is ready shows "Getting the valley ready…" for the moment left.
 - **The first picture no longer freezes the title:** every material's shader is prepared in the background (`renderer.compileAsync`) before the valley is drawn.
 - **The mini-map picture** is painted once the valley is built (it used to run in the middle of start-up).
-- **All start-up scripts are fetched at once** (`<link rel="modulepreload">` list made by `tools/preload.mjs`; check `preload`).
+- **All start-up scripts are fetched at once** (`<link rel="modulepreload">` list made by `tools/preload.mts`; check `preload`).
 - Not changed: the valley takes about the same time to build (about 3.5 s here, 14 s on a slow phone). Making it faster (building far areas later) belongs with the new Concept D layout, item 2.
 
 ## Owner's decisions, 9 Oct (AEST): story, cast, order of work
@@ -152,7 +152,7 @@ Measured in the test browser (390 px phone; the slow-phone figures use a 4x slow
 
 ## Fixes from the r50 full run (10 Oct)
 - **Placement rules** (moving the trees for the yard plot shifted other things): trees keep 5 m from every Leafy; UNESCO landmarks keep clear of Leafies and of other landmarks' signs, only pick a spot whose sign stands on open ground, and look further out before falling back to their planned spot; gathering spots and dig spots never sit under a building or landmark.
-- **Start-up size (PERF-001):** the story and the yard load while the valley is built; the voice pack's list (`voices/manifest.json`) now names only the lines that are not English (`other`, per language) instead of every line's language (`langOf`): 211 KB to 144 KB. The game, `tools/make-voice-pack.mjs` and Studio read both forms.
+- **Start-up size (PERF-001):** the story and the yard load while the valley is built; the voice pack's list (`voices/manifest.json`) now names only the lines that are not English (`other`, per language) instead of every line's language (`langOf`): 211 KB to 144 KB. The game, `tools/make-voice-pack.mts` and Studio read both forms.
 - **Map picture cache:** the service worker no longer clears `sv-world` (the cache deletes old builds' pictures itself); the perf check waits until the picture is saved instead of a fixed 0.8 s.
 - **Checks:** `films` also plays the story films.
 

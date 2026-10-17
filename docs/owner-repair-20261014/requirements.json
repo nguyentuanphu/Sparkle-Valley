@@ -508,7 +508,7 @@
       "evidence": [],
       "releaseApproved": false,
       "finding": "Draft self-service family flow requires review; controlled tests historical; production, reassignment and recovery approval open",
-      "source": "js/familydevices.js; netlify/lib/family-devices.mjs",
+      "source": "js/familydevices.js; netlify/lib/family-devices.mts",
       "checks": "historical ownerfamily; production proof missing",
       "owner": "Release repair editor"
     },
@@ -521,7 +521,7 @@
       "evidence": [],
       "releaseApproved": false,
       "finding": "Draft self-service family flow requires review; controlled tests historical; production, reassignment and recovery approval open",
-      "source": "js/familydevices.js; netlify/lib/family-devices.mjs",
+      "source": "js/familydevices.js; netlify/lib/family-devices.mts",
       "checks": "historical ownerfamily; production proof missing",
       "owner": "Release repair editor"
     },
@@ -534,7 +534,7 @@
       "evidence": [],
       "releaseApproved": false,
       "finding": "Draft self-service family flow requires review; controlled tests historical; production, reassignment and recovery approval open",
-      "source": "js/familydevices.js; netlify/lib/family-devices.mjs",
+      "source": "js/familydevices.js; netlify/lib/family-devices.mts",
       "checks": "historical ownerfamily; production proof missing",
       "owner": "Release repair editor"
     },
@@ -547,7 +547,7 @@
       "evidence": [],
       "releaseApproved": false,
       "finding": "Draft self-service family flow requires review; controlled tests historical; production, reassignment and recovery approval open",
-      "source": "js/familydevices.js; netlify/lib/family-devices.mjs",
+      "source": "js/familydevices.js; netlify/lib/family-devices.mts",
       "checks": "historical ownerfamily; production proof missing",
       "owner": "Release repair editor"
     },
@@ -560,7 +560,7 @@
       "evidence": [],
       "releaseApproved": false,
       "finding": "Draft self-service family flow requires review; controlled tests historical; production, reassignment and recovery approval open",
-      "source": "js/familydevices.js; netlify/lib/family-devices.mjs",
+      "source": "js/familydevices.js; netlify/lib/family-devices.mts",
       "checks": "historical ownerfamily; production proof missing",
       "owner": "Release repair editor"
     },
@@ -573,7 +573,7 @@
       "evidence": [],
       "releaseApproved": false,
       "finding": "Draft self-service family flow requires review; controlled tests historical; production, reassignment and recovery approval open",
-      "source": "js/familydevices.js; netlify/lib/family-devices.mjs",
+      "source": "js/familydevices.js; netlify/lib/family-devices.mts",
       "checks": "historical ownerfamily; production proof missing",
       "owner": "Release repair editor"
     },
@@ -586,7 +586,7 @@
       "evidence": [],
       "releaseApproved": false,
       "finding": "Draft self-service family flow requires review; controlled tests historical; production, reassignment and recovery approval open",
-      "source": "js/familydevices.js; netlify/lib/family-devices.mjs",
+      "source": "js/familydevices.js; netlify/lib/family-devices.mts",
       "checks": "historical ownerfamily; production proof missing",
       "owner": "Release repair editor"
     },

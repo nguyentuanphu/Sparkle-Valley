@@ -17,21 +17,21 @@ You are a helper chat on Sparkle Valley (Studio core). Another chat, **Release**
 ### 2. How Studio reaches devices today (checked 17 Oct AEDT)
 
 - **Live at once (online Studio only):** Releases, Festivals, Sparkle Lab and tester controls.
-  - Path: `studio/ui/app.js` `saveLive` (about line 647), then `/studio/api/live` (`netlify/functions/studio.mjs`), then `netlify/lib/live.mjs` (`saveLive`, cleaned by `cleanLive`), then the public `/api/live` (`netlify/functions/live.mjs`, `Cache-Control: public, max-age=30`).
+  - Path: `studio/ui/app.js` `saveLive` (about line 647), then `/studio/api/live` (`netlify/functions/studio.mts`), then `netlify/lib/live.mts` (`saveLive`, cleaned by `cleanLive`), then the public `/api/live` (`netlify/functions/live.mts`, `Cache-Control: public, max-age=30`).
   - The game reads it in `js/custom.js` (about lines 104 to 120): the copy kept in localStorage (`sv2_live`) first, then the website's answer, and `onLive` listeners when it changed. A live rule wins over the same rule in `custom.json` (`pick()`).
   - `sw.js` never caches `/api/`.
 - **Needs Publish, then a Netlify build:** everything else on the content pages: Message, Missions, Quiz, Our stories, Villagers (names), Story characters, Memory Villages (plots), Simple screen (`activities`), Defaults (`defaults`, `features`), Ads settings, and the photo links (`faces[].photo`, `album`).
-  - Path: `saveContent` (`app.js` about line 56), then `writeContent` (`studio/core.cjs` about line 294) into `content/custom.json`, held in the blob store `studio-pending`.
-  - Publish (`core.cjs` about lines 128 to 166, 518 to 523) commits to `studio-draft`, then moves `main`, which makes Netlify build.
+  - Path: `saveContent` (`app.js` about line 56), then `writeContent` (`studio/core.cts` about line 294) into `content/custom.json`, held in the blob store `studio-pending`.
+  - Publish (`core.cts` about lines 128 to 166, 518 to 523) commits to `studio-draft`, then moves `main`, which makes Netlify build.
 - **SparkleStudio.exe:** has no live path; even Releases and Festivals need Publish there.
 
 ### 3. What to build
 
 1. **The content pages above go live at once.**
-   - `cleanLive` in `netlify/lib/live.mjs` keeps a checked section for each one: allowed keys only, size limits per item and for the whole answer (it goes to every device at every opening), text cleaned the way `custom.json` content is.
+   - `cleanLive` in `netlify/lib/live.mts` keeps a checked section for each one: allowed keys only, size limits per item and for the whole answer (it goes to every device at every opening), text cleaned the way `custom.json` content is.
    - `js/custom.js` merges each section the way `pick()` does: live wins, and `custom.json` stays the fallback.
    - Each Studio page saves through `saveLive`, the way Releases do.
-2. **Photo links live.** The photos are already in the private family store at once (`core.cjs` about lines 466 to 470); only their link waits for Publish today.
+2. **Photo links live.** The photos are already in the private family store at once (`core.cts` about lines 466 to 470); only their link waits for Publish today.
 3. **Screens that read once at start.** Most `CUSTOM.*` values are read once when the game opens. Where a page's change should show without reopening (Message, Missions), hook it to `onLive`. Otherwise, say in Studio that it shows the next time the game opens.
 4. **Studio says it plainly.** Each page shows "Live: devices get it the next time they open the game (about 30 seconds)", or "Needs Publish" for what stays there, in English and Vietnamese.
 5. **SparkleStudio.exe.** Make it save these pages to the website's `/studio/api/live` with its Studio key. If that is too big for r81, list it under "not done" and keep Publish working in the exe.

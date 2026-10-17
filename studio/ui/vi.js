@@ -1,4 +1,4 @@
-// The Studio's servers (studio/core.cjs, studio/studio.cjs, netlify/functions/studio.mjs and netlify/lib/) answer in
+// The Studio's servers (studio/core.cts, studio/studio.cts, netlify/functions/studio.mts and netlify/lib/) answer in
 // English; this turns each answer into Vietnamese when Studio is in Vietnamese (owner, 10 Oct: "English and Vietnamese
 // for everything"). Each line: the English (a pattern, numbers and names caught) and the Vietnamese. The `studio` check
 // reads every message the servers can send and fails if one has no line here.
@@ -87,6 +87,7 @@ export const VI_MESSAGES = [
   [/^Piper did not make a WAV file\.$/, () => 'Piper không tạo được tệp WAV.'],
   [/^Piper stopped: ([\s\S]*)$/, (m) => `Piper dừng: ${m[1]}`],
   [/^The MP3 encoder is missing\.$/, () => 'Thiếu bộ mã hóa MP3.'],
+  [/^studio\/core\.cts: the Studio engine did not load$/, () => 'studio/core.cts: không tải được bộ máy của Studio'],
   [/^Something else is still running: (.*)$/, (m) => `Một việc khác vẫn đang chạy: ${m[1]}`],
   [/^Nothing new to publish: the website already has everything\.$/, () => 'Không có gì mới để phát hành: trang web đã có đủ.'],
   [/^Nothing new: GitHub already has everything\.$/, () => 'Không có gì mới: GitHub đã có đủ.'],

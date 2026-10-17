@@ -347,12 +347,12 @@ Environment note: this session has no npm registry access; Playwright 1.56.1 is 
 - Reports #251/#256 (Shadow Shapes stuck at 233,-56) reproduced 8/8 when arriving by a long trip; G.clearSpot could choose ground past the valley edge beside the shadow theatre (R74 hid it by accepting landings within 8 m). Fixed; autoplay's long trips land like the Go button. New check ownertheatreapproach. Focused 14/14.
 - Strict types: js/content/autoplay.js, js/content/tester.js, new js/games/playwatch.js (14 files in types, 6 strict). 111 unit tests.
 - Probes: six learning games open and are won on current; #86 well and #261 Ô Ăn Quan not reproduced in emulation (report-dispositions.md has every report).
-- Still open: see the remaining-work list given to Henry (Studio, family production, learning review, films, hearts proposal, quests/strategies, screen coverage, speed checks, players.mjs types, full picture table, review, ZIP).
+- Still open: see the remaining-work list given to Henry (Studio, family production, learning review, films, hearts proposal, quests/strategies, screen coverage, speed checks, players.mts types, full picture table, review, ZIP).
 
 ## Session update · 16 October 2026, about 01:00 AEDT
 
 - Full 38727825273 at 100e7ed8: 159/182 because share 3 stalled for two hours after its first check (boot) timed out; its 23 checks never reported. Runner now fails a check after 45 minutes and replaces an unresponsive browser (27772f57). PR300 advanced to 9afa91e7 (13 commits); its Full is the next exact-source result.
-- Types (strict): netlify/lib/hello-clean.mjs (device id/build/session validation, compared on 20,000 payloads) and netlify/lib/family-devices.mjs (found and fixed: moving a photo whose picture was missing wrote an empty picture). 16 type-checked files, 8 strict; 116 unit tests.
+- Types (strict): netlify/lib/hello-clean.mts (device id/build/session validation, compared on 20,000 payloads) and netlify/lib/family-devices.mts (found and fixed: moving a photo whose picture was missing wrote an empty picture). 16 type-checked files, 8 strict; 116 unit tests.
 - Decorations: Halloween door pumpkins reserved first; rings without streets keep posts whole and report requested/placed (China Town 93/110 on Tết, its clear ground is full). Festival AFTER pictures refreshed at 2f16d8fb.
 - Studio point 34: all 30 pages × desktop/phone, 190 folds, 0 unfolded categories (story characters and the publish list were unfolded in R74). CORRECTION: an earlier statement (commit f26ddba8 message) that no R74 fold hides its content was a measurement error; measured by what the browser draws, R74's folds work.
 - Speed: battery passed locally; perf and startup blocked (esbuild download denied by this session's network policy). Reports #86, #261 not reproduced in emulation.

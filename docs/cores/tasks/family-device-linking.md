@@ -40,7 +40,7 @@ This work order covers family-photo access and device pairing. Do not promise or
 ## Ownership and implementation planning
 Studio leads the work order. Analytics & Infra owns the private backend and family/device authorization with Studio. Kid UI owns in-game Grown-ups screens. Release integrates and deploys after the normal review and release approval.
 
-Before implementation, inspect js/family.js (resolve actual client module), js/ui.js, js/state.js, studio/ui/app.js, studio/core.cjs, netlify/lib/family.mjs, netlify/functions/family.mjs and the Studio API. Record precise affected files and interfaces; do not assume the multiplayer Online core owns family-photo access.
+Before implementation, inspect js/family.js (resolve actual client module), js/ui.js, js/state.js, studio/ui/app.js, studio/core.cts, netlify/lib/family.mts, netlify/functions/family.mts and the Studio API. Record precise affected files and interfaces; do not assume the multiplayer Online core owns family-photo access.
 
 ## Required behavior and verification
 - Pairing requires the parent's approval; the temporary code expires and cannot be reused.

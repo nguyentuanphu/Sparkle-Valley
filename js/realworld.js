@@ -1,10 +1,12 @@
 // The real place behind every landmark: "📷 Real photos" shows photographs of the real thing, slowly panning like a
 // film; "🚶 Step inside (360°)" opens Google's map and street view of the real place, inside the game.
-// (round R privacy, 9 Oct, owner: "landmark photos served from our own site") the photos are only the ones saved with
-// the game in photos/ (listed in photos/index.json, chosen by a grown-up in Studio's Real photos page or fetched by
-// tools/fetch-landmark-photos.mjs, each with who took it and its licence). The game never asks Wikipedia or Wikimedia
-// itself; a place with no saved photos shows "the photos are on their way". The service worker keeps the photos, so
-// they work offline. The map and street view open Google, so a grown-up says yes first (press and hold).
+// (owner, 17 Oct AEDT: "point photos to Wikimedia; if no internet, mention internet required"; replaces round R's
+// "landmark photos served from our own site") the photos are the ones listed in photos/index.json (chosen by a grown-up
+// in Studio's Real photos page, each with who took it and its licence), shown from where they live online: Wikimedia
+// or Flickr, nowhere else (PHOTO_HOST). A photo Studio had to keep a copy of (its last resort) is a file in photos/.
+// Without the internet the viewer says the photos need it; a photo seen before still shows (the service worker keeps
+// it). A place with no photos listed shows "the photos are on their way". The map and street view open Google, so a
+// grown-up says yes first (press and hold).
 import { T } from './i18n.js';
 import { el, esc, flip } from './util.js';
 import { SFX } from './audio.js';
@@ -48,10 +50,14 @@ const SPECIAL = [[/phở/i, 'pho'], [/hàng mã/i, 'hangma'], [/đông hồ/i, '
 export function homeSources(name, kind) { const sp = SPECIAL.find(([re]) => re.test(name || '')); return REAL_KINDS[sp ? sp[1] : kind] || null; }
 const cache = {};
 export const photoKey = sources => sources[0].toLowerCase().replace(/[^\p{L}\p{N}]+/gu, '-').replace(/^-|-$/g, '').slice(0, 60);
-// photos/index.json: { key: [{ src: 'photos/<key>/1.jpg', file, caption, credit }] } (key = photoKey of the sources)
+// photos/index.json: { key: [{ url: 'https://upload.wikimedia.org/…', page, file, caption, credit }] } (key = photoKey
+// of the sources); a copy Studio kept has src: 'photos/<key>/1.jpg' instead of url
 let LOCAL = null;
-// (round R privacy, 9 Oct) only our own files: a src must be a path inside photos/, never a web address
-const ours = p => p && typeof p.src === 'string' && /^photos\/[\w\p{L}\p{N}./-]+\.(jpe?g|png|webp)$/iu.test(p.src) && !p.src.includes('..');
+// (17 Oct AEDT) the photo sites the game may show from (the same list is in sw.js, which keeps seen photos)
+export const PHOTO_HOST = /^https:\/\/((upload|thumb)\.wikimedia\.org|live\.staticflickr\.com|farm\d+\.staticflickr\.com)\//;
+const saved = p => typeof p.src === 'string' && /^photos\/[\w\p{L}\p{N}./-]+\.(jpe?g|png|webp)$/iu.test(p.src) && !p.src.includes('..');
+const ours = p => p && ((typeof p.url === 'string' && PHOTO_HOST.test(p.url) && !/\s/.test(p.url)) || saved(p));
+const photoAddress = p => p.url && PHOTO_HOST.test(p.url) ? p.url : p.src;
 const localPhotos = async key => { if (!LOCAL) LOCAL = fetch('photos/index.json').then(r => r.ok ? r.json() : {}).catch(() => ({})); const L = await LOCAL; return (Array.isArray(L[key]) ? L[key] : []).filter(ours); };
 async function photosFor(sources) {
   const key = photoKey(sources); if (cache[key]) return cache[key];
@@ -59,8 +65,8 @@ async function photosFor(sources) {
   if (!photos.length) return null;
   return (cache[key] = { photos });
 }
-// (round R privacy, 9 Oct) photos from Wikimedia that an older version kept on this device are cleared once
-try { if (window.caches) caches.open('sv-photos').then(c => c.keys().then(ks => ks.forEach(r => { const u = new URL(r.url); if (u.origin !== location.origin || u.pathname.startsWith('/photos-list/')) c.delete(r); }))).catch(() => { }); } catch (e) { }
+// (round R) an old list address that an older version kept on this device is cleared once
+try { if (window.caches) caches.open('sv-photos').then(c => c.keys().then(ks => ks.forEach(r => { if (new URL(r.url).pathname.startsWith('/photos-list/')) c.delete(r); }))).catch(() => { }); } catch (e) { }
 
 // the photo viewer: big, slowly panning photos; swipe or ◀ ▶; the 360° button when there is a real place to stand in
 export function openPhotos(name, sources, { icon = '📷', id = null, onClose } = {}) {
@@ -75,11 +81,19 @@ export function openPhotos(name, sources, { icon = '📷', id = null, onClose } 
   const close = () => { if (closed) return; closed = true; clearInterval(auto); m.classList.add('out'); setTimeout(() => m.remove(), 250); onClose && onClose(); };
   m.querySelector('.rv-x').onclick = () => { SFX.tap(); close(); };
   if (real) m.querySelector('.rv-360').onclick = () => { SFX.tap(); openStreetView(id); };
+  // (owner, 17 Oct AEDT) no internet and no photo of this place seen before: say the photos need the internet
+  const noNet = () => {
+    clearInterval(auto); m.classList.add('none'); dots.innerHTML = ''; cap.innerHTML = ''; stage.querySelectorAll('.rv-img').forEach(o => o.remove());
+    stage.insertAdjacentHTML('beforeend', `<div class="rv-load rv-nonet">${pic('🌐')}<p>${T('Real photos need the internet. Try again when you are online!', 'Cần có internet để xem ảnh thật. Khi có mạng, thử lại nhé!')}</p></div>`);
+    say('Real photos need the internet. Try again when you are online!', 'Cần có internet để xem ảnh thật. Khi có mạng, thử lại nhé!');
+  };
   const show = i => {
     if (!list.length) return; k = (i + list.length) % list.length; const p = list[k];
     const im = el('img', 'rv-img'); im.alt = name; im.referrerPolicy = 'no-referrer'; im.style.setProperty('--px', (k % 2 ? 1 : -1) * 3 + '%');
-    im.src = p.src;
+    im.src = photoAddress(p);
     im.onload = () => { stage.querySelectorAll('.rv-img.on').forEach(o => { o.classList.remove('on'); setTimeout(() => o.remove(), 900); }); im.classList.add('on'); };
+    // a photo that cannot come (no internet, or gone from its site) is left out; none left: the internet note
+    im.onerror = () => { im.remove(); if (closed || !list.includes(p)) return; list = list.filter(x => x !== p); if (!list.length) return noNet(); m.classList.toggle('one', list.length < 2); show(k); };
     stage.appendChild(im);
     dots.innerHTML = list.map((_, j) => `<i class="${j === k ? 'on' : ''}"></i>`).join('');
     // (round R privacy, 9 Oct) the credit is shown as words, not a link out of the game

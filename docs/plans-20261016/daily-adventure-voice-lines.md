@@ -1,6 +1,6 @@
 # Daily adventure: new spoken lines (chat C, 17 Oct 2026 AEDT)
 
-Every line the daily adventure says (js/content/adventures.js, `spokenLines()`): the givers' introductions, Grandpa Owl's lines about yesterday (D11), every step, the window, chest and week-chest lines. None has a child's, friend's or pet's name. Not recorded in this chat (the plan gives `voices/` to Release): Release please record them with `node tools/make-voice-pack.mjs --engine azure`.
+Every line the daily adventure says (js/content/adventures.js, `spokenLines()`): the givers' introductions, Grandpa Owl's lines about yesterday (D11), every step, the window, chest and week-chest lines. None has a child's, friend's or pet's name. Not recorded in this chat (the plan gives `voices/` to Release): Release please record them with `node tools/make-voice-pack.mts --engine azure`.
 
 280 lines, each in English and Vietnamese (560 recordings).
 

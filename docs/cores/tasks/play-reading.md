@@ -72,7 +72,7 @@ Spare if one is dropped: Big and Little Letters / Chữ Hoa Chữ Thường (mat
 Every letter name, letter sound, word, sentence and instruction must be in the voice pack (HANDOFF rule 11). Letter
 sounds need care: Azure says a letter's name, not its sound, so record sounds as short syllables or phonetic text (and
 the six Vietnamese tones on "ma"); list how each is made. If `AZURE_SPEECH_KEY` is set, record with
-`node tools/make-voice-pack.mjs --engine azure`; otherwise list every new line on the board for Voice & Audio.
+`node tools/make-voice-pack.mts --engine azure`; otherwise list every new line on the board for Voice & Audio.
 
 ## You may change
 `js/games/reading.js` (new), `js/content/reading.js` (new), `js/content/activities.js` (the new area and its games),

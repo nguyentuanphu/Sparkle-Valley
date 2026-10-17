@@ -34,7 +34,7 @@ Written by the Release chat in case its usage runs out. Start after r70 is live,
 ## The rest (about 33 tales without a film)
 List them: every tale id in the tales content without a `FILMS[id]`. Order: Vietnamese first. Each batch:
 1. About 6 film scripts, timed to each page's narration (note 1 above), with the music bed (note 2).
-2. New spoken lines recorded with Azure: `node tools/make-voice-pack.mjs --engine azure --key "$AZURE_SPEECH_KEY" --region "$AZURE_SPEECH_REGION"`
+2. New spoken lines recorded with Azure: `node tools/make-voice-pack.mts --engine azure --key "$AZURE_SPEECH_KEY" --region "$AZURE_SPEECH_REGION"`
    (never print or commit the key; `--count` shows what is missing; no line with a child's name is recorded).
 3. Only the checks for the change (owner, 13 Oct AEDT): `cd tests && node suite.mjs --changed` (it picks `films`, `tales`,
    the voice and language checks, `phone`, and runs `films` in full because film files changed), plus the new silent-tail
@@ -80,7 +80,7 @@ prints each page's recorded voice length.
   stood still about 2 s after its answer (release now keeps the longer of the two).
 - The 9 older films got narrator lines where the film ran on in silence; the lantern chapters 2 and 3 no longer hold the
   whole parade still at second 2 until the words end (the tap moved to the end of the scene).
-- Voice tools: `tools/voice-lines.mjs` reads `js/content/films/` and `S.say(...)` lines (download area: games, like the
+- Voice tools: `tools/voice-lines.mts` reads `js/content/films/` and `S.say(...)` lines (download area: games, like the
   other films). Azure recording of the new lines started (1124 files).
 - Next: when recording ends, `node run.mjs filmtails` with the real lengths, move line times where it reports a gap;
   stills on phone, tablet, computer (`SHOT_ONE=1 SHOT_W=… SHOT_H=… node filmshots.mjs <folder> <ids>`); quick checks.

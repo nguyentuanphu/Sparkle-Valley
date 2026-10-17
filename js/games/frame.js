@@ -227,7 +227,7 @@ export function openGame(id, { players, level = 1, style = 'shrine', partnerName
       pk.onclick = e => { if (e.target === pk) pk.remove(); };
       pk.querySelectorAll('[data-l]').forEach(b => b.onclick = () => { SFX.tap(); pk.remove(); if (b.dataset.l !== levelPick.value) finish(false, { restart: b.dataset.l }); });
     };
-    Promise.resolve(def.run(api)).catch(e => { console.error(e); finish(false); });
+    Promise.resolve(def.run(api)).catch(e => { console.error(e); window.svModuleGone?.(e); finish(false); });
   });
 }
 

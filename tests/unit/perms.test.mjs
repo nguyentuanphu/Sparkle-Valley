@@ -1,8 +1,8 @@
-// (owner, 14 Oct AEDT) Studio accounts get permissions one by one (netlify/lib/admins.mjs PERMS); the roles are ready-made
+// (owner, 14 Oct AEDT) Studio accounts get permissions one by one (netlify/lib/admins.mts PERMS); the roles are ready-made
 // sets that do exactly what they did before; managing admins, Security and the Access log stay with the owner role
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { allowed, needs, permsOf, put, PERMS, PRESETS } from '../../netlify/lib/admins.mjs';
+import { allowed, needs, permsOf, put, PERMS, PRESETS } from '../../netlify/lib/admins.mts';
 
 const mem = () => { const m = new Map(); return { get: async (k, o) => m.has(k) ? (o && o.type === 'json' ? JSON.parse(m.get(k)) : m.get(k)) : null, setJSON: async (k, v) => { m.set(k, JSON.stringify(v)); }, set: async (k, v) => { m.set(k, String(v)); }, delete: async k => { m.delete(k); }, list: async ({ prefix = '' } = {}) => ({ blobs: [...m.keys()].filter(k => k.startsWith(prefix)).map(key => ({ key })) }) }; };
 const as = role => ({ role, perms: permsOf({ role }) });

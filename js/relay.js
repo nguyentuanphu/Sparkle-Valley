@@ -82,6 +82,7 @@ export async function open(key, bytes) { try { const pt = await crypto.subtle.de
 // ---------- a channel: one encrypted topic on every broker that answers ----------
 // onMsg(obj) gets each message once. status() tells how many brokers are connected.
 export class Channel {
+  /** @param {{ kind: string, code: string, onMsg?: (m: any) => void, will?: any }} o */
   constructor({ kind, code, onMsg, will }) { this.kind = kind; this.code = code; this.onMsg = onMsg; this.will = will; this.clients = []; this.seen = new Map(); this.alive = true; this.extra = new Set(); }
   async start() {
     this.key = await keyFor(this.code); this.topic = await topicFor(this.kind, this.code);
