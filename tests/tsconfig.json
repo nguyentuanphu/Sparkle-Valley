@@ -1,4 +1,5 @@
 {
+  "extends": "../tsconfig.base.json",
   "//": "Type checking (owner, round 30): the files that start with // @ts-check are checked with their JSDoc types. Run: npx tsc -p tests",
   "compilerOptions": {
     "allowJs": true, "checkJs": false, "noEmit": true, "strict": false, "noImplicitAny": false,

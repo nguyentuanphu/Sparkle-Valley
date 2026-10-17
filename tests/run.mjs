@@ -24,6 +24,9 @@ async function pairKeys(A, B) {
 // changes every run (SV_SEED), and everything when their own files changed (SV_FULL=reading,films,… from suite.mjs)
 const sampled = name => process.env.SV_SAMPLE === '1' && !(process.env.SV_FULL || '').split(',').includes(name);
 const SEED = Number(process.env.SV_SEED) || Math.floor(Date.now() / 36e5);
+// (owner, 16 Oct AEDT: TypeScript, batch 0) the game's .ts files are made into the .js the browser loads before any
+// check runs (tools/build.mjs; suite.mjs does it once for all its runs and says so with SV_BUILT)
+if (!process.env.SV_BUILT) { const { execFileSync } = await import('child_process'); execFileSync(process.execPath, ['../tools/build.mjs'], { stdio: 'inherit' }); }
 const only = process.argv.slice(2).filter(a => !a.startsWith('--'));
 const want = k => !only.length || only.includes(k);
 const results = [];

@@ -41,6 +41,8 @@ const TIMES_F = path.join(HERE, 'check-times.json'), MAP_F = path.join(HERE, 'ch
 const readJSON = (f, d) => { try { return JSON.parse(fs.readFileSync(f, 'utf8')); } catch (e) { return d; } };
 const times = readJSON(TIMES_F, {});
 const GAME_URL = process.env.SV_URL || 'http://localhost:8765/';
+// (owner, 16 Oct AEDT: TypeScript, batch 0) the game's .ts files made into .js once, before any run (tools/build.mjs)
+if (!flag('--list') && !flag('--collect')) { execFileSync(process.execPath, [path.join(HERE, '../tools/build.mjs')], { stdio: 'inherit' }); process.env.SV_BUILT = '1'; }
 
 // where each check's code sits in run.mjs (line numbers, from 1)
 // (from its "await check(" line to its closing "});"; lines between checks are shared helpers)

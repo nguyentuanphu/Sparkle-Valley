@@ -4,6 +4,10 @@
 set -e
 cd "$(dirname "$0")"
 OUT=netlify-site
+# (owner, 16 Oct AEDT: TypeScript, batch 0) every .ts becomes the .js beside it first (tools/build.mjs); with .ts files
+# in the game this needs Node, and the zip is not made without it
+if command -v node >/dev/null 2>&1; then node tools/build.mjs
+elif find js studio/ui -name '*.ts' ! -name '*.d.ts' 2>/dev/null | grep -q . || [ -f sw.ts ]; then echo "Node is needed to build the game's TypeScript files (tools/build.mjs)"; exit 1; fi
 rm -rf "$OUT" sparkle-valley-netlify.zip
 mkdir -p "$OUT"
 cp -r index.html manifest.webmanifest sw.js netlify.toml css fonts icons js vendor videos content "$OUT"/
