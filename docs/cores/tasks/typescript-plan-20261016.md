@@ -25,36 +25,40 @@ make the game load or run faster. Part 2 is the speed work, and it is separate.
 - Every `.js`/`.mjs`/`.cjs` file of ours becomes `.ts`/`.mts`/`.cts` **in the same place** (`js/state.ts` next to
   where `js/state.js` was). Imports keep the `.js` name (`import { settings } from './state.js'`): TypeScript finds
   `state.ts`, and the built file keeps the same import, so built files look exactly like today's.
-- **The build** (`tools/build.mjs`, new): esbuild turns each `.ts` into a `.js` in `dist/`, one file for one file, with
-  the rest of the site (css, fonts, icons, vendor, content, photos, voices links) copied or linked beside it. About a
-  second for the whole game. Then `tools/bundle.mjs` packs `dist/` for the website as it does today.
+- **The build** (`tools/build.mjs`, built in batch 0, 17 Oct AEDT): Node's own type stripping makes each `.ts` into
+  the `.js` **beside it**, with every line and column unchanged. (Changed from the first draft's `dist/` folder: the
+  same addresses as today, so the website, the offline list, the pack, the checks and Studio need no new paths, and
+  no source maps are needed, because an error on a phone points at the same line of the `.ts`.) The made `.js` is
+  never committed; the tool keeps their list in `.gitignore`. It takes well under a second.
 - **The check** `types`: `tsc --noEmit` over everything. esbuild only removes notes; `tsc` is what finds mistakes.
 - Settings (`tsconfig.base.json` at the root): `strict`, `noEmit`, `erasableSyntaxOnly` (only notes, nothing Node or
-  esbuild must translate), `verbatimModuleSyntax`, `allowImportingTsExtensions`, `target es2022`.
+  esbuild must translate), `target es2022`; each check's own tsconfig extends it.
 - Shared types in `types/`: the save format (`sv2_*` keys), network messages, the Studio API, tester reports, family
   devices, and the shared game object. Server, Studio and game use the same files, so a changed message shape fails
   the check in all three at once.
 - Third-party files in `vendor/` (three.js, peerjs) stay as they are, with type files.
 
-## What changes around the build
+## What changes around the build (done in batch 0 unless marked later)
 | Where | Today | After |
 |---|---|---|
-| Website (Netlify) | `node tools/bundle.mjs . \|\| true`, site from the repo root | `node tools/build.mjs && node tools/bundle.mjs dist`, site from `dist/`; a failed build stops the deploy (the live site stays as it was) |
+| Website (Netlify) | `node tools/bundle.mjs . \|\| true` | `node tools/build.mjs && (node tools/bundle.mjs . \|\| true)`; a failed build stops the deploy (the live site stays as it was) |
 | Netlify Node | not pinned | `NODE_VERSION = "22.22.0"` in `netlify.toml` |
-| Drag-and-drop zip | `build-netlify.sh`, Node optional | needs Node; zips `dist/` |
-| Offline list (`sw.js`) | about 250 names written by hand | made by the build from `dist/` (`sw.ts` source) |
-| Tests | serve the repo folder (`tests/run.mjs` servers at lines 75 and 5354) | `suite.mjs` builds first and serves `dist/`; GitHub workflows add the build step |
-| Studio exe | copies the game's files from GitHub | copies the built site from a `site` branch that GitHub's workflow fills from `main` after each deploy |
-| Studio online | `/studio` pages import `js/…` | import the built `js/…` in `dist/` (same addresses) |
-| iPhone debugging | the phone's file is the repo's file | source maps (`.map` files) beside the built files point Safari at the `.ts` lines |
-| Check map | `tests/check-map.json` names `.js` | names `.ts`; refreshed from the GitHub run |
+| Drag-and-drop zip | `build-netlify.sh`, Node optional | builds first; needs Node once any `.ts` exists |
+| Offline list (`sw.js`) | names written by hand | unchanged: the `.js` names stay |
+| Tests | serve the repo folder | `run.mjs` and `suite.mjs` build first; the same folder is served |
+| GitHub Pages, daily voices | serve or publish the repo | build first |
+| Studio exe | copies the game's files from GitHub | unchanged; it makes a game file's `.js` from its `.ts` when asked (same type stripping); `build-exe.sh` builds first |
+| Studio online | `/studio` pages import `js/…` | unchanged: Netlify built the `.js` |
+| iPhone debugging | the phone's file is the repo's file | the same lines and columns as the `.ts` (no source maps) |
+| Check picker (`suite.mjs --changed`) | maps `js/*.js` changes | later, with batch 3: map a `.ts` change to its `.js` |
+| Check map | `tests/check-map.json` names `.js` | unchanged (the built `.js` is what runs) |
 
 ## Order: in batches, one core at a time (owner, 16 Oct AEDT)
 esbuild builds `.js` and `.ts` side by side and `tsc` checks both (`allowJs`), so the game works with some files
 converted and some not. No full freeze: only the core being converted pauses its code work, for its batch.
-1. **Batch 0, groundwork (Release, nobody pauses):** `tools/build.mjs`, `tsconfig.base.json`, `types/`, the build in
-   Netlify, the zip, the tests, the GitHub workflows and the Studio `site` branch, all working on today's `.js` files,
-   full suite green.
+1. **Batch 0, groundwork (Release, nobody pauses), built 17 Oct AEDT on `work/ts-batch0-20261017`:** `tools/build.mjs`,
+   `tsconfig.base.json`, the build in Netlify, the zip, the tests, GitHub Pages, the daily voices and the Studio exe,
+   all working on today's `.js` files. (`types/` comes with batch 3, where the first shared types are needed.)
 2. **Each later batch, two commits:** (a) rename only, no other change, so git follows the rename and other branches'
    edits still land in the renamed file; (b) type notes and fixes until the light check shows 0 errors for that batch.
    Paths in tests, docs, `check-map.json` and the exe script change in the same batch.
@@ -83,7 +87,7 @@ Estimates; batch 3 will show the real pace.
 ## Risks
 - A build failure stops a deploy; today's fallback hid that. The build runs on every pull request first.
 - Edits on other branches to a renamed file: the rename-only commit lets git follow it; the paused core has none.
-- The Studio exe needs the `site` branch to exist before it can update; old exes keep their last copy until rebuilt.
+- Node's type stripping is marked experimental by Node: pinned to Node 22.22 everywhere; if it ever changes, esbuild can make the same `.js` instead.
 - Undo: revert one batch; the build keeps working with that batch back in `.js`.
 
 # Part 2: a lighter, faster load
@@ -92,14 +96,14 @@ Measured 16 Oct AEDT in the repo and from `tests/perf-baseline.json` (budgets PE
 
 | Item | Today | What to do | Owner core |
 |---|---|---|---|
-| S1 Photos | 197 photos, 76 MB; 11 over the 600 KB rule, the largest 7.7 MB (`photos/en-dragon-bridge-da-nang/3.jpg`) | `tools/photo-shrink.mjs`: longest side 1600 px, JPEG quality about 80, keep the original's licence record; Studio saves new photos the same way; a check fails any photo over 600 KB. Expect most of the 76 MB to go (to measure) | Studio |
+| S1 Photos | 197 photos, 76 MB stored with the game | **owner, 17 Oct AEDT: linked from Wikimedia or Flickr, not stored** (no internet: the viewer says so; seen photos kept on the device); `photos/` removed; Studio saves a copy only as a last resort. Built on `work/photo-links-20261017` | Release |
 | S2 Valley build time | 6.6 s from the game's code to a built valley (`worldMs`, test browser) | profile it; build the child's own area first and the rest in small pieces while they play; reuse `js/worldcache.js` more | World (after Round T) |
 | S3 Draw calls | 507 at home, 359 in Lotus Village; budget 250 | merge still objects that share a look, more one-shape repeats (instancing) | World |
 | S4 Start-up download | 2.6 MB before the title screen (packed, before compression); three.js already minified | see what is in it (esbuild's size report), load films, stories and games only when opened, check Netlify sends it compressed | Analytics & Infra |
 | S5 Voice list | `voices/manifest.json` 340 KB | split it per language so a family downloads only its own | Voice & Audio |
 | S6 Voice pack | 166 MB English, 165 MB Vietnamese, already small (32 kbit/s, mono) and downloaded area by area | leave for now; a smaller format (Opus) only after testing on old iPhones | Voice & Audio |
 
-Order: S1 and S5 first (no code risk, big saving), then S4, then S2 and S3 once Round T ends. Each item lowers its
+Order: S1 (built) and S5 first (no code risk, big saving), then S4, then S2 and S3 once Round T ends. Each item lowers its
 number in `tests/perf-baseline.json` (the ratchet) and is checked by `perf`, `startup` and `battery`.
 Part 2 can start now; it does not wait for Part 1, and S1 and S5 do not touch game code.
 
