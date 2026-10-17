@@ -103,6 +103,7 @@ await check('lighterload', async () => {
   try {
     ok(!got.some(s => /\/js\/(games\/thinking|tales-content|howto-player)\.js$/.test(s)), 'optional implementation fetched before opening: ' + got.filter(s => /thinking|tales-content|howto-player/.test(s)));
     await start(P.page); await clear(P.page);
+    ok(await P.page.evaluate(async () => !!(await import('/js/custom.js')).customQuiz().length || !(await import('/js/games/frame.js')).GAMES.familyquiz), 'Family Quiz appeared with no family questions');
     await P.page.waitForFunction(async () => !!(await import('/js/voice.js')).voicePack(), null, { timeout: 20000 });
     ok(got.some(s => s.endsWith('/voices/manifest-en.json')) && !got.some(s => /\/voices\/manifest(?:-(?:vi|hi|zh))?\.json$/.test(s)), 'English-only device fetched another index');
     await P.page.evaluate(async () => {
@@ -121,6 +122,10 @@ await check('lighterload', async () => {
       const full = await t.load(); return { before, after: full.pages.length, en: full.pages[0][1], same: full === t };
     });
     ok(tale.same && tale.before === tale.after && tale.en, 'lazy tale lost its pages/identity: ' + JSON.stringify(tale));
+    await P.page.evaluate(async () => { (await import('/js/ui.js')).openGrownups(() => {}); });
+    await P.page.locator('#gBil').check();
+    await P.page.waitForFunction(async () => !!(await import('/js/voice.js')).voicePack()?.signatures?.vi);
+    await clear(P.page);
     await P.page.evaluate(async () => { const S = await import('/js/state.js'); S.settings.lang = 'vi'; (await import('/js/core/events.js')).events.emit('LanguageChanged'); });
     await P.page.waitForFunction(async () => !!(await import('/js/voice.js')).voicePack()?.signatures?.vi);
     ok(!got.some(s => /\/voices\/manifest-(?:hi|zh)\.json$/.test(s)), 'language switch fetched learning-language indexes');

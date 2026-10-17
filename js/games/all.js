@@ -10,9 +10,14 @@ for (const group of Object.values(GAME_LOADERS)) {
   };
   for (const id of group.ids) {
     const def = GAME_CATALOG.find(d => d.id === id);
-    register({ ...def, load, run: GAMES[id]?.run || (async api => {
+    if (!def) continue; // Family Quiz exists only when a grown-up supplied questions, as before.
+    const lazy = async api => {
       await load();
-      if (!api.closed) return GAMES[id].run(api);
-    }) });
+      if (api.closed) return;
+      const run = GAMES[id]?.run;
+      if (!run || run === lazy) throw new Error('Game implementation unavailable: ' + id);
+      return run(api);
+    };
+    register({ ...def, load, run: GAMES[id]?.run || lazy });
   }
 }

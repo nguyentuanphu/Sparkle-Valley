@@ -1,3 +1,4 @@
+import { events } from './core/events.js';
 // Screens and pop-ups: title, who's playing, grown-ups settings, photo editor, NPC dialogue,
 // the Sparkle Pad (map, backpack, adventure log, album, camera), cooking, shop and online play.
 import { AREAS, gamesIn, withSitePlaces } from './content/activities.js';
@@ -494,7 +495,7 @@ export function openGrownups(after) {
     chk('#gAdv', 'dailyAdventure');
     card.querySelectorAll('.seg.advday button').forEach(b => b.onclick = () => { settings.advDay = b.dataset.d; saveSettings(); const y = m.scrollTop; draw(); m.scrollTop = y; });
     card.querySelectorAll('.seg.advlvl button').forEach(b => b.onclick = () => { settings.advLevel = b.dataset.l; saveSettings(); const y = m.scrollTop; draw(); m.scrollTop = y; });
-    chk('#gBil', 'bilingual'); chk('#gVoice', 'voice'); chk('#gMusic', 'music', () => settings.music ? Music.refresh() : Music.stop()); chk('#gSound', 'sound'); chk('#gTapSnd', 'tapSounds'); chk('#gDay', 'alwaysDay');
+    chk('#gBil', 'bilingual', () => events.emit('SettingsChanged', { key: 'bilingual' })); chk('#gVoice', 'voice'); chk('#gMusic', 'music', () => settings.music ? Music.refresh() : Music.stop()); chk('#gSound', 'sound'); chk('#gTapSnd', 'tapSounds'); chk('#gDay', 'alwaysDay');
     card.querySelector('#vEn').onchange = e => { settings.voiceEn = e.target.value; saveSettings(); };
     card.querySelector('#vVi').onchange = e => { settings.voiceVi = e.target.value; saveSettings(); };
     card.querySelectorAll('[data-try]').forEach(b => b.onclick = () => {

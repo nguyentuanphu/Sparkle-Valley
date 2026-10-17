@@ -1,6 +1,7 @@
 // Menu metadata stays available before an implementation is opened. Keep it in registration order.
 import { T } from '../i18n.js';
 import { curCode } from '../money.js';
+import { customQuiz } from '../custom.js';
 const home = () => ['AUD', 'VND'].includes(curCode()) ? curCode() : 'AUD';
 export const GAME_CATALOG = [
   { id: 'pattern', icon: '🔁', name: () => T('What Comes Next?', 'Tiếp Theo Là Gì?') },
@@ -91,7 +92,7 @@ export const GAME_CATALOG = [
   { id: 'marketcount', icon: '🧺', learn: true, name: () => T('Market Counting', 'Đếm Ở Chợ') },
   { id: 'feelings', icon: '😊', learn: true, name: () => T('How Do They Feel?', 'Bạn Thấy Thế Nào?') },
   { id: 'soundhunt', icon: '🔤', learn: true, name: () => T('First Sound Hunt', 'Săn Âm Đầu') }
-];
+].filter(def => def.id !== 'familyquiz' || customQuiz().length > 0);
 export const GAME_LOADERS = {
   'thinking.js': { ids: ["pattern","counting","letters","numbers","shapes","colors","sorting","memory"], load: () => import('./thinking.js') },
   'strategy.js': { ids: ["hanoi","robot","maze","goat"], load: () => import('./strategy.js') },

@@ -25,8 +25,8 @@ function registered(file) {
   return out;
 }
 test('menu catalogue matches lazy game definitions, order, names and eligibility', () => {
-  for (const lang of [0, 1]) for (const currency of ['AUD', 'VND']) {
-    const context = vm.createContext({ T: (...pair) => pair[lang], curCode: () => currency });
+  for (const hasQuiz of [false, true]) for (const lang of [0, 1]) for (const currency of ['AUD', 'VND']) {
+    const context = vm.createContext({ T: (...pair) => pair[lang], curCode: () => currency, customQuiz: () => hasQuiz ? [{}] : [] });
     const c = vm.runInContext(text.replace(/^import .*;$/gm, '').replace(/export const/g, 'const') + '\n({catalog:GAME_CATALOG, groups:GAME_LOADERS})', context);
     const expected = Object.entries(c.groups).flatMap(([file, group]) => {
       const defs = registered(file).map(expression => vm.runInContext(expression, context));
@@ -34,7 +34,7 @@ test('menu catalogue matches lazy game definitions, order, names and eligibility
       return defs;
     });
     const plain = defs => JSON.parse(JSON.stringify(defs.map(d => ({ ...d, name: d.name() }))));
-    assert.deepEqual(plain(c.catalog), plain(expected));
+    assert.deepEqual(plain(c.catalog), plain(expected.filter(d => d.id !== 'familyquiz' || hasQuiz)));
     assert.equal(new Set(c.catalog.map(d => d.id)).size, c.catalog.length);
   }
 });
