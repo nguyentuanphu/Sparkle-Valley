@@ -742,6 +742,10 @@ await check('ownervoicewifi', async () => {
   const got = [];
   const P = await open(b, {w:390,h:844,touch:true,pre:`Object.defineProperty(navigator,'connection',{get:()=>({type:'wifi',saveData:false}),configurable:true});`,settings:{lang:'en',bilingual:false,autoPack:false},route:async ctx => {
     await ctx.route('**/voices/areas.json', r => r.fulfill({json:{groups:Object.fromEntries(Object.entries(hashes).map(([g,hs])=>[g,hs.join(' ')])),size:{}}}));
+    // (r82, lighter loading) the game reads one voice list per language: the same tiny pack, served per language, so a
+    // language change loads this test's Vietnamese list rather than the real one
+    await ctx.route(/\/voices\/manifest-(en|vi|zh|hi)\.json$/, r => { const L = /manifest-(\w+)\.json$/.exec(r.request().url())[1];
+      r.fulfill({json:{version:999,made:'owner-wifi-language-switch',language:L,areas:true,cast:{[L]:['f']},voices:{},tpl:{},lines:Object.fromEntries(Object.entries(lines).filter(([h])=>langOf[h]===L))}}); });
     await ctx.route('**/voices/*/f/*_*.mp3', async r => {
       const file = new globalThis.URL(r.request().url()).pathname;
       got.push(file);
