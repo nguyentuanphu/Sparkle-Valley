@@ -628,8 +628,13 @@ await check('voice', async () => {
       const V = await import('/js/voice.js'), { FAMILY_PHRASES } = V; let rec = null; for (let i = 0; i < 60 && !V.voicePack(); i++) await new Promise(r => setTimeout(r, 250)); window.__svVoiceLog = (l, t, has) => { if (has && !rec) rec = t; };
       for (const ph of FAMILY_PHRASES) { V.sayIn('vi', ph.vi); if (rec) break; }
       if (!rec) return { none: true };
-      window.__speaks = 0; window.__plays = 0; window.__sources = 0; await V.sayAsync(rec, rec);
-      return { line: rec, speaks: window.__speaks, plays: window.__plays, sources: window.__sources, diag: V.voiceDiag };
+      // (17 Oct AEDT, flaky on GitHub) the running game may start a line of its own meanwhile (a welcome, a sticker),
+      // which rightly stops this one with nothing played: the game is paused, and a line cut off by another one (seen by
+      // the captions' listener) is said again, up to 3 times; the interruptions are reported
+      if (window.__sv) window.__sv.paused = true;
+      const others = []; V.spoken.push(t => others.push(t)); let cut = 0;
+      for (let k = 0; k < 3; k++) { others.length = 0; window.__speaks = 0; window.__plays = 0; window.__sources = 0; await V.sayAsync(rec, rec); if (!others.length) break; cut++; }
+      return { line: rec, speaks: window.__speaks, plays: window.__plays, sources: window.__sources, cut, diag: V.voiceDiag };
     });
     await P.ctx.close(); return r;
   };
@@ -801,9 +806,15 @@ await check('voicecover', async () => {
     const V = await import('/js/voice.js'), wait = ms => new Promise(r => setTimeout(r, ms));
     for (let k = 0; k < 60 && !V.voicePack(); k++) await wait(250);
     const res = {};
+    // (17 Oct AEDT, flaky on GitHub) a line of the running game's own (a welcome, a sticker) rightly stops this one part
+    // way: the game is paused, and a line cut off by another one (seen by the captions' listener) is said again, up to 3
+    // times; the interruptions are reported
+    if (window.__sv) window.__sv.paused = true;
+    const others = []; V.spoken.push(t => others.push(t));
     for (const [key, line] of [['number', 'You rolled 47! Count with me.'], ['name', 'Zorbly is here! Hold on and kick your legs: tap, tap, tap!']]) {
-      window.__speaks = 0; window.__srcs = 0; res[key] = { parts: V.lineParts('en', line) };
-      await V.sayAsync(line, line); res[key].speaks = window.__speaks; res[key].srcs = window.__srcs; res[key].diag = { ...V.voiceDiag }; // (why a part did not play, when it does not)
+      res[key] = { parts: V.lineParts('en', line), cut: 0 };
+      for (let k = 0; k < 3; k++) { others.length = 0; window.__speaks = 0; window.__srcs = 0; await V.sayAsync(line, line); if (!others.length) break; res[key].cut++; }
+      res[key].speaks = window.__speaks; res[key].srcs = window.__srcs; res[key].diag = { ...V.voiceDiag }; // (why a part did not play, when it does not)
     }
     return res;
   });
