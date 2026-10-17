@@ -283,7 +283,7 @@ async function gatherPhotos(sources, name, max) {
 //   local   computer-only helpers from studio.cjs: tts (Piper), settings, build, deploy, open, players, info
 /**
  * @typedef {{ tts?: Function, settings?: Function, build?: Function, deploy?: Function, open?: Function, players?: Function,
- *   info?: () => object, inbox?: Function, label?: (b: any) => Promise<any>, api?: Function, onlineVersion?: () => Promise<string>, testers?: (api: string, b: any) => Promise<any> }} LocalHelpers
+ *   info?: () => object, inbox?: Function, label?: (b: any) => Promise<any>, api?: Function, onlineVersion?: () => Promise<string>, testers?: (api: string, b: any) => Promise<any>, live?: (b: any) => Promise<any> }} LocalHelpers
  * @param {{ store: any, conf: any, online?: boolean, local?: LocalHelpers, family?: any }} opts
  */
 function createStudio({ store, conf, online = false, local = {}, family = null }) {
