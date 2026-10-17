@@ -1,50 +1,34 @@
-// @ts-check
 // Separate private collections. Device credentials are hashed; pairing needs approval on an existing device.
 import { randomBytes, createHash } from 'node:crypto';
 import { readFamilyBackup } from '../../js/family-backup.js';
-/**
- * @typedef {{ get(key: string, options?: { type: 'json' }): Promise<any>, setJSON(key: string, value: unknown): Promise<unknown>, delete(key: string): Promise<unknown>,
- *   list(options: { prefix: string, cursor?: string }): Promise<{ blobs: { key: string }[], cursor?: string }> }} Store  Netlify Blobs (or the tests' memory store)
- * @typedef {{ id: string, label: string, state: 'approved' | 'pending' | 'removed', at: number, pairKey?: string }} FamilyDevice
- * @typedef {{ id: string, recovery: string, at: number, devices: FamilyDevice[], photos: Record<string, { at: number }> }} Family
- * @typedef {{ family: string, device: string }} Session
- * @typedef {{ family: string, expires: number, claimed?: string }} Pairing
- * @typedef {Record<string, unknown>} Body  what the device sent: any field may be missing or of any kind
- */
-/** @returns {string} */
-const secret = () => randomBytes(24).toString('base64url');
-/** @param {unknown} text @returns {string} */
-const hash = text => createHash('sha256').update(String(text)).digest('hex');
-const ID = { test: /** @param {unknown} value @returns {value is string} */ value => typeof value === 'string' && /^[\p{L}\p{N} _.'-]{1,100}$/u.test(value) && !['__proto__','constructor','prototype'].includes(value) };
-/** @param {unknown} value */
-const text = value => String(value || '').trim().slice(0, 60);
-/** @param {unknown} code */
-const codeKey = code => 'pair/' + hash(String(code || '').toUpperCase().replace(/[^A-Z0-9]/g, ''));
-/** @param {number} status @param {string} message */
-const error = (status, message) => Object.assign(new Error(message), { status });
-/** @param {Store} S @param {string} action @param {Body} [body] @param {string} [credential] @param {number} [now] */
-export async function familyAction(S, action, body = {}, credential = '', now = Date.now()) {
-  /** @param {string} key */
-  const read = key => S.get(key, { type: 'json' });
-  /** @param {string} prefix @returns {Promise<any[]>} */
-  const records = async prefix => { /** @type {any[]} */ const out = []; /** @type {string | undefined} */ let cursor; do { const page = await S.list({ prefix, cursor }); for (const item of page.blobs) { const value = await read(item.key); if (value) out.push(value); } cursor = page.cursor; } while (cursor); return out; };
-  /** @param {string} id @returns {Promise<Family | null>} */
-  const loadFamily = async id => { const meta = await read('family/' + id); if (!meta) return null; const devices = await records('device/' + id + '/'), photos = await records('photo/' + id + '/'); return { ...meta, devices, photos: Object.fromEntries(photos.map(({ npc, ...photo }) => [npc, photo])) }; };
-  /** @param {string} id @param {string} npc */
-  const photoKey = (id, npc) => 'photo/' + id + '/' + hash(npc);
-  /** @param {string} id @param {string} npc */
-  const pictureKey = (id, npc) => 'picture/' + id + '/' + hash(npc);
-  /** @type {Session | null} */
-  const session = credential ? await read('session/' + hash(credential)) : null;
+// Netlify Blobs (or the tests' memory store)
+export type Store = { get(key: string, options?: { type: 'json' }): Promise<any>, setJSON(key: string, value: unknown): Promise<unknown>, delete(key: string): Promise<unknown>,
+  list(options: { prefix: string, cursor?: string }): Promise<{ blobs: { key: string }[], cursor?: string }> };
+export type FamilyDevice = { id: string, label: string, state: 'approved' | 'pending' | 'removed', at: number, pairKey?: string };
+export type Family = { id: string, recovery: string, at: number, devices: FamilyDevice[], photos: Record<string, { at: number }> };
+export type Session = { family: string, device: string };
+export type Pairing = { family: string, expires: number, claimed?: string };
+// what the device sent: any field may be missing or of any kind
+export type Body = Record<string, unknown>;
+const secret = (): string => randomBytes(24).toString('base64url');
+const hash = (text: unknown): string => createHash('sha256').update(String(text)).digest('hex');
+const ID = { test: (value: unknown): value is string => typeof value === 'string' && /^[\p{L}\p{N} _.'-]{1,100}$/u.test(value) && !['__proto__','constructor','prototype'].includes(value) };
+const text = (value: unknown) => String(value || '').trim().slice(0, 60);
+const codeKey = (code: unknown) => 'pair/' + hash(String(code || '').toUpperCase().replace(/[^A-Z0-9]/g, ''));
+const error = (status: number, message: string) => Object.assign(new Error(message), { status });
+export async function familyAction(S: Store, action: string, body: Body = {}, credential: string = '', now: number = Date.now()) {
+  const read = (key: string) => S.get(key, { type: 'json' });
+  const records = async (prefix: string): Promise<any[]> => { const out: any[] = []; let cursor: string | undefined; do { const page = await S.list({ prefix, cursor }); for (const item of page.blobs) { const value = await read(item.key); if (value) out.push(value); } cursor = page.cursor; } while (cursor); return out; };
+  const loadFamily = async (id: string): Promise<Family|null> => { const meta = await read('family/' + id); if (!meta) return null; const devices = await records('device/' + id + '/'), photos = await records('photo/' + id + '/'); return { ...meta, devices, photos: Object.fromEntries(photos.map(({ npc, ...photo }) => [npc, photo])) }; };
+  const photoKey = (id: string, npc: string) => 'photo/' + id + '/' + hash(npc);
+  const pictureKey = (id: string, npc: string) => 'picture/' + id + '/' + hash(npc);
+  const session: Session|null = credential ? await read('session/' + hash(credential)) : null;
   let family = session ? await loadFamily(session.family) : null;
   const device = family?.devices.find(d => d.id === session?.device);
   const approved = !!(device && device.state === 'approved');
-  /** @returns {Family} */
-  const requireFamily = () => { if (!approved || !family) throw error(403, 'device not approved'); return family; };
-  /** @param {Family} family */
-  const save = family => S.setJSON('family/' + family.id, { id: family.id, recovery: family.recovery, at: family.at });
-  /** @param {string} fid @param {unknown} label @param {FamilyDevice['state']} state @returns {Promise<{ token: string, device: FamilyDevice }>} */
-  const newDevice = async (fid, label, state) => { const token = secret(), id = secret(); await S.setJSON('session/' + hash(token), { family: fid, device: id }); const device = { id, label: text(label) || 'Family device', state, at: now }; await S.setJSON('device/' + fid + '/' + id, device); return { token, device }; };
+  const requireFamily = (): Family => { if (!approved || !family) throw error(403, 'device not approved'); return family; };
+  const save = (family: Family) => S.setJSON('family/' + family.id, { id: family.id, recovery: family.recovery, at: family.at });
+  const newDevice = async (fid: string, label: unknown, state: FamilyDevice['state']): Promise<{ token: string; device: FamilyDevice; }> => { const token = secret(), id = secret(); await S.setJSON('session/' + hash(token), { family: fid, device: id }); const device = { id, label: text(label) || 'Family device', state, at: now }; await S.setJSON('device/' + fid + '/' + id, device); return { token, device }; };
   if (action === 'create') {
     if (body.recovery) throw error(400, 'use recover');
     const id = secret(), recovery = secret(), d = await newDevice(id, body.label, 'approved');

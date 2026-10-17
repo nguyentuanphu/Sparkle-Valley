@@ -5108,12 +5108,14 @@ await check('chests', async () => {
 
 await check('types', async () => {
   // type checking (owner, round 30): the files that start with // @ts-check are checked against their JSDoc types
-  // (js/state.js, js/netmsg.js, studio/core.cts; tests/tsconfig.json lists them). Needs: cd tests && npm install
+  // (js/state.js, js/netmsg.js; tests/tsconfig.json lists them), then the .mts and .cts files (tests/tsconfig.server.json). Needs: cd tests && npm install
   const { execFileSync } = await import('child_process'), tsc = 'node_modules/.bin/tsc';
   if (!fs.existsSync(tsc)) return 'skipped (run npm install in tests)';
   try { execFileSync(tsc, ['-p', '.'], { encoding: 'utf8' }); execFileSync(tsc, ['-p','tsconfig-contracts.json'], {encoding:'utf8'}); } catch (e) { ok(false, ((e.stdout || '') + '').split('\n').slice(0, 8).join(' | ')); }
-  const n = JSON.parse(fs.readFileSync('tsconfig.json', 'utf8')).files.length;
-  return `${n} explicit files type-checked; detector/outbox/family-backup modules additionally strict-checked; no errors`;
+  // (owner, 16-17 Oct AEDT: TypeScript batches 1 and 2) the website's server pieces, the Studio engine and the tools, as Node runs them
+  let server = ''; try { server = execFileSync(tsc, ['-p', 'tsconfig.server.json', '--listFilesOnly'], { encoding: 'utf8' }); execFileSync(tsc, ['-p', 'tsconfig.server.json'], { encoding: 'utf8' }); } catch (e) { ok(false, 'tsconfig.server.json: ' + ((e.stdout || '') + '').split('\n').slice(0, 8).join(' | ')); }
+  const n = JSON.parse(fs.readFileSync('tsconfig.json', 'utf8')).files.length, ts = server.split('\n').filter(f => /\.(mts|cts)$/.test(f) && !f.includes('node_modules')).length;
+  return `${n} explicit files type-checked; detector/outbox/family-backup modules additionally strict-checked; ${ts} TypeScript files of the server, Studio and tools; no errors`;
 });
 
 await check('perf', async () => {

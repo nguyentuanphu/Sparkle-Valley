@@ -25,7 +25,26 @@
 import { createHash } from 'crypto';
 // what a device sends is checked in netlify/lib/hello-clean.mts (type-checked); the store below keeps only that
 import { ID, WORD, NAME, LINES, day, int, obj, counts, words, bat, batAdd, clean } from './hello-clean.mts';
+import type { KidDay, Start } from './hello-clean.mts';
 export { LINES, clean };
+
+// what is kept: a device's "still here" (live/<id>), a device on a day (d/<day>/<id>), a finished day added up (sum/<day>)
+type Session = { on: boolean, at: number, build: string };
+type DayRecord = { hellos: number, isNew?: boolean, mins: number, kids: number, tales: number, online: number, app?: boolean, lang: string, kind: string,
+  build: string, builds?: Record<string, boolean>, games: Counts, hours?: Counts, children?: Record<string, KidDay>, errs?: Counts, stuck?: Counts, quits?: Counts,
+  fps?: number[], starts?: Start[], bat?: number[] };
+// a line devices had to say with the machine voice (line/<hash>)
+type LineRecord = { lang: string, text: string, n: number, first: string, last?: string };
+type LiveRecord = { on: boolean, at: number, kid?: string, sessions?: Record<string, Session> };
+type Counts = Record<string, number>;
+type DevDay = { mins: number, tales: number, games: Counts, hours: Counts, kids: Record<string, KidDay>, errs: Counts, stuck: Counts, quits: Counts,
+  fps: number[], starts: Start[], bat: number[] };
+type DaySum = { date: string, ids: string[], newDevices: number, mins: number, games: Counts, langs: Counts, builds: Counts, kinds: Counts,
+  app: number, kids: number, tales: number, online: number, dev: Record<string, DevDay> };
+// one device and one child over the 30 days of the report
+type Kid = { key: string, name: string, age: string, mins: number, simpleMins: number, tales: number, games: Record<string, number[]>, places: Counts };
+type Dev = { id: string, mins: number, days: number, tales: number, kids: Record<string, Kid>, errs: number, stuck: number, fps: number[], last?: string,
+  bat?: number[], starts?: Start[] };
 
 // a place name from the connection (Netlify's geo), cleaned
 const place = s => String(s || '').normalize('NFC').replace(/[^\p{L}\p{N} .'-]/gu, '').slice(0, 40);
@@ -35,7 +54,7 @@ const place = s => String(s || '').normalize('NFC').replace(/[^\p{L}\p{N} .'-]/g
 export async function live(S, b, now = Date.now()) {
   if (!b || !ID.test(b.id || '')) return false;
   const kid = NAME.test(String(b.kid || '')) ? String(b.kid || '').trim() : '';
-  const key='live/'+b.id,old=await S.get(key,{type:'json'})||{},sessions=old.sessions||{};
+  const key='live/'+b.id,old=await S.get(key,{type:'json'})||{},sessions: Record<string, Session>=old.sessions||{};
   const sid=/^[a-z0-9]{16}$/.test(b.sid||'')?b.sid:'legacy';
   sessions[sid]={on:!!b.live,at:now,build:/^r\d{1,4}$/.test(b.b||'')?b.b:'?'};
   const kept=Object.fromEntries(Object.entries(sessions).filter(([,s])=>now-s.at<LIVE_MS).sort((a,b)=>b[1].at-a[1].at).slice(0,16));
@@ -44,7 +63,7 @@ export async function live(S, b, now = Date.now()) {
 }
 export const LIVE_MS = 5 * 60e3; // no "still here" for five minutes: offline (the phone died, or lost the internet)
 // opts.ip: a keyed hash of the connection (netlify/lib/guard.mts), only to count its lines per day
-export async function hello(S, body, now = Date.now(), where = {}, opts = {}) {
+export async function hello(S, body, now = Date.now(), where: { city?: string, region?: string, country?: string } = {}, opts: { ip?: string } = {}) {
   if (body && body.live != null) return live(S, body, now);
   const d = clean(body, now); if (!d) return false;
   const today = day(now);
@@ -101,16 +120,16 @@ async function addLines(S, id, ip, lines, today) {
   if (took) { await S.set(kd, String(nd)); await S.set(ki, String(ni)); await S.set(kn, String(nn)); }
 }
 
-const add = (o, k, n = 1) => { o[k] = (o[k] || 0) + n; };
+const add = (o: Counts, k: string, n = 1) => { o[k] = (o[k] || 0) + n; };
 // (14 Oct AEDT: Studio's Analytics page timed out with 504) the store is read many at a time, never one by one: each
 // read takes tens of ms, and the page has 10 s in all
 const POOL = 16;
-async function each(list, fn, n = POOL) { const out = new Array(list.length); let i = 0; await Promise.all(Array.from({ length: Math.min(n, list.length) }, async () => { while (i < list.length) { const k = i++; out[k] = await fn(list[k], k); } })); return out; }
+async function each<T, R>(list: T[], fn: (x: T, i: number) => Promise<R>, n = POOL): Promise<R[]> { const out = new Array(list.length); let i = 0; await Promise.all(Array.from({ length: Math.min(n, list.length) }, async () => { while (i < list.length) { const k = i++; out[k] = await fn(list[k], k); } })); return out; }
 async function listAll(S, prefix) { const all = []; let cursor; do { const r = await S.list({ prefix, ...(cursor ? { cursor } : {}) }); all.push(...r.blobs); cursor = r.cursor; } while (cursor); return all; }
-async function sumDay(S, date, keep) {
+async function sumDay(S, date: string, keep: boolean): Promise<DaySum> {
   const saved = await S.get('sum/' + date, { type: 'json' }); if (saved) return saved;
-  const blobs = await listAll(S, `d/${date}/`), s = { date, ids: [], newDevices: 0, mins: 0, games: {}, langs: {}, builds: {}, kinds: {}, app: 0, kids: 0, tales: 0, online: 0, dev: {} };
-  const recs = await each(blobs, b => S.get(b.key, { type: 'json' }));
+  const blobs = await listAll(S, `d/${date}/`), s: DaySum = { date, ids: [], newDevices: 0, mins: 0, games: {}, langs: {}, builds: {}, kinds: {}, app: 0, kids: 0, tales: 0, online: 0, dev: {} };
+  const recs = await each(blobs, (b): Promise<DayRecord | null> => S.get(b.key, { type: 'json' }));
   for (const [i, b] of blobs.entries()) {
     const r = recs[i]; if (!r) continue;
     s.ids.push(b.key.split('/')[2]); if (r.isNew) s.newDevices++; s.mins += r.mins; s.kids += r.kids; s.tales += r.tales; s.online += r.online || 0; if (r.app) s.app++;
@@ -130,8 +149,8 @@ export async function report(S, now = Date.now()) {
   const countAll = async () => { let n = 0, cursor; do { const r = await S.list({ prefix: 'dev/', ...(cursor ? { cursor } : {}) }); n += r.blobs.length; cursor = r.cursor; } while (cursor); return n; };
   const [sums, allTime] = await Promise.all([each(days, (d, i) => sumDay(S, d, i < days.length - 1), 6), countAll()]);
   const uniq = list => new Set(list.flatMap(s => s.ids)).size, last = n => sums.slice(-n);
-  const total = (list, f) => { const o = {}; for (const s of list) for (const [k, v] of Object.entries(s[f])) add(o, k, v); return o; };
-  const top = (o, n) => Object.entries(o).sort((a, b) => b[1] - a[1]).slice(0, n);
+  const total = (list: DaySum[], f: 'games' | 'langs' | 'builds' | 'kinds') => { const o: Counts = {}; for (const s of list) for (const [k, v] of Object.entries(s[f])) add(o, k, v); return o; };
+  const top = (o: Counts, n: number) => Object.entries(o).sort((a, b) => b[1] - a[1]).slice(0, n);
   await tidy(S, now);
   const t = sums[sums.length - 1], w = last(7), deviceDays = sums.reduce((a, s) => a + s.ids.length, 0);
   const detail = await details(S, sums, now);
@@ -165,12 +184,12 @@ function report0(now, sums, t, w, deviceDays, allTime, uniq, total, top, detail)
 }
 
 // round L: the last 30 days per device and per child, when they play, where from, what went wrong, and suggestions
-async function details(S, sums, now) {
+async function details(S, sums: DaySum[], now: number) {
   const infos = {}, labels = {};
-  const lives = {};
+  const lives: Record<string, LiveRecord> = {};
   await Promise.all(['info/', 'label/', 'live/'].map(async pre => { const blobs = (await listAll(S, pre)).slice(0, 2000);
     await each(blobs, async b => { const id = b.key.slice(pre.length); if (pre === 'info/') infos[id] = await S.get(b.key, { type: 'json' }); else if (pre === 'live/') lives[id] = await S.get(b.key, { type: 'json' }); else labels[id] = await S.get(b.key); }); }));
-  const hours = Array(24).fill(0), places = {}, errs = {}, stuck = {}, quits = {}, starts = {}, devs = {};
+  const hours = Array(24).fill(0), places: Counts = {}, errs: Record<string, { n: number, devices: Set<string> }> = {}, stuck: Counts = {}, quits: Counts = {}, starts: Counts = {}, devs: Record<string, Dev> = {};
   for (const s of sums) for (const [id, x] of Object.entries(s.dev || {})) {
     const D = devs[id] = devs[id] || { id, mins: 0, days: 0, tales: 0, kids: {}, errs: 0, stuck: 0, fps: [0, 0, 0], last: s.date };
     D.mins += x.mins; D.days++; D.tales += x.tales; D.last = s.date; D.fps = D.fps.map((v, i) => v + ((x.fps || [])[i] || 0));
@@ -188,7 +207,7 @@ async function details(S, sums, now) {
       for (const [pl, n] of Object.entries(c.p || {})) { add(K.places, pl, n); add(places, pl, n); }
     }
   }
-  const top = (o, n) => Object.entries(o).sort((a, b) => b[1] - a[1]).slice(0, n);
+  const top = (o: Counts, n: number) => Object.entries(o).sort((a, b) => b[1] - a[1]).slice(0, n);
   const fpsOf = f => f[1] ? Math.round(f[0] / f[1]) : null;
   // (#36) a device's usual start-up: medians in seconds of the time to a built valley and to its first picture, for starts
   // from the device's saved copy (warm) and the others (first visits and updates), and its most common slowest step
@@ -203,17 +222,17 @@ async function details(S, sums, now) {
   const r1 = v => Math.round(v * 10) / 10;
   const powerOf = b => !b || !b[0] ? null : { fps: b[9] ? Math.round(b[1] / b[9]) : null, frameMs: b[1] ? r1(b[2] / b[1]) : null, draws: b[1] ? Math.round(b[3] / b[1]) : null,
     ratio: Math.round(b[4] / b[0]) / 100, mins: b[0], batteryPerHour: b[6] >= 10 ? r1(b[7] / 10 / b[6] * 60) : null, charging: b[8] > b[6], idlePct: Math.round(100 * b[5] / b[0]) };
-  const devices = Object.keys({ ...infos, ...devs, ...lives }).map(id => { const I = infos[id] || {}, D = devs[id] || { mins: 0, days: 0, tales: 0, kids: {}, errs: 0, stuck: 0, fps: [0, 0, 0] };
+  const devices = Object.keys({ ...infos, ...devs, ...lives }).map(id => { const I = infos[id] || {}, D: Omit<Dev, 'id'> = devs[id] || { mins: 0, days: 0, tales: 0, kids: {}, errs: 0, stuck: 0, fps: [0, 0, 0] };
     return { id, label: labels[id] || '', kind: I.kind || '?', os: I.os || '?', br: I.br || '?', screen: I.sc || '', app: !!I.app, build: I.build || '?', lang: I.lang || '?', loc: I.loc || null, first: I.first || '', last: I.last || D.last || '',
       online: !!(lives[id] && lives[id].on && now - lives[id].at < LIVE_MS), activeVersions:[...new Set(Object.values(lives[id]?.sessions||{}).filter(s=>s.on&&now-s.at<LIVE_MS).map(s=>s.build))],seenAt: lives[id] ? new Date(lives[id].at).toISOString() : '', playingNow: lives[id] && lives[id].on && now - lives[id].at < LIVE_MS ? lives[id].kid || '' : '',
       mins: D.mins, days: D.days, tales: D.tales, errors: D.errs, stuck: D.stuck, fps: fpsOf(D.fps), slowMins: D.fps[2], startup: startupOf(D.starts || []), power: powerOf(D.bat),
       kids: Object.values(D.kids).sort((a, b) => b.mins - a.mins).map(K => ({ ...K, games: Object.entries(K.games).sort((a, b) => b[1][0] - a[1][0]).slice(0, 10).map(([g, v]) => [g, ...v]), places: top(K.places, 8) })) }; })
-    .sort((a, b) => b.online - a.online || (b.last || '').localeCompare(a.last || '') || b.mins - a.mins);
+    .sort((a, b) => +b.online - +a.online || (b.last || '').localeCompare(a.last || '') || b.mins - a.mins);
   const count = f => { const o = {}; for (const d of devices) if (d.days) add(o, f(d)); return o; };
   const problems = {
     errors: Object.entries(errs).sort((a, b) => b[1].n - a[1].n).slice(0, 15).map(([k, e]) => [k, e.n, e.devices.size]),
     stuck: top(stuck, 15),
-    quits: Object.entries(quits).map(([g, n]) => [g, n, starts[g] || n, Math.round(100 * n / Math.max(n, starts[g] || n))]).sort((a, b) => b[1] - a[1]).slice(0, 12),
+    quits: Object.entries(quits).map(([g, n]): [string, number, number, number] => [g, n, starts[g] || n, Math.round(100 * n / Math.max(n, starts[g] || n))]).sort((a, b) => b[1] - a[1]).slice(0, 12),
     slow: devices.filter(d => d.fps != null && d.fps < 25).map(d => [d.id, d.label, d.fps, d.slowMins])
   };
   // things worth doing: Studio words them (with the games' and places' own names), most useful first
@@ -241,6 +260,6 @@ export async function setLabel(S, id, label) { if (!ID.test(id || '')) return fa
 
 // the missing lines inbox, most asked-for first
 export async function inbox(S) {
-  const blobs = (await listAll(S, 'line/')).slice(0, 2000), out = (await each(blobs, b => S.get(b.key, { type: 'json' }))).filter(Boolean);
+  const blobs = (await listAll(S, 'line/')).slice(0, 2000), out = (await each(blobs, (b): Promise<LineRecord | null> => S.get(b.key, { type: 'json' }))).filter(Boolean);
   return out.sort((a, b) => b.n - a.n).slice(0, 600);
 }

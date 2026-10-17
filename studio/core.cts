@@ -1,4 +1,3 @@
-// @ts-check
 // Sparkle Studio's engine: the work behind every page (content, faces, ads, voices, photos, publishing, the website,
 // the health check, players). It is the same program in both places the Studio runs:
 //   · the exe on the family's computer (studio.cts): files in the game folder, keys in %APPDATA%\SparkleStudio
@@ -36,17 +35,19 @@ function folderStore(root) {
 // Publish). Only the family's own files can be written: content/, voices/, photos/, tools/voice-extra.json.
 const FAMILY = rel => /^(content|voices|photos)\//.test(rel) || rel === 'tools/voice-extra.json';
 // (tests point the exe at a pretend GitHub with STUDIO_GITHUB_API; it is never set for families)
+// what the Studio sends to GitHub or Netlify
+type Ask = { method?: string, body?: string };
 const GH_API = (typeof process !== 'undefined' && process.env && process.env.STUDIO_GITHUB_API) || 'https://api.github.com';
 function ghApi(token) {
   // (owner, 12 Oct: real photos would not publish, "error 504") GitHub sometimes answers 502, 503 or 504 when it is busy:
   // such a request is tried twice more after a short wait before it counts as an error
-  return async (p, opt = {}) => {
+  return async (p: string, opt: Ask = {}) => {
     for (let a = 0; ; a++) {
       let r; try { r = await fetch(GH_API + p, { ...opt, headers: { Authorization: 'Bearer ' + token, Accept: 'application/vnd.github+json', 'User-Agent': 'sparkle-studio', 'X-GitHub-Api-Version': '2022-11-28', ...(opt.body ? { 'Content-Type': 'application/json' } : {}) } }); }
       catch (e) { if (a < 2) { await new Promise(res => setTimeout(res, 700 * (a + 1))); continue; } throw e; }
       if ([502, 503, 504].includes(r.status) && a < 2) { await r.text().catch(() => ''); await new Promise(res => setTimeout(res, 700 * (a + 1))); continue; }
-      const t = await r.text(); /** @type {any} */ let j = {}; try { j = JSON.parse(t); } catch (e) { }
-      if (!r.ok) { const e = /** @type {Error & { status?: number }} */ (new Error(`GitHub ${r.status}: ${(j.message || t).slice(0, 160)}`)); e.status = r.status; throw e; }
+      const t = await r.text(); let j: any = {}; try { j = JSON.parse(t); } catch (e) { }
+      if (!r.ok) { const e: Error & { status?: number } = new Error(`GitHub ${r.status}: ${(j.message || t).slice(0, 160)}`); e.status = r.status; throw e; }
       return j;
     }
   };
@@ -197,7 +198,7 @@ const PHOTO_HOST = /^https:\/\/((upload|thumb)\.wikimedia\.org|live\.staticflick
 // a Wikimedia photo is linked at thumb.wikimedia.org (Wikimedia's own address for its copies; upload.wikimedia.org refuses
 // more), at the largest of its standard sizes up to 1280 px that fits the original (any other size is refused when
 // linked, https://www.mediawiki.org/wiki/Common_thumbnail_sizes), without the ?utm_… it adds
-const wmSized = (/** @type {string} */ url, /** @type {number} */ width) => {
+const wmSized = (url: string, width: number) => {
   if (!/^https:\/\/(upload|thumb)\.wikimedia\.org\//.test(url)) return url;
   const u = url.split('?')[0].replace(/^https:\/\/upload\./, 'https://thumb.'), m = /^https:\/\/thumb\.wikimedia\.org\/wikipedia\/commons\/([0-9a-f])\/([0-9a-f]{2})\/([^/]+\.(?:jpe?g|png))$/i.exec(u);
   if (!m) return u; const step = [1280, 960, 500, 330, 250].find(x => x <= (width || 1280)) || 250;
@@ -220,10 +221,12 @@ const LOCALE = { en: 'en-AU', vi: 'vi-VN', zh: 'zh-CN', hi: 'hi-IN' };
 //            %APPDATA%\SparkleStudio\family-photos (the game run from the exe reads them there); never in the game folder
 // family = { where: 'site' | 'computer', put(name, buf), get(name), remove(name), code(), newCode() } (from studio.cts / studio.mts)
 const FAMREF = /^family:([\w-]{24,64})$/, FAMNAME = /^[\w-]{24,64}$/, OLDFAM = /^content\/(faces|album)\/[\w.-]+$/;
+// the content pack (content/custom.json) as far as this file looks inside it; the rest is the pages' own
+type Content = { faces?: Record<string, { photo?: string } | null>, album?: ({ photo?: string } | null)[], [section: string]: unknown };
 const familyName = () => crypto.randomBytes(18).toString('base64url'); // 24 letters, nobody can guess one
 const isJpeg = b => b && b.length > 3 && b[0] === 0xff && b[1] === 0xd8;
 // every family photo the content pack names
-function familyRefs(c) {
+function familyRefs(c: Content) {
   const out = new Set(), add = p => { const m = FAMREF.exec(String(p || '')); if (m) out.add(m[1]); };
   for (const f of Object.values((c && c.faces) || {})) add(f && f.photo);
   for (const x of Array.isArray(c && c.album) ? c.album : []) add(x && x.photo);
@@ -236,6 +239,10 @@ function familyRefs(c) {
 //   · Openverse (openverse.org): Creative Commons photos from Flickr, museums and other open collections
 // Every candidate is scored (the article's own lead picture first, then big, landscape, named after the place) and
 // the best are taken from the different sources, so the children see the place from several angles.
+// a picture found for a landmark, and Wikimedia Commons' answer about one
+type Found = { url: string, width?: number, height?: number, caption: string, credit: string, from: string, title: string, lead?: boolean };
+type CommonsPage = { title: string, imageinfo?: { url: string, thumburl?: string, width: number, height: number, extmetadata?: Record<string, { value: string }> }[] };
+type CommonsAnswer = { query?: { pages?: Record<string, CommonsPage> } };
 const UA = { 'User-Agent': 'SparkleStudio/1.0 (family game dashboard)', accept: 'application/json' };
 const BADPIC = /\.(svg|gif|tif|tiff|webm|ogv|ogg|oga|wav|mp3|pdf)$|logo|flag of|map|locator|coat of arms|seal of|icon|diagram|signature|plan of|chart/i;
 async function bestPhotos(sources, max) {
@@ -261,14 +268,14 @@ async function bestPhotos(sources, max) {
 }
 async function commonsInfo(file) {
   const r = await fetch(`https://commons.wikimedia.org/w/api.php?action=query&format=json&prop=imageinfo&iiprop=url|extmetadata|size&iiurlwidth=1280&titles=${encodeURIComponent(file)}`, { headers: UA });
-  const j = await r.json(), pg = Object.values((j.query || {}).pages || {})[0], ii = pg && pg.imageinfo && pg.imageinfo[0]; if (!ii) return null;
+  const j: CommonsAnswer = await r.json(), pg = Object.values(j.query?.pages || {})[0], ii = pg && pg.imageinfo && pg.imageinfo[0]; if (!ii) return null;
   const md = ii.extmetadata || {};
   return { url: ii.thumburl || ii.url, width: ii.width, credit: [strip(md.Artist && md.Artist.value).slice(0, 80), strip(md.LicenseShortName && md.LicenseShortName.value)].filter(Boolean).join(' · ') };
 }
 async function commonsSearch(name, n = 8) {
   const r = await fetch(`https://commons.wikimedia.org/w/api.php?action=query&format=json&generator=search&gsrnamespace=6&gsrlimit=${n}&gsrsearch=${encodeURIComponent(name + ' filetype:bitmap')}&prop=imageinfo&iiprop=url|extmetadata|size&iiurlwidth=1280`, { headers: UA });
-  if (!r.ok) return []; const j = await r.json();
-  return Object.values((j.query || {}).pages || {}).map(pg => { const ii = pg.imageinfo && pg.imageinfo[0]; if (!ii || BADPIC.test(pg.title)) return null; const md = ii.extmetadata || {};
+  if (!r.ok) return []; const j: CommonsAnswer = await r.json();
+  return Object.values(j.query?.pages || {}).map(pg => { const ii = pg.imageinfo && pg.imageinfo[0]; if (!ii || BADPIC.test(pg.title)) return null; const md = ii.extmetadata || {};
     return { url: ii.thumburl || ii.url, width: ii.width, height: ii.height, caption: strip(md.ImageDescription && md.ImageDescription.value || pg.title.replace(/^File:|\.\w+$/g, '')), credit: [strip(md.Artist && md.Artist.value).slice(0, 80), strip(md.LicenseShortName && md.LicenseShortName.value)].filter(Boolean).join(' · '), from: 'Wikimedia Commons', title: pg.title }; }).filter(Boolean);
 }
 async function openverse(name, n = 8) {
@@ -277,13 +284,13 @@ async function openverse(name, n = 8) {
   return (j.results || []).filter(x => x.url && /^https:/.test(x.url)).map(x => ({ url: x.url, width: x.width, height: x.height, caption: strip(x.title || ''), credit: [x.creator, (x.license || '').toUpperCase() + ' ' + (x.license_version || '')].filter(Boolean).join(' · ').trim(), from: x.source || 'Openverse', title: x.title || '' }));
 }
 async function gatherPhotos(sources, name, max) {
-  const cands = [];
+  const cands: Found[] = [];
   try { for (const p of await bestPhotos(sources, max + 2)) { const info = await commonsInfo(p.file); if (info) cands.push({ url: info.url, width: info.width, caption: p.caption, credit: info.credit, from: 'Wikipedia', title: p.file, lead: cands.length === 0 }); } } catch (e) { }
   const q = name || (sources[0] || '').split(':').slice(1).join(':');
   if (q) { try { cands.push(...await commonsSearch(q)); } catch (e) { } try { cands.push(...await openverse(q)); } catch (e) { } }
   const words = String(q).toLowerCase().split(/\s+/).filter(w => w.length > 2);
   const score = c => (c.lead ? 100 : 0) + Math.min(30, (c.width || 0) / 60) + (c.width && c.height && c.width > c.height ? 10 : 0) + words.filter(w => (c.title + ' ' + c.caption).toLowerCase().includes(w)).length * 8 - ((c.width || 0) && c.width < 500 ? 100 : 0);
-  const seen = new Set(), bySrc = {};
+  const seen = new Set(), bySrc: Record<string, Found[]> = {};
   cands.filter(c => !seen.has(c.url) && seen.add(c.url)).sort((a, b) => score(b) - score(a)).forEach(c => (bySrc[c.from] = bySrc[c.from] || []).push(c));
   const out = [], lists = Object.values(bySrc); while (out.length < max && lists.some(l => l.length)) for (const l of lists) if (l.length && out.length < max) out.push(l.shift()); // take turns between sources
   return out;
@@ -294,29 +301,26 @@ async function gatherPhotos(sources, name, max) {
 //   conf    keys and names: azureKey, azureRegion, netlifyToken, netlifySite, githubToken, githubRepo, githubBranch, …
 //   online  true on the website (computer-only things are switched off there)
 //   local   computer-only helpers from studio.cts: tts (Piper), settings, build, deploy, open, players, info
-/**
- * @typedef {{ tts?: Function, settings?: Function, build?: Function, deploy?: Function, open?: Function, players?: Function,
- *   info?: () => object, inbox?: Function, label?: (b: any) => Promise<any>, api?: Function, onlineVersion?: () => Promise<string>, testers?: (api: string, b: any) => Promise<any>, live?: (b: any) => Promise<any> }} LocalHelpers
- * @param {{ store: any, conf: any, online?: boolean, local?: LocalHelpers, family?: any }} opts
- */
-function createStudio({ store, conf, online = false, local = {}, family = null }) {
+type LocalHelpers = { tts?: Function, settings?: Function, build?: Function, deploy?: Function, open?: Function, players?: Function,
+  info?: () => object, inbox?: Function, label?: (b: any) => Promise<any>, api?: Function, onlineVersion?: () => Promise<string>, testers?: (api: string, b: any) => Promise<any>, live?: (b: any) => Promise<any> };
+function createStudio({ store, conf, online = false, local = {}, family = null }: { store: any, conf: any, online?: boolean, local?: LocalHelpers, family?: any }) {
   const S = store;
   const readJSON = async (rel, def) => { const b = await S.read(rel); if (!b) return def; try { return JSON.parse(b.toString('utf8')); } catch (e) { return def; } };
   const writeJSON = (rel, o, pretty = 1) => S.write(rel, Buffer.from(JSON.stringify(o, null, pretty)));
-  const readContent = () => readJSON('content/custom.json', {});
+  const readContent = (): Promise<Content> => readJSON('content/custom.json', {});
   async function writeContent(obj) {
     const old = await S.read('content/custom.json');
     if (old && S.backup) await S.write('content/old/custom-' + new Date().toISOString().replace(/[:.]/g, '-') + '.json', old);
     await writeJSON('content/custom.json', obj);
   }
   async function voicesHave() {
-    const out = {};
+    const out: Record<string, Record<string, string[]>> = {};
     for (const [L, slots] of Object.entries(CAST)) { out[L] = {}; for (const s of slots) out[L][s] = (await S.list(`voices/${L}/${s}`)).filter(f => f.endsWith('.mp3')).map(f => f.slice(0, -4)); }
     return out;
   }
   // how many recordings, from the pack's own list (one small file, not every folder: round K, the online Studio was slow)
-  async function voiceCount() { const m = await readJSON('voices/manifest.json', null); if (m && m.lines && typeof m.lines === 'object') return Object.values(m.lines).reduce((a, v) => a + String(v).length, 0); return countVoices(await voicesHave()); }
-  const countVoices = h => Object.values(h).reduce((a, s) => a + Object.values(s).reduce((b, l) => b + l.length, 0), 0);
+  async function voiceCount() { const m = await readJSON('voices/manifest.json', null); if (m && m.lines && typeof m.lines === 'object') return Object.values(m.lines).reduce((a: number, v) => a + String(v).length, 0); return countVoices(await voicesHave()); }
+  const countVoices = (h: Record<string, Record<string, string[]>>) => Object.values(h).reduce((a, s) => a + Object.values(s).reduce((b, l) => b + l.length, 0), 0);
   async function addToManifest(lang, slot, hash) {
     const m = await readJSON('voices/manifest.json', { version: 2, engine: 'mixed', cast: CAST, voices: {}, lines: {}, langOf: {} });
     m.lines = m.lines || {}; if (!m.other) m.langOf = m.langOf || {}; m.cast = m.cast || CAST; m.voices = m.voices || {};
@@ -400,14 +404,14 @@ function createStudio({ store, conf, online = false, local = {}, family = null }
   let draftSeen = null; // (the exe asks GitHub whether a draft waits at most every 30 s)
   async function publishDraft(J, message) { J.msg = 'Publishing the draft…'; const r = await ghStore().publish(message); J.done = J.total = r.changed; draftSeen = null; return r; }
   // ---------- the website: Netlify deploys and GitHub changes, to see and manage from the dashboard ----------
-  async function nf(p, opt = {}) {
+  async function nf(p: string, opt: Ask = {}) {
     const r = await fetch('https://api.netlify.com/api/v1' + p, { ...opt, headers: { Authorization: 'Bearer ' + conf.netlifyToken, 'User-Agent': 'sparkle-studio', ...(opt.body ? { 'Content-Type': 'application/json' } : {}) } });
-    const t = await r.text(); /** @type {any} */ let j = {}; try { j = JSON.parse(t); } catch (e) { }
+    const t = await r.text(); let j: any = {}; try { j = JSON.parse(t); } catch (e) { }
     if (!r.ok) throw new Error(`Netlify ${r.status}: ${(j.message || t).slice(0, 160)}`);
     return j;
   }
   async function siteStatus() {
-    const out = {};
+    const out: { netlify?: object, netlifyError?: string, github?: object, githubError?: string } = {};
     if (conf.netlifyToken && conf.netlifySite) {
       try {
         const site = await nf(`/sites/${encodeURIComponent(conf.netlifySite)}`), deps = await nf(`/sites/${encodeURIComponent(conf.netlifySite)}/deploys?per_page=10`);
@@ -589,4 +593,9 @@ const makeToken = (pw, days = 30) => { const exp = Date.now() + days * 864e5, si
 const checkToken = (pw, t) => { if (!pw || !t) return false; const [exp, sig] = String(t).split('.'); if (!(+exp > Date.now())) return false; const want = crypto.createHmac('sha256', tokenKey(pw)).update(String(exp)).digest('base64url'); return sig && sig.length === want.length && crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(want)); };
 const samePassword = (pw, given) => { if (!pw || typeof given !== 'string') return false; const a = crypto.createHash('sha256').update(pw).digest(), b = crypto.createHash('sha256').update(given).digest(); return crypto.timingSafeEqual(a, b); };
 
-module.exports = { createStudio, folderStore, githubStore, ghApi, STUDIO_VERSION, MIME, mimeOf, slug, CAST, makeToken, checkToken, samePassword, FAMILY, FAMREF, FAMNAME, familyRefs };
+const engine = { createStudio, folderStore, githubStore, ghApi, STUDIO_VERSION, MIME, mimeOf, slug, CAST, makeToken, checkToken, samePassword, FAMILY, FAMREF, FAMNAME, familyRefs };
+module.exports = engine;
+// TypeScript cannot see module.exports across files (the only syntax that could, import = require, is not a type note),
+// and an "export" would make esbuild treat this file as a module (the exe and the website bundle it): the engine's shape
+// is given a name for every file instead, for studio.cts and netlify/functions/studio.mts
+declare global { type StudioEngine = typeof engine; }

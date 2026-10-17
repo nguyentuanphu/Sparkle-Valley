@@ -56,7 +56,7 @@ export async function list(S) {
 }
 export async function get(S, name) { name = cleanName(name); return NAME.test(name) ? S.get(key(name), { type: 'json' }) : null; }
 // add someone, or give them a new password and/or role
-export async function put(S, { name, password, role, perms }, by) {
+export async function put(S, { name, password, role, perms }: { name: string, password?: string, role: string, perms?: string[] }, by) {
   name = cleanName(name);
   if (!NAME.test(name)) return { error: 'A sign-in name has 2–60 letters, numbers or . _ @ + - (no spaces).' };
   if (!ROLES.includes(role)) role = 'viewer';

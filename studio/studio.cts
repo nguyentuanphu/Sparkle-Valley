@@ -13,14 +13,18 @@
 'use strict';
 const http = require('http'), fs = require('fs'), path = require('path'), os = require('os'), zlib = require('zlib'), vm = require('vm'), { spawn, execFile } = require('child_process');
 
-const { createStudio, folderStore, MIME } = require('./core.cts');
+const { createStudio, folderStore, MIME }: StudioEngine = require('./core.cts');
 let sea = null; try { sea = require('node:sea'); if (!sea.isSea()) sea = null; } catch (e) { sea = null; }
 const UI_DIR = path.join(__dirname, 'ui');
 const asset = name => { if (sea) { try { return Buffer.from(sea.getAsset(name)); } catch (e) { return null; } } const p = path.join(UI_DIR, name); return fs.existsSync(p) ? fs.readFileSync(p) : null; };
 
 // ---------- settings (on this computer only) ----------
 const CONF_DIR = path.join(process.env.APPDATA || path.join(os.homedir(), '.config'), 'SparkleStudio'), CONF = path.join(CONF_DIR, 'settings.json');
-let conf = {}; try { conf = JSON.parse(fs.readFileSync(CONF, 'utf8')); } catch (e) { conf = {}; }
+// what Settings keeps (keys only here, never in the game folder)
+type Settings = { gameDir?: string, piperExe?: string, piperModels?: Record<string, string>, azureRegion?: string, azureKey?: string,
+  netlifySite?: string, netlifyToken?: string, githubRepo?: string, githubBranch?: string, githubToken?: string, siteUrl?: string, studioKey?: string,
+  studioPassword?: string, [setting: string]: unknown };
+let conf: Settings = {}; try { conf = JSON.parse(fs.readFileSync(CONF, 'utf8')); } catch (e) { conf = {}; }
 delete conf.studioPassword; // (round R privacy) the website now takes a Studio key, never the password: the old one is not kept
 const saveConf = () => { fs.mkdirSync(CONF_DIR, { recursive: true }); fs.writeFileSync(CONF, JSON.stringify(conf, null, 1)); };
 const isGame = d => d && fs.existsSync(path.join(d, 'index.html')) && fs.existsSync(path.join(d, 'js', 'main.js'));
@@ -40,8 +44,10 @@ const readBody = (req, max = 60e6) => new Promise((ok, no) => { const ch = []; l
 
 // ---------- Piper: free voices that run on this computer, no internet (https://github.com/rhasspy/piper) ----------
 // The grown-up downloads piper.exe and a voice model (.onnx) per language and puts their paths in Settings.
-let lame = null;
-function lameLib() { if (lame) return lame; const src = asset('lame.min.js'); if (!src) throw new Error('The MP3 encoder is missing.'); const ctx = { console, Math, Int8Array, Int16Array, Int32Array, Float32Array, Float64Array, Uint8Array, Array, ArrayBuffer }; ctx.window = ctx; ctx.self = ctx; vm.runInNewContext(src.toString('utf8'), ctx); lame = ctx.lamejs; return lame; }
+// lame.min.js (the MP3 encoder, a plain script run in its own little world)
+type Lame = { Mp3Encoder: new (channels: number, rate: number, kbps: number) => { encodeBuffer(s: Int16Array): Int8Array, flush(): Int8Array } };
+let lame: Lame | null = null;
+function lameLib() { if (lame) return lame; const src = asset('lame.min.js'); if (!src) throw new Error('The MP3 encoder is missing.'); const ctx: Record<string, unknown> & { lamejs?: Lame } = { console, Math, Int8Array, Int16Array, Int32Array, Float32Array, Float64Array, Uint8Array, Array, ArrayBuffer }; ctx.window = ctx; ctx.self = ctx; vm.runInNewContext(src.toString('utf8'), ctx); lame = ctx.lamejs; return lame; }
 function wavToMp3(buf) {
   // a plain 16-bit PCM WAV (what Piper writes) → MP3 32 kbps mono
   let p = 12, rate = 22050, ch = 1, data = null;
@@ -99,7 +105,7 @@ const PUBLISH = ['index.html', 'manifest.webmanifest', 'sw.js', 'netlify.toml', 
 // there (/studio/game/api/family/<name>, this computer only). With no website set they stay on this computer only.
 const FAM_DIR = path.join(CONF_DIR, 'family-photos'), FAMNAME = /^[\w-]{24,64}$/;
 const linked = () => !!(conf.siteUrl && conf.studioKey);
-async function siteApi(p, body) {
+async function siteApi(p: string, body?: unknown) {
   const r = await fetch(site() + '/studio/api/' + p, body === undefined ? { headers: { 'X-Studio-Key': conf.studioKey || '' } } : { method: 'POST', headers: { 'X-Studio-Key': conf.studioKey || '', 'X-Studio': '1', 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
   if (!r.ok) { const j = await r.json().catch(() => ({})); throw new Error(j.error || 'The website said ' + r.status); }
   return r;
@@ -171,10 +177,12 @@ async function updateApply() {
 const SYNC = path.join(CONF_DIR, 'sync.json'), SYNC_SKIP = /^(\.git|node_modules|studio\/dist|studio\/\.build|content\/old)\//;
 const FAM_FILE = rel => /^(content|voices|photos)\//.test(rel) || rel === 'tools/voice-extra.json';
 const gitShaOf = b => require('crypto').createHash('sha1').update('blob ' + b.length + '\0').update(b).digest('hex');
-let sync = { state: 'idle', done: 0, total: 0, msg: '', kept: [], error: '' };
-async function ghJ(p) {
+type Sync = { state: string, done: number, total: number, msg: string, kept: string[], error: string, from?: string, to?: string, fresh?: boolean };
+let sync: Sync = { state: 'idle', done: 0, total: 0, msg: '', kept: [], error: '' };
+// GitHub's answer: each caller names the parts it reads (an answer that is not JSON reads as empty)
+async function ghJ<T extends object>(p: string): Promise<Partial<T>> {
   const r = await fetch(`${GH_UPD()}/repos/${conf.githubRepo}${p}`, { headers: { Authorization: 'Bearer ' + conf.githubToken, Accept: 'application/vnd.github+json', 'User-Agent': 'sparkle-studio', 'X-GitHub-Api-Version': '2022-11-28' } });
-  const t = await r.text(); let j = {}; try { j = JSON.parse(t); } catch (e) { }
+  const t = await r.text(); let j: Partial<T> = {}; try { j = JSON.parse(t); } catch (e) { }
   if (!r.ok) throw new Error(`GitHub ${r.status} while getting the newest game`); return j;
 }
 const folderBuild = () => { try { return (/VERSION = '[^']*?(r\d+)'/.exec(fs.readFileSync(G('sw.js'), 'utf8')) || [])[1] || '?'; } catch (e) { return '?'; } };
@@ -186,10 +194,10 @@ async function syncFolder(force) {
   const fresh = !GAME; if (fresh) { GAME = conf.gameDir && !isGame(conf.gameDir) ? path.resolve(conf.gameDir) : newGameDir(); fs.mkdirSync(GAME, { recursive: true }); force = true; }
   sync = { state: 'running', done: 0, total: 0, msg: '', kept: [], error: '', from: folderBuild(), fresh };
   try {
-    const head = (await ghJ(`/git/ref/heads/${encodeURIComponent(conf.githubBranch || 'main')}`)).object.sha;
-    let rec = {}; try { rec = JSON.parse(fs.readFileSync(SYNC, 'utf8')) || {}; } catch (e) { rec = {}; }
+    const head = (await ghJ<{ object: { sha: string } }>(`/git/ref/heads/${encodeURIComponent(conf.githubBranch || 'main')}`)).object.sha;
+    let rec: { commit?: string, dir?: string, shas?: Record<string, string> } = {}; try { rec = JSON.parse(fs.readFileSync(SYNC, 'utf8')) || {}; } catch (e) { rec = {}; }
     if (!force && rec.commit === head && rec.dir === GAME) { sync.state = 'done'; sync.msg = ''; return sync; }
-    const t = await ghJ(`/git/trees/${(await ghJ(`/git/commits/${head}`)).tree.sha}?recursive=1`);
+    const t = await ghJ<{ truncated: boolean, tree: { path: string, type: string, sha: string }[] }>(`/git/trees/${(await ghJ<{ tree: { sha: string } }>(`/git/commits/${head}`)).tree.sha}?recursive=1`);
     if (t.truncated) throw new Error('GitHub sent only part of the game: get it as a ZIP from GitHub instead.');
     const tree = t.tree.filter(x => x.type === 'blob' && !SYNC_SKIP.test(x.path)), before = (rec.dir === GAME && rec.shas) || {}, todo = [], shas = {};
     for (const x of tree) {
@@ -204,7 +212,7 @@ async function syncFolder(force) {
     const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-');
     let k = 0;
     const worker = async () => { while (k < todo.length) { const x = todo[k++]; sync.msg = x.path;
-      const b = Buffer.from((await ghJ(`/git/blobs/${x.sha}`)).content || '', 'base64'), f = safeJoin(GAME, x.path);
+      const b = Buffer.from((await ghJ<{ content: string }>(`/git/blobs/${x.sha}`)).content || '', 'base64'), f = safeJoin(GAME, x.path);
       if (/^content\/[^/]+\.json$/.test(x.path) && fs.existsSync(f)) { fs.mkdirSync(G('content', 'old'), { recursive: true }); fs.copyFileSync(f, G('content', 'old', stamp + '-' + path.basename(f))); }
       fs.mkdirSync(path.dirname(f), { recursive: true }); fs.writeFileSync(f, b); sync.done++; } };
     await Promise.all(Array.from({ length: 6 }, worker));
@@ -248,7 +256,7 @@ const local = {
       if (!conf.netlifyToken || !conf.netlifySite) return { code: 400, body: { error: 'Add your Netlify token and site in Settings first.' } };
       const f = G('sparkle-valley-netlify.zip'); if (!fs.existsSync(f)) return { code: 400, body: { error: 'Build the zip first.' } };
       const r = await fetch(`https://api.netlify.com/api/v1/sites/${encodeURIComponent(conf.netlifySite)}/deploys`, { method: 'POST', headers: { Authorization: 'Bearer ' + conf.netlifyToken, 'Content-Type': 'application/zip' }, body: fs.readFileSync(f) });
-      const t = await r.text(); let j = {}; try { j = JSON.parse(t); } catch (e) { }
+      const t = await r.text(); let j: { message?: string, state?: string, ssl_url?: string, url?: string, deploy_ssl_url?: string, admin_url?: string } = {}; try { j = JSON.parse(t); } catch (e) { }
       if (!r.ok) return { code: 502, body: { error: `Netlify said ${r.status}: ${(j.message || t).slice(0, 200)}` } };
       return { code: 200, body: { ok: true, state: j.state, url: j.ssl_url || j.url || j.deploy_ssl_url, admin: j.admin_url } };
     }

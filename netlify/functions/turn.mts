@@ -11,7 +11,7 @@ const HOUR = 3600e3;
 const json = (o, status = 200) => new Response(JSON.stringify(o), { status, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'private, max-age=1800' } });
 const onlyTurn = list => (Array.isArray(list) ? list : [list]).filter(s => s && s.urls).map(s => ({ urls: s.urls, ...(s.username ? { username: s.username, credential: s.credential } : {}) }));
 
-export const makeTurn = ({ fetchFn = (...a) => fetch(...a), now = () => Date.now() } = {}) => async req => {
+export const makeTurn = ({ fetchFn = (...a: Parameters<typeof fetch>) => fetch(...a), now = () => Date.now() } = {}) => async req => {
   if (req.method !== 'GET') return new Response('', { status: 405 });
   if (kept && now() - kept.at < HOUR) return json({ iceServers: kept.list });
   const cfId = env('CF_TURN_KEY_ID'), cfToken = env('CF_TURN_KEY_TOKEN'), mDomain = env('METERED_DOMAIN'), mKey = env('METERED_API_KEY');

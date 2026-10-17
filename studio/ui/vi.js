@@ -87,6 +87,7 @@ export const VI_MESSAGES = [
   [/^Piper did not make a WAV file\.$/, () => 'Piper không tạo được tệp WAV.'],
   [/^Piper stopped: ([\s\S]*)$/, (m) => `Piper dừng: ${m[1]}`],
   [/^The MP3 encoder is missing\.$/, () => 'Thiếu bộ mã hóa MP3.'],
+  [/^studio\/core\.cts: the Studio engine did not load$/, () => 'studio/core.cts: không tải được bộ máy của Studio'],
   [/^Something else is still running: (.*)$/, (m) => `Một việc khác vẫn đang chạy: ${m[1]}`],
   [/^Nothing new to publish: the website already has everything\.$/, () => 'Không có gì mới để phát hành: trang web đã có đủ.'],
   [/^Nothing new: GitHub already has everything\.$/, () => 'Không có gì mới: GitHub đã có đủ.'],

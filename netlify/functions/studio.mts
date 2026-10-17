@@ -15,6 +15,7 @@
 // signed with it. Family photos live in the private store (netlify/lib/family.mts), never in GitHub.
 import crypto from 'crypto';
 import core from '../../studio/core.cts';
+import type { Store } from '../lib/family-devices.mts';
 import { report, inbox, setLabel } from '../lib/players.mts';
 import * as admins from '../lib/admins.mts';
 import * as family from '../lib/family.mts';
@@ -22,6 +23,9 @@ import * as accessLog from '../lib/accesslog.mts';
 import { ipOf, ipKey, locked, failed, cleared, tidy } from '../lib/guard.mts';
 import { readLive, saveLive, readContent as readLiveContent, saveContent as saveLiveContent, LiveError } from '../lib/live.mts';
 import * as tester from '../lib/tester.mts';
+// (TypeScript sees nothing of a CommonJS file's module.exports: the engine is checked once here and then has its own type)
+const isEngine = (m: unknown): m is StudioEngine => typeof m === 'object' && m !== null && 'createStudio' in m && 'githubStore' in m;
+if (!isEngine(core)) throw new Error('studio/core.cts: the Studio engine did not load');
 const { createStudio, githubStore, makeToken, checkToken, samePassword } = core;
 
 const env = k => ((globalThis.Netlify && globalThis.Netlify.env.get(k)) || process.env[k] || '').trim();
@@ -71,8 +75,8 @@ const isJpeg = b => b && b.length > 3 && b[0] === 0xff && b[1] === 0xd8;
 export const makeStudio = ({ playersStore = blobs, adminStore = adminBlobs, heldStore = heldBlobs, liveStore = liveBlobs, familyStore = familyBlobs, guardStore = guardBlobs, logStore = logBlobs, testerStore = testerBlobs, now = () => Date.now() } = {}) => { const handle = async (req, ctx, out) => {
   const url = new URL(req.url), p = url.pathname, pw = env('STUDIO_PASSWORD'), post = req.method === 'POST';
   if (!pw) return json({ error: 'The online Studio is not set up yet: add STUDIO_PASSWORD in Netlify (Site configuration → Environment variables), then deploy again.', setup: true }, 503);
-  const A = await adminStore(), gen = +(await A.get('gen').catch(() => 0)) || 0, t = now();
-  const log = async (who, role, what, note) => accessLog.add(await logStore(), { who, role, what, ctx, note }, t);
+  const A: Store & { set(key: string, value: string): Promise<unknown> } = await adminStore(), gen = +(await A.get('gen').catch(() => 0)) || 0, t = now();
+  const log = async (who, role, what, note?: string) => accessLog.add(await logStore(), { who, role, what, ctx, note }, t);
   // (owner, 11 Oct) the owner signs in with the password only; two-step is for the admins (was a choice in Setup → Admins)
   const ownerOff = async () => true;
   const ownerSig = async () => ownerKey(pw, gen, await A.get('totp/owner', { type: 'json' }).catch(() => null), await ownerOff());
@@ -239,6 +243,6 @@ export const makeStudio = ({ playersStore = blobs, adminStore = adminBlobs, held
   } catch (e) { return json({ error: String(e && e.message || e) }, 500); }
 };
   // (a trusted browser's fresh year rides on whatever answer it gets)
-  return async (req, ctx) => { const out = {}, res = await handle(req, ctx, out); if (out.renew) try { res.headers.append('Set-Cookie', out.renew); } catch (e) { } return res; }; };
+  return async (req, ctx) => { const out: { renew?: string } = {}, res = await handle(req, ctx, out); if (out.renew) try { res.headers.append('Set-Cookie', out.renew); } catch (e) { } return res; }; };
 export default makeStudio();
 export const config = { path: ['/studio/api/*', '/studio/content/*'] };
