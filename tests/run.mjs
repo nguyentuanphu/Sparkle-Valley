@@ -6869,6 +6869,39 @@ await check('animalvoices', async () => {
   return `10 animals play their real recordings (${Object.entries(r).map(([k, v]) => `${k} ${v.len} s`).join(', ')}), none drawn as tones; "Who Says That?" starts with a recording; all 10 files in the offline list`;
 });
 
+await check('realrides', async () => {
+  // (owner, 17 Oct AEDT: "the bus and tram travel time to different destinations are too quick, rider should be able to
+  // enjoy the real view and distance") a ride to a chosen stop really drives the roads there, with the child on board,
+  // taking about a minute for the farthest stop (Jump still gets off); the child is let off at that stop and the bus
+  // drives back to its own route
+  const P = await open(b, { w: 900, h: 640, settings: { voice: false } }); await clear(P.page);
+  const r = await P.page.evaluate(async () => {
+    const G = __sv, h = G.heroes[0], W = await import('/js/world.js'), wait = ms => new Promise(r => setTimeout(r, ms));
+    const keepOn = (await import('/js/custom.js')); void keepOn;
+    const sl = G.traffic.slots.find(s => s.mover && /^bus/.test(s.id)); if (!sl.v) G.traffic.make(sl);
+    const it = G.interactables.find(i => i.id === 'ride_' + G.traffic.slots.indexOf(sl)); if (!it) return { none: 'no ride' };
+    h.place(sl.v.o.position.x + 3, sl.v.o.position.z + 3); h.profile.age = 'little'; await wait(300);
+    const go = it.act(h); await wait(600);
+    const yes = [...document.querySelectorAll('.dialog button, .dialog .btn')].find(x => /Get on|Lên xe/.test(x.textContent)); if (!yes) return { none: 'no get-on button', html: (document.querySelector('.dialog') || {}).innerText };
+    yes.click(); await wait(800);
+    const stops = [...document.querySelectorAll('.stoppick [data-k]')]; if (!stops.length) return { none: 'no stop picker' };
+    // the farthest stop on the list
+    const list = G.world.busStops.filter(b => Math.hypot(b.x - h.pos.x, b.z - h.pos.z) > 12); let far = 0; list.forEach((b, k) => { if (Math.hypot(b.x - h.pos.x, b.z - h.pos.z) > Math.hypot(list[far].x - h.pos.x, list[far].z - h.pos.z)) far = k; });
+    stops[far].click(); await go; await wait(500);
+    const tr = sl.trip; if (!tr) return { none: 'no trip' };
+    const p0 = [sl.v.o.position.x, sl.v.o.position.z], s0 = tr.s; await wait(3000); const along = tr.s - s0; // (game time: a slow test browser runs the game's clock slower)
+    const p1 = [sl.v.o.position.x, sl.v.o.position.z], moved = Math.hypot(p1[0] - p0[0], p1[1] - p0[1]), rd = W.roadDist(p1[0], p1[1]);
+    const onBoard = !!h.carry && Math.hypot(h.pos.x - p1[0], h.pos.z - p1[1]) < 3, planned = tr.len / tr.speed;
+    // the rest of the way, quickly: the trip arrives and the child gets off at the stop
+    tr.s = tr.len - .5; await wait(1200); const dest = list[far], off = !h.carry && Math.hypot(h.pos.x - dest.x, h.pos.z - dest.z) < 4;
+    tr.s = Math.min(tr.s, 1); await wait(1500);
+    return { len: Math.round(tr.len), planned: +planned.toFixed(1), moved: +moved.toFixed(1), along: +along.toFixed(1), onRoad: rd.road ? +(rd.d - rd.road.w / 2).toFixed(2) : 99, onBoard, off, home: !sl.trip, stop: dest.name() };
+  });
+  const errs = P.errors; await P.ctx.close();
+  ok(!r.none && r.moved > 2 && Math.abs(r.moved - r.along) < 2 && r.onRoad < .5 && r.onBoard && r.planned >= 45 && r.planned <= 70 && r.off && r.home && !errs.length, JSON.stringify({ ...r, errs }));
+  return `a bus to the farthest stop (${r.stop}, ${r.len} m along the roads) drives there with the child on board, planned ${r.planned} s; ${r.moved} m along the road in the first moments, on the road; the child gets off at the stop and the bus goes back to its route`;
+});
+
 await check('swupdate', async () => {
   // (r80, owner 17 Oct AEDT: "users must have the latest r") on its own small server (the game's files, its service
   // worker made version A, B or C, js/build.js saying which): (1) after an update the page gets the NEW version's files,

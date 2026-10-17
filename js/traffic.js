@@ -41,6 +41,8 @@ const AU_RIDERS = [look('shirt', '#ffd23f', '#6a4a2a', 'short', 'cap', '#f2c9a8'
 const TWO_WHEEL = new Set(['honda67', 'cub', 'dream', 'scooter', 'postie', 'trailBike', 'quadBike', 'baGac', 'roadster', 'miniBike', 'roadBike', 'bmx', 'kidsBike', 'xichlo', 'touristCart']);
 const VN_ROAD = ['honda67', 'cub', 'dream', 'scooter', 'taxi', 'cub', 'scooter', 'baGac', 'bus', 'dream', 'sedan', 'roadster'];
 const AU_ROAD = ['sedan', 'ute', 'suv', 'busAU', 'postie', 'sedan', 'roadBike', 'ute'];
+// (owner, 17 Oct AEDT) a trip to a chosen stop, in m/s: gentle, so the valley can be seen going by
+const TRIP_SPEED = 6.5;
 const SPEED = { bus: 4.2, busAU: 4.2, tramModern: 3.2, xichlo: 1.6, touristCart: 2.2, roadster: 2.6, miniBike: 2.4, roadBike: 3.6, baGac: 3.2, default: 4.6 };
 
 const rng = seed => () => (seed = (seed * 16807) % 2147483647) / 2147483647;
@@ -175,7 +177,7 @@ export function createTraffic(G) {
   const nameOf = sl => sl.id === 'taxi' ? T('the taxi', 'xe taxi') : /^tram/.test(sl.id) ? T('the tram', 'tàu điện') : sl.id === 'touristCart' ? T('the electric cart', 'xe điện') : T('the bus', 'xe buýt');
   for (const sl of slots.filter(s => s.mover && FARE[s.id])) {
     G.interactables.push({ id: 'ride_' + slots.indexOf(sl), walks: true, get x() { return where(sl)[0]; }, get z() { return where(sl)[1]; }, r: 3.2, icon: /^tram/.test(sl.id) ? '🚋' : sl.id === 'taxi' ? '🚕' : '🚌',
-      label: () => T('Get on ', 'Lên ') + nameOf(sl), visible: h => !sl.passenger && !h.riding && !h.carry && keep('busFares'),
+      label: () => T('Get on ', 'Lên ') + nameOf(sl), visible: h => !sl.passenger && !sl.trip && !h.riding && !h.carry && keep('busFares'),
       act: async h => {
         if (!sl.v) make(sl); const fare = FARE[sl.id], little = h.profile && h.profile.age !== 'big';
         sl.mover.wait = Math.max(sl.mover.wait, 30);   // it waits while the child decides
@@ -186,15 +188,86 @@ export function createTraffic(G) {
         if (!free) { farm.coins -= fare; saveFarm(); SFX.chime(); }
         // (Round V, owner 13 Oct: "at all stations they can select a destination") where to: every stop in the valley
         const dest = await pickStop(h, sl);
-        sl.passenger = h; let started = false, gone = 0; const rideT0 = performance.now();   // (Round V: a ride to a chosen stop lasts about 7 s by the clock, whatever the frame rate)
+        // (owner, 17 Oct AEDT: "travel time to different destinations are too quick, rider should be able to enjoy the real
+        // view and distance") to a chosen stop the vehicle really drives there, along the roads (js/wayfind.js), at a
+        // gentle speed: a long trip across the valley takes about a minute; it drives back to its own route afterwards
+        const trip = dest ? await tripTo(sl, dest) : null;
+        sl.passenger = h; let started = false, gone = 0;
         h.carry = (dt, t, pad) => {
           const m = sl.mover; if (m.wait <= 0) started = true; gone += dt;
+          if (trip) {
+            const off = () => { h.carry = null; sl.passenger = null; trip.back = true; };
+            if (trip.arrived) { off(); say(`Here we are: ${dest.name()}! Bye bye!`, `Tới ${dest.name()} rồi! Tạm biệt!`); h.place(dest.x + 1.2, dest.z + 1.2); return null; }
+            if (pad.jump()) { off(); const o = sl.v.o; h.place(o.position.x + Math.cos(o.rotation.y) * 2.6, o.position.z - Math.sin(o.rotation.y) * 2.6); say('Bye bye!', 'Tạm biệt con!'); return null; }
+            const p = sl.v.o.localToWorld(new THREE.Vector3(...seatOf(sl, sl.v))); return { vehicle: sl.v, x: p.x, y: p.y - .55, z: p.z, yaw: sl.v.o.rotation.y, state: 'sit', speed: 0, rest: true };
+          }
           // off at the next stop (the end of its route, where it rests), or when Jump is pressed
-          if (dest && performance.now() - rideT0 > 7000) { h.carry = null; sl.passenger = null; say(`Here we are: ${dest.name()}! Bye bye!`, `Tới ${dest.name()} rồi! Tạm biệt!`); h.place(dest.x + 1.2, dest.z + 1.2); return null; }   // (a short ride, then the stop chosen)
           if (pad.jump() || (started && m.wait > 0 && gone > 2)) { h.carry = null; sl.passenger = null; const o = sl.v.o; h.place(o.position.x + Math.cos(o.rotation.y) * 2.6, o.position.z - Math.sin(o.rotation.y) * 2.6); say('Here we are! Bye bye!', 'Tới nơi rồi! Tạm biệt con!'); return null; }
           const p = sl.v.o.localToWorld(new THREE.Vector3(...seatOf(sl, sl.v))); return { vehicle: sl.v, x: p.x, y: p.y - .55, z: p.z, yaw: sl.v.o.rotation.y, state: 'sit', speed: 0, rest: true };
         };
       } });
+  }
+  // (owner, 17 Oct AEDT) a trip to a chosen stop: the way along the roads from where the vehicle stands to the stop, driven
+  // on its own side of the road at TRIP_SPEED (a little faster on a very long way, so no trip is over about 65 s: owner, "about 1 minute")
+  let roadNet = null;
+  async function tripTo(sl, dest) {
+    const Wf = await import('./wayfind.js'); roadNet = roadNet || vehicleNet(Wf.roadGraph(G.PLACES || []));
+    const o = sl.v.o.position, way = Wf.route(roadNet, o.x, o.z, dest.x, dest.z); if (!way || way.pts.length < 3) return null;
+    const pts = way.pts.slice(0, -1), cum = [0]; for (let i = 1; i < pts.length; i++) cum.push(cum[i - 1] + Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]));
+    const len = cum[cum.length - 1]; if (len < 8) return null;
+    const trip = { pts, cum, len, s: 0, back: false, arrived: false, speed: Math.max(TRIP_SPEED, len / 65), yaw: sl.v.o.rotation.y }; sl.trip = trip; return trip;
+  }
+  // the road network a vehicle may use: the walking links across a town's square stay only where nothing stands in the
+  // way (no building, stall or other solid within 1.6 m of the line, sampled every metre): a bus never drives through a house
+  function vehicleNet(g) {
+    const solids = W.colliders.filter(c => c.r >= .8 && c.top == null), boxes = W.boxes || [];
+    const blocked = (x, z) => solids.some(c => Math.hypot(c.x - x, c.z - z) < c.r + 1.6) || boxes.some(b => x > b.x0 - 1.6 && x < b.x1 + 1.6 && z > b.z0 - 1.6 && z < b.z1 + 1.6);
+    const onRoad = (x, z) => { const d = roadDist(x, z); return d.road && d.d < d.road.w / 2 + .3; };
+    const clearAt = ([ax, az], [bx, bz]) => { const n = Math.ceil(Math.hypot(bx - ax, bz - az)); for (let k = 0; k <= n; k++) { const x = ax + (bx - ax) * k / n, z = az + (bz - az) * k / n; if (!onRoad(x, z) && blocked(x, z)) return false; } return true; };
+    const nodes = g.nodes.slice(), edges = g.edges.map(() => []), len = (p, q) => Math.hypot(q[0] - p[0], q[1] - p[1]);
+    // a crossing with something in the way bends round it once (a point to one side, up to 18 m out), if both halves are clear
+    g.edges.forEach((es, a) => es.forEach(([b, w]) => { if (b < a) return;
+      const A = nodes[a], B = nodes[b]; if (clearAt(A, B)) { edges[a].push([b, w]); edges[b].push([a, w]); return; }
+      const way = detour(A, B); if (!way) return;   // nothing clear: this crossing is not for vehicles
+      let prev = a; for (const P2 of way) { const k = nodes.length; nodes.push(P2); edges.push([]); const d = len(nodes[prev], P2); edges[prev].push([k, d]); edges[k].push([prev, d]); prev = k; }
+      const d = len(nodes[prev], B); edges[prev].push([b, d]); edges[b].push([prev, d]);
+    }));
+    // a way round: the shortest path on a 1 m grid in the area round A and B (keeping 1.6 m from anything solid, roads
+    // always open), straightened to its corners; null if there is none within 24 m of the crossing
+    function detour(A, B) {
+      const pad = 24, x0 = Math.floor(Math.min(A[0], B[0]) - pad), z0 = Math.floor(Math.min(A[1], B[1]) - pad), nx = Math.ceil(Math.max(A[0], B[0]) + pad) - x0 + 1, nz = Math.ceil(Math.max(A[1], B[1]) + pad) - z0 + 1;
+      const ok = new Uint8Array(nx * nz); for (let j = 0; j < nz; j++) for (let i = 0; i < nx; i++) { const x = x0 + i, z = z0 + j; ok[j * nx + i] = onRoad(x, z) || !blocked(x, z) ? 1 : 0; }
+      const cell = P => [Math.round(P[0]) - x0, Math.round(P[1]) - z0], [si, sj] = cell(A), [ei, ej] = cell(B), from = new Int32Array(nx * nz).fill(-1), q = [sj * nx + si]; from[q[0]] = q[0];
+      ok[sj * nx + si] = ok[ej * nx + ei] = 1;
+      for (let h = 0; h < q.length && from[ej * nx + ei] < 0; h++) { const c = q[h], i = c % nx, j = (c - i) / nx;
+        for (const [di, dj] of [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]]) { const a2 = i + di, b2 = j + dj, k = b2 * nx + a2; if (a2 < 0 || b2 < 0 || a2 >= nx || b2 >= nz || from[k] >= 0 || !ok[k]) continue; if (di && dj && (!ok[j * nx + a2] || !ok[b2 * nx + i])) continue; from[k] = c; q.push(k); } }
+      if (from[ej * nx + ei] < 0) return null;
+      const path = []; for (let c = ej * nx + ei; ; c = from[c]) { path.unshift([x0 + c % nx, z0 + Math.floor(c / nx)]); if (from[c] === c) break; }
+      // straighten: from each corner, the farthest point still in a clear line
+      const out = []; let at = A;
+      for (let k = 1; k < path.length; ) { let far = k; while (far + 1 < path.length && clearAt(at, path[far + 1])) far++; if (far === path.length - 1 && clearAt(at, B)) break; out.push(path[far]); at = path[far]; k = far + 1; }
+      return out;
+    }
+    return { nodes, edges };
+  }
+  // where a trip has got to: the point s metres along, its heading, and the lane offset to the right of the way it goes
+  const tripAt = (sl, tr) => {
+    const { pts, cum } = tr, s = Math.max(0, Math.min(tr.len, tr.s)); let i = 1; while (i < cum.length - 1 && cum[i] < s) i++;
+    const [ax, az] = pts[i - 1], [bx, bz] = pts[i], k = (s - cum[i - 1]) / ((cum[i] - cum[i - 1]) || 1), x = ax + (bx - ax) * k, z = az + (bz - az) * k;
+    let hy = Math.atan2(bx - ax, bz - az); if (tr.back) hy += Math.PI;
+    const lane = Math.abs(sl.mover.lane || 1.4) * (sl.cc === 'au' ? -1 : 1), rx = -Math.cos(hy), rz = Math.sin(hy);
+    return [x + rx * lane, z + rz * lane, hy];
+  };
+  function driveTrip(sl, dt) {
+    const tr = sl.trip, o = sl.v.o;
+    if (!tr.back && tr.arrived) return;   // waiting at the stop while the rider gets off
+    tr.s += (tr.back ? -1 : 1) * tr.speed * dt;
+    if (!tr.back && tr.s >= tr.len) { tr.s = tr.len; tr.arrived = true; }
+    if (tr.back && tr.s <= 0) { sl.trip = null; sl.mover.wait = 2; return; }   // home again: on with its own route
+    const [x, z, hy] = tripAt(sl, tr);
+    let d = hy - tr.yaw; d = Math.atan2(Math.sin(d), Math.cos(d)); tr.yaw += d * Math.min(1, dt * 4);   // (turns gently at the corners)
+    o.position.set(x, ground(x, z), z); o.rotation.y = tr.yaw;
+    sl.v.wheels.forEach(w => { w.rotation.x += tr.speed * dt / sl.v.wr; });
   }
   // (Round V) the stop picker: every bus stop by its place's picture and name; "Next stop" rides to the end of this route
   function pickStop(h, sl) {
@@ -237,6 +310,7 @@ export function createTraffic(G) {
     const H = G.heroes || [];
     for (const sl of slots) {
       const m = sl.mover; if (!m || !sl.v) continue;
+      if (sl.trip) { driveTrip(sl, dt); continue; }   // (owner, 17 Oct AEDT) on a trip to a chosen stop, or on its way back
       // far from every child: nothing to update
       const o = sl.v.o; if (H.length && !H.some(h => Math.hypot(h.pos.x - o.position.x, h.pos.z - o.position.z) < 140)) continue;
       const sp = SPEED[sl.id] || SPEED.default;
@@ -256,7 +330,7 @@ export function createTraffic(G) {
       }
     }
   });
-  const api = { apply, slots, where, make, count: () => slots.length };
+  const api = { apply, slots, where, make, vehicleNet, count: () => slots.length };
   G.traffic = api;
   return api;
 }
