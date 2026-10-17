@@ -101,7 +101,8 @@ await check('voicefirstchoice', async () => {
   } });
   try {
     await P.page.click('.screen.title .seg.lang [data-l="vi"]');
-    await P.page.waitForFunction(async () => !!(await import('/js/voice.js')).voicePack()?.signatures?.vi, null, { timeout: 30000 });
+    await P.page.evaluate(async () => { window.__voiceIndexCheck = await import('/js/voice.js'); });
+    await P.page.waitForFunction(() => !!window.__voiceIndexCheck.voicePack()?.signatures?.vi, null, { timeout: 30000 });
     ok(indexes.length === 1 && indexes[0] === '/voices/manifest-vi.json', 'first language choice fetched an unwanted index: ' + indexes.join(', '));
     ok(!P.errors.length, P.errors.join(' | '));
   } finally { await P.ctx.close(); }
@@ -118,7 +119,8 @@ await check('lighterload', async () => {
     ok(!got.some(s => /\/js\/(games\/thinking|tales-content|howto-player)\.js$/.test(s)), 'optional implementation fetched before opening: ' + got.filter(s => /thinking|tales-content|howto-player/.test(s)));
     await start(P.page); await clear(P.page);
     ok(await P.page.evaluate(async () => !!(await import('/js/custom.js')).customQuiz().length || !(await import('/js/games/frame.js')).GAMES.familyquiz), 'Family Quiz appeared with no family questions');
-    await P.page.waitForFunction(async () => !!(await import('/js/voice.js')).voicePack(), null, { timeout: 20000 });
+    await P.page.evaluate(async () => { window.__voiceIndexCheck = await import('/js/voice.js'); });
+    await P.page.waitForFunction(() => !!window.__voiceIndexCheck.voicePack(), null, { timeout: 20000 });
     ok(got.some(s => s.endsWith('/voices/manifest-en.json')) && !got.some(s => /\/voices\/manifest(?:-(?:vi|hi|zh))?\.json$/.test(s)), 'English-only device fetched another index');
     const closed = await P.page.evaluate(async () => {
       const F = await import('/js/games/frame.js');
@@ -141,10 +143,10 @@ await check('lighterload', async () => {
     ok(tale.same && tale.before === tale.after && tale.en, 'lazy tale lost its pages/identity: ' + JSON.stringify(tale));
     await P.page.evaluate(async () => { (await import('/js/ui.js')).openGrownups(() => {}); });
     await P.page.locator('#gBil').check();
-    await P.page.waitForFunction(async () => !!(await import('/js/voice.js')).voicePack()?.signatures?.vi);
+    await P.page.waitForFunction(() => !!window.__voiceIndexCheck.voicePack()?.signatures?.vi);
     await clear(P.page);
     await P.page.evaluate(async () => { const S = await import('/js/state.js'); S.settings.lang = 'vi'; (await import('/js/core/events.js')).events.emit('LanguageChanged'); });
-    await P.page.waitForFunction(async () => !!(await import('/js/voice.js')).voicePack()?.signatures?.vi);
+    await P.page.waitForFunction(() => !!window.__voiceIndexCheck.voicePack()?.signatures?.vi);
     ok(!got.some(s => /\/voices\/manifest-(?:hi|zh)\.json$/.test(s)), 'language switch fetched learning-language indexes');
     ok(!P.errors.length, P.errors.join(' | '));
   } finally { await P.ctx.close(); }
@@ -5457,7 +5459,8 @@ await check('offline', async () => {
   try {
     const url = `http://127.0.0.2:${srv.address().port}/`;
     const P = await open(b, { w: 390, h: 760, touch: true, url, play: false });
-    await P.page.waitForFunction(async () => { const r = await navigator.serviceWorker.getRegistration(); return !!(r && r.active); }, null, { timeout: 120000 });
+    await P.page.waitForFunction(() => !!navigator.serviceWorker.controller, null, { timeout: 120000 });
+    ok(await P.page.evaluate(async () => !!(await navigator.serviceWorker.getRegistration())?.active), 'offline install did not activate');
     await P.page.waitForTimeout(1000);
     const again = async () => { const t0 = Date.now(); await P.page.reload({ timeout: 30000 }).catch(() => { }); const got = await P.page.waitForSelector('.screen.title', { timeout: Math.max(1000, 30000 - (Date.now() - t0)) }).then(() => true, () => false); return got ? Date.now() - t0 : -1; };
     const saved = await again();
@@ -6819,7 +6822,15 @@ await check('swupdate', async () => {
   try {
     const url = `http://127.0.0.2:${srv.address().port}/`;
     const P = await open(b, { w: 390, h: 760, touch: true, url, play: false });
-    const active = v => P.page.waitForFunction(async v => { const r = await navigator.serviceWorker.getRegistration(); return !!r?.active && navigator.serviceWorker.controller && (await caches.keys()).includes('sv-2099-swtest-' + v) && !r.installing && !r.waiting; }, v, { timeout: 120000 });
+    const active = async v => {
+      const until = Date.now() + 120000;
+      while (Date.now() < until) {
+        const ready = await P.page.evaluate(async v => { const r = await navigator.serviceWorker.getRegistration(); return !!r?.active && !!navigator.serviceWorker.controller && (await caches.keys()).includes('sv-2099-swtest-' + v) && !r.installing && !r.waiting; }, v);
+        if (ready) return;
+        await P.page.waitForTimeout(200);
+      }
+      throw new Error('service worker version ' + v + ' did not finish activating');
+    };
     const build = () => P.page.evaluate(() => fetch('/js/build.js').then(r => r.text()).then(t => /BUILD = '([^']+)'/.exec(t)?.[1]));
     const update = () => P.page.evaluate(() => navigator.serviceWorker.getRegistration().then(r => r.update()).catch(e => String(e)));
     await active('a'); await P.page.waitForTimeout(500);
