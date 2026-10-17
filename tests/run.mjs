@@ -94,6 +94,20 @@ await check('boot', async () => {
   }
 });
 
+await check('voicefirstchoice', async () => {
+  const indexes = [];
+  const P = await open(b, { play: false, route: async ctx => {
+    ctx.on('request', q => { const m = /\/voices\/manifest[^/]*\.json/.exec(q.url()); if (m) indexes.push(m[0]); });
+  } });
+  try {
+    await P.page.click('.screen.title .seg.lang [data-l="vi"]');
+    await P.page.waitForFunction(async () => !!(await import('/js/voice.js')).voicePack()?.signatures?.vi, null, { timeout: 30000 });
+    ok(indexes.length === 1 && indexes[0] === '/voices/manifest-vi.json', 'first language choice fetched an unwanted index: ' + indexes.join(', '));
+    ok(!P.errors.length, P.errors.join(' | '));
+  } finally { await P.ctx.close(); }
+  return 'choosing Vietnamese on the first click downloads only the Vietnamese index';
+});
+
 await check('lighterload', async () => {
   const got = [];
   const P = await open(b, { play: false, route: async ctx => {

@@ -346,8 +346,8 @@ export const voicePack = () => PACK;
 // Lines asked for before the list has arrived (slow phone networks at start-up) wait for it, so they are spoken
 // with the recorded voice too instead of the phone's own voice.
 let packTried = false;
-// (round R, PERF-001) fetched on the first tap or key press, or soon after the valley is ready: nothing is spoken before a
-// child taps, so the title screen comes up without it
+// Fetch after a click has applied the language choice, or after the valley is ready.
+// Keyboard speech requests its index directly; pointerdown must not fetch the previous language.
 let packReady = null;
 const voiceIndex = createVoiceIndex(url => fetch(url), pack => { PACK = pack; voiceDiag.pack = 'ok'; autoSavePack(); }, async () => {
   try { const cached = await (await caches.open('sv-voices')).match('voices/manifest.json'); return cached ? await cached.json() : null; } catch (e) { return null; }
@@ -362,7 +362,7 @@ const loadPack = (langs = voiceLanguages(settings)) => {
 navigator.serviceWorker?.addEventListener('message', e => {
   if (e.data?.type === 'SV_VOICE_LANGUAGE_MANIFEST') voiceIndex.refresh(e.data.manifest);
 });
-for (const ev of ['pointerdown', 'keydown', 'touchstart']) addEventListener(ev, () => loadPack(), { once: true, capture: true, passive: true });
+addEventListener('click', () => loadPack(), { once: true, passive: true });
 // Language/settings changes fetch only the newly selected index. Saved MP3s are kept.
 for (const ev of ['LanguageChanged', 'SettingsChanged']) events.on(ev, () => { if (packReady) loadPack(); });
 { const t0 = Date.now(), wait = setInterval(() => { const g = window.__sv; if (packReady) return clearInterval(wait); if ((g && g.bootTimes) || Date.now() - t0 > 30000) { clearInterval(wait); setTimeout(() => loadPack(), 3000); } }, 500); }
