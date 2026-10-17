@@ -190,6 +190,9 @@ function githubStore({ token, repo, branch = 'main', draft = 'studio-draft', api
 // folder named after a Vietnamese place (photos/en-bến-thành-market/1.jpg) opens too
 const PHOTO_MAX = 1.5e6;
 const OURFILE = /^(content|photos)\/[\w\p{L}\p{N}./-]+$/u, OURPHOTO = /^photos\/[\w\p{L}\p{N}./-]+$/u;
+// (owner, 17 Oct AEDT: "point photos to Wikimedia") a photo on one of these sites is listed by its address, not saved
+// (the same list is js/realworld.js PHOTO_HOST and sw.js); a photo anywhere else is saved as before, the last resort
+const PHOTO_HOST = /^https:\/\/(upload\.wikimedia\.org|live\.staticflickr\.com|farm\d+\.staticflickr\.com)\//;
 const slug = s => String(s).normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'D').replace(/[^\w]+/g, '-').replace(/^-|-$/g, '').toLowerCase().slice(0, 40) || 'face';
 const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.mjs': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.json': 'application/json; charset=utf-8', '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.svg': 'image/svg+xml', '.mp3': 'audio/mpeg', '.mp4': 'video/mp4', '.woff2': 'font/woff2', '.webmanifest': 'application/manifest+json', '.ico': 'image/x-icon', '.txt': 'text/plain; charset=utf-8', '.zip': 'application/zip', '.toml': 'text/plain' };
 const mimeOf = f => MIME[path.extname(f).toLowerCase()] || 'application/octet-stream';
@@ -337,6 +340,13 @@ function createStudio({ store, conf, online = false, local = {}, family = null }
     const pix = await readJSON('photos/index.json', {}), blocked = new Set(((await readJSON('photos/blocked.json', {}))[key]) || []), out = [];
     const picks = (await gatherPhotos(sources, name, max + blocked.size + 4)).filter(p => !blocked.has(p.title) && !blocked.has(p.url));
     for (const p of picks) { if (out.length >= max) break;
+      // (owner, 17 Oct AEDT) on Wikimedia or Flickr: listed by its address (checked that it answers), nothing saved
+      if (PHOTO_HOST.test(p.url) && !/\s/.test(p.url)) {
+        const h = await fetch(p.url, { method: 'HEAD', headers: { 'User-Agent': UA['User-Agent'] } }).catch(() => null);
+        if (!h || !h.ok || !/image\//.test(h.headers.get('content-type') || 'image/')) continue;
+        out.push({ url: p.url, file: p.title, caption: (p.caption || '').slice(0, 160), credit: [p.credit, p.from].filter(Boolean).join(' · ').slice(0, 200) }); continue;
+      }
+      // anywhere else (the last resort): a copy saved with the game, as before
       const img = await fetch(p.url, { headers: { 'User-Agent': UA['User-Agent'] } }); if (!img.ok || !/image\//.test(img.headers.get('content-type') || 'image/')) continue;
       // (r65) a photo over 1.5 MB is left for the next one: online Studio cannot send it back to show it, and it is heavy on a phone
       const buf = Buffer.from(await img.arrayBuffer()); if (buf.length > PHOTO_MAX) continue;
@@ -500,12 +510,12 @@ function createStudio({ store, conf, online = false, local = {}, family = null }
     if (api === 'job') return ok(JOB || {});
     // (r65) the list without the photos whose file is gone (an old ✕ undone by a stale list); a POST also saves it so
     if (api === 'photos/index') { const pix = await readJSON('photos/index.json', {}), have = new Set(await S.walk('photos')), out = {}; let gone = 0;
-      for (const [k, L] of Object.entries(pix)) { const kept = (Array.isArray(L) ? L : []).filter(p => p && have.has(p.src)); gone += (Array.isArray(L) ? L.length : 0) - kept.length; if (kept.length) out[k] = kept; }
+      for (const [k, L] of Object.entries(pix)) { const kept = (Array.isArray(L) ? L : []).filter(p => p && ((typeof p.url === 'string' && PHOTO_HOST.test(p.url)) || have.has(p.src))); /* (17 Oct AEDT) a linked photo has no file */ gone += (Array.isArray(L) ? L.length : 0) - kept.length; if (kept.length) out[k] = kept; }
       if (gone && post) await writeJSON('photos/index.json', out); return ok(out); }
     if (api === 'photos/get1' && post) { const x = b.item || {}; if (!/^[\p{L}\p{N}-]{1,60}$/u.test(x.key || '') || !Array.isArray(x.sources)) return bad('bad place'); return ok(await getPhotos1(x, Math.min(8, Math.max(1, +b.max || 4)))); }
-    if (api === 'photos/remove' && post) { const pix = await readJSON('photos/index.json', {}), L = pix[b.key] || []; const i = L.findIndex(p => p.src === b.src); if (i >= 0) {
-      if (L[i].file && b.block !== false) { const bl = await readJSON('photos/blocked.json', {}); bl[b.key] = [...new Set([...(bl[b.key] || []), L[i].file])].slice(-60); await writeJSON('photos/blocked.json', bl); } // not fetched again
-      if (OURPHOTO.test(L[i].src) && !L[i].src.includes('..')) await S.remove(L[i].src); L.splice(i, 1); if (L.length) pix[b.key] = L; else delete pix[b.key]; await writeJSON('photos/index.json', pix); } return ok({ ok: true }); }
+    if (api === 'photos/remove' && post) { const pix = await readJSON('photos/index.json', {}), L = pix[b.key] || []; const i = L.findIndex(p => (b.src && p.src === b.src) || (b.src && p.url === b.src)); if (i >= 0) { // (17 Oct AEDT) a linked photo by its address
+      if (L[i].file && b.block !== false) { const bl = await readJSON('photos/blocked.json', {}); bl[b.key] = [...new Set([...(bl[b.key] || []), L[i].file, ...(L[i].url ? [L[i].url] : [])])].slice(-60); await writeJSON('photos/blocked.json', bl); } // not fetched again
+      if (L[i].src && OURPHOTO.test(L[i].src) && !L[i].src.includes('..')) await S.remove(L[i].src); L.splice(i, 1); if (L.length) pix[b.key] = L; else delete pix[b.key]; await writeJSON('photos/index.json', pix); } return ok({ ok: true }); }
     if (api === 'voices/extra') {
       const L = await readJSON('tools/voice-extra.json', []);
       if (post) { const have = new Set(L.map(l => l.lang + '|' + l.text)); let n = 0; for (const l of b.lines || []) if (l && CAST[l.lang] && typeof l.text === 'string' && l.text.trim() && l.text.length < 400 && !have.has(l.lang + '|' + l.text)) { L.push({ lang: l.lang, text: l.text }); have.add(l.lang + '|' + l.text); n++; } if (n) await S.write('tools/voice-extra.json', Buffer.from(JSON.stringify(L, null, 0).replace(/\},\{/g, '},\n{') + '\n')); return ok({ added: n, total: L.length }); }

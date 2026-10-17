@@ -19,6 +19,7 @@ const FILES = [
 // network answers quickly, otherwise the saved copy after a short wait: a connection that never answers (Wi-Fi with no
 // internet, weak phone signal) must never keep the game from starting. The network's answer still refreshes the copy.
 const QUICK = 1500;
+const PHOTO_HOST = /^https:\/\/(upload\.wikimedia\.org|live\.staticflickr\.com|farm\d+\.staticflickr\.com)\//;
 function quick(e, cacheName, req, fallback) {
   return caches.open(cacheName).then(c => {
     const net = fetch(req).then(r => { if (r.ok) return c.put(req, r.clone()).catch(() => { }).then(() => r); return r; });
@@ -55,6 +56,16 @@ self.addEventListener('fetch', e => {
   const req = e.request;
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
+  // (owner, 17 Oct AEDT) real photos shown from Wikimedia or Flickr (js/realworld.js PHOTO_HOST): kept here once seen,
+  // so they still show without the internet; the newest 150 are kept (an image from another site comes back "opaque",
+  // which is fine to keep and show)
+  if (PHOTO_HOST.test(req.url)) {
+    e.respondWith(caches.open('sv-photos').then(c => c.match(req, { ignoreVary: true }).then(hit => hit || fetch(req).then(r => {
+      if (r.ok || r.type === 'opaque') e.waitUntil(c.put(req, r.clone()).then(() => c.keys()).then(ks => { const old = ks.filter(k => PHOTO_HOST.test(k.url)); return Promise.all(old.slice(0, Math.max(0, old.length - 150)).map(k => c.delete(k))); }).catch(() => { }));
+      return r;
+    }))));
+    return;
+  }
   if (url.origin !== location.origin) return;
   // (round R privacy, 9 Oct) family photos (api/family/…) are private: never kept here, straight to the network (the
   // game keeps its own copy in the "sv-family" cache); nor anything else under api/

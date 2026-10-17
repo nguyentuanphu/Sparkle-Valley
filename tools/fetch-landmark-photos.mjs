@@ -1,8 +1,8 @@
 // Fetches 3–5 freely licensed photos of every landmark from Wikimedia Commons into photos/<key>/ and lists them in
-// photos/index.json, the only place the game takes real photos from (round R privacy, 9 Oct, owner: "landmark photos
-// served from our own site"; rule PRIV-011). A developer runs it on a computer with the internet; the game never asks
-// Wikipedia or Wikimedia itself. Studio's Real photos page writes the same files, so either can be used, and a grown-up
-// can take a photo off there (photos/blocked.json is respected here too).
+// photos/index.json. (Owner, 17 Oct AEDT: photos are now linked from Wikimedia or Flickr, not saved; Studio's Real
+// photos page does that. This tool saves copies, so it is kept only as a last resort, as Studio's own saving is;
+// rule PRIV-011.) A developer runs it on a computer with the internet. A grown-up can take a photo off in Studio
+// (photos/blocked.json is respected here too).
 //
 //   node tools/fetch-landmark-photos.mjs                 places without photos, 4 each
 //   node tools/fetch-landmark-photos.mjs --max 5         3 to 5 per place

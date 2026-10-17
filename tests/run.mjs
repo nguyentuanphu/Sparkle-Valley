@@ -3373,17 +3373,21 @@ await check('songs', async () => {
 });
 
 await check('realphotos', async () => {
-  // (round R privacy, 9 Oct, owner: "landmark photos served from our own site") the photos are only the ones listed in
-  // photos/index.json (paths inside photos/), with their credit as words; the game never asks Wikipedia or Wikimedia; a
-  // place with none says the photos are on their way; 360° (Google) opens only after a grown-up's press and hold.
+  // (owner, 17 Oct AEDT: "point photos to Wikimedia; if no internet, mention internet required"; replaces round R's
+  // "served from our own site") the photos listed in photos/index.json are shown from Wikimedia or Flickr, or from
+  // photos/ when Studio kept a copy; any other web address is left out; the credit is words, not a link; a place with
+  // none says the photos are on their way; 360° (Google) opens only after a grown-up's press and hold.
   // (round O) 360° opens on top of the photos.
   const P = await open(b, { w: 390, h: 844, touch: true }); await clear(P.page);
   const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==', 'base64');
-  const outside = []; P.page.on('request', q => { if (/wikipedia\.org|wikimedia\.org|openverse/.test(q.url())) outside.push(q.url()); });
+  const outside = []; P.page.on('request', q => { const u = q.url(); if (/^https?:/.test(u) && !u.startsWith(P.page.url().split('/').slice(0, 3).join('/')) && !/^https:\/\/(upload\.wikimedia\.org|live\.staticflickr\.com|maps\.google\.com)\//.test(u)) outside.push(u); });
+  await P.page.route(/^https:\/\/(upload\.wikimedia\.org|live\.staticflickr\.com)\//, r => r.fulfill({ body: png, contentType: 'image/png' }));
   await P.page.route('**/photos/index.json*', r => r.fulfill({ json: { 'en-saigon-central-post-office': [
-    { src: 'photos/en-saigon-central-post-office/1.jpg', file: 'File:Lead photo.jpg', caption: 'The post office', credit: 'Photographer · CC BY 2.0 · Wikipedia' },
-    { src: 'photos/en-saigon-central-post-office/2.jpg', file: 'File:Other view.jpg', caption: 'Inside the hall', credit: 'Someone · CC BY-SA 4.0' },
-    { src: 'https://upload.wikimedia.org/a/elsewhere.jpg', file: 'File:Elsewhere.jpg', caption: 'not ours', credit: 'x' }] } }));
+    { url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/ab/Lead.jpg/1280px-Lead.jpg', file: 'File:Lead photo.jpg', caption: 'The post office', credit: 'Photographer · CC BY 2.0 · Wikipedia' },
+    { url: 'https://live.staticflickr.com/65535/123_abc_b.jpg', file: 'Inside the hall', caption: 'Inside the hall', credit: 'Someone · BY 2.0 · flickr' },
+    { src: 'photos/en-saigon-central-post-office/2.jpg', file: 'File:Kept copy.jpg', caption: 'A copy Studio kept', credit: 'Someone · CC BY-SA 4.0' },
+    { url: 'https://pics.example.com/elsewhere.jpg', file: 'Elsewhere', caption: 'not a photo site', credit: 'x' },
+    { src: 'https://upload.wikimedia.org/a/elsewhere.jpg', file: 'File:Elsewhere.jpg', caption: 'a web address as a file', credit: 'x' }] } }));
   await P.page.route('**/photos/en-saigon-central-post-office/*.jpg', r => r.fulfill({ body: png, contentType: 'image/png' }));
   await P.page.route('https://maps.google.com/**', r => r.fulfill({ body: '<html><body>map</body></html>', contentType: 'text/html' }));
   const r = await P.page.evaluate(async () => {
@@ -3408,9 +3412,21 @@ await check('realphotos', async () => {
     const empty = !!document.querySelector('.realview.none');
     return { none, dots, cap, srcs, links, gate: !!gate, early, says, tap, opened, onTop: !!(top && top.closest('.rvmap')), empty, direct };
   });
+  // (owner, 17 Oct AEDT) no internet: every photo fails to come, so the viewer says the photos need the internet
+  await P.page.route(/^https:\/\/(upload\.wikimedia\.org|live\.staticflickr\.com)\//, r => r.abort('internetdisconnected'));
+  await P.page.route('**/photos/en-saigon-central-post-office/*.jpg', r => r.abort('internetdisconnected'));
+  const off = await P.page.evaluate(async () => {
+    const W = await import('/js/realworld.js'), wait = ms => new Promise(x => setTimeout(x, ms));
+    W.openPhotos('Saigon Central Post Office', W.REAL.postoffice[0], { id: 'postoffice' });
+    for (let k = 0; k < 40 && !document.querySelector('.rv-nonet'); k++) await wait(150);
+    const n = document.querySelector('.rv-nonet'), v = document.querySelector('.realview');
+    const out = { note: n ? n.textContent.trim() : '', art: !!(n && n.querySelector('svg, .art')), arrows: v ? getComputedStyle(v.querySelector('.rv-next')).display : '', imgs: v ? v.querySelectorAll('.rv-img').length : -1 };
+    document.querySelectorAll('.realview, .modal').forEach(e => e.remove()); return out;
+  });
   const errs = P.errors; await P.ctx.close();
-  ok(!r.none && r.dots === 2 && /Photographer/.test(r.cap) && r.srcs.every(x => /^photos\//.test(x)) && !r.links && r.gate && !r.early && r.says && r.tap >= 44 && r.opened && r.onTop && r.direct && r.empty && !outside.length && !errs.length, JSON.stringify(Object.assign(r, { outside, errs })));
-  return `2 photos from photos/index.json (a web address left out), credit “${r.cap}” as words; nothing asked of Wikipedia or Wikimedia; a place with none says they are on their way; 360° asks a grown-up (says it opens Google) while Use the internet is off, then opens on top of the photos; with it on, opens straight away`;
+  ok(/internet/.test(off.note) && off.art && off.arrows === 'none' && !off.imgs, 'no internet: ' + JSON.stringify(off));
+  ok(!r.none && r.dots === 3 && /Photographer/.test(r.cap) && r.srcs.length && r.srcs.every(x => /^(photos\/|https:\/\/(upload\.wikimedia\.org|live\.staticflickr\.com)\/)/.test(x)) && !r.links && r.gate && !r.early && r.says && r.tap >= 44 && r.opened && r.onTop && r.direct && r.empty && !outside.length && !errs.length, JSON.stringify(Object.assign(r, { outside, errs })));
+  return `3 photos from photos/index.json (Wikimedia, Flickr and a copy Studio kept; other web addresses left out), credit “${r.cap}” as words; nothing asked of any other site; no internet: “${off.note}”; a place with none says they are on their way; 360° asks a grown-up (says it opens Google) while Use the internet is off, then opens on top of the photos; with it on, opens straight away`;
 });
 
 await check('firstplayer', async () => {
