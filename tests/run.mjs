@@ -3380,8 +3380,8 @@ await check('realphotos', async () => {
   // (round O) 360° opens on top of the photos.
   const P = await open(b, { w: 390, h: 844, touch: true }); await clear(P.page);
   const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==', 'base64');
-  const outside = []; P.page.on('request', q => { const u = q.url(); if (/^https?:/.test(u) && !u.startsWith(P.page.url().split('/').slice(0, 3).join('/')) && !/^https:\/\/(upload\.wikimedia\.org|live\.staticflickr\.com|maps\.google\.com)\//.test(u)) outside.push(u); });
-  await P.page.route(/^https:\/\/(upload\.wikimedia\.org|live\.staticflickr\.com)\//, r => r.fulfill({ body: png, contentType: 'image/png' }));
+  const outside = []; P.page.on('request', q => { const u = q.url(); if (/^https?:/.test(u) && !u.startsWith(P.page.url().split('/').slice(0, 3).join('/')) && !/^https:\/\/((upload|thumb)\.wikimedia\.org|live\.staticflickr\.com|maps\.google\.com)\//.test(u)) outside.push(u); });
+  await P.page.route(/^https:\/\/((upload|thumb)\.wikimedia\.org|live\.staticflickr\.com)\//, r => r.fulfill({ body: png, contentType: 'image/png' }));
   await P.page.route('**/photos/index.json*', r => r.fulfill({ json: { 'en-saigon-central-post-office': [
     { url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/ab/Lead.jpg/1280px-Lead.jpg', file: 'File:Lead photo.jpg', caption: 'The post office', credit: 'Photographer · CC BY 2.0 · Wikipedia' },
     { url: 'https://live.staticflickr.com/65535/123_abc_b.jpg', file: 'Inside the hall', caption: 'Inside the hall', credit: 'Someone · BY 2.0 · flickr' },
@@ -3413,7 +3413,7 @@ await check('realphotos', async () => {
     return { none, dots, cap, srcs, links, gate: !!gate, early, says, tap, opened, onTop: !!(top && top.closest('.rvmap')), empty, direct };
   });
   // (owner, 17 Oct AEDT) no internet: every photo fails to come, so the viewer says the photos need the internet
-  await P.page.route(/^https:\/\/(upload\.wikimedia\.org|live\.staticflickr\.com)\//, r => r.abort('internetdisconnected'));
+  await P.page.route(/^https:\/\/((upload|thumb)\.wikimedia\.org|live\.staticflickr\.com)\//, r => r.abort('internetdisconnected'));
   await P.page.route('**/photos/en-saigon-central-post-office/*.jpg', r => r.abort('internetdisconnected'));
   const off = await P.page.evaluate(async () => {
     const W = await import('/js/realworld.js'), wait = ms => new Promise(x => setTimeout(x, ms));
@@ -3425,7 +3425,7 @@ await check('realphotos', async () => {
   });
   const errs = P.errors; await P.ctx.close();
   ok(/internet/.test(off.note) && off.art && off.arrows === 'none' && !off.imgs, 'no internet: ' + JSON.stringify(off));
-  ok(!r.none && r.dots === 3 && /Photographer/.test(r.cap) && r.srcs.length && r.srcs.every(x => /^(photos\/|https:\/\/(upload\.wikimedia\.org|live\.staticflickr\.com)\/)/.test(x)) && !r.links && r.gate && !r.early && r.says && r.tap >= 44 && r.opened && r.onTop && r.direct && r.empty && !outside.length && !errs.length, JSON.stringify(Object.assign(r, { outside, errs })));
+  ok(!r.none && r.dots === 3 && /Photographer/.test(r.cap) && r.srcs.length && r.srcs.every(x => /^(photos\/|https:\/\/((upload|thumb)\.wikimedia\.org|live\.staticflickr\.com)\/)/.test(x)) && !r.links && r.gate && !r.early && r.says && r.tap >= 44 && r.opened && r.onTop && r.direct && r.empty && !outside.length && !errs.length, JSON.stringify(Object.assign(r, { outside, errs })));
   return `3 photos from photos/index.json (Wikimedia, Flickr and a copy Studio kept; other web addresses left out), credit “${r.cap}” as words; nothing asked of any other site; no internet: “${off.note}”; a place with none says they are on their way; 360° asks a grown-up (says it opens Google) while Use the internet is off, then opens on top of the photos; with it on, opens straight away`;
 });
 

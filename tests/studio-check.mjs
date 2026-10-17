@@ -489,16 +489,16 @@ export async function studioCheck(browser, open) {
       const real = globalThis.fetch, asked = [], J = o => new Response(JSON.stringify(o), { status: 200, headers: { 'content-type': 'application/json' } });
       const urls = ['https://live.staticflickr.com/1/gone_b.jpg', 'https://live.staticflickr.com/1/a_b.jpg', 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/ab/B.jpg/1280px-B.jpg'];
       globalThis.fetch = async (u, o = {}) => { u = String(u); if (u.includes('openverse')) return J({ results: urls.map((url, i) => ({ url, width: 1600, height: 900, title: 'Linked place ' + i, creator: 'me', license: 'by', license_version: '4.0', source: 'flickr' })) });
-        if (/staticflickr|upload\.wikimedia/.test(u)) { asked.push((o.method || 'GET') + ' ' + u); return new Response(null, { status: u.includes('gone') ? 404 : 200, headers: { 'content-type': 'image/jpeg' } }); }
+        if (/staticflickr|(upload|thumb)\.wikimedia/.test(u)) { asked.push((o.method || 'GET') + ' ' + u); return new Response(null, { status: u.includes('gone') ? 404 : 200, headers: { 'content-type': 'image/jpeg' } }); }
         if (u.startsWith('http://localhost') || u.startsWith('http://127.0.0.1')) return real(u); return new Response('{}', { status: 404 }); };
       try { const st = createStudio({ store: folderStore(d), conf: {} }), r = await st.handle('photos/get1', 'POST', Buffer.from(JSON.stringify({ item: { key: 'linked-place', sources: ['en:Linked place'], name: 'Linked place' }, max: 2 })));
         const ix = JSON.parse(fs.readFileSync(path.join(d, 'photos/index.json'), 'utf8'))['linked-place'] || [], saved = fs.existsSync(path.join(d, 'photos/linked-place')) ? fs.readdirSync(path.join(d, 'photos/linked-place')) : [];
-        ok(r.code === 200 && ix.length === 2 && ix.every(x => x.url && !x.src) && ix.map(x => x.url).join() === urls.slice(1).join() && !saved.length && asked.every(a => a.startsWith('HEAD ')),
+        ok(r.code === 200 && ix.length === 2 && ix.every(x => x.url && !x.src) && ix.map(x => x.url).join() === [urls[1], urls[2].replace('https://upload.', 'https://thumb.')].join() && !saved.length && asked.every(a => a.startsWith('HEAD ')),
           'linked photos: ' + JSON.stringify({ r: r.body, ix, saved, asked }));
         const ixr = await st.handle('photos/index', 'POST', Buffer.from('{}')); ok(ixr.code === 200 && ixr.body['linked-place'] && ixr.body['linked-place'].length === 2, 'a linked photo was taken off the list as if its file were gone: ' + JSON.stringify(ixr.body));
         await st.handle('photos/remove', 'POST', Buffer.from(JSON.stringify({ key: 'linked-place', src: urls[1] })));
         const after = JSON.parse(fs.readFileSync(path.join(d, 'photos/index.json'), 'utf8'))['linked-place'] || [], bl = JSON.parse(fs.readFileSync(path.join(d, 'photos/blocked.json'), 'utf8'))['linked-place'] || [];
-        ok(after.length === 1 && after[0].url === urls[2] && bl.includes(urls[1]), 'taking off a linked photo: ' + JSON.stringify({ after, bl })); }
+        ok(after.length === 1 && after[0].url === urls[2].replace('https://upload.', 'https://thumb.') && bl.includes(urls[1]), 'taking off a linked photo: ' + JSON.stringify({ after, bl })); }
       finally { globalThis.fetch = real; fs.rmSync(d, { recursive: true, force: true }); }
       notes.push('a Wikimedia or Flickr photo is listed by its address (nothing saved), one that does not answer is skipped, and ✕ takes a linked one off'); }
     // 6. the dashboard in a browser: online (signed in) and in the exe, on a desktop and a phone

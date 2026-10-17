@@ -54,7 +54,7 @@ export const photoKey = sources => sources[0].toLowerCase().replace(/[^\p{L}\p{N
 // of the sources); a copy Studio kept has src: 'photos/<key>/1.jpg' instead of url
 let LOCAL = null;
 // (17 Oct AEDT) the photo sites the game may show from (the same list is in sw.js, which keeps seen photos)
-export const PHOTO_HOST = /^https:\/\/(upload\.wikimedia\.org|live\.staticflickr\.com|farm\d+\.staticflickr\.com)\//;
+export const PHOTO_HOST = /^https:\/\/((upload|thumb)\.wikimedia\.org|live\.staticflickr\.com|farm\d+\.staticflickr\.com)\//;
 const saved = p => typeof p.src === 'string' && /^photos\/[\w\p{L}\p{N}./-]+\.(jpe?g|png|webp)$/iu.test(p.src) && !p.src.includes('..');
 const ours = p => p && ((typeof p.url === 'string' && PHOTO_HOST.test(p.url) && !/\s/.test(p.url)) || saved(p));
 const photoAddress = p => p.url && PHOTO_HOST.test(p.url) ? p.url : p.src;

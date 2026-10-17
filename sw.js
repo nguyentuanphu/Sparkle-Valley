@@ -19,7 +19,7 @@ const FILES = [
 // network answers quickly, otherwise the saved copy after a short wait: a connection that never answers (Wi-Fi with no
 // internet, weak phone signal) must never keep the game from starting. The network's answer still refreshes the copy.
 const QUICK = 1500;
-const PHOTO_HOST = /^https:\/\/(upload\.wikimedia\.org|live\.staticflickr\.com|farm\d+\.staticflickr\.com)\//;
+const PHOTO_HOST = /^https:\/\/((upload|thumb)\.wikimedia\.org|live\.staticflickr\.com|farm\d+\.staticflickr\.com)\//;
 function quick(e, cacheName, req, fallback) {
   return caches.open(cacheName).then(c => {
     const net = fetch(req).then(r => { if (r.ok) return c.put(req, r.clone()).catch(() => { }).then(() => r); return r; });

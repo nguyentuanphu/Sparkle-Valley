@@ -192,10 +192,16 @@ const PHOTO_MAX = 1.5e6;
 const OURFILE = /^(content|photos)\/[\w\p{L}\p{N}./-]+$/u, OURPHOTO = /^photos\/[\w\p{L}\p{N}./-]+$/u;
 // (owner, 17 Oct AEDT: "point photos to Wikimedia") a photo on one of these sites is listed by its address, not saved
 // (the same list is js/realworld.js PHOTO_HOST and sw.js); a photo anywhere else is saved as before, the last resort
-const PHOTO_HOST = /^https:\/\/(upload\.wikimedia\.org|live\.staticflickr\.com|farm\d+\.staticflickr\.com)\//;
-// a Wikimedia original wider than 1280 px (Openverse lists originals) → Wikimedia's own 1280 px copy (one of its standard
-// sizes: any other size is refused when linked, https://www.mediawiki.org/wiki/Common_thumbnail_sizes)
-const wm1280 = (/** @type {string} */ url, /** @type {number} */ width) => { const m = /^https:\/\/upload\.wikimedia\.org\/wikipedia\/commons\/([0-9a-f])\/([0-9a-f]{2})\/([^/]+\.(?:jpe?g|png))$/i.exec(url); return m && width > 1280 ? `https://upload.wikimedia.org/wikipedia/commons/thumb/${m[1]}/${m[2]}/${m[3]}/1280px-${m[3]}` : url; };
+const PHOTO_HOST = /^https:\/\/((upload|thumb)\.wikimedia\.org|live\.staticflickr\.com|farm\d+\.staticflickr\.com)\//;
+// a Wikimedia photo is linked at thumb.wikimedia.org (Wikimedia's own address for its copies; upload.wikimedia.org refuses
+// more), at the largest of its standard sizes up to 1280 px that fits the original (any other size is refused when
+// linked, https://www.mediawiki.org/wiki/Common_thumbnail_sizes), without the ?utm_… it adds
+const wmSized = (/** @type {string} */ url, /** @type {number} */ width) => {
+  if (!/^https:\/\/(upload|thumb)\.wikimedia\.org\//.test(url)) return url;
+  const u = url.split('?')[0].replace(/^https:\/\/upload\./, 'https://thumb.'), m = /^https:\/\/thumb\.wikimedia\.org\/wikipedia\/commons\/([0-9a-f])\/([0-9a-f]{2})\/([^/]+\.(?:jpe?g|png))$/i.exec(u);
+  if (!m) return u; const step = [1280, 960, 500, 330, 250].find(x => x <= (width || 1280)) || 250;
+  return `https://thumb.wikimedia.org/wikipedia/commons/thumb/${m[1]}/${m[2]}/${m[3]}/${step}px-${m[3]}`;
+};
 const slug = s => String(s).normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'D').replace(/[^\w]+/g, '-').replace(/^-|-$/g, '').toLowerCase().slice(0, 40) || 'face';
 const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.mjs': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.json': 'application/json; charset=utf-8', '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.svg': 'image/svg+xml', '.mp3': 'audio/mpeg', '.mp4': 'video/mp4', '.woff2': 'font/woff2', '.webmanifest': 'application/manifest+json', '.ico': 'image/x-icon', '.txt': 'text/plain; charset=utf-8', '.zip': 'application/zip', '.toml': 'text/plain' };
 const mimeOf = f => MIME[path.extname(f).toLowerCase()] || 'application/octet-stream';
@@ -345,7 +351,7 @@ function createStudio({ store, conf, online = false, local = {}, family = null }
     for (const p of picks) { if (out.length >= max) break;
       // (owner, 17 Oct AEDT) on Wikimedia or Flickr: listed by its address (checked that it answers), nothing saved
       if (PHOTO_HOST.test(p.url) && !/\s/.test(p.url)) {
-        p.url = wm1280(p.url, p.width || 0);
+        p.url = wmSized(p.url, p.width || 0);
         const h = await fetch(p.url, { method: 'HEAD', headers: { 'User-Agent': UA['User-Agent'] } }).catch(() => null);
         if (!h || !h.ok || !/image\//.test(h.headers.get('content-type') || 'image/')) continue;
         out.push({ url: p.url, file: p.title, caption: (p.caption || '').slice(0, 160), credit: [p.credit, p.from].filter(Boolean).join(' · ').slice(0, 200) }); continue;
