@@ -2933,6 +2933,13 @@ await check('boats', async () => {
       if (shallow) bad.push(`${name}: ${shallow} m too shallow (first at ${first})`);
       if (low) bad.push(`${name}: ${low} m under a deck too low for it`);
       for (const s of f.stops) { const p = s.dock && s.dock.pier && s.dock.pier.land; if (!p) continue; const rd = W.roadDist(p.x, p.z); if (!rd.road || rd.d > rd.road.w / 2 + 3) bad.push(`${name}: the pier at ${p.x.toFixed(0)},${p.z.toFixed(0)} (${s.name()}) joins no road (${rd.d.toFixed(1)} m)`); }
+      // (owner, 18 Oct AEDT: "the boat docks are too far drop off the ground") walk each pier from the bank to its end: it
+      // starts level with the ground, and no step up or down is more than a child can climb (1.2 m)
+      for (const s of f.stops) { const pr = s.dock && s.dock.pier; if (!pr || !pr.land) continue; const L = Math.hypot(pr.tip.x - pr.land.x, pr.tip.z - pr.land.z);
+        let y = W.heightAt(pr.land.x - Math.sin(pr.a), pr.land.z - Math.cos(pr.a)), worst = 0;
+        for (let k = -1; k <= L; k += .2) { const g = G.world.groundAt(pr.land.x + Math.sin(pr.a) * k, pr.land.z + Math.cos(pr.a) * k, y + .01); worst = Math.max(worst, Math.abs(g - y)); y = g; }
+        if (worst > 1.2) bad.push(`${name}: the pier at ${pr.land.x.toFixed(0)},${pr.land.z.toFixed(0)} (${s.name()}) has a ${worst.toFixed(1)} m drop`);
+        if (Math.abs(y - pr.tip.y) > .3) bad.push(`${name}: walking the pier at ${pr.land.x.toFixed(0)},${pr.land.z.toFixed(0)} ends ${(y - pr.tip.y).toFixed(1)} m off its end`); }
       info.push(`${name} ${f.stops.length} stops`);
     }
     const raft = F.find(f => f.line), want = (M.BOATS.find(b => b.id === 'raft').bridgeStops || []).map(s => s.bridge), have = raft ? raft.stops.map(s => s.bridge).filter(Boolean) : [];
@@ -2940,12 +2947,18 @@ await check('boats', async () => {
     if (!F.some(f => f.harbour)) bad.push('no Sydney Harbour ferry');
     // (round T3) every boat the map gives two piers runs: the Sydney Harbour ferry and the Sài Gòn boat to Vũng Tàu
     for (const B of M.BOATS.filter(B => B.piers)) if (!F.some(f => f.boat === B.id)) bad.push(`no boat ${B.id}`);
+    // (owner, 18 Oct AEDT: Cầu Rồng's sign stood in Sông Hồng and the map sent children there) every bridge landmark's ℹ️
+    // sign (where the map's Travel takes a child) is on dry land within 12 m of its bridge's end
+    for (const Bd of W.BRIDGES.filter(Bd => Bd.landmark)) for (const lm of G.LANDMARKS.filter(l => l.id === Bd.landmark)) {
+      const ends = Bd.axis === 'z' ? [[Bd.c, Bd.a0], [Bd.c, Bd.a1]] : [[Bd.a0, Bd.c], [Bd.a1, Bd.c]], d = Math.min(...ends.map(([x, z]) => Math.hypot(lm.x - x, lm.z - z)));
+      if (W.heightAt(lm.x, lm.z) < W.WATER + .4 || d > 12) bad.push(`${lm.id}: its sign at ${lm.x.toFixed(0)},${lm.z.toFixed(0)} is ${d.toFixed(0)} m from its bridge${W.heightAt(lm.x, lm.z) < W.WATER + .4 ? ', in the water' : ''}`);
+    }
     return { bad, info };
   });
   const errs = P.errors; await P.ctx.close();
   ok(!r.bad.length, r.bad.slice(0, 10).join('; '));
   ok(!errs.length, errs.join(' | '));
-  return r.info.join(', ') + '; every route deep enough, under high enough decks, every pier on a road or path';
+  return r.info.join(', ') + '; every route deep enough, under high enough decks, every pier on a road or path, level with its bank and walkable to its end; every bridge landmark sign on land by its bridge';
 });
 
 await check('plots', async () => {
