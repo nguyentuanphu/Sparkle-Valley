@@ -104,8 +104,8 @@ window.ADS10 = (() => {
         say: ['Every place, friend and animal found adds a sticker to the book.', 'Mỗi nơi đã đến, mỗi người bạn và con vật tìm thấy là thêm một hình dán vào sổ.'] },
       { id: 'rw3', bg: WARM, phones: ['wardrobe'], confetti: true, cap: ['Dress up your hero', 'Thay đồ cho nhân vật'], cls: 'pink',
         say: ['Coins buy clothes and hats to dress up their hero.', 'Tiền xu dùng để mua quần áo và mũ cho nhân vật.'] },
-      { id: 'rw4', bg: SKY, phones: ['stickers', 'adventure'], cap: ['Rewards without pressure', 'Phần thưởng không áp lực'], cls: 'white',
-        say: ['Gentle rewards, no timers, no shop pressure, nothing to buy.', 'Phần thưởng nhẹ nhàng, không hẹn giờ, không ép mua, không có gì phải trả tiền.'] },
+      { id: 'rw4', bg: SKY, phones: ['stickers', 'adventure'], cap: ['Gentle rewards every day', 'Phần thưởng nhẹ nhàng mỗi ngày'], cls: 'white',
+        say: ['Gentle rewards that make every day feel special.', 'Phần thưởng nhẹ nhàng, ngày nào cũng thấy vui.'] },
       end('rw5', 'Sparkle Valley. Something new every day.', 'Thung Lũng Lấp Lánh. Mỗi ngày một điều mới.')
     ],
     together: [
@@ -130,8 +130,8 @@ window.ADS10 = (() => {
       { id: 'pa3', bg: MINT, phones: ['studio-message'], cap: ['Sparkle Studio for parents', 'Sparkle Studio cho bố mẹ'], cls: 'green',
         say: ['Sparkle Studio lets you set messages, missions and settings from your own phone.', 'Sparkle Studio giúp bố mẹ đặt lời nhắn, nhiệm vụ và cài đặt ngay trên điện thoại.'] },
       { capTop: true, id: 'pa4', bg: SKY, phones: ['simple'], cap: ['Private and safe', 'Riêng tư và an toàn'], cls: 'white',
-        chips: [['🚫 No tracking, nothing to buy', '🚫 Không theo dõi, không phải mua gì'], ['📴 Works offline', '📴 Chơi được khi không có mạng'], ['🔒 Family photos stay private', '🔒 Ảnh gia đình luôn riêng tư']],
-        say: ['No ad networks, no tracking and nothing to buy. It works offline, and family photos stay private.', 'Không mạng quảng cáo, không theo dõi, không phải mua gì. Chơi được khi không có mạng, và ảnh gia đình luôn riêng tư.'] },
+        chips: [['📴 Works offline', '📴 Chơi được khi không có mạng'], ['🔒 Family photos stay private', '🔒 Ảnh gia đình luôn riêng tư']],
+        say: ['It works offline, and family photos stay private.', 'Chơi được khi không có mạng, và ảnh gia đình luôn riêng tư.'] },
       end('pa5', 'Sparkle Valley. Play in your browser today.', 'Thung Lũng Lấp Lánh. Chơi ngay trên trình duyệt hôm nay.')
     ]
   };
@@ -145,9 +145,9 @@ window.ADS10_COVER = {
   learn: { head: ['Reading, counting and money', 'Đọc chữ, đếm số và tiêu tiền'], bg: 'linear-gradient(160deg,#c9f7e1 0%,#fff3c4 100%)', phones: ['game-reading', 'game-money'], chip: ['📚 Learning hidden in play', '📚 Học mà như chơi'] },
   heritage: { head: ['Folk games and festivals', 'Trò chơi dân gian và lễ hội'], bg: 'radial-gradient(ellipse at 50% 30%,#ffd6a0 0%,#ff9fb2 50%,#8a5cf6 100%)', phones: ['game-oanquan', 'festivals'], chip: ['🏮 Ô ăn quan, kites, Trung Thu', '🏮 Ô ăn quan, thả diều, Trung Thu'] },
   stories: { head: ['Fairy tales, read aloud', 'Truyện cổ tích, kể thành tiếng'], bg: 'radial-gradient(ellipse at 50% 20%,#b49cff 0%,#6a4a9a 70%,#3a2a60 100%)', phones: ['tale', 'dialog'], chip: ['📖 Stories in both languages', '📖 Truyện bằng hai thứ tiếng'] },
-  rewards: { head: ['Daily adventures and stickers', 'Phiêu lưu mỗi ngày và hình dán'], bg: 'linear-gradient(160deg,#c9f7e1 0%,#fff3c4 100%)', phones: ['adventure', 'stickers'], chip: ['⭐ Gentle rewards, nothing to buy', '⭐ Thưởng nhẹ nhàng, không phải mua'] },
+  rewards: { head: ['Daily adventures and stickers', 'Phiêu lưu mỗi ngày và hình dán'], bg: 'linear-gradient(160deg,#c9f7e1 0%,#fff3c4 100%)', phones: ['adventure', 'stickers'], chip: ['⭐ A sticker for every discovery', '⭐ Mỗi khám phá một hình dán'] },
   together: { head: ['Play together, near or far', 'Chơi cùng nhau, dù gần hay xa'], bg: 'linear-gradient(180deg,#5ec8f2 0%,#a8e3f7 55%,#8fdc6a 55%,#5fb447 100%)', phones: ['two-players', 'friends'], chip: ['🔒 Safe, with grown-up codes', '🔒 An toàn, có mã của người lớn'] },
-  parents: { head: ['Screen time you can feel good about', 'Giờ chơi màn hình bố mẹ yên tâm'], bg: 'linear-gradient(160deg,#ffe7b0 0%,#ffc4d6 100%)', phones: ['grownups', 'studio-message'], chip: ['🚫 No tracking, works offline', '🚫 Không theo dõi, chơi khi không có mạng'] }
+  parents: { head: ['Screen time you can feel good about', 'Giờ chơi màn hình bố mẹ yên tâm'], bg: 'linear-gradient(160deg,#ffe7b0 0%,#ffc4d6 100%)', phones: ['grownups', 'studio-message'], chip: ['📴 Works offline, you stay in charge', '📴 Chơi khi không có mạng, bố mẹ nắm quyền'] }
 };
 
 // (from ads5.js) an ad as stage scenes for one language; stills are <name>-<lang>.jpg unless written name@lang
