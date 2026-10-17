@@ -759,6 +759,8 @@ await check('ownervoicewifi', async () => {
       const S=await import('/js/state.js'), V=await import('/js/voicepack.js');
       S.settings.autoPack=true; S.settings.packCell=false;
       window.__ownerPackProgress=[];
+      // (r82, lighter loading) a newly loaded language list restarts the downloader with the game's own reporter: hear it too
+      (await import('/js/voice.js')).onPackProgress(e=>window.__ownerPackProgress.push(e));
       V.startPack(pack,e=>window.__ownerPackProgress.push(e),()=> 'nearby');
     },{lines,langOf,areas:true,version:999,made:'owner-wifi-language-switch'});
     let timer;
