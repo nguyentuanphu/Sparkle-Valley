@@ -360,7 +360,7 @@ const loadPack = (langs = voiceLanguages(settings)) => {
   return packReady;
 };
 navigator.serviceWorker?.addEventListener('message', e => {
-  if (e.data?.type === 'SV_VOICE_MANIFEST') voiceIndex.refresh(e.data.manifest);
+  if (e.data?.type === 'SV_VOICE_LANGUAGE_MANIFEST') voiceIndex.refresh(e.data.manifest);
 });
 for (const ev of ['pointerdown', 'keydown', 'touchstart']) addEventListener(ev, () => loadPack(), { once: true, capture: true, passive: true });
 // Language/settings changes fetch only the newly selected index. Saved MP3s are kept.

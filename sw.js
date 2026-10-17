@@ -72,7 +72,7 @@ self.addEventListener('fetch', e => {
             const manifest = JSON.parse(text);
             if (manifest && manifest.lines) {
               const clients = await self.clients.matchAll({ type: 'window' });
-              clients.forEach(client => client.postMessage({ type: 'SV_VOICE_MANIFEST', manifest }));
+              clients.forEach(client => client.postMessage({ type: manifest.language ? 'SV_VOICE_LANGUAGE_MANIFEST' : 'SV_VOICE_MANIFEST', manifest }));
             }
           }
         }
