@@ -1,7 +1,7 @@
 {
- "studio": "r81",
- "sha256": "a756d96a1e0dd88412f0f7786841c24f87db796cd5575bdefbd9a9082d695268",
- "size": 86770688,
- "notes": "r81: content pages (Message, Missions, Quiz, Villagers, Defaults and more) go live at once from the exe too, with its Studio key",
- "built": "2026-10-17T01:16:49.974Z"
+ "studio": "r83",
+ "sha256": "507a9e280a2d202a74b345bae5b790c90bfbf97702d9dd4580faa1591089b51f",
+ "size": 86774272,
+ "notes": "r83: real photos linked from Wikimedia and Flickr (no internet: a friendly message), lighter loading, TypeScript engine",
+ "built": "2026-10-17T19:23:56.229Z"
 }
