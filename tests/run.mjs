@@ -4137,9 +4137,22 @@ await check('ride', async () => {
     const car = I.find(i => /^drive_/.test(i.id) && /car/i.test(i.label())); if (car) { h.place(car.x + 1, car.z); car.act(h, G); out.driving = !!h.riding && !!h.riding.vehicle;
       // (Round V, owner 13 Oct) the camera rides at the child's eyes, looking ahead
       for (let k = 0; k < 60; k++) h.finish(1 / 60, k / 60, G, 0); const eyeUp = h.cam.position.y - h.pos.y, eyeNear = Math.hypot(h.cam.position.x - h.pos.x, h.cam.position.z - h.pos.z); out.pov = eyeUp > .8 && eyeUp < 2.6 && eyeNear < 1.2;
-      // drive it away, get off, walk away: it goes back to its parking spot
+      // drive it away and get off: (owner, 17 Oct AEDT, #354: "stay where left"; was: back once the child walked 20 m
+      // away) it waits where it was left while the child is 40 m away, and goes back to its parking spot once every child
+      // is far away (70 m)
       const sl = G.traffic.slots.find(x => x.v && x.v.o === h.riding.mesh), home = sl ? [sl.x, sl.z] : null; h.pos.x += 30; h.riding.mesh.position.x += 30; h.dismount(); out.off = !h.riding;
-      h.place(h.pos.x + 40, h.pos.z); await new Promise(r => setTimeout(r, 1200)); out.carBack = !!home && Math.hypot(sl.v.o.position.x - home[0], sl.v.o.position.z - home[1]) < 1; }
+      const atHome = () => !!home && Math.hypot(sl.v.o.position.x - home[0], sl.v.o.position.z - home[1]) < 1, left = [sl.v.o.position.x, sl.v.o.position.z];
+      h.place(left[0] + 40, left[1]); await new Promise(r => setTimeout(r, 1200)); out.carStays = !atHome() && Math.hypot(sl.v.o.position.x - left[0], sl.v.o.position.z - left[1]) < .5;
+      h.place(left[0] + 70, left[1]); await new Promise(r => setTimeout(r, 1200)); out.carBack = atHome(); }
+    // (#354, owner 17 Oct AEDT: "all animals and vehicles can travel anywhere") a bicycle rides over every bridge, end to
+    // end, on its deck (the Dragon Bridge in a lane beside the dragon); before, every ride stopped at the first plank
+    { const w = await import('/js/world.js'), bike = I.find(i => /^bike_/.test(i.id)), pad = { cdx: 0, cdy: 0, mx: 0, mz: 1, jump: () => false, act: () => false, run: false };
+      out.bridges = []; for (const B of w.BRIDGES) {
+        h.place(bike.x + 1, bike.z); bike.act(h, G); const lane = B.style === 'dragon' ? 2.2 : 0, u0 = B.a0 - 6, u1 = B.a1 + 6, cy = B.axis === 'x' ? -Math.PI / 2 : Math.PI;
+        const [x, z] = B.axis === 'x' ? [u0, B.c + lane] : [B.c + lane, u0]; h.pos.set(x, G.world.groundAt(x, z), z); h.riding.mesh.position.copy(h.pos);
+        let deck = false; for (let k = 0; k < 600; k++) { h.camYaw = h.steerYaw = cy; h.update(1 / 30, pad, k / 30, G); const u = B.axis === 'x' ? h.pos.x : h.pos.z; if (u > B.a0 + 2 && u < B.a1 - 2 && h.pos.y > w.WATER + 1) deck = true; if (u > u1) break; }
+        if (!((B.axis === 'x' ? h.pos.x : h.pos.z) > u1 - 1 && deck)) out.bridges.push(B.id); h.dismount(); }
+      out.bridgeCount = w.BRIDGES.length; }
     // a buffalo: ride it away, get off: it runs back home
     const bf = (G.world.buffalo || [])[0]; if (bf) { h.place(bf.mesh.position.x + 1, bf.mesh.position.z); G.mount(h, bf); h.pos.x += 12; bf.mesh.position.x += 12; h.dismount(); out.buffHome = bf.tx === bf.home[0] && bf.tz === bf.home[1] && bf.back === true; }
     return out;
@@ -4162,8 +4175,8 @@ await check('ride', async () => {
   }, age);
   r.big = await bus('big'); r.little = await bus('little');
   const errs = P.errors; await P.ctx.close();
-  ok(r.drive >= 20 && r.bike >= 4 && r.rides >= 4 && r.stops >= 4 && !r.lift && r.driving && r.off && r.big.on && r.big.paid > 0 && r.little.on && r.little.paid === 0 && r.big.picks >= 3 && r.big.arrived && r.pov && r.carBack && r.buffHome && !errs.length, JSON.stringify(Object.assign(r, { errs })));
-  return `${r.drive} parked cars and motorbikes to drive, ${r.bike} bicycles, ${r.rides} buses, trams and taxis to ride (big kid paid ${r.big.paid}, under-5 free), ${r.stops} bus stops, each stop a choice of ${r.big.picks} places and the child arrives there; the camera rides at the child's eyes; a car left elsewhere goes back to its spot and a buffalo runs home; no lifts from strangers`;
+  ok(r.drive >= 20 && r.bike >= 4 && r.rides >= 4 && r.stops >= 4 && !r.lift && r.driving && r.off && r.big.on && r.big.paid > 0 && r.little.on && r.little.paid === 0 && r.big.picks >= 3 && r.big.arrived && r.pov && r.carStays && r.carBack && r.buffHome && r.bridgeCount >= 10 && !r.bridges.length && !errs.length, JSON.stringify(Object.assign(r, { errs })));
+  return `${r.drive} parked cars and motorbikes to drive, ${r.bike} bicycles, ${r.rides} buses, trams and taxis to ride (big kid paid ${r.big.paid}, under-5 free), ${r.stops} bus stops, each stop a choice of ${r.big.picks} places and the child arrives there; the camera rides at the child's eyes; a car left behind waits where it was left and goes back to its spot once every child is far away; a buffalo runs home; a bicycle rides over all ${r.bridgeCount} bridges; no lifts from strangers`;
 });
 
 await check('familymissions', async () => {

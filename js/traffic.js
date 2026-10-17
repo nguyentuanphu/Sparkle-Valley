@@ -143,11 +143,17 @@ export function createTraffic(G) {
     const H = G.heroes || []; if (!H.length) return;
     let n = 0;
     for (const sl of slots) { if (sl.v) continue; const [x, z] = where(sl); if (H.some(h => Math.hypot(h.pos.x - x, h.pos.z - z) < NEAR)) { make(sl); if (++n >= 4) { scan = 0; break; } } }
-    // (Round V, owner 13 Oct: "all vehicles I can ride can go anywhere and go back to their place") a bicycle, motorbike or
-    // car left somewhere goes back to its parking spot once every child has walked away from it
+    // (Round V, owner 13 Oct: "all vehicles I can ride can go anywhere"; owner 17 Oct AEDT, #354: a vehicle left behind
+    // "stays where left") a bicycle, motorbike or car stays where the child got off, so they can hop back on; it goes back
+    // to its parking spot only once every child is far away (60 m), or once night has fallen since it was left and no
+    // child is near it (20 m)
     for (const sl of slots) if (sl.hide && sl.v) sl.v.o.visible = !!sl.taken || keep(sl.hide);
+    const night = !!(W.isNight && W.isNight());
     for (const sl of slots) { if (!sl.rideable || sl.mover || !sl.v || sl.taken || sl.x == null) continue; const o = sl.v.o.position;
-      if (Math.hypot(o.x - sl.x, o.z - sl.z) > 2 && !H.some(h => Math.hypot(h.pos.x - o.x, h.pos.z - o.z) < 20)) { o.set(sl.x, ground(sl.x, sl.z), sl.z); sl.v.o.rotation.y = sl.yaw || 0; } }
+      if (Math.hypot(o.x - sl.x, o.z - sl.z) <= 2) { sl.dusk = false; sl.wasNight = night; continue; }
+      if (night && sl.wasNight === false) sl.dusk = true; sl.wasNight = night;
+      const near = r => H.some(h => Math.hypot(h.pos.x - o.x, h.pos.z - o.z) < r);
+      if (!near(60) || (sl.dusk && !near(20))) { o.set(sl.x, ground(sl.x, sl.z), sl.z); sl.v.o.rotation.y = sl.yaw || 0; sl.dusk = false; } }
   });
 
   // children ride the bicycles: Jump gets off (js/player.js riding, with the vehicle's own seat and grips)

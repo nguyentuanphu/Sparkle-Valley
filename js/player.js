@@ -93,9 +93,13 @@ export class Hero {
         const b0 = this.riding, sp = (b0.speed || RIDE) * mag; this.speed = lerp(this.speed, sp, Math.min(1, dt * 4));
         if (mag > .05) this.yaw = angleLerp(this.yaw, Math.atan2(mx, mz), Math.min(1, dt * 6));
         const nx = p.x + Math.sin(this.yaw) * this.speed * dt, nz = p.z + Math.cos(this.yaw) * this.speed * dt;
-        const g = heightAt(nx, nz);
+        // (#354, owner 17 Oct AEDT: "all animals and vehicles can travel anywhere") the real ground under the next step, as
+        // walking uses it: a bridge's deck, a pier or a platform counts, not the river bed below it; deep water still stops
+        const g = W.groundAt(nx, nz, p.y + .5);
         if (g > WATER - .4 && Math.abs(g - ground) < 1.5) { p.x = nx; p.z = nz; }
-        W.collide(p, 1.2); p.y = W.groundAt(p.x, p.z);
+        // (#354) a ride takes 0.8 m each side, about a bicycle's or a buffalo's width: wide enough not to brush through
+        // walls, narrow enough for every bridge a child walks over (Chùa Cầu's covered bridge is 3.2 m wide; 1.2 m did not fit)
+        W.collide(p, .8); p.y = W.groundAt(p.x, p.z, p.y + .5);
         const b = this.riding; b.mesh.position.set(p.x, p.y, p.z); b.mesh.rotation.y = this.yaw; b.shadow.position.set(p.x, p.y + .05, p.z);
         // (round R) a bicycle: its wheels roll, and the child sits on its saddle with hands on the grips and feet on the pedals
         if (b.vehicle) { const v = b.vehicle; v.wheels.forEach(w => { w.rotation.x += this.speed * dt / v.wr; }); this.state = 'ride'; this.finish(dt, t, game, 0);
