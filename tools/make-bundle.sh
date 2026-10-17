@@ -24,7 +24,7 @@ Sparkle Valley $BUILD, local test bundle (commit $(git rev-parse --short HEAD), 
    (Any static web server works. Counting players and the online Studio are not
    available locally: they run on Netlify. "netlify dev" in the game folder runs them.)
 
-2. Sparkle Studio: $( [ "$EXE" = yes ] && echo "copy SparkleStudio.exe into the \"game\" folder and double-click it." || echo "not built in this bundle; run  node studio/studio.cjs  (Node 22) in the game folder." )
+2. Sparkle Studio: $( [ "$EXE" = yes ] && echo "copy SparkleStudio.exe into the \"game\" folder and double-click it." || echo "not built in this bundle; run  node studio/studio.cts  (Node 22) in the game folder." )
    It opens at http://127.0.0.1:7777.
 
 3. Read HANDOFF.md first, then INFRASTRUCTURE.md (hosting, keys, testing),

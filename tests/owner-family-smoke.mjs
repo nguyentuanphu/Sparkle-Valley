@@ -1,7 +1,7 @@
 // Two isolated browser devices using the real private-family action handler.
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import { familyAction } from '../netlify/lib/family-devices.mjs';
+import { familyAction } from '../netlify/lib/family-devices.mts';
 import { launch, open, clear } from './harness.mjs';
 const records = new Map();
 const store = { get: async key => structuredClone(records.get(key) ?? null), setJSON: async (key,value) => records.set(key,structuredClone(value)), delete: async key => records.delete(key), list: async ({prefix}) => ({blobs:[...records.keys()].filter(k=>k.startsWith(prefix)).map(key=>({key}))}) };

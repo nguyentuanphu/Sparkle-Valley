@@ -26,7 +26,7 @@ sides), `cities.js` `streetSpot` (2.2 m from houses, 1.6 m from the road, falls 
 `hawkers.js` routes (+2.6 m) kept fixed offsets from the road's centre.
 
 ## The plan shown to the owner
-1. **Rules first, shown failing on r60:** in `docs/ARCHITECTURE.md` §9 (then `node tools/rules-from-doc.mjs`) and
+1. **Rules first, shown failing on r60:** in `docs/ARCHITECTURE.md` §9 (then `node tools/rules-from-doc.mts`) and
    `js/validate.js`: every stall and kiosk 1.5 m or more from the road's edge and 3 m or more from any building; 1.2 m
    between neighbours; facing its street; one row on one side of the place's main street; none alone in a field;
    walking sellers on the footpath, never on a road or through a house.

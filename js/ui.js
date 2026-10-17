@@ -1,3 +1,4 @@
+import { events } from './core/events.js';
 // Screens and pop-ups: title, who's playing, grown-ups settings, photo editor, NPC dialogue,
 // the Sparkle Pad (map, backpack, adventure log, album, camera), cooking, shop and online play.
 import { AREAS, gamesIn, withSitePlaces } from './content/activities.js';
@@ -284,7 +285,9 @@ function jumpNav(root, after) {
   const hs = [...root.querySelectorAll(':scope > h3, :scope h3.jump')].filter(h => h.textContent.trim());
   if (hs.length < 4) return;
   const nav = el('div', 'jumpnav');
-  hs.forEach((h, k) => { const t = [...h.childNodes].filter(n => n.nodeName !== 'SMALL').map(n => n.textContent).join('').trim().replace(/\s+/g, ' '), b = el('button', '', esc([...t].length > 26 ? [...t].slice(0, 25).join('') + '…' : t)); b.onclick = () => { SFX.tap(); h.scrollIntoView({ behavior: 'smooth', block: 'start' }); }; nav.appendChild(b); h.style.scrollMarginTop = '64px'; });
+  // (17 Oct AEDT) a jump lands the heading clear of the row: the row sticks below the window's top padding and its 44 px
+  // buttons made it taller than the old fixed 64 px, so headings landed under it
+  hs.forEach((h, k) => { const t = [...h.childNodes].filter(n => n.nodeName !== 'SMALL').map(n => n.textContent).join('').trim().replace(/\s+/g, ' '), b = el('button', '', esc([...t].length > 26 ? [...t].slice(0, 25).join('') + '…' : t)); b.onclick = () => { SFX.tap(); h.style.scrollMarginTop = nav.offsetHeight + (parseFloat(getComputedStyle(root).paddingTop) || 0) + 6 + 'px'; h.scrollIntoView({ behavior: 'smooth', block: 'start' }); }; nav.appendChild(b); h.style.scrollMarginTop = '64px'; });
   (after && after.parentNode === root ? after : root.firstElementChild).insertAdjacentElement('afterend', nav);
 }
 // ---------- Grown-ups: the recorded voices at a glance ----------
@@ -494,7 +497,7 @@ export function openGrownups(after) {
     chk('#gAdv', 'dailyAdventure');
     card.querySelectorAll('.seg.advday button').forEach(b => b.onclick = () => { settings.advDay = b.dataset.d; saveSettings(); const y = m.scrollTop; draw(); m.scrollTop = y; });
     card.querySelectorAll('.seg.advlvl button').forEach(b => b.onclick = () => { settings.advLevel = b.dataset.l; saveSettings(); const y = m.scrollTop; draw(); m.scrollTop = y; });
-    chk('#gBil', 'bilingual'); chk('#gVoice', 'voice'); chk('#gMusic', 'music', () => settings.music ? Music.refresh() : Music.stop()); chk('#gSound', 'sound'); chk('#gTapSnd', 'tapSounds'); chk('#gDay', 'alwaysDay');
+    chk('#gBil', 'bilingual', () => events.emit('SettingsChanged', { key: 'bilingual' })); chk('#gVoice', 'voice'); chk('#gMusic', 'music', () => settings.music ? Music.refresh() : Music.stop()); chk('#gSound', 'sound'); chk('#gTapSnd', 'tapSounds'); chk('#gDay', 'alwaysDay');
     card.querySelector('#vEn').onchange = e => { settings.voiceEn = e.target.value; saveSettings(); };
     card.querySelector('#vVi').onchange = e => { settings.voiceVi = e.target.value; saveSettings(); };
     card.querySelectorAll('[data-try]').forEach(b => b.onclick = () => {

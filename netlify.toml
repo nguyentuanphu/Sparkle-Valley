@@ -1,17 +1,22 @@
 # Netlify settings (used for both drag-and-drop and Git deploys).
 [build]
   publish = "."
-  # (Analytics & Infra, 10 Oct) pack the start-up scripts in Netlify's own copy (tools/bundle.mjs); a drag-and-drop zip
+  # (Analytics & Infra, 10 Oct) pack the start-up scripts in Netlify's own copy (tools/bundle.mts); a drag-and-drop zip
   # is already packed by build-netlify.sh. If packing cannot run, the site keeps the plain modules.
-  command = "node tools/bundle.mjs . || true"
+  # (owner, 16 Oct AEDT: TypeScript, batch 0) first every .ts becomes the .js beside it (tools/build.mts); if that fails
+  # the deploy stops and the live site stays as it was. Packing may still fall back to the plain modules.
+  command = "node tools/build.mts && (node tools/bundle.mts . || true)"
+[build.environment]
+  # type stripping (tools/build.mts) needs Node 22.18 or newer; the same version the checks and the exe use
+  NODE_VERSION = "22.22.0"
 
 # Small server pieces (Git deploys only; a drag-and-drop zip has none of them):
-#   /api/hello        devices counting players, anonymously (netlify/functions/hello.mjs)
-#   /studio/api/*     Sparkle Studio online, behind the grown-ups' password (netlify/functions/studio.mjs)
-#   /api/turn         the voice relay details for friends on different networks (netlify/functions/turn.mjs)
-#   /api/live         releases and festival changes from Studio (netlify/functions/live.mjs)
-#   /api/family/*     a family photo, only with the family code (netlify/functions/family.mjs, round R privacy)
-#   /api/tester       tester devices' reports and their status (netlify/functions/tester.mjs, owner 12 Oct: PRIV-016)
+#   /api/hello        devices counting players, anonymously (netlify/functions/hello.mts)
+#   /studio/api/*     Sparkle Studio online, behind the grown-ups' password (netlify/functions/studio.mts)
+#   /api/turn         the voice relay details for friends on different networks (netlify/functions/turn.mts)
+#   /api/live         releases and festival changes from Studio (netlify/functions/live.mts)
+#   /api/family/*     a family photo, only with the family code (netlify/functions/family.mts, round R privacy)
+#   /api/tester       tester devices' reports and their status (netlify/functions/tester.mts, owner 12 Oct: PRIV-016)
 [functions]
   directory = "netlify/functions"
   node_bundler = "esbuild"

@@ -2,7 +2,7 @@
 // strictly checked, at most 6 a day, a device's usual start-up and the median by kind of device
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { clean, hello, report } from '../../netlify/lib/players.mjs';
+import { clean, hello, report } from '../../netlify/lib/players.mts';
 const mem = () => { const m = new Map(); return { get: async (k, o) => m.has(k) ? (o && o.type === 'json' ? JSON.parse(m.get(k)) : m.get(k)) : null, set: async (k, v) => { m.set(k, String(v)); }, setJSON: async (k, v) => { m.set(k, JSON.stringify(v)); }, delete: async k => { m.delete(k); }, list: async ({ prefix = '' } = {}) => ({ blobs: [...m.keys()].filter(k => k.startsWith(prefix)).map(key => ({ key })) }), _m: m }; };
 
 

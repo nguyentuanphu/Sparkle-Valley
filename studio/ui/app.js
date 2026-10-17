@@ -1,4 +1,4 @@
-// Sparkle Studio dashboard (runs in the browser, talks to studio.cjs on this computer).
+// Sparkle Studio dashboard (runs in the browser, talks to studio.cts on this computer).
 import { viMessage, PERM_VI } from './vi.js';
 const $ = s => document.querySelector(s);
 let LANG = localStorage.getItem('studioLang') || 'vi';
@@ -111,7 +111,7 @@ const SECTIONS = [
 const ROLE = () => (INFO && INFO.me && INFO.me.role) || 'owner';
 // (round R privacy) Security and the Access log are the owner's, online only
 const ONLINE_ONLY = ['admins', 'security', 'accesslog'], OWNER_ONLY = ['security', 'accesslog'];
-// (owner, 14 Oct AEDT) each account has its own permissions (netlify/lib/admins.mjs PERMS): a page shows only to those
+// (owner, 14 Oct AEDT) each account has its own permissions (netlify/lib/admins.mts PERMS): a page shows only to those
 // who may open it, the rest of the dashboard follows. The exe on the family computer is the owner's: everything.
 const CAN = k => ROLE() === 'owner' || ((INFO && INFO.me && INFO.me.perms) || []).includes(k);
 const PAGE_NEEDS = { players: 'analytics', testers: 'testers', familycode: 'family', album: 'family', publish: 'publish' };
@@ -846,7 +846,7 @@ PAGES.children = async P => {
   };
 };
 // ---------- voices ----------
-// The same lines the game speaks (tools/voice-lines.mjs), worked out here from the game's own files, plus the
+// The same lines the game speaks (tools/voice-lines.mts), worked out here from the game's own files, plus the
 // family's stories, quiz and message. Each missing recording can be made with Azure, Piper (free, on this computer)
 // or recorded with the microphone.
 const VI = /[ăâđêôơưáàảãạấầẩẫậắằẳẵặéèẻẽẹếềểễệíìỉĩịóòỏõọốồổỗộớờởỡợúùủũụứừửữựýỳỷỹỵ]/i;
@@ -871,7 +871,7 @@ async function allJobs() {
   for (const [en, vi] of seen.values()) { put('en', swapNames(en, 'en')); put('vi', swapNames(vi, 'vi')); }
   for (const [lang, L] of Object.entries(LEARN)) for (const w of L.words) put(lang, w[3]);
   const cities = SRC.cities, re = /\['([^'\\]+)', '(?:[^'\\]|\\.)*', '(?:[^'\\]|\\.)*', '(zh|hi)'\]/g; let m; while ((m = re.exec(cities))) put(m[2], m[1]);
-  // lines built while playing (names, numbers, colours…): collected by tools/voice-harvest.mjs and sent from devices
+  // lines built while playing (names, numbers, colours…): collected by tools/voice-harvest.mts and sent from devices
   for (const l of await api('voices/extra').catch(() => [])) if (CAST[l.lang]) put(l.lang, l.text);
   // the inbox: lines the children's devices had to say with the machine voice, sent by themselves
   INBOX = await api('voices/inbox').catch(() => []);
@@ -1287,14 +1287,14 @@ PAGES.photos = async P => {
   const all = [...items.values()];
   const draw = async () => {
     const pix = await api('photos/index', {}), have = all.filter(x => pix[x.key] && pix[x.key].length).length;
-    P.innerHTML = `<h2>📷 ${T('Real photos', 'Ảnh thật')}</h2><p class="sub">${T('The best photos of each real place, from Wikipedia, Wikimedia Commons and Openverse (Creative Commons photos from Flickr and museums), the article’s main picture first, a few from each source. They are saved into the game with who took them and the licence, so children see them even with no internet. Runs on this computer; Publish to send them to the children. ✕ takes off a photo that is not of the place, and it is never fetched again.', 'Những ảnh đẹp nhất của từng nơi thật, lấy từ Wikipedia, Wikimedia Commons và Openverse (ảnh Creative Commons từ Flickr và các bảo tàng), ảnh chính của bài viết trước, mỗi nguồn vài ảnh. Ảnh được lưu vào game kèm tên người chụp và giấy phép, nên các con xem được cả khi không có mạng. Chạy trên máy này; bấm Phát hành để gửi tới các con. ✕ bỏ ảnh không đúng nơi, và ảnh đó sẽ không bị tải lại.')}</p>
-    <div class="card"><p><b>${have}</b> / ${all.length} ${T('places have photos saved', 'nơi đã có ảnh')}.</p>
+    P.innerHTML = `<h2>📷 ${T('Real photos', 'Ảnh thật')}</h2><p class="sub">${T('The best photos of each real place, from Wikipedia, Wikimedia Commons and Openverse (Creative Commons photos from Flickr and museums), the article’s main picture first, a few from each source. They are shown from where they live online (Wikimedia or Flickr) with who took them and the licence; nothing is saved into the game (only a photo from another site is, as a last resort). Children need the internet to see a photo the first time; after that their device keeps it. Runs on this computer; Publish to send them to the children. ✕ takes off a photo that is not of the place, and it is never fetched again.', 'Những ảnh đẹp nhất của từng nơi thật, lấy từ Wikipedia, Wikimedia Commons và Openverse (ảnh Creative Commons từ Flickr và các bảo tàng), ảnh chính của bài viết trước, mỗi nguồn vài ảnh. Ảnh được hiện từ nơi ảnh nằm trên mạng (Wikimedia hoặc Flickr) kèm tên người chụp và giấy phép; không lưu ảnh vào game (chỉ ảnh từ trang khác mới được lưu, khi không còn cách nào khác). Lần đầu xem ảnh các con cần có internet; sau đó máy sẽ giữ lại ảnh. Chạy trên máy này; bấm Phát hành để gửi tới các con. ✕ bỏ ảnh không đúng nơi, và ảnh đó sẽ không bị tải lại.')}</p>
+    <div class="card"><p><b>${have}</b> / ${all.length} ${T('places have photos', 'nơi đã có ảnh')}.</p>
       <div class="row"><div style="flex:0 0 160px"><label>${T('Photos per place', 'Số ảnh mỗi nơi')}</label><select id="pmax">${[3, 4, 6].map(n => `<option ${n === 4 ? 'selected' : ''}>${n}</option>`).join('')}</select></div>
       <button class="btn" id="pmiss">⬇️ ${T('Get photos for places without any', 'Tải ảnh cho nơi chưa có')}</button><button class="btn ghost" id="pall">🔄 ${T('Get them all again', 'Tải lại tất cả')}</button></div>
       <div class="prog"><i id="ppb"></i></div><p class="note" id="pres"></p><p class="warn" id="pbad" hidden></p><button class="btn" id="pfix" hidden>🔄 ${T('Get those places again', 'Tải lại những nơi đó')}</button></div>
-    <div class="grid">${all.map(x => `<div class="card"><b>${esc(x.name)}</b> <button class="btn small ghost" data-get="${esc(x.key)}">🔄</button><div class="thumbs">${(pix[x.key] || []).map(p => `<span class="thumb"><img src="${FILE(esc(p.src))}" title="${esc(p.credit || '')}" alt="${esc(x.name)}" data-key="${esc(x.key)}">${p.credit ? `<small class="credit">${esc(p.credit)}</small>` : ''}<i class="thumbbad">${T('Can’t open: 🔄 get it again', 'Không mở được: 🔄 tải lại')}</i><button data-rm="${esc(x.key)}|${esc(p.src)}" title="${T('Not this place: take it off (it won’t be fetched again)', 'Không phải nơi này: bỏ ảnh (sẽ không tải lại)')}" aria-label="${T('Remove this photo', 'Bỏ ảnh này')}">✕</button></span>`).join('') || `<span class="note">${T('none yet', 'chưa có')}</span>`}</div></div>`).join('')}</div>`;
+    <div class="grid">${all.map(x => `<div class="card"><b>${esc(x.name)}</b> <button class="btn small ghost" data-get="${esc(x.key)}">🔄</button><div class="thumbs">${(pix[x.key] || []).map(p => `<span class="thumb"><img src="${p.url ? esc(p.url) : FILE(esc(p.src))}" referrerpolicy="no-referrer" title="${esc(p.credit || '')}" alt="${esc(x.name)}" data-key="${esc(x.key)}">${p.credit ? `<small class="credit">${esc(p.credit)}</small>` : ''}<i class="thumbbad">${T('Can’t open: 🔄 get it again', 'Không mở được: 🔄 tải lại')}</i><button data-rm="${esc(x.key)}|${esc(p.url || p.src)}" title="${T('Not this place: take it off (it won’t be fetched again)', 'Không phải nơi này: bỏ ảnh (sẽ không tải lại)')}" aria-label="${T('Remove this photo', 'Bỏ ảnh này')}">✕</button></span>`).join('') || `<span class="note">${T('none yet', 'chưa có')}</span>`}</div></div>`).join('')}</div>`;
     // (r65) a photo that cannot be shown (too big for the website to send, or its file gone) says so, with 🔄 beside it
-    const broken = () => { const n = P.querySelectorAll('.thumb.bad').length; $('#pbad').hidden = $('#pfix').hidden = !n; $('#pbad').textContent = n ? T(`⚠️ ${n} photo(s) can’t be opened (too big, or the file is gone). 🔄 gets that place again (photos over 1.5 MB are skipped now).`, `⚠️ ${n} ảnh không mở được (quá lớn, hoặc mất tệp). 🔄 tải lại nơi đó (ảnh trên 1,5 MB giờ được bỏ qua).`) : ''; };
+    const broken = () => { const n = P.querySelectorAll('.thumb.bad').length; $('#pbad').hidden = $('#pfix').hidden = !n; $('#pbad').textContent = n ? T(`⚠️ ${n} photo(s) can’t be opened (gone from its website, too big, or the file is gone). 🔄 gets that place again (photos over 1.5 MB are skipped now).`, `⚠️ ${n} ảnh không mở được (đã bị xoá khỏi trang web, quá lớn, hoặc mất tệp). 🔄 tải lại nơi đó (ảnh trên 1,5 MB giờ được bỏ qua).`) : ''; };
     P.querySelectorAll('.thumb img').forEach(im => { const bad = () => { im.closest('.thumb').classList.add('bad'); broken(); }; if (im.complete && !im.naturalWidth) bad(); else im.onerror = bad; });
     const go = async list => { // one place at a time (online each request must be short), the progress shown here
       P.querySelectorAll('button').forEach(b => b.disabled = true); let done = 0, errs = 0;
@@ -1371,7 +1371,7 @@ PAGES.settings = async P => {
 };
 // Sydney time is AEDT (UTC+11) in daylight saving and AEST (UTC+10) the rest of the year
 const sydneyZone = d => /GMT\+11|AEDT/.test(new Date(d).toLocaleString('en-AU', { timeZone: 'Australia/Sydney', timeZoneName: 'short' })) ? 'AEDT' : 'AEST';
-// ---------- players: how many children play (anonymous counts from the website, netlify/lib/players.mjs) ----------
+// ---------- players: how many children play (anonymous counts from the website, netlify/lib/players.mts) ----------
 PAGES.players = async P => {
   const myRender = P.dataset.render, stale = () => cur !== 'players' || P.dataset.render !== myRender;
   P.innerHTML = `<h2>📊 ${T('Analytics', 'Phân tích')}</h2><div class="card">${T('Asking the website…', 'Đang hỏi trang web…')}</div>`;
@@ -1486,9 +1486,9 @@ PAGES.players = async P => {
 };
 // ---------- 👥 Admins (online, round O) ----------
 const ROLE_NAMES = { viewer: ['👀 Viewer: Analytics only', '👀 Xem: chỉ Phân tích'], editor: ['✏️ Editor: every page and Publish', '✏️ Sửa: mọi trang và Phát hành'], owner: ['👑 Owner: everything, also admins', '👑 Chủ: tất cả, cả quản trị viên'], custom: ['🧩 Chosen: only what is ticked', '🧩 Tự chọn: chỉ những gì được đánh dấu'] };
-// (owner, 14 Oct AEDT) the permissions one by one (the server's list, netlify/lib/admins.mjs PERMS): ticked = allowed
+// (owner, 14 Oct AEDT) the permissions one by one (the server's list, netlify/lib/admins.mts PERMS): ticked = allowed
 const permList = (perms, on, name) => `<div class="perms">${Object.entries(perms || {}).map(([k, [i, en, vi]]) => `<label class="perm"><input type="checkbox" data-perm="${k}" ${on.includes(k) ? 'checked' : ''} ${name ? '' : 'disabled'}> ${i} ${T(en, vi)}</label>`).join('')}</div>`;
-// (owner, 12 Oct) Tester reports: what tester devices found (netlify/lib/tester.mjs). The day's summary; each problem with
+// (owner, 12 Oct) Tester reports: what tester devices found (netlify/lib/tester.mts). The day's summary; each problem with
 // how often, on how many devices and versions, where, and its status; filters; a problem's details (the notes, the
 // players, the errors, the last 30 seconds as steps, the screenshots) with Fixed in…, Being fixed, Not a bug, Same as…;
 // and the testers: their reports, the ones that helped, their badge and this week's star, and Stop tester.

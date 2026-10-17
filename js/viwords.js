@@ -1,7 +1,7 @@
 // Vietnamese words inside English lines (round R, owner: "bánh khọt" or "nước mía" said by the English voice can't be
 // understood). viRuns() cuts an English line into pieces, [['en', 'Buy some '], ['vi', 'bánh khọt'], ['en', '?']], so
 // dish names, place names and people's names are spoken by the Vietnamese voice and everything else stays English.
-// Used by the game (js/voice.js, device and online voices) and by tools/make-voice-pack.mjs (recorded voices).
+// Used by the game (js/voice.js, device and online voices) and by tools/make-voice-pack.mts (recorded voices).
 //   · a word with Vietnamese letters (đ, ơ, ư, ă, â, ê, ô or a tone mark) is Vietnamese;
 //   · a plain word right next to one (only spaces between) joins it when it is a Vietnamese syllable that is not also
 //     an everyday English word: "Hội An", "Bắc Ninh", "Phố Hai Quê", "Bác 2";

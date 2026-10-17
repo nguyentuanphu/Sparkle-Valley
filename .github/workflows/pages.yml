@@ -19,6 +19,11 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
+      # (owner, 16 Oct AEDT: TypeScript, batch 0) every .ts made into the .js beside it (type stripping: Node 22.18 or newer)
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node tools/build.mts
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

@@ -33,7 +33,9 @@ const LAYOUT = ['phone', 'contract', 'hscroll', 'chips', 'a11y', 'iphone', 'simp
 // checks without a browser, a few seconds each: always run
 const QUICK = ['unit', 'rules', 'types', 'arch', 'emoji', 'noemoji', 'preload', 'names', 'bilingual'];
 
-const git = (...a) => execFileSync('git', a, { cwd: REPO, encoding: 'utf8', maxBuffer: 1 << 28 });
+// (r82) core.quotePath=false: a folder with Vietnamese letters (photos/vi-bạch-dinh/) comes back as its plain name,
+// not git's quoted "photos/vi-b\341\272\241ch-dinh/", which no rule below could place
+const git = (...a) => execFileSync('git', ['-c', 'core.quotePath=false', ...a], { cwd: REPO, encoding: 'utf8', maxBuffer: 1 << 28 });
 const tryGit = (...a) => { try { return git(...a); } catch (e) { return null; } };
 const RUN = fs.readFileSync(path.join(HERE, 'run.mjs'), 'utf8'), RUNLINES = RUN.split('\n');
 const ALL = [...RUN.matchAll(/^await check\('([a-z0-9-]+)'/gm)].map(m => m[1]);
@@ -41,6 +43,8 @@ const TIMES_F = path.join(HERE, 'check-times.json'), MAP_F = path.join(HERE, 'ch
 const readJSON = (f, d) => { try { return JSON.parse(fs.readFileSync(f, 'utf8')); } catch (e) { return d; } };
 const times = readJSON(TIMES_F, {});
 const GAME_URL = process.env.SV_URL || 'http://localhost:8765/';
+// (owner, 16 Oct AEDT: TypeScript, batch 0) the game's .ts files made into .js once, before any run (tools/build.mts)
+if (!flag('--list') && !flag('--collect')) { execFileSync(process.execPath, [path.join(HERE, '../tools/build.mts')], { stdio: 'inherit' }); process.env.SV_BUILT = '1'; }
 
 // where each check's code sits in run.mjs (line numbers, from 1)
 // (from its "await check(" line to its closing "});"; lines between checks are shared helpers)
@@ -76,9 +80,20 @@ function select() {
       continue;
     }
     if (f === 'tests/studio-check.mjs') { add(['studio'], f); continue; }
+    if (/^tests\/unit\/[\w.-]+\.test\.mjs$/.test(f)) { add(['unit'], f); continue; } // (r82) a unit test file changes only the unit check
+    if (/^types\/.*\.d\.ts$|^tsconfig\.base\.json$/.test(f)) { add(['types', 'names'], f); continue; } // (r82) shared type notes: only the type checks read them
     if (/^tests\/(check-map|check-times)\.json$|^tests\/suite\.mjs$/.test(f)) continue;
     if (f === 'tests/ui-contract.json') { add(['contract'], f); continue; }
     if (f.startsWith('tests/')) return full(f + ' changed (shared test code)');
+    // (r82, TypeScript) a game file in .ts runs as the .js made beside it (tools/build.mts), so every check that loads that
+    // .js; a line-by-line choice cannot follow a file that was renamed from .js
+    if (/^js\/.*\.ts$/.test(f) && !f.endsWith('.d.ts')) {
+      game = true;
+      if (!map) return full('no code map yet (tests/check-map.json): run the full suite once');
+      const entry = map.files[f.replace(/\.ts$/, '.js')];
+      if (!entry) notes.push(`${f}: a new file (checked through the file that loads it)`); else add(bitsOf(entry.load), f + ' (TypeScript: every check that loads it)');
+      continue;
+    }
     if (/^js\/.*\.js$/.test(f)) {
       game = true;
       if (!map) return full('no code map yet (tests/check-map.json): run the full suite once');

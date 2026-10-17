@@ -224,7 +224,7 @@ select option { color: #000; }
 .rec span { font-size: 30px; } .rec small { font-size: 12px; color: var(--soft); }
 .rec small i { font-style: normal; position: relative; display: inline-block; font-size: 22px; }
 .rec small i.miss { opacity: .3; filter: grayscale(1); }
-.rec small i .tick { position: absolute; right: -6px; bottom: -4px; font-size: 12px; } .rec small i .tick svg.art { width: 14px; height: 14px; }
+.rec small i .tick { position: absolute; right: -6px; bottom: -4px; font-size: 12px; } .rec small i .tick svg.art, .rec small i .tick .arti { display: block; width: 14px; height: 14px; } /* (17 Oct AEDT) the wrapper too, or the tick sat 9 px high */
 .stickers { display: grid; grid-template-columns: repeat(auto-fill, minmax(56px, 1fr)); gap: 8px; }
 .stickers div { aspect-ratio: 1; border-radius: 14px; background: rgba(255, 255, 255, .9); display: flex; align-items: center; justify-content: center; font-size: 32px; }
 .stickers div.miss { background: rgba(255, 255, 255, .08); color: rgba(255, 255, 255, .3); font-size: 22px; }
@@ -1028,9 +1028,12 @@ button { color: var(--text); }
 .phead .pflag { font-size: 26px; } .phead b { flex: 1; font-size: 1.1em; } .phead small { font-weight: 700; }
 .pstamps { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin: 10px 0 6px; }
 .pst { display: flex; flex-direction: column; align-items: center; gap: 2px; background: none; border: 0; padding: 0; min-width: 0; }
-.pst span { width: 100%; aspect-ratio: 1; max-width: 56px; display: grid; place-items: center; font-size: 24px; border-radius: 50%; border: 3px dashed #d8c7a6; color: #aaa; }
-.pst.on span { border: 3px solid var(--c); background: #fff; transform: rotate(var(--r)); box-shadow: 0 0 0 3px rgba(255,255,255,.8) inset; }
+.pst > span { width: 100%; aspect-ratio: 1; max-width: 56px; display: grid; place-items: center; font-size: 24px; border-radius: 50%; border: 3px dashed #d8c7a6; color: #aaa; }
+.pst.on > span { border: 3px solid var(--c); background: #fff; transform: rotate(var(--r)); box-shadow: 0 0 0 3px rgba(255,255,255,.8) inset; }
 .pst small { font-size: 11px; line-height: 1.1; text-align: center; color: #6a5a4a; overflow-wrap: anywhere; }
+/* (owner, 17 Oct AEDT: pictures not centred) only the stamp circle itself: the drawn picture inside (.arti) had the circle's
+   own dashed ring and size too, so the question mark sat low and spilled out of the stamp */
+.pst > span > .arti { width: 62%; height: 62%; vertical-align: 0; }
 .prew { text-align: center; font-weight: 700; color: #6a4a2a; }
 /* confetti */
 .confetti { position: fixed; z-index: 60; pointer-events: none; overflow: hidden; }
@@ -2740,6 +2743,11 @@ body.bigtext .theatre .th-text { --thp: clamp(20px, 3.2vw, 28px); --thm: clamp(1
 .pad .slot { justify-content: flex-start; padding: 10px 6px 8px; overflow: hidden; }
 .pad .slot > span:not(.sw), .pad .slot > svg, .pad .slot > .kpic, .pad .slot > .art { flex: none; width: 64px; height: 64px; min-height: 64px; margin: 4px auto 8px; display: flex; align-items: center; justify-content: center; overflow: visible; }
 .pad .slot > span:not(.sw) > svg, .pad .slot > span:not(.sw) > .art, .pad .slot > span:not(.sw) > .kpic { width: 56px; height: 56px; }
+/* (owner, 17 Oct AEDT: "the food items are not in centre and not balanced") a drawn emoji comes wrapped in .arti, 1.1em wide
+   (37 px here), while the rule above made its drawing 64 px: the picture spilled 13 px to the right and sat on the name.
+   The wrapper takes the picture's size so the drawing is centred in its tile */
+.pad .slot > span:not(.sw) > .arti { display: flex; width: 56px; height: 56px; vertical-align: 0; }
+.pad .slot > span:not(.sw) > .arti > svg { width: 100%; height: 100%; }
 .pad .slot > small { flex: none; width: 100%; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; text-overflow: ellipsis; overflow-wrap: anywhere; line-height: 1.2; max-height: 2.4em; }
 /* (r79 A2, owner 16 Oct: "Getting the voices ready..." floated over the Pad) the voices note stays behind every window,
    panel and game (they start at layer 25) and fades while one is open, so it never covers their words or buttons */

@@ -30,9 +30,9 @@ This is an explicit inventory, not a universal pass. Source review is separate f
 | Studio navigation/dashboard | studio/ui/app.js | current code review | phone/computer keyboard/EN/VI screenshots |
 | Studio Releases/categories/devices | studio/ui/app.js | source folds/per-device contracts present | actual visibility/persistence/touch and old policy precedence |
 | Studio Sparkle Lab | studio/ui/app.js | online/exe phone/tablet/desktop Studio361s; device policies, complete peeks, isolated saves and no Releases player fetch passed | exact-source menu/control pictures; slow/error/navigation cases and production load timing |
-| Studio Analytics/Performance | studio/ui/app.js, players.mjs | current/historical/active version source repair; backend tests | actual screens/empty errors/list cap; production data |
+| Studio Analytics/Performance | studio/ui/app.js, players.mts | current/historical/active version source repair; backend tests | actual screens/empty errors/list cap; production data |
 | Studio Tester reports | studio/ui/app.js, tester backend | reporting path source reviewed | receipt-to-issue-to-release-to-retest proof |
-| Studio Admins/custom permissions | studio/ui/app.js, admins.mjs | R75 source implementation retained | immediate list behavior; save/failure/enforcement current checks |
+| Studio Admins/custom permissions | studio/ui/app.js, admins.mts | R75 source implementation retained | immediate list behavior; save/failure/enforcement current checks |
 | Other Studio pages/dialogs | studio/ui/app.js, studio core | source folding helper present | enumerate every page/content group and error/loading states |
 | Public-transport rider/cabin/exit | js/player.js, js/traffic.js, js/vehicles.js, js/rideview.js | six rendered bus/busAU/tramModern age cases83s and visibility restoration; ride54s fares/destinations/exits passed | 24 final exacta246d116 before/after rider/exit captures complete; coach/taxi/driving render, split-screen and physical-device comparisons missing |
 

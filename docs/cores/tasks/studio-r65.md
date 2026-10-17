@@ -14,7 +14,7 @@ round takes it). Read `CLAUDE.md`, `HANDOFF.md`, `docs/cores/README.md`, `docs/c
    names on the board; show "not reported yet" until they arrive.
 2. **Real photos show broken.** The downloads are fine (the 134 photos in `studio-draft` are real JPEG/PNG pictures); the
    thumbnails break when Studio shows a saved photo before Publish (online: held in Netlify Blobs `studio-pending`,
-   `heldOn` in `netlify/functions/studio.mjs`, read through `/studio/api/file/photos/...`, `studio/core.cjs`
+   `heldOn` in `netlify/functions/studio.mts`, read through `/studio/api/file/photos/...`, `studio/core.cts`
    `getPhotos1`). Reproduce it in the `studio` check (pretend GitHub and Netlify), fix it, and make the check prove every
    saved thumbnail opens as an image, online and in the exe.
 3. **Ads: more guidance and pictures of how they look.** On the Ads page: a live preview of the roadside signboard and of

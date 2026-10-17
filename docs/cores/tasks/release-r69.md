@@ -30,8 +30,8 @@ r69 = live main (r68) + `core/play`. Every other branch carries only board or no
 3. **The auto play check** (owner 12 Oct): Studio Releases switch `autoplay` (group "For testing"), every device or ticked
    devices; `js/autoplay.js`, `js/content/autoplay.js`; new check `autoplay` (already in HANDOFF's checks table).
 4. **Studio**: real photos publish in steps of 12 (502/503/504 retried); the exe updates itself from the `studio-exe`
-   branch and keeps its game folder up to date from GitHub (`studio/core.cjs`, `studio/studio.cjs`, `studio/ui/*`,
-   `netlify/functions/studio.mjs`, `tools/publish-exe.sh`).
+   branch and keeps its game folder up to date from GitHub (`studio/core.cts`, `studio/studio.cts`, `studio/ui/*`,
+   `netlify/functions/studio.mts`, `tools/publish-exe.sh`).
 
 ## Already done on `core/play`
 - HANDOFF: an r69 round-history entry (draft: fill in the checks) and the `autoplay` row in the checks table.
@@ -61,7 +61,7 @@ r69 = live main (r68) + `core/play`. Every other branch carries only board or no
 1. `git fetch`; merge `core/play` into a release branch from main (or open a pull request from `core/play`); fix the AI
    review's findings, if any.
 2. Bump to **r69**: `js/build.js`, `sw.js` VERSION (`sv-2026-10-13-r69` or the day you ship), `studio/version.json`.
-3. `node tools/make-voice-pack.mjs --engine azure` (expect 0 new).
+3. `node tools/make-voice-pack.mts --engine azure` (expect 0 new).
 4. Full suite: `cd tests && node run.mjs` (one browser run at a time; keep a local server on port 8765 running).
 5. HANDOFF: finish the r69 entry with the checks; board; `release.md` notes.
 6. The Netlify zip (`git archive` line in `release.md`).

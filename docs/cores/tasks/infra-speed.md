@@ -10,7 +10,7 @@ From `docs/cores/ROUND-R.md` (Infrastructure): "bundle and compress the code; Gi
 - The service worker (`sw.js`) still caches everything for offline, and a new build still updates devices.
 - **Done by Release (10 Oct AEST, owner's request):** `.github/workflows/pr-checks.yml` (quick checks on every pull
   request into `main`) and `.github/workflows/ai-review.yml`. Extend `pr-checks.yml` rather than adding a second one.
-  Still to do: run the fast checks on every push to a branch too. The original item: **a GitHub Actions workflow** that runs the fast checks on every pull request and every push to a branch: unit tests, `node tools/rules-from-doc.mjs --check`, `node tools/preload.mjs --check`, the emoji audit, and `arch` if it runs without a browser. Netlify already makes deploy previews; the workflow need not deploy.
+  Still to do: run the fast checks on every push to a branch too. The original item: **a GitHub Actions workflow** that runs the fast checks on every pull request and every push to a branch: unit tests, `node tools/rules-from-doc.mts --check`, `node tools/preload.mts --check`, the emoji audit, and `arch` if it runs without a browser. Netlify already makes deploy previews; the workflow need not deploy.
 - Voices and SparkleStudio.exe stay in git (do not move them).
 
 ## You may change

@@ -39,7 +39,7 @@ Nothing tagged [PROP] or [IMPR] adds a game feature. It only reorganises how exi
 |---|---|
 | Game code | 86 ES modules, ~1.6 MB of JavaScript (lines are long: `main.js` 107 KB, `ui.js` 109 KB, `world.js` 82 KB, `cities.js` 63 KB) |
 | Build step | None. three.js r160, PeerJS (online only), Web Audio, Web Speech, IndexedDB, Cache API, service worker |
-| Server pieces | 2 Netlify Functions (`hello`, `studio`) + Netlify Blobs; Sparkle Studio (Node, exe + online) sharing `studio/core.cjs` |
+| Server pieces | 2 Netlify Functions (`hello`, `studio`) + Netlify Blobs; Sparkle Studio (Node, exe + online) sharing `studio/core.cts` |
 | Shared mutable "god object" | `G`: about **95 members assigned in `main.js`** (functions, state, sub-systems: `G.heroes`, `G.npcs`, `G.dialog`, `G.give`, `G.ferries`…) and passed to almost every module |
 | Shared mutable world | `world`/`W` from `createWorld()`: arrays every feature pushes into. **Feature modules write into each other's world:** `colliders.push` 68× in 18 files, `boxes.push` 14× in 9, `interactables.push` 56× in 23, `updaters.push` 65× in 24, `scene.add` 201× in 29, `heightAt()` 220× in 26 |
 | Static world data | Module-level constants in `world.js`: `CITIES`, `ROADS`, `RIVER`, `VILLAGE`, `TOWN`, `MARKET`, `AUSSIE`, `SHRINES`, `TOWERS`, `FLATS`/`LEVELS`, `FOOTPRINTS` (filled at runtime) |
@@ -58,7 +58,7 @@ Nothing tagged [PROP] or [IMPR] adds a game feature. It only reorganises how exi
 5. **Strict separation where it already exists:**
    - the voice pack by content hash (`packhash.js`);
    - the family content pack (`custom.js`);
-   - the Studio engine shared by the exe and online (`studio/core.cjs`).
+   - the Studio engine shared by the exe and online (`studio/core.cts`).
 
 ### 1.3 Structural problems (why the architecture must change)
 
@@ -143,7 +143,7 @@ L0 CORE         ids · events · rng · math/geometry · result/errors · config
 | L5 | `app` | Boot, lifecycle, loop, wiring, error boundary |
 
 Outside the game, sharing L0–L2 where possible:
-- `studio` (exe + online, `studio/core.cjs`);
+- `studio` (exe + online, `studio/core.cts`);
 - `netlify/functions` (`hello`, `studio`);
 - `tools` (voice pack, harvest).
 
@@ -747,7 +747,7 @@ The design-handbook aliases (G1–G11, R1–R12) map onto these ids and stay val
 | PRIV-007 | The cloud relay's room-code channel carries only knocks and the starter's answers, each locked for the one who knocked; all room traffic goes on a channel made from a random room secret handed, locked, only to players let in (a new secret when someone is removed); a guest meets only players the starter introduces; the starter's words (door, admit, full, nope, kick, members, rekey) are believed only with the starter's key (round R privacy, 9 Oct) | BLOCKER | check `knock`, `cloud` + review |
 | PRIV-008 | Friends' status says only "playing now" and a token made fresh each session; names, places and room codes go only inside notes and invitations locked for one saved friend with the key saved when they played together (the add-friend button) (round R privacy, 9 Oct) | BLOCKER | check `meet`, `cloud` + review |
 | PRIV-010 | Voices are made in Studio only (owner, 9 Oct): the child's device never calls an online speech service, keeps no voice key (an old `ttsKey` is deleted on load and from a restored backup) and never copies (clones) anyone's voice; a line with no recording uses the device voice and is noted as missing for Studio | BLOCKER | check `voice` + review |
-| PRIV-011 | Landmark photos come only from the game's own site (owner, 9 Oct): the files listed in `photos/index.json`, inside `photos/`; the game never asks Wikipedia or Wikimedia (only Studio and `tools/fetch-landmark-photos.mjs` do); Google's map and street view of a real place open only after a grown-up's press and hold, or straight away once a grown-up has turned on Use the internet in Grown-ups (owner, 10 Oct: "if parents enable internet use then in games should not be asking again") | BLOCKER | check `realphotos` (+ `together`) |
+| PRIV-011 | Landmark photos are the ones listed in `photos/index.json`, shown from where they live online, Wikimedia or Flickr and no other site, or from `photos/` when Studio had to keep a copy (owner, 17 Oct AEDT: "point photos to Wikimedia"; replaces 9 Oct "only from the game's own site"); without the internet the viewer says the photos need it, and a photo seen before still shows; the credit is words, never a link; Google's map and street view of a real place open only after a grown-up's press and hold, or straight away once a grown-up has turned on Use the internet in Grown-ups (owner, 10 Oct: "if parents enable internet use then in games should not be asking again") | BLOCKER | check `realphotos` (+ `together`) |
 | PRIV-012 | Family photos are family-only (owner, 9 Oct): photo faces and Family album pictures are never public files of the website or files in GitHub; Sparkle Studio keeps them in the private family store (Netlify Blobs `family-photos`, or the exe's own folder outside the game) under random names of 24+ characters, `content/custom.json` names them `family:<name>`, and `/api/family/<name>` gives one only with the family code (header `x-family-code`, compared in constant time, 10 wrong codes lock a connection for 15 minutes, `Cache-Control: private`); the game keeps them in the `sv-family` cache, the service worker never caches `api/` | BLOCKER | `unit` (privacy) + check `familyphotos` + check `studio` |
 | PRIV-013 | Sparkle Studio online: every admin signs in with two steps (password, then a TOTP code: HMAC-SHA1, 30 s, one step either side, a code taken once) unless the owner chose the password only for that account in Setup → Admins (owner, 9 Oct; two-step is the default, changing it signs that person out); the owner signs in with STUDIO_PASSWORD only (owner, 11 Oct), passwords of 12 characters or more (STUDIO_PASSWORD too, or signing in is refused with the reason), 10 wrong tries on an account or from a connection lock it for 15 minutes, every sign-in and every opening of the Analytics is in the access log (town and country only, never the address), and Sign everyone out ends every cookie and exe key | BLOCKER | `unit` (privacy) + check `studio` |
 | PRIV-014 | The website's public doors are limited: `/api/hello` 60 requests a connection in 10 minutes; `/api/tester` 120 requests a connection in 10 minutes, 60 reports a device and 150 a connection a day (PRIV-016); missing lines 10 a hello, 30 a device a day, 60 a connection a day, 200 new lines a day; `/api/live` never names who changed it; counters keep a keyed hash of the connection, never the address | MAJOR | `unit` (privacy) |
@@ -767,7 +767,7 @@ The design-handbook aliases (G1–G11, R1–R12) map onto these ids and stay val
 | SAVE-003 | A save referencing unknown ids loads with those parts dropped, never crashes | MAJOR | unit [IMPR] |
 
 ### 9.7 Rule registry [IMPR]
-- `js/content/rules.js` (L1) exports `RULES = { 'ROAD-005': { text, severity, check, alias: 'R5' }, … }` — **built round F**, made from this section's tables by `tools/rules-from-doc.mjs` (so the two never disagree; check `rules`). `js/validate.js` gives each problem its rule's severity.
+- `js/content/rules.js` (L1) exports `RULES = { 'ROAD-005': { text, severity, check, alias: 'R5' }, … }` — **built round F**, made from this section's tables by `tools/rules-from-doc.mts` (so the two never disagree; check `rules`). `js/validate.js` gives each problem its rule's severity.
 - Checks and validators report by rule id.
 - The handbook and HANDOFF cite ids.
 - A test fails if a rule has no validation entry, or if a check names an unknown id.
@@ -892,8 +892,8 @@ Metrics are from the r37 measurement (§1.1). No module is dead code, so nothing
 
 | Module | Class | Why |
 |---|---|---|
-| `studio/core.cjs`, `studio/studio.cjs`, `studio/ui/*` | KEEP | One engine for the exe and online (STUDIO-001). Later [IMPR]: import `gen` + `gen.validate` (pure ESM) to validate edits instead of the hidden-iframe snapshot |
-| `netlify/functions/*`, `netlify/lib/players.mjs` | KEEP | Small, tested (`studio`) |
+| `studio/core.cts`, `studio/studio.cts`, `studio/ui/*` | KEEP | One engine for the exe and online (STUDIO-001). Later [IMPR]: import `gen` + `gen.validate` (pure ESM) to validate edits instead of the hidden-iframe snapshot |
+| `netlify/functions/*`, `netlify/lib/players.mts` | KEEP | Small, tested (`studio`) |
 | `tools/*` (voice pack, harvest) | KEEP | — |
 | `sw.js` | KEEP | Offline strategy (voices, saves, manifest cache-first) |
 | `tests/run.mjs`, `tests/harness.mjs`, `tests/studio-check.mjs`, `tests/world-audit.mjs` | KEEP | Grow with §10 |

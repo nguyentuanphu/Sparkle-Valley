@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { familyAction } from '../../netlify/lib/family-devices.mjs';
+import { familyAction } from '../../netlify/lib/family-devices.mts';
 const memory = () => { const map = new Map(); return { get: async key => map.has(key) ? structuredClone(map.get(key)) : null, setJSON: async (key, value) => map.set(key, structuredClone(value)), delete: async key => map.delete(key), list: async ({ prefix }) => ({ blobs: [...map.keys()].filter(key => key.startsWith(prefix)).map(key => ({ key })) }) }; };
 test('removed devices do not exhaust pairing and recovery capacity', async () => {
   const S = memory(), first = await familyAction(S, 'create', {}, '', 1);

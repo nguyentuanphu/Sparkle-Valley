@@ -5,7 +5,7 @@
 // Multiplayer runs when a local PeerJS server is up on 127.0.0.1:9000 (see the README in this folder).
 import fs from 'fs';
 import os from 'os';
-import { launch, open, clear, start, URL, seedPlayers, takeCoverage } from './harness.mjs';
+import { launch, open, clear, noWelcome, start, URL, seedPlayers, takeCoverage } from './harness.mjs';
 import { groundAudit } from './world-audit.mjs';
 import { studioCheck } from './studio-check.mjs';
 import { studioRepairCheck } from './studio-repair-check.mjs';
@@ -24,6 +24,9 @@ async function pairKeys(A, B) {
 // changes every run (SV_SEED), and everything when their own files changed (SV_FULL=reading,films,… from suite.mjs)
 const sampled = name => process.env.SV_SAMPLE === '1' && !(process.env.SV_FULL || '').split(',').includes(name);
 const SEED = Number(process.env.SV_SEED) || Math.floor(Date.now() / 36e5);
+// (owner, 16 Oct AEDT: TypeScript, batch 0) the game's .ts files are made into the .js the browser loads before any
+// check runs (tools/build.mts; suite.mjs does it once for all its runs and says so with SV_BUILT)
+if (!process.env.SV_BUILT) { const { execFileSync } = await import('child_process'); execFileSync(process.execPath, ['../tools/build.mts'], { stdio: 'inherit' }); }
 const only = process.argv.slice(2).filter(a => !a.startsWith('--'));
 const want = k => !only.length || only.includes(k);
 const results = [];
@@ -54,7 +57,7 @@ const check = async (name, fn) => {
 };
 const ok = (c, msg) => { if (!c) throw new Error(msg); };
 fs.mkdirSync('out', { recursive: true });
-// ---- (Analytics & Infra, 11 Oct, #36) the packed copy the website serves (tools/bundle.mjs), built once a run in
+// ---- (Analytics & Infra, 11 Oct, #36) the packed copy the website serves (tools/bundle.mts), built once a run in
 // out/packed (the big folders are linked, not copied), and a little server for a folder on 127.0.0.2 (the game skips its
 // service worker on localhost): compressed like Netlify when asked, and able to stop answering (a dead connection) ----
 let packedDir = null;
@@ -64,8 +67,8 @@ async function packedSite() {
   fs.rmSync(dir, { recursive: true, force: true }); fs.mkdirSync(dir, { recursive: true });
   for (const f of ['index.html', 'sw.js']) fs.copyFileSync(path.join(repo, f), path.join(dir, f));
   for (const f of ['manifest.webmanifest', 'css', 'fonts', 'icons', 'js', 'vendor', 'content', 'videos', 'voices', 'photos']) if (fs.existsSync(path.join(repo, f))) fs.symlinkSync(path.join(repo, f), path.join(dir, f));
-  execFileSync(process.execPath, [path.join(repo, 'tools/bundle.mjs'), dir], { encoding: 'utf8' });
-  ok(fs.existsSync(path.join(dir, 'bundle')), 'the packed copy was not built (tools/bundle.mjs: esbuild missing?)');
+  execFileSync(process.execPath, [path.join(repo, 'tools/bundle.mts'), dir], { encoding: 'utf8' });
+  ok(fs.existsSync(path.join(dir, 'bundle')), 'the packed copy was not built (tools/bundle.mts: esbuild missing?)');
   return (packedDir = dir);
 }
 async function serveFolder(root, { gzip = false } = {}) {
@@ -92,6 +95,65 @@ await check('boot', async () => {
     await P.page.screenshot({ path: `out/boot-${w}.png` });
     ok(!P.errors.length, `${w}px: ${P.errors.join(' | ')}`); await P.ctx.close();
   }
+});
+
+await check('voicefirstchoice', async () => {
+  const indexes = [];
+  const P = await open(b, { play: false, route: async ctx => {
+    ctx.on('request', q => { const m = /\/voices\/manifest[^/]*\.json/.exec(q.url()); if (m) indexes.push(m[0]); });
+  } });
+  try {
+    await P.page.click('.screen.title .seg.lang [data-l="vi"]');
+    await P.page.evaluate(async () => { window.__voiceIndexCheck = await import('/js/voice.js'); });
+    await P.page.waitForFunction(() => !!window.__voiceIndexCheck.voicePack()?.signatures?.vi, null, { timeout: 30000 });
+    ok(indexes.length === 1 && indexes[0] === '/voices/manifest-vi.json', 'first language choice fetched an unwanted index: ' + indexes.join(', '));
+    ok(!P.errors.length, P.errors.join(' | '));
+  } finally { await P.ctx.close(); }
+  return 'choosing Vietnamese on the first click downloads only the Vietnamese index';
+});
+
+await check('lighterload', async () => {
+  const got = [];
+  const P = await open(b, { play: false, route: async ctx => {
+    ctx.on('request', q => got.push(new globalThis.URL(q.url()).pathname));
+    await ctx.route('**/js/games/thinking.js', async r => { await new Promise(done => setTimeout(done, 700)); await r.continue(); });
+  } });
+  try {
+    ok(!got.some(s => /\/js\/(games\/thinking|tales-content|howto-player)\.js$/.test(s)), 'optional implementation fetched before opening: ' + got.filter(s => /thinking|tales-content|howto-player/.test(s)));
+    await start(P.page); await clear(P.page);
+    ok(await P.page.evaluate(async () => !!(await import('/js/custom.js')).customQuiz().length || !(await import('/js/games/frame.js')).GAMES.familyquiz), 'Family Quiz appeared with no family questions');
+    await P.page.evaluate(async () => { window.__voiceIndexCheck = await import('/js/voice.js'); });
+    await P.page.waitForFunction(() => !!window.__voiceIndexCheck.voicePack(), null, { timeout: 20000 });
+    ok(got.some(s => s.endsWith('/voices/manifest-en.json')) && !got.some(s => /\/voices\/manifest(?:-(?:vi|hi|zh))?\.json$/.test(s)), 'English-only device fetched another index');
+    const closed = await P.page.evaluate(async () => {
+      const F = await import('/js/games/frame.js');
+      window.__lazyGame = F.openGame('pattern', { players: [__sv.heroes[0].profile] });
+      const layer = document.querySelector('.gl:not(.out)'), stage = layer.querySelector('.gl-stage');
+      layer.querySelector('.gl-x').click();
+      await window.__lazyGame;
+      await F.GAMES.pattern.load();
+      return { open: F.gameOpen(), children: stage.children.length, active: document.querySelectorAll('.gl:not(.out)').length };
+    });
+    ok(!closed.open && !closed.children && !closed.active, 'closed game ran after its delayed implementation arrived: ' + JSON.stringify(closed));
+    await P.page.waitForSelector('.gl', { state: 'detached' });
+    await P.page.evaluate(async () => { const F = await import('/js/games/frame.js'); window.__lazyGame = F.openGame('pattern', { players: [__sv.heroes[0].profile] }); });
+    await P.page.waitForFunction(() => document.querySelector('.gl-stage')?.children.length > 0);
+    await P.page.click('.gl-x'); await P.page.waitForTimeout(350);
+    const tale = await P.page.evaluate(async () => {
+      const { MORE_TALES } = await import('/js/talesdata.js'); const t = MORE_TALES[0], before = t.pages.length;
+      const full = await t.load(); return { before, after: full.pages.length, en: full.pages[0][1], same: full === t };
+    });
+    ok(tale.same && tale.before === tale.after && tale.en, 'lazy tale lost its pages/identity: ' + JSON.stringify(tale));
+    await P.page.evaluate(async () => { (await import('/js/ui.js')).openGrownups(() => {}); });
+    await P.page.locator('#gBil').check();
+    await P.page.waitForFunction(() => !!window.__voiceIndexCheck.voicePack()?.signatures?.vi);
+    await clear(P.page);
+    await P.page.evaluate(async () => { const S = await import('/js/state.js'); S.settings.lang = 'vi'; (await import('/js/core/events.js')).events.emit('LanguageChanged'); });
+    await P.page.waitForFunction(() => !!window.__voiceIndexCheck.voicePack()?.signatures?.vi);
+    ok(!got.some(s => /\/voices\/manifest-(?:hi|zh)\.json$/.test(s)), 'language switch fetched learning-language indexes');
+    ok(!P.errors.length, P.errors.join(' | '));
+  } finally { await P.ctx.close(); }
+  return 'cold startup defers game/tale/how-to implementations; closing a loading game cancels it; a warm game opens; tale identity/pages survive; EN-only and VI switching fetch only needed indexes';
 });
 
 await check('spill', async () => {
@@ -566,8 +628,13 @@ await check('voice', async () => {
       const V = await import('/js/voice.js'), { FAMILY_PHRASES } = V; let rec = null; for (let i = 0; i < 60 && !V.voicePack(); i++) await new Promise(r => setTimeout(r, 250)); window.__svVoiceLog = (l, t, has) => { if (has && !rec) rec = t; };
       for (const ph of FAMILY_PHRASES) { V.sayIn('vi', ph.vi); if (rec) break; }
       if (!rec) return { none: true };
-      window.__speaks = 0; window.__plays = 0; window.__sources = 0; await V.sayAsync(rec, rec);
-      return { line: rec, speaks: window.__speaks, plays: window.__plays, sources: window.__sources, diag: V.voiceDiag };
+      // (17 Oct AEDT, flaky on GitHub) the running game may start a line of its own meanwhile (a welcome, a sticker),
+      // which rightly stops this one with nothing played: the game is paused, and a line cut off by another one (seen by
+      // the captions' listener) is said again, up to 3 times; the interruptions are reported
+      if (window.__sv) window.__sv.paused = true;
+      const others = []; V.spoken.push(t => others.push(t)); let cut = 0;
+      for (let k = 0; k < 3; k++) { others.length = 0; window.__speaks = 0; window.__plays = 0; window.__sources = 0; await V.sayAsync(rec, rec); if (!others.length) break; cut++; }
+      return { line: rec, speaks: window.__speaks, plays: window.__plays, sources: window.__sources, cut, diag: V.voiceDiag };
     });
     await P.ctx.close(); return r;
   };
@@ -589,14 +656,14 @@ await check('voicepack', async () => {
   await ctx.addInitScript(seedPlayers);
   await ctx.addInitScript(() => { const o = JSON.parse(localStorage.getItem('sv2_settings') || '{}'); Object.assign(o, { lang: 'vi', voice: false, sound: false, music: false, quality: 'low', autoPack: true, packCell: true }); localStorage.setItem('sv2_settings', JSON.stringify(o)); });
   const P = { ctx, page, errors };
-  await P.ctx.route('**/voices/manifest.json', async route => { const r = await route.fetch(), j = await r.json(), keep = Object.keys(j.lines).slice(0, 24), lines = {}, langOf = {}; for (const h of keep) { lines[h] = j.lines[h]; if (j.langOf) langOf[h] = j.langOf[h]; } await route.fulfill({ json: { ...j, lines, langOf, made: 'test' } }); });
+  await P.ctx.route('**/voices/manifest-*.json', async route => { const r = await route.fetch(), j = await r.json(), keep = Object.keys(j.lines).slice(0, 24), lines = {}, langOf = {}; for (const h of keep) { lines[h] = j.lines[h]; if (j.langOf) langOf[h] = j.langOf[h]; } await route.fulfill({ json: { ...j, lines, langOf, made: 'test', signature: 'test-' + j.language } }); });
   // every text the bar shows is written down as it changes
   await P.ctx.addInitScript(() => { window.__packLog = []; new MutationObserver(() => { const e = document.querySelector('.packbar span'); if (e && window.__packLog[window.__packLog.length - 1] !== e.textContent) window.__packLog.push(e.textContent); }).observe(document, { subtree: true, childList: true, characterData: true }); });
   let firstLoad = true;
   const openAgain = async () => { if (firstLoad) { firstLoad = false; await P.page.goto(URL); } else await P.page.reload(); await start(P.page); await clear(P.page); await P.page.waitForFunction(() => window.__packLog.some(x => /✓/.test(x)), null, { timeout: 60000 }).catch(() => { }); return P.page.evaluate(() => window.__packLog); };
   const state = () => P.page.evaluate(async () => { const c = await caches.open('sv-voices'); return { files: (await c.keys()).filter(r => /\/voices\/.+\.mp3$/.test(r.url)).length, saved: JSON.parse(localStorage.getItem('sv2_settings')).packSaved || '' }; });
   const first = await openAgain(), s1 = await state();
-  ok(first.some(x => /%/.test(x)) && first.some(x => /✓/.test(x)) && s1.files >= 24 && s1.saved === '24:2:test', 'first open: ' + JSON.stringify({ first: first.slice(0, 4), s1 }));
+  ok(first.some(x => /%/.test(x)) && first.some(x => /✓/.test(x)) && s1.files >= 24 && s1.saved === 'vi:test-vi', 'first open: ' + JSON.stringify({ first: first.slice(0, 4), s1 }));
   // next open: everything is there, so nothing downloads and the bar says nothing (round O, owner: it looked as if the
   // voices loaded on every start, and listing all the files each time cost battery)
   await P.page.reload(); await start(P.page); await clear(P.page); await P.page.waitForTimeout(10000);
@@ -680,6 +747,10 @@ await check('ownervoicewifi', async () => {
   const got = [];
   const P = await open(b, {w:390,h:844,touch:true,pre:`Object.defineProperty(navigator,'connection',{get:()=>({type:'wifi',saveData:false}),configurable:true});`,settings:{lang:'en',bilingual:false,autoPack:false},route:async ctx => {
     await ctx.route('**/voices/areas.json', r => r.fulfill({json:{groups:Object.fromEntries(Object.entries(hashes).map(([g,hs])=>[g,hs.join(' ')])),size:{}}}));
+    // (r82, lighter loading) the game reads one voice list per language: the same tiny pack, served per language, so a
+    // language change loads this test's Vietnamese list rather than the real one
+    await ctx.route(/\/voices\/manifest-(en|vi|zh|hi)\.json$/, r => { const L = /manifest-(\w+)\.json$/.exec(r.request().url())[1];
+      r.fulfill({json:{version:999,made:'owner-wifi-language-switch',language:L,areas:true,cast:{[L]:['f']},voices:{},tpl:{},lines:Object.fromEntries(Object.entries(lines).filter(([h])=>langOf[h]===L))}}); });
     await ctx.route('**/voices/*/f/*_*.mp3', async r => {
       const file = new globalThis.URL(r.request().url()).pathname;
       got.push(file);
@@ -693,6 +764,8 @@ await check('ownervoicewifi', async () => {
       const S=await import('/js/state.js'), V=await import('/js/voicepack.js');
       S.settings.autoPack=true; S.settings.packCell=false;
       window.__ownerPackProgress=[];
+      // (r82, lighter loading) a newly loaded language list restarts the downloader with the game's own reporter: hear it too
+      (await import('/js/voice.js')).onPackProgress(e=>window.__ownerPackProgress.push(e));
       V.startPack(pack,e=>window.__ownerPackProgress.push(e),()=> 'nearby');
     },{lines,langOf,areas:true,version:999,made:'owner-wifi-language-switch'});
     let timer;
@@ -719,9 +792,9 @@ await check('ownervoicewifi', async () => {
 await check('voicecover', async () => {
   // (round R item 12) the coverage check: every line the game can speak has its recordings (both voices), is in the
   // pack's list and in an area; lines with changing words are templates whose fixed pieces, gap words and numbers are
-  // recorded as parts; what can't be listed in advance is counted with its reason (tools/make-voice-pack.mjs --cover)
+  // recorded as parts; what can't be listed in advance is counted with its reason (tools/make-voice-pack.mts --cover)
   const { execFileSync } = await import('child_process');
-  let out = ''; try { out = execFileSync(process.execPath, ['../tools/make-voice-pack.mjs', '--cover'], { encoding: 'utf8', maxBuffer: 1 << 26 }); } catch (e) { out = (e.stdout || '') + ''; }
+  let out = ''; try { out = execFileSync(process.execPath, ['../tools/make-voice-pack.mts', '--cover'], { encoding: 'utf8', maxBuffer: 1 << 26 }); } catch (e) { out = (e.stdout || '') + ''; }
   const r = JSON.parse(out.trim().split('\n').pop());
   ok(!r.bad.length, `${r.bad.length} lines not covered: ` + r.bad.slice(0, 12).join(' | '));
   // in the game: a line with a number is put together from recorded parts, and a gap that is a name is left out; the
@@ -733,9 +806,15 @@ await check('voicecover', async () => {
     const V = await import('/js/voice.js'), wait = ms => new Promise(r => setTimeout(r, ms));
     for (let k = 0; k < 60 && !V.voicePack(); k++) await wait(250);
     const res = {};
+    // (17 Oct AEDT, flaky on GitHub) a line of the running game's own (a welcome, a sticker) rightly stops this one part
+    // way: the game is paused, and a line cut off by another one (seen by the captions' listener) is said again, up to 3
+    // times; the interruptions are reported
+    if (window.__sv) window.__sv.paused = true;
+    const others = []; V.spoken.push(t => others.push(t));
     for (const [key, line] of [['number', 'You rolled 47! Count with me.'], ['name', 'Zorbly is here! Hold on and kick your legs: tap, tap, tap!']]) {
-      window.__speaks = 0; window.__srcs = 0; res[key] = { parts: V.lineParts('en', line) };
-      await V.sayAsync(line, line); res[key].speaks = window.__speaks; res[key].srcs = window.__srcs;
+      res[key] = { parts: V.lineParts('en', line), cut: 0 };
+      for (let k = 0; k < 3; k++) { others.length = 0; window.__speaks = 0; window.__srcs = 0; await V.sayAsync(line, line); if (!others.length) break; res[key].cut++; }
+      res[key].speaks = window.__speaks; res[key].srcs = window.__srcs; res[key].diag = { ...V.voiceDiag }; // (why a part did not play, when it does not)
     }
     return res;
   });
@@ -1001,7 +1080,9 @@ await check('tales', async () => {
     let pages = 0;
     for (const lang of ['en', 'vi']) { S.settings.lang = lang;
       for (const tale of G.TALES) {
-        const done = openTheatre(tale, {}), m = document.querySelector('.theatre');
+        // (r82) a tale's words load when it opens, so its theatre appears a moment later
+        const done = openTheatre(tale, {}); let m = null; for (let w = 0; w < 60 && !(m = document.querySelector('.theatre')); w++) await new Promise(r => setTimeout(r, 50));
+        if (!m) { bad.push(`${tale.id}: the theatre did not open`); continue; }
         for (let k = 0; k < (lang === 'en' ? tale.pages.length : 1); k++) { // (the pictures are the same in both languages)
           await new Promise(r => setTimeout(r, 120)); pages++;
           const where = m.querySelector('.th-stage'), raw = rawIn(where).concat(rawIn(m.querySelector('.th-bar'))), fall = where.querySelectorAll('.emo').length;
@@ -1021,9 +1102,9 @@ await check('tales', async () => {
 });
 
 await check('emoji', async () => {
-  // every emoji the game uses has a drawing in js/art.js (tools/emoji-audit.mjs)
+  // every emoji the game uses has a drawing in js/art.js (tools/emoji-audit.mts)
   const { execFileSync } = await import('child_process'), { fileURLToPath } = await import('url');
-  let out = ''; try { out = execFileSync(process.execPath, ['../tools/emoji-audit.mjs'], { encoding: 'utf8' }); } catch (e) { out = (e.stdout || '') + ''; ok(false, out.split('\n').slice(0, 12).join(' | ')); }
+  let out = ''; try { out = execFileSync(process.execPath, ['../tools/emoji-audit.mts'], { encoding: 'utf8' }); } catch (e) { out = (e.stdout || '') + ''; ok(false, out.split('\n').slice(0, 12).join(' | ')); }
   // (owner, round R: "don't use emoji at all, including in all our docs, only our drawings") no emoji in the docs either
   const EMO = /\p{Extended_Pictographic}|[\u{1F1E6}-\u{1F1FF}]/u, ARROWS = /^[\u2190-\u21FF\u25A0-\u25FF\u2B05-\u2B07\u23E9-\u23FA©®™‼⁉〰]$/u, inDocs = [];
   for (const f of execFileSync('git', ['ls-files', '*.md', '*.txt'], { cwd: '..', encoding: 'utf8' }).split('\n').filter(Boolean)) {
@@ -1654,7 +1735,8 @@ await check('filmtails', async () => {
     const ids = [...Object.keys(C.FILMS), ...Object.keys(L.TALE_FILMS)].filter(id => !only.length || only.includes(id));
     for (const id of ids) {
       const script = C.FILMS[id] || await L.taleFilm(id);
-      const tale = [...TALES, ...MORE_TALES].find(t => t.id === id) || STORY_TALES[id]; if (!tale) { out.missing.push(id + ': no words'); continue; }
+      let tale = [...TALES, ...MORE_TALES].find(t => t.id === id) || STORY_TALES[id]; if (!tale) { out.missing.push(id + ': no words'); continue; }
+      if (tale.load) tale = await tale.load(); // (r82) a tale's words load when it opens, as in the game
       if (tale.pages.length !== script.pages.length) out.missing.push(`${id}: ${script.pages.length} film pages for ${tale.pages.length} pages of words`);
       const f = F.createFilm(stage, script, { name: 'Na', companion: 'firefly', look: {} });
       for (let k = 0; k < script.pages.length; k++) {
@@ -1800,7 +1882,7 @@ await check('halves', async () => {
 await check('preload', async () => {
   // (round R, faster launch) index.html lists every start-up script so the browser fetches them all at once
   const { execFileSync } = await import('child_process'), { fileURLToPath } = await import('url');
-  try { return execFileSync(process.execPath, [fileURLToPath(new globalThis.URL('../tools/preload.mjs', import.meta.url)), '--check'], { encoding: 'utf8' }).trim(); }
+  try { return execFileSync(process.execPath, [fileURLToPath(new globalThis.URL('../tools/preload.mts', import.meta.url)), '--check'], { encoding: 'utf8' }).trim(); }
   catch (e) { throw new Error((e.stdout || e.message).trim()); }
 });
 await check('story', async () => {
@@ -3373,17 +3455,21 @@ await check('songs', async () => {
 });
 
 await check('realphotos', async () => {
-  // (round R privacy, 9 Oct, owner: "landmark photos served from our own site") the photos are only the ones listed in
-  // photos/index.json (paths inside photos/), with their credit as words; the game never asks Wikipedia or Wikimedia; a
-  // place with none says the photos are on their way; 360° (Google) opens only after a grown-up's press and hold.
+  // (owner, 17 Oct AEDT: "point photos to Wikimedia; if no internet, mention internet required"; replaces round R's
+  // "served from our own site") the photos listed in photos/index.json are shown from Wikimedia or Flickr, or from
+  // photos/ when Studio kept a copy; any other web address is left out; the credit is words, not a link; a place with
+  // none says the photos are on their way; 360° (Google) opens only after a grown-up's press and hold.
   // (round O) 360° opens on top of the photos.
   const P = await open(b, { w: 390, h: 844, touch: true }); await clear(P.page);
   const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==', 'base64');
-  const outside = []; P.page.on('request', q => { if (/wikipedia\.org|wikimedia\.org|openverse/.test(q.url())) outside.push(q.url()); });
+  const outside = []; P.page.on('request', q => { const u = q.url(); if (/^https?:/.test(u) && !u.startsWith(P.page.url().split('/').slice(0, 3).join('/')) && !/^https:\/\/((upload|thumb)\.wikimedia\.org|live\.staticflickr\.com|maps\.google\.com)\//.test(u)) outside.push(u); });
+  await P.page.route(/^https:\/\/((upload|thumb)\.wikimedia\.org|live\.staticflickr\.com)\//, r => r.fulfill({ body: png, contentType: 'image/png' }));
   await P.page.route('**/photos/index.json*', r => r.fulfill({ json: { 'en-saigon-central-post-office': [
-    { src: 'photos/en-saigon-central-post-office/1.jpg', file: 'File:Lead photo.jpg', caption: 'The post office', credit: 'Photographer · CC BY 2.0 · Wikipedia' },
-    { src: 'photos/en-saigon-central-post-office/2.jpg', file: 'File:Other view.jpg', caption: 'Inside the hall', credit: 'Someone · CC BY-SA 4.0' },
-    { src: 'https://upload.wikimedia.org/a/elsewhere.jpg', file: 'File:Elsewhere.jpg', caption: 'not ours', credit: 'x' }] } }));
+    { url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/ab/Lead.jpg/1280px-Lead.jpg', file: 'File:Lead photo.jpg', caption: 'The post office', credit: 'Photographer · CC BY 2.0 · Wikipedia' },
+    { url: 'https://live.staticflickr.com/65535/123_abc_b.jpg', file: 'Inside the hall', caption: 'Inside the hall', credit: 'Someone · BY 2.0 · flickr' },
+    { src: 'photos/en-saigon-central-post-office/2.jpg', file: 'File:Kept copy.jpg', caption: 'A copy Studio kept', credit: 'Someone · CC BY-SA 4.0' },
+    { url: 'https://pics.example.com/elsewhere.jpg', file: 'Elsewhere', caption: 'not a photo site', credit: 'x' },
+    { src: 'https://upload.wikimedia.org/a/elsewhere.jpg', file: 'File:Elsewhere.jpg', caption: 'a web address as a file', credit: 'x' }] } }));
   await P.page.route('**/photos/en-saigon-central-post-office/*.jpg', r => r.fulfill({ body: png, contentType: 'image/png' }));
   await P.page.route('https://maps.google.com/**', r => r.fulfill({ body: '<html><body>map</body></html>', contentType: 'text/html' }));
   const r = await P.page.evaluate(async () => {
@@ -3408,9 +3494,21 @@ await check('realphotos', async () => {
     const empty = !!document.querySelector('.realview.none');
     return { none, dots, cap, srcs, links, gate: !!gate, early, says, tap, opened, onTop: !!(top && top.closest('.rvmap')), empty, direct };
   });
+  // (owner, 17 Oct AEDT) no internet: every photo fails to come, so the viewer says the photos need the internet
+  await P.page.route(/^https:\/\/((upload|thumb)\.wikimedia\.org|live\.staticflickr\.com)\//, r => r.abort('internetdisconnected'));
+  await P.page.route('**/photos/en-saigon-central-post-office/*.jpg', r => r.abort('internetdisconnected'));
+  const off = await P.page.evaluate(async () => {
+    const W = await import('/js/realworld.js'), wait = ms => new Promise(x => setTimeout(x, ms));
+    W.openPhotos('Saigon Central Post Office', W.REAL.postoffice[0], { id: 'postoffice' });
+    for (let k = 0; k < 40 && !document.querySelector('.rv-nonet'); k++) await wait(150);
+    const n = document.querySelector('.rv-nonet'), v = document.querySelector('.realview');
+    const out = { note: n ? n.textContent.trim() : '', art: !!(n && n.querySelector('svg, .art')), arrows: v ? getComputedStyle(v.querySelector('.rv-next')).display : '', imgs: v ? v.querySelectorAll('.rv-img').length : -1 };
+    document.querySelectorAll('.realview, .modal').forEach(e => e.remove()); return out;
+  });
   const errs = P.errors; await P.ctx.close();
-  ok(!r.none && r.dots === 2 && /Photographer/.test(r.cap) && r.srcs.every(x => /^photos\//.test(x)) && !r.links && r.gate && !r.early && r.says && r.tap >= 44 && r.opened && r.onTop && r.direct && r.empty && !outside.length && !errs.length, JSON.stringify(Object.assign(r, { outside, errs })));
-  return `2 photos from photos/index.json (a web address left out), credit “${r.cap}” as words; nothing asked of Wikipedia or Wikimedia; a place with none says they are on their way; 360° asks a grown-up (says it opens Google) while Use the internet is off, then opens on top of the photos; with it on, opens straight away`;
+  ok(/internet/.test(off.note) && off.art && off.arrows === 'none' && !off.imgs, 'no internet: ' + JSON.stringify(off));
+  ok(!r.none && r.dots === 3 && /Photographer/.test(r.cap) && r.srcs.length && r.srcs.every(x => /^(photos\/|https:\/\/((upload|thumb)\.wikimedia\.org|live\.staticflickr\.com)\/)/.test(x)) && !r.links && r.gate && !r.early && r.says && r.tap >= 44 && r.opened && r.onTop && r.direct && r.empty && !outside.length && !errs.length, JSON.stringify(Object.assign(r, { outside, errs })));
+  return `3 photos from photos/index.json (Wikimedia, Flickr and a copy Studio kept; other web addresses left out), credit “${r.cap}” as words; nothing asked of any other site; no internet: “${off.note}”; a place with none says they are on their way; 360° asks a grown-up (says it opens Google) while Use the internet is off, then opens on top of the photos; with it on, opens straight away`;
 });
 
 await check('firstplayer', async () => {
@@ -4368,8 +4466,8 @@ await check('tradeclothes', async () => {
 await check('bilingual', async () => {
   // (Round U, owner 11 Oct: Grandma Huệ spoke Vietnamese with English set) no English slot of an [English, Vietnamese]
   // pair (an array, T(…, …) or { en, vi }) holds a Vietnamese sentence; names, songs and sayings that stay Vietnamese
-  // on purpose are listed with a reason in tools/lang-allow.json (tools/lang-audit.mjs)
-  const { audit } = await import('../tools/lang-audit.mjs'), r = audit();
+  // on purpose are listed with a reason in tools/lang-allow.json (tools/lang-audit.mts)
+  const { audit } = await import('../tools/lang-audit.mts'), r = audit();
   ok(!r.length, r.slice(0, 12).map(x => `${x.file}:${x.line} "${x.en}"`).join(' | '));
   return 'every English line is English (names, songs and sayings on the allow list)';
 });
@@ -4378,7 +4476,7 @@ await check('rules', async () => {
   // the rule registry (architecture step 0): js/content/rules.js is exactly what docs/ARCHITECTURE.md §9 says, and every
   // rule id the code and the checks name (ROAD-003, VEH-001, PRIV-004…) is in it
   const { execFileSync } = await import('child_process');
-  try { execFileSync(process.execPath, ['../tools/rules-from-doc.mjs', '--check'], { encoding: 'utf8' }); } catch (e) { ok(false, (e.stdout || '') + ''); }
+  try { execFileSync(process.execPath, ['../tools/rules-from-doc.mts', '--check'], { encoding: 'utf8' }); } catch (e) { ok(false, (e.stdout || '') + ''); }
   const { RULES } = await import('../js/content/rules.js');
   const src = ['../js/validate.js', 'run.mjs', 'perf-baseline.json'].map(f => fs.readFileSync(f, 'utf8')).join('\n');
   const named = [...new Set([...src.matchAll(/\b([A-Z]{2,8}-\d{3})\b/g)].map(m => m[1]))], missing = named.filter(id => !RULES[id]);
@@ -5030,12 +5128,14 @@ await check('chests', async () => {
 
 await check('types', async () => {
   // type checking (owner, round 30): the files that start with // @ts-check are checked against their JSDoc types
-  // (js/state.js, js/netmsg.js, studio/core.cjs; tests/tsconfig.json lists them). Needs: cd tests && npm install
+  // (js/state.js, js/netmsg.js; tests/tsconfig.json lists them), then the .mts and .cts files (tests/tsconfig.server.json). Needs: cd tests && npm install
   const { execFileSync } = await import('child_process'), tsc = 'node_modules/.bin/tsc';
   if (!fs.existsSync(tsc)) return 'skipped (run npm install in tests)';
   try { execFileSync(tsc, ['-p', '.'], { encoding: 'utf8' }); execFileSync(tsc, ['-p','tsconfig-contracts.json'], {encoding:'utf8'}); } catch (e) { ok(false, ((e.stdout || '') + '').split('\n').slice(0, 8).join(' | ')); }
-  const n = JSON.parse(fs.readFileSync('tsconfig.json', 'utf8')).files.length;
-  return `${n} explicit files type-checked; detector/outbox/family-backup modules additionally strict-checked; no errors`;
+  // (owner, 16-17 Oct AEDT: TypeScript batches 1 and 2) the website's server pieces, the Studio engine and the tools, as Node runs them
+  let server = ''; try { server = execFileSync(tsc, ['-p', 'tsconfig.server.json', '--listFilesOnly'], { encoding: 'utf8' }); execFileSync(tsc, ['-p', 'tsconfig.server.json'], { encoding: 'utf8' }); } catch (e) { ok(false, 'tsconfig.server.json: ' + ((e.stdout || '') + '').split('\n').slice(0, 8).join(' | ')); }
+  const n = JSON.parse(fs.readFileSync('tsconfig.json', 'utf8')).files.length, ts = server.split('\n').filter(f => /\.(mts|cts)$/.test(f) && !f.includes('node_modules')).length;
+  return `${n} explicit files type-checked; detector/outbox/family-backup modules additionally strict-checked; ${ts} TypeScript files of the server, Studio and tools; no errors`;
 });
 
 await check('perf', async () => {
@@ -5400,7 +5500,8 @@ await check('offline', async () => {
   try {
     const url = `http://127.0.0.2:${srv.address().port}/`;
     const P = await open(b, { w: 390, h: 760, touch: true, url, play: false });
-    await P.page.waitForFunction(async () => { const r = await navigator.serviceWorker.getRegistration(); return !!(r && r.active); }, null, { timeout: 120000 });
+    await P.page.waitForFunction(() => !!navigator.serviceWorker.controller, null, { timeout: 120000 });
+    ok(await P.page.evaluate(async () => !!(await navigator.serviceWorker.getRegistration())?.active), 'offline install did not activate');
     await P.page.waitForTimeout(1000);
     const again = async () => { const t0 = Date.now(); await P.page.reload({ timeout: 30000 }).catch(() => { }); const got = await P.page.waitForSelector('.screen.title', { timeout: Math.max(1000, 30000 - (Date.now() - t0)) }).then(() => true, () => false); return got ? Date.now() - t0 : -1; };
     const saved = await again();
@@ -5805,6 +5906,7 @@ await check('ownerheartstap', async () => {
   // (Full run 37: the daily gift's own note took the HUD note while this ran) the gift's note and voice stay quiet here
   const sw = (id, on) => P.page.evaluate(([id, on]) => import('/js/custom.js').then(C => { C.CUSTOM.features = { ...(C.CUSTOM.features || {}), [id]: on }; }), [id, on]);
   await sw('explain_gift_note', false); await sw('explain_gift_voice', false);
+  await noWelcome(P.page); // (Grandpa Owl's welcome caption fell inside the first tap's look on slower machines)
   // the voice is on here (the checks start with it off), and any way it speaks counts: a recorded file or the device voice
   await P.page.evaluate(async () => { (await import('/js/state.js')).settings.voice = true; window.__spoke = []; window.__explained = []; addEventListener('sv-explain', e => window.__explained.push(e.detail)); const s = speechSynthesis.speak.bind(speechSynthesis); speechSynthesis.speak = u => { window.__spoke.push(u.text); try { s(u); } catch (e) { } }; });
   const box = await P.page.evaluate(() => { const h = document.querySelector('.hud .hearts'), r = h.getBoundingClientRect(); return { y: r.y + r.height / 2, x: r.x + r.width / 2, hit: Math.round(r.height), role: h.getAttribute('role'), label: h.getAttribute('aria-label') }; });
@@ -6251,7 +6353,7 @@ await check('r79bagtiles', async () => {
   const rows = [];
   for (const [dev, w, h, touch, textSize] of [['phone', 390, 844, true, 0], ['bigphone', 430, 932, true, 2], ['computer', 1280, 800, false, 0]]) {
     const P = await open(b, { w, h, touch, settings: { textSize } }); await clear(P.page);
-    await P.page.evaluate(() => { const p = __sv.heroes[0].profile; p.bought = { h_tauhu: 1, h_traicay: 1 }; p.inv = { ...(p.inv || {}), ruby: 1, crystal: 1, fossil: 1, bone: 2, pebble: 4, apple: 3 }; });
+    await P.page.evaluate(() => { const p = __sv.heroes[0].profile; p.bought = { h_tauhu: 1, h_traicay: 1 }; p.dishes = { ...(p.dishes || {}), pho: 1 }; p.inv = { ...(p.inv || {}), ruby: 1, crystal: 1, fossil: 1, bone: 2, pebble: 4, apple: 3 }; });
     await P.page.evaluate(() => { const n = document.createElement('div'); n.className = 'packbar'; n.innerHTML = '<span>Getting the voices ready… 6%</span><i><b></b></i>'; document.body.appendChild(n); });
     await P.page.evaluate(() => __sv.openPad(0, 'bag')); await P.page.waitForSelector('.pad .slot'); await P.page.waitForTimeout(900);
     const r = await P.page.evaluate(() => {
@@ -6261,12 +6363,15 @@ await check('r79bagtiles', async () => {
         if (!pic || !lab) continue;
         const t = s.getBoundingClientRect(), a = pic.getBoundingClientRect(), l = lab.getBoundingClientRect(), name = lab.textContent.trim().slice(0, 24);
         // the drawn shape too (a picture can spill past its box)
-        let drawnBottom = a.bottom; const g = pic.tagName === 'svg' ? pic : pic.querySelector('svg');
-        try { if (g && g.getBBox) { const bb = g.getBBox(), m = g.getScreenCTM(); drawnBottom = Math.max(drawnBottom, (bb.y + bb.height) * m.d + m.f); } } catch (e) { }
+        // (owner, 17 Oct AEDT: "the food items are not in centre") and its drawn middle: the box was centred while the drawing
+        // inside spilled 13 px to the right
+        let drawnBottom = a.bottom, drawnMid = (a.left + a.right) / 2; const g = pic.tagName === 'svg' ? pic : pic.querySelector('svg');
+        try { if (g && g.getBBox) { const bb = g.getBBox(), m = g.getScreenCTM(); drawnBottom = Math.max(drawnBottom, (bb.y + bb.height) * m.d + m.f); drawnMid = (bb.x + bb.width / 2) * m.a + m.e; } } catch (e) { }
         const lines = Math.round(l.height / parseFloat(getComputedStyle(lab).lineHeight));
         if (drawnBottom > l.top + 1) bad.push(name + ': picture over name by ' + Math.round(drawnBottom - l.top) + ' px');
         if (lines > 2) bad.push(name + ': ' + lines + ' lines');
         if (Math.abs((a.left + a.right) / 2 - (t.left + t.right) / 2) > 2) bad.push(name + ': picture off centre');
+        if (Math.abs(drawnMid - (t.left + t.right) / 2) > 4) bad.push(name + ': drawing ' + Math.round(drawnMid - (t.left + t.right) / 2) + ' px off centre');
         if (l.bottom > t.bottom + 1) bad.push(name + ': name spills out of its tile');
       }
       const pb = document.querySelector('.packbar'), pr = pb.getBoundingClientRect(), top = document.elementFromPoint(pr.left + pr.width / 2, pr.top + pr.height / 2);
@@ -6279,6 +6384,36 @@ await check('r79bagtiles', async () => {
     ok(!P.errors.length, P.errors.join(' | ')); await P.ctx.close();
   }
   return rows.join(', ') + '; pictures centred and clear of names, names at most two lines, voices note hidden behind the Pad';
+});
+await check('articentre', async () => {
+  // (owner, 17 Oct AEDT: "not in centre and not balanced, please check everywhere") a drawn emoji comes wrapped in .arti; a
+  // window rule that sizes the drawing but not its wrapper pushes it off centre (the Bag's food 13 px right, the Passport's
+  // question marks out of their stamps). Every Pad tab, every part folded open, and the games hub, on a phone and a computer
+  const rows = [];
+  const scan = () => { const bad = new Set();
+    for (const w of document.querySelectorAll('.arti')) { const g = w.querySelector(':scope > svg'); if (!g) continue;
+      const a = w.getBoundingClientRect(), r = g.getBoundingClientRect(); if (!a.width || !r.width) continue;
+      const dx = Math.round((r.left + r.right) / 2 - (a.left + a.right) / 2), dy = Math.round((r.top + r.bottom) / 2 - (a.top + a.bottom) / 2);
+      if (Math.abs(dx) > 2 || Math.abs(dy) > 2) bad.add(w.parentElement.tagName.toLowerCase() + '.' + w.parentElement.className + ' in .' + (w.parentElement.parentElement || {}).className + ' (' + w.dataset.e + ' ' + dx + ',' + dy + ')'); }
+    return [...bad]; };
+  for (const [dev, w, h, touch, lang] of [['phone', 430, 873, true, 'vi'], ['computer', 1280, 800, false, 'en']]) {
+    const P = await open(b, { w, h, touch, lang }); await clear(P.page);
+    await P.page.evaluate(() => { const p = __sv.heroes[0].profile; p.bought = { h_tauhu: 1 }; p.dishes = { ...(p.dishes || {}), pho: 1 }; p.inv = { ...(p.inv || {}), ruby: 1, apple: 3, egg: 1 }; __sv.openPad(0, 'map'); });
+    await P.page.waitForSelector('.pad-tabs button');
+    const tabs = await P.page.evaluate(() => [...document.querySelectorAll('.pad-tabs button')].map(x => x.dataset.t)), bad = [];
+    for (const t of tabs) {
+      await P.page.evaluate(t => document.querySelector(`.pad-tabs button[data-t="${t}"]`).click(), t); await P.page.waitForTimeout(600);
+      await P.page.evaluate(() => document.querySelectorAll('.pad-body [aria-expanded="false"]').forEach(x => x.click())); await P.page.waitForTimeout(300);
+      bad.push(...(await P.page.evaluate(scan)).map(x => t + ': ' + x));
+    }
+    await P.page.evaluate(() => document.querySelector('.pad .x').click()); await P.page.waitForTimeout(400);
+    await P.page.evaluate(() => __sv.openGamesHub(0, () => {})); await P.page.waitForTimeout(900);
+    bad.push(...(await P.page.evaluate(scan)).map(x => 'games: ' + x));
+    rows.push(dev + ': ' + tabs.length + ' tabs and the games hub');
+    ok(!bad.length, dev + ': drawn pictures off their centre: ' + bad.slice(0, 8).join('; '));
+    ok(!P.errors.length, P.errors.join(' | ')); await P.ctx.close();
+  }
+  return rows.join(', ') + '; every drawn picture centred in its place';
 });
 await check('r79albumwords', async () => {
   // (r79 A3) Album "Words I learned": each row holds its picture and its hear-again button (44 px or more) inside it, lined
@@ -6762,7 +6897,15 @@ await check('swupdate', async () => {
   try {
     const url = `http://127.0.0.2:${srv.address().port}/`;
     const P = await open(b, { w: 390, h: 760, touch: true, url, play: false });
-    const active = v => P.page.waitForFunction(async v => { const r = await navigator.serviceWorker.getRegistration(); return !!r?.active && navigator.serviceWorker.controller && (await caches.keys()).includes('sv-2099-swtest-' + v) && !r.installing && !r.waiting; }, v, { timeout: 120000 });
+    const active = async v => {
+      const until = Date.now() + 120000;
+      while (Date.now() < until) {
+        const ready = await P.page.evaluate(async v => { const r = await navigator.serviceWorker.getRegistration(); return !!r?.active && !!navigator.serviceWorker.controller && (await caches.keys()).includes('sv-2099-swtest-' + v) && !r.installing && !r.waiting; }, v);
+        if (ready) return;
+        await P.page.waitForTimeout(200);
+      }
+      throw new Error('service worker version ' + v + ' did not finish activating');
+    };
     const build = () => P.page.evaluate(() => fetch('/js/build.js').then(r => r.text()).then(t => /BUILD = '([^']+)'/.exec(t)?.[1]));
     const update = () => P.page.evaluate(() => navigator.serviceWorker.getRegistration().then(r => r.update()).catch(e => String(e)));
     await active('a'); await P.page.waitForTimeout(500);
@@ -6797,6 +6940,31 @@ await check('swupdate', async () => {
     return `the new version's files after an update (not the copy kept beside it); a stopped update kept ${partial} files and fetched only the rest; start screens: took over and reloaded by itself; playing: no reload, the notice offered it; back on screen: asked the website again`;
   } finally { srv.closeAllConnections(); srv.close(); }
 });
+await check('offscreenpanels', async () => {
+  // (owner, 17 Oct AEDT) about 190 "button off the screen" tester issues came from devices on r69 to r74, each one window
+  // whose buttons below the fold were all reported at once. The tester device's own detector (js/tester-detection.js),
+  // run here on the real windows at those devices' sizes, reports none of them: every window's buttons can be scrolled to.
+  const SIZES = [['phone', 390, 844, true], ['iPhone', 430, 873, true], ['tablet', 820, 1180, true], ['Android tablet', 1600, 960, true], ['computer', 1260, 1337, false]];
+  const bad = [];
+  for (const [name, w, h, touch] of SIZES) {
+    const P = await open(b, { w, h, touch }); await clear(P.page);
+    const r = await P.page.evaluate(async () => {
+      const U = await import('/js/ui.js'), D = await import('/js/tester-detection.js'), G = window.__sv, out = {};
+      const windows = { grownups: () => U.openGrownups(() => { }), settings: () => U.openQuick(G, 0), play: () => U.openGamesHub(G, 0, () => { }), pad: () => U.openPad(G, 0) };
+      for (const [k, openIt] of Object.entries(windows)) {
+        document.querySelectorAll('.modal').forEach(m => m.remove()); openIt(); await new Promise(res => setTimeout(res, 900));
+        const top = D.activeReportPanel(document), bs = [...document.querySelectorAll('.modal button, .hud button, .gl button, .dialog button')];
+        out[k] = { top: top ? top.className : '', buttons: bs.length, off: bs.filter(x => D.unreachableControl(x, top)).map(x => (x.textContent || '').trim().slice(0, 30)) };
+      }
+      document.querySelectorAll('.modal').forEach(m => m.remove()); return out;
+    });
+    for (const [k, v] of Object.entries(r)) { if (!v.top || v.buttons < 3) bad.push(`${name} ${k}: did not open (${v.top || 'no window'}, ${v.buttons} buttons)`); if (v.off.length) bad.push(`${name} ${k}: ${v.off.length} off the screen: ${v.off.slice(0, 5).join(' | ')}`); }
+    await P.ctx.close();
+  }
+  ok(!bad.length, bad.join(' · '));
+  return `Grown-ups, Settings, Play and the Pad on 5 screens (phone to computer): every button can be reached`;
+});
+
 await b.close();
 const failed = results.filter(r => !r[1]);
 console.log(`\n${results.length - failed.length}/${results.length} checks passed`);

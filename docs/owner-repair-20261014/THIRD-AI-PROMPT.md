@@ -49,7 +49,7 @@ regions, cities, town, homes, vendors, hawkers, places, solids, content/map). A 
   recommended one first), then work through the list without asking again unless a real choice comes up.
 - Questions to the owner only as pop-up questions. Times in Sydney time (AEDT now). No emoji in docs.
 - English and Vietnamese for everything a child sees or hears. Touch targets 44 px or more (64 px for under-5s).
-- New spoken lines: record them with `node tools/make-voice-pack.mjs --engine azure` if `AZURE_SPEECH_KEY` is set
+- New spoken lines: record them with `node tools/make-voice-pack.mts --engine azure` if `AZURE_SPEECH_KEY` is set
   (never print or commit the key), then keep the voice index additive: restore `voices/manifest.json` and
   `voices/areas.json` from git and add only the new lines, including each line's language under `other` (a
   Vietnamese line not listed there is looked for under `voices/en/` and breaks the core pack). Better: list new

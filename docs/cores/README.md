@@ -65,7 +65,7 @@ These come from `CLAUDE.md`, `HANDOFF.md` and `docs/ARCHITECTURE.md` §9, which 
 3. **Stay in your files.** Each core file lists what it owns. To change another core's file, write the request on
    `BOARD.md` (what, why, which file). A one-line fix that a check needs is allowed if it is noted on the board.
 4. **Rules are checked.** A core changes its own hard rules (`docs/ARCHITECTURE.md` §9) only when the owner asks. It
-   then runs `node tools/rules-from-doc.mjs` so `js/content/rules.js` matches.
+   then runs `node tools/rules-from-doc.mts` so `js/content/rules.js` matches.
 5. **Tests.** Before handing over, run the core's own checks (listed in its file):
    `cd tests && SV_URL=http://localhost:<port>/ CHROMIUM=/opt/pw-browsers/chromium node run.mjs <checks>`.
    Serve the copy you work on with `python3 -m http.server <port>`. Never run two browser test runs at once.
