@@ -6896,6 +6896,31 @@ await check('swupdate', async () => {
     return `the new version's files after an update (not the copy kept beside it); a stopped update kept ${partial} files and fetched only the rest; start screens: took over and reloaded by itself; playing: no reload, the notice offered it; back on screen: asked the website again`;
   } finally { srv.closeAllConnections(); srv.close(); }
 });
+await check('offscreenpanels', async () => {
+  // (owner, 17 Oct AEDT) about 190 "button off the screen" tester issues came from devices on r69 to r74, each one window
+  // whose buttons below the fold were all reported at once. The tester device's own detector (js/tester-detection.js),
+  // run here on the real windows at those devices' sizes, reports none of them: every window's buttons can be scrolled to.
+  const SIZES = [['phone', 390, 844, true], ['iPhone', 430, 873, true], ['tablet', 820, 1180, true], ['Android tablet', 1600, 960, true], ['computer', 1260, 1337, false]];
+  const bad = [];
+  for (const [name, w, h, touch] of SIZES) {
+    const P = await open(b, { w, h, touch }); await clear(P.page);
+    const r = await P.page.evaluate(async () => {
+      const U = await import('/js/ui.js'), D = await import('/js/tester-detection.js'), G = window.__sv, out = {};
+      const windows = { grownups: () => U.openGrownups(() => { }), settings: () => U.openQuick(G, 0), play: () => U.openGamesHub(G, 0, () => { }), pad: () => U.openPad(G, 0) };
+      for (const [k, openIt] of Object.entries(windows)) {
+        document.querySelectorAll('.modal').forEach(m => m.remove()); openIt(); await new Promise(res => setTimeout(res, 900));
+        const top = D.activeReportPanel(document), bs = [...document.querySelectorAll('.modal button, .hud button, .gl button, .dialog button')];
+        out[k] = { top: top ? top.className : '', buttons: bs.length, off: bs.filter(x => D.unreachableControl(x, top)).map(x => (x.textContent || '').trim().slice(0, 30)) };
+      }
+      document.querySelectorAll('.modal').forEach(m => m.remove()); return out;
+    });
+    for (const [k, v] of Object.entries(r)) { if (!v.top || v.buttons < 3) bad.push(`${name} ${k}: did not open (${v.top || 'no window'}, ${v.buttons} buttons)`); if (v.off.length) bad.push(`${name} ${k}: ${v.off.length} off the screen: ${v.off.slice(0, 5).join(' | ')}`); }
+    await P.ctx.close();
+  }
+  ok(!bad.length, bad.join(' · '));
+  return `Grown-ups, Settings, Play and the Pad on 5 screens (phone to computer): every button can be reached`;
+});
+
 await b.close();
 const failed = results.filter(r => !r[1]);
 console.log(`\n${results.length - failed.length}/${results.length} checks passed`);
