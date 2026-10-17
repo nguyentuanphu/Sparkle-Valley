@@ -120,7 +120,7 @@ Parents see the same list in plain words, folded under the Use the internet swit
 
 ### 6.3 Automated checks
 
-In `tests/`, run `npm install` once (Playwright, and TypeScript for the `types` check), then `node run.mjs [check…]`. The full list is in HANDOFF §2.
+In `tests/`, run `npm install` once (Playwright, and TypeScript for the `types` check), then `node run.mjs [check…]` (it runs `node tools/build.mjs` first, so every `.ts` has its `.js`; HANDOFF §1). The full list is in HANDOFF §2.
 - **`unit`** runs `node --test` on `tests/unit/` (no browser).
 - **On GitHub:** `.github/workflows/checks.yml` runs `unit rules preload emoji arch types names` and builds the packed zip on every pull request and every push to a branch (not `main`; Netlify deploys that). Nothing is deployed.
 - **`offline`** serves the game itself on 127.0.0.2 (the game skips its service worker on localhost) and can stop answering. `SV_ROOT=../netlify-site` runs it on the packed copy.

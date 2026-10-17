@@ -3,7 +3,12 @@
   publish = "."
   # (Analytics & Infra, 10 Oct) pack the start-up scripts in Netlify's own copy (tools/bundle.mjs); a drag-and-drop zip
   # is already packed by build-netlify.sh. If packing cannot run, the site keeps the plain modules.
-  command = "node tools/bundle.mjs . || true"
+  # (owner, 16 Oct AEDT: TypeScript, batch 0) first every .ts becomes the .js beside it (tools/build.mjs); if that fails
+  # the deploy stops and the live site stays as it was. Packing may still fall back to the plain modules.
+  command = "node tools/build.mjs && (node tools/bundle.mjs . || true)"
+[build.environment]
+  # type stripping (tools/build.mjs) needs Node 22.18 or newer; the same version the checks and the exe use
+  NODE_VERSION = "22.22.0"
 
 # Small server pieces (Git deploys only; a drag-and-drop zip has none of them):
 #   /api/hello        devices counting players, anonymously (netlify/functions/hello.mjs)
