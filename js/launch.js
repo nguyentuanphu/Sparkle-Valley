@@ -25,7 +25,11 @@ window.svLaunchProgress = (value, total, label) => {
 const busy = () => { const g = window.__sv; return !!(g?.heroes?.length && (g.paused || document.querySelector('.gl, .dialog, .storybook, .theatre'))); };
 // (third AI's review R4) Studio's switch is known from the first second: until the game's own switch reader is ready
 // (js/main.js, after the valley is built), this page reads content/custom.json itself
-let noticeOff = false; fetch('content/custom.json', { cache: 'no-store' }).then(r => r.json()).then(j => { noticeOff = j?.features?.explain_updateNotice === false; }).catch(() => { });
+// (r81 Studio live) a live Defaults section kept on this device (js/custom.js, sv2_live) wins over custom.json, as in the game
+let noticeOff = false;
+const liveFeatures = (() => { try { const f = JSON.parse(localStorage.getItem('sv2_live') || '{}')?.content?.features; return f && typeof f === 'object' ? f : null; } catch (e) { return null; } })();
+if (liveFeatures) noticeOff = liveFeatures.explain_updateNotice === false;
+else fetch('content/custom.json', { cache: 'no-store' }).then(r => r.json()).then(j => { noticeOff = j?.features?.explain_updateNotice === false; }).catch(() => { });
 window.svOfferUpdate = (needed = false) => {
   // (owner, 16 Oct) Studio can turn the notice off: the new version then starts the next time the game is opened.
   // (review R3) Not when a part of the game has already gone after a deploy (svModuleGone): this tab cannot go on

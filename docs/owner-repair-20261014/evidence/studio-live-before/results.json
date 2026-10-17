@@ -1,0 +1,67 @@
+[
+  {
+    "label": "phone",
+    "page": "message",
+    "note": ""
+  },
+  {
+    "label": "phone",
+    "page": "play",
+    "note": ""
+  },
+  {
+    "label": "phone",
+    "page": "ads",
+    "note": ""
+  },
+  {
+    "label": "phone",
+    "page": "music",
+    "note": ""
+  },
+  {
+    "label": "tablet",
+    "page": "message",
+    "note": ""
+  },
+  {
+    "label": "tablet",
+    "page": "play",
+    "note": ""
+  },
+  {
+    "label": "tablet",
+    "page": "ads",
+    "note": ""
+  },
+  {
+    "label": "tablet",
+    "page": "music",
+    "note": ""
+  },
+  {
+    "label": "computer",
+    "page": "message",
+    "note": ""
+  },
+  {
+    "label": "computer",
+    "page": "play",
+    "note": ""
+  },
+  {
+    "label": "computer",
+    "page": "ads",
+    "note": ""
+  },
+  {
+    "label": "computer",
+    "page": "music",
+    "note": ""
+  },
+  {
+    "label": "phone-vi",
+    "page": "message",
+    "note": ""
+  }
+]

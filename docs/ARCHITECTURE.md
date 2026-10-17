@@ -761,7 +761,7 @@ The design-handbook aliases (G1–G11, R1–R12) map onto these ids and stay val
 | PERF-005 | Memory after 10 mini-games grows < 40 MB and no page elements are left behind | MAJOR | check `perf` |
 | SAFE-001 | Safe for ages 2–8: no weapons, blood, scary faces, animal fights, real logos, phone numbers or addresses (G8) | BLOCKER | visual + review |
 | STUDIO-001 | The exe and online Studio are one program and the same version as the game | BLOCKER | check `studio` |
-| STUDIO-002 | Online saves wait on the website until Publish (round P), which sends them all as one commit to the draft and then live; Publish copies only the family's files | BLOCKER | check `studio` |
+| STUDIO-002 | Online saves of the family's files wait on the website until Publish (round P), which sends them all as one commit to the draft and then live; Publish copies only the family's files. The content pages (Message, Missions, Quiz, Our stories, Villagers, Story characters, Memory Villages, Simple screen, Defaults, Ads settings, photo links) are saved live at once instead (owner, 17 Oct AEDT, r81), checked and size-limited, with content/custom.json as the fallback | BLOCKER | check `studio` |
 | SAVE-001 | Never overwrite safe copies when the main save is unreadable | BLOCKER | check `saves` |
 | SAVE-002 | Every save section has a version and a migration from every older version | MAJOR | unit [IMPR] |
 | SAVE-003 | A save referencing unknown ids loads with those parts dropped, never crashes | MAJOR | unit [IMPR] |

@@ -111,7 +111,7 @@ export const RULES = {
   "PERF-005": { "text": "Memory after 10 mini-games grows < 40 MB and no page elements are left behind", "severity": "MAJOR", "check": "check perf" },
   "SAFE-001": { "text": "Safe for ages 2–8: no weapons, blood, scary faces, animal fights, real logos, phone numbers or addresses (G8)", "severity": "BLOCKER", "check": "visual + review" },
   "STUDIO-001": { "text": "The exe and online Studio are one program and the same version as the game", "severity": "BLOCKER", "check": "check studio" },
-  "STUDIO-002": { "text": "Online saves wait on the website until Publish (round P), which sends them all as one commit to the draft and then live; Publish copies only the family's files", "severity": "BLOCKER", "check": "check studio" },
+  "STUDIO-002": { "text": "Online saves of the family's files wait on the website until Publish (round P), which sends them all as one commit to the draft and then live; Publish copies only the family's files. The content pages (Message, Missions, Quiz, Our stories, Villagers, Story characters, Memory Villages, Simple screen, Defaults, Ads settings, photo links) are saved live at once instead (owner, 17 Oct AEDT, r81), checked and size-limited, with content/custom.json as the fallback", "severity": "BLOCKER", "check": "check studio" },
   "SAVE-001": { "text": "Never overwrite safe copies when the main save is unreadable", "severity": "BLOCKER", "check": "check saves" },
   "SAVE-002": { "text": "Every save section has a version and a migration from every older version", "severity": "MAJOR", "check": "unit [IMPR]" },
   "SAVE-003": { "text": "A save referencing unknown ids loads with those parts dropped, never crashes", "severity": "MAJOR", "check": "unit [IMPR]" }
