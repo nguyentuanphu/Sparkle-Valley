@@ -10,9 +10,9 @@ for (const group of Object.values(GAME_LOADERS)) {
   };
   for (const id of group.ids) {
     const def = GAME_CATALOG.find(d => d.id === id);
-    register({ ...def, load, async run(api) {
+    register({ ...def, load, run: GAMES[id]?.run || (async api => {
       await load();
       if (!api.closed) return GAMES[id].run(api);
-    } });
+    }) });
   }
 }
