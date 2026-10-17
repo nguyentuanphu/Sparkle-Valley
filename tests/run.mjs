@@ -6305,6 +6305,7 @@ await check('feel', async () => {
       m.close(); await wait(260); out.window = { sounds: log.slice(), still: Math.abs(y0 - y1) < 1 && Math.abs(y1 - y2) < 1, gone: !document.querySelector('.modal.feeltest') };
       // coins fly into the counter and land with a climbing note
       log.length = 0; S.farm.coins += 30; await wait(200); out.flying = document.querySelectorAll('.sv-fly').length; await wait(1200);
+      for (let t = 0; t < 18 && document.querySelector('.sv-fly'); t++) await wait(100);   // (r85: a busy machine starts the 650 ms flights late; up to 3 s in all, what is required is unchanged)
       out.landed = log.filter(k => k === 'pop').length; out.flyGone = !document.querySelector('.sv-fly');
       // Grown-ups → Tap sounds off: no press sound, other sounds stay
       S.settings.tapSounds = false; await wait(500); o0 = osc; down(btns[0]); up(); A.SFX.tap(); out.tapOff = osc - o0; o0 = osc; A.SFX.ok(); out.otherStill = osc - o0; S.settings.tapSounds = true;

@@ -59,7 +59,7 @@ export function createFerries(G) {
     // and comes down in steps to the water, never below the ground under it, so no pier hangs under a high bank
     const dx = ex - sx, dz = ez - sz, L = Math.hypot(dx, dz), a = Math.atan2(dx, dz), y0 = WATER + .6, parts = [], ux = dx / L, uz = dz / L;
     const ks = []; for (let k = 0; k < L - .45; k += .55) ks.push(k); ks.push(L);
-    const ys = []; ks.forEach((k, i) => ys.push(Math.max(y0, i ? ys[i - 1] - .88 : heightAt(sx, sz), heightAt(sx + ux * k, sz + uz * k) + .02)));   // (steps of at most 0.88 m from the bank's edge: a child steps up 1.2 m)
+    const ys = []; ks.forEach((k, i) => ys.push(Math.max(y0, i ? ys[i - 1] - .88 : heightAt(sx, sz) - .04, heightAt(sx + ux * k, sz + uz * k) - .04)));   // (steps of at most 0.88 m from the bank's edge: a child steps up 1.2 m; on land its top is 3 cm over the ground, flush with the road it starts on, ROAD-017)
     const y = ys[ys.length - 1];
     ks.forEach((k, i) => { const t = Math.max(.14, ys[i] - (ys[i + 1] ?? ys[i]) + .14); parts.push(P(B(2.6, t, .5), i % 2 ? '#a87a4a' : '#b88a5a', [0, ys[i] - y - t / 2 + .07, k])); });   // (a step is solid down to the next one)
     ks.forEach((k, i) => { if (i % 4 && i < ks.length - 1) return; const h = ys[i] - WATER + 1.7; [-1.2, 1.2].forEach(x => parts.push(P(C(.13, .13, h, 6), '#7a5236', [x, ys[i] - y - h / 2 + .1, k]))); });
