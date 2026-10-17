@@ -9,6 +9,7 @@
 // exe compares itself with the online Studio on the Check page.
 'use strict';
 const fs = require('fs'), path = require('path'), crypto = require('crypto');
+const { splitManifest } = require('../tools/voice-manifests.cjs');
 const STUDIO_VERSION = require('./version.json').studio;
 
 // ---------- where the files live ----------
@@ -310,6 +311,7 @@ function createStudio({ store, conf, online = false, local = {}, family = null }
     if (!m.voices[lang]) m.voices[lang] = {}; if (!m.voices[lang][slot]) m.voices[lang][slot] = { id: AZ_VOICES[lang][slot], name: AZ_VOICES[lang][slot] };
     if (m.other) { if (lang !== 'en' && !String(m.other[lang] || '').split(' ').includes(hash)) m.other[lang] = ((m.other[lang] || '') + ' ' + hash).trim(); } else m.langOf[hash] = lang; // (new packs list only the lines that are not English)
     m.lines[hash] = (m.lines[hash] || '').replace(slot, '') + slot; m.made = new Date().toISOString().slice(0, 10);
+    for (const [language, shard] of Object.entries(splitManifest(m))) await S.write(`voices/manifest-${language}.json`, Buffer.from(JSON.stringify(shard)));
     await S.write('voices/manifest.json', Buffer.from(JSON.stringify(m)));
   }
   async function azureSay(lang, slot, text, runs) {

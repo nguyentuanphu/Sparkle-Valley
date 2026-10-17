@@ -15,19 +15,8 @@ import { el, shuffle, wait } from '../util.js';
 import { sayAsync, spoken } from '../voice.js';
 import { settings } from '../state.js';
 import { canListen, listen, stopListening } from '../listen.js';
-import { GAME_INFO } from '../content/activities.js';
-import { HOWTO } from '../howto.js';
 
-GAME_INFO.sayfind = ['words', 3, 1]; GAME_INFO.marketcount = ['numbers', 3, 1]; GAME_INFO.soundhunt = ['words', 4, 2];
-// (feelings keeps its place: Me and my family, for everyone)
-const INTRO = {
-  sayfind: ['Listen to the word, then tap its picture. You can also say the word.', 'Nghe từ rồi chạm vào hình. Con cũng có thể nói từ đó.'],
-  marketcount: ['Put the fruit in the basket. We count each one together.', 'Bỏ trái cây vào giỏ. Mình cùng đếm từng quả nhé.'],
-  feelings: ['Listen to the little story. Tap the face that shows how Lá feels.', 'Nghe câu chuyện nhỏ. Chạm vào khuôn mặt cho thấy Lá cảm thấy thế nào.'],
-  soundhunt: ['Listen to the sound. Tap every picture that sounds the same.', 'Nghe âm. Chạm vào mọi hình có âm giống vậy.']
-};
-for (const [id, [en, vi]] of Object.entries(INTRO)) HOWTO[id] = { steps: [{ pic: '👂', en, vi }] };
-
+import { TALK_INTRO as INTRO } from './learning-meta.js';
 const tier = api => api.tier ? api.tier() : api.little ? 0 : api.level >= 3 ? 3 : api.level >= 2 ? 2 : 1;
 const nextRound = api => api.nextRound ? api.nextRound() : tier(api);
 const favour = (api, list, key) => api.favour ? api.favour(list, key) : list;

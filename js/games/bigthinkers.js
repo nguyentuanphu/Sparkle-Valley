@@ -6,15 +6,7 @@ import { register, choiceButtons, untilRight } from './frame.js';
 import { T } from '../i18n.js';
 import { pic } from '../art.js';
 import { el, shuffle, wait } from '../util.js';
-import { GAME_INFO } from '../content/activities.js';
-import { HOWTO } from '../howto.js';
-GAME_INFO.rulefinder = ['thinking', 3, 1]; GAME_INFO.gardenorder = ['thinking', 3, 1]; GAME_INFO.steppingpath = ['thinking', 4, 2];
-const instructions = {
-  rulefinder: [['Look at the examples. Choose another picture that follows their rule.', 'Nhìn các ví dụ. Chọn thêm hình theo cùng quy luật.']],
-  gardenorder: [['Put the little story in order. Choose what happens first, then what happens next.', 'Xếp câu chuyện nhỏ theo thứ tự. Chọn việc xảy ra trước, rồi việc tiếp theo.']],
-  steppingpath: [['Follow neighbouring flowers to reach the flag. Avoid the puddles.', 'Theo những bông hoa cạnh nhau đến lá cờ. Tránh vũng nước.']]
-};
-for (const [id, lines] of Object.entries(instructions)) HOWTO[id] = { steps: lines.map(([en, vi]) => ({ pic: '🧩', en, vi })) };
+import { instructions } from './learning-meta.js';
 // 0 under-5, 1 Easy, 2 Medium, 3 Hard (the level already includes the child's progress, as in the other new games)
 // (r79 learning, I1) the frame's tier follows the child inside the game (api.tier); simple test frames fall back to the level
 const tier = api => api.tier ? api.tier() : api.little ? 0 : api.level >= 3 ? 3 : api.level >= 2 ? 2 : 1;

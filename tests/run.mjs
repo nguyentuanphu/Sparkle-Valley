@@ -94,6 +94,65 @@ await check('boot', async () => {
   }
 });
 
+await check('voicefirstchoice', async () => {
+  const indexes = [];
+  const P = await open(b, { play: false, route: async ctx => {
+    ctx.on('request', q => { const m = /\/voices\/manifest[^/]*\.json/.exec(q.url()); if (m) indexes.push(m[0]); });
+  } });
+  try {
+    await P.page.click('.screen.title .seg.lang [data-l="vi"]');
+    await P.page.evaluate(async () => { window.__voiceIndexCheck = await import('/js/voice.js'); });
+    await P.page.waitForFunction(() => !!window.__voiceIndexCheck.voicePack()?.signatures?.vi, null, { timeout: 30000 });
+    ok(indexes.length === 1 && indexes[0] === '/voices/manifest-vi.json', 'first language choice fetched an unwanted index: ' + indexes.join(', '));
+    ok(!P.errors.length, P.errors.join(' | '));
+  } finally { await P.ctx.close(); }
+  return 'choosing Vietnamese on the first click downloads only the Vietnamese index';
+});
+
+await check('lighterload', async () => {
+  const got = [];
+  const P = await open(b, { play: false, route: async ctx => {
+    ctx.on('request', q => got.push(new globalThis.URL(q.url()).pathname));
+    await ctx.route('**/js/games/thinking.js', async r => { await new Promise(done => setTimeout(done, 700)); await r.continue(); });
+  } });
+  try {
+    ok(!got.some(s => /\/js\/(games\/thinking|tales-content|howto-player)\.js$/.test(s)), 'optional implementation fetched before opening: ' + got.filter(s => /thinking|tales-content|howto-player/.test(s)));
+    await start(P.page); await clear(P.page);
+    ok(await P.page.evaluate(async () => !!(await import('/js/custom.js')).customQuiz().length || !(await import('/js/games/frame.js')).GAMES.familyquiz), 'Family Quiz appeared with no family questions');
+    await P.page.evaluate(async () => { window.__voiceIndexCheck = await import('/js/voice.js'); });
+    await P.page.waitForFunction(() => !!window.__voiceIndexCheck.voicePack(), null, { timeout: 20000 });
+    ok(got.some(s => s.endsWith('/voices/manifest-en.json')) && !got.some(s => /\/voices\/manifest(?:-(?:vi|hi|zh))?\.json$/.test(s)), 'English-only device fetched another index');
+    const closed = await P.page.evaluate(async () => {
+      const F = await import('/js/games/frame.js');
+      window.__lazyGame = F.openGame('pattern', { players: [__sv.heroes[0].profile] });
+      const layer = document.querySelector('.gl:not(.out)'), stage = layer.querySelector('.gl-stage');
+      layer.querySelector('.gl-x').click();
+      await window.__lazyGame;
+      await F.GAMES.pattern.load();
+      return { open: F.gameOpen(), children: stage.children.length, active: document.querySelectorAll('.gl:not(.out)').length };
+    });
+    ok(!closed.open && !closed.children && !closed.active, 'closed game ran after its delayed implementation arrived: ' + JSON.stringify(closed));
+    await P.page.waitForSelector('.gl', { state: 'detached' });
+    await P.page.evaluate(async () => { const F = await import('/js/games/frame.js'); window.__lazyGame = F.openGame('pattern', { players: [__sv.heroes[0].profile] }); });
+    await P.page.waitForFunction(() => document.querySelector('.gl-stage')?.children.length > 0);
+    await P.page.click('.gl-x'); await P.page.waitForTimeout(350);
+    const tale = await P.page.evaluate(async () => {
+      const { MORE_TALES } = await import('/js/talesdata.js'); const t = MORE_TALES[0], before = t.pages.length;
+      const full = await t.load(); return { before, after: full.pages.length, en: full.pages[0][1], same: full === t };
+    });
+    ok(tale.same && tale.before === tale.after && tale.en, 'lazy tale lost its pages/identity: ' + JSON.stringify(tale));
+    await P.page.evaluate(async () => { (await import('/js/ui.js')).openGrownups(() => {}); });
+    await P.page.locator('#gBil').check();
+    await P.page.waitForFunction(() => !!window.__voiceIndexCheck.voicePack()?.signatures?.vi);
+    await clear(P.page);
+    await P.page.evaluate(async () => { const S = await import('/js/state.js'); S.settings.lang = 'vi'; (await import('/js/core/events.js')).events.emit('LanguageChanged'); });
+    await P.page.waitForFunction(() => !!window.__voiceIndexCheck.voicePack()?.signatures?.vi);
+    ok(!got.some(s => /\/voices\/manifest-(?:hi|zh)\.json$/.test(s)), 'language switch fetched learning-language indexes');
+    ok(!P.errors.length, P.errors.join(' | '));
+  } finally { await P.ctx.close(); }
+  return 'cold startup defers game/tale/how-to implementations; closing a loading game cancels it; a warm game opens; tale identity/pages survive; EN-only and VI switching fetch only needed indexes';
+});
+
 await check('spill', async () => {
   const bad = [];
   for (const lang of ['en', 'vi']) for (const [w, h, touch] of [[320, 640, true], [375, 812, true], [1024, 768, false]]) {
@@ -589,14 +648,14 @@ await check('voicepack', async () => {
   await ctx.addInitScript(seedPlayers);
   await ctx.addInitScript(() => { const o = JSON.parse(localStorage.getItem('sv2_settings') || '{}'); Object.assign(o, { lang: 'vi', voice: false, sound: false, music: false, quality: 'low', autoPack: true, packCell: true }); localStorage.setItem('sv2_settings', JSON.stringify(o)); });
   const P = { ctx, page, errors };
-  await P.ctx.route('**/voices/manifest.json', async route => { const r = await route.fetch(), j = await r.json(), keep = Object.keys(j.lines).slice(0, 24), lines = {}, langOf = {}; for (const h of keep) { lines[h] = j.lines[h]; if (j.langOf) langOf[h] = j.langOf[h]; } await route.fulfill({ json: { ...j, lines, langOf, made: 'test' } }); });
+  await P.ctx.route('**/voices/manifest-*.json', async route => { const r = await route.fetch(), j = await r.json(), keep = Object.keys(j.lines).slice(0, 24), lines = {}, langOf = {}; for (const h of keep) { lines[h] = j.lines[h]; if (j.langOf) langOf[h] = j.langOf[h]; } await route.fulfill({ json: { ...j, lines, langOf, made: 'test', signature: 'test-' + j.language } }); });
   // every text the bar shows is written down as it changes
   await P.ctx.addInitScript(() => { window.__packLog = []; new MutationObserver(() => { const e = document.querySelector('.packbar span'); if (e && window.__packLog[window.__packLog.length - 1] !== e.textContent) window.__packLog.push(e.textContent); }).observe(document, { subtree: true, childList: true, characterData: true }); });
   let firstLoad = true;
   const openAgain = async () => { if (firstLoad) { firstLoad = false; await P.page.goto(URL); } else await P.page.reload(); await start(P.page); await clear(P.page); await P.page.waitForFunction(() => window.__packLog.some(x => /✓/.test(x)), null, { timeout: 60000 }).catch(() => { }); return P.page.evaluate(() => window.__packLog); };
   const state = () => P.page.evaluate(async () => { const c = await caches.open('sv-voices'); return { files: (await c.keys()).filter(r => /\/voices\/.+\.mp3$/.test(r.url)).length, saved: JSON.parse(localStorage.getItem('sv2_settings')).packSaved || '' }; });
   const first = await openAgain(), s1 = await state();
-  ok(first.some(x => /%/.test(x)) && first.some(x => /✓/.test(x)) && s1.files >= 24 && s1.saved === '24:2:test', 'first open: ' + JSON.stringify({ first: first.slice(0, 4), s1 }));
+  ok(first.some(x => /%/.test(x)) && first.some(x => /✓/.test(x)) && s1.files >= 24 && s1.saved === 'vi:test-vi', 'first open: ' + JSON.stringify({ first: first.slice(0, 4), s1 }));
   // next open: everything is there, so nothing downloads and the bar says nothing (round O, owner: it looked as if the
   // voices loaded on every start, and listing all the files each time cost battery)
   await P.page.reload(); await start(P.page); await clear(P.page); await P.page.waitForTimeout(10000);
@@ -5400,7 +5459,8 @@ await check('offline', async () => {
   try {
     const url = `http://127.0.0.2:${srv.address().port}/`;
     const P = await open(b, { w: 390, h: 760, touch: true, url, play: false });
-    await P.page.waitForFunction(async () => { const r = await navigator.serviceWorker.getRegistration(); return !!(r && r.active); }, null, { timeout: 120000 });
+    await P.page.waitForFunction(() => !!navigator.serviceWorker.controller, null, { timeout: 120000 });
+    ok(await P.page.evaluate(async () => !!(await navigator.serviceWorker.getRegistration())?.active), 'offline install did not activate');
     await P.page.waitForTimeout(1000);
     const again = async () => { const t0 = Date.now(); await P.page.reload({ timeout: 30000 }).catch(() => { }); const got = await P.page.waitForSelector('.screen.title', { timeout: Math.max(1000, 30000 - (Date.now() - t0)) }).then(() => true, () => false); return got ? Date.now() - t0 : -1; };
     const saved = await again();
@@ -6762,7 +6822,15 @@ await check('swupdate', async () => {
   try {
     const url = `http://127.0.0.2:${srv.address().port}/`;
     const P = await open(b, { w: 390, h: 760, touch: true, url, play: false });
-    const active = v => P.page.waitForFunction(async v => { const r = await navigator.serviceWorker.getRegistration(); return !!r?.active && navigator.serviceWorker.controller && (await caches.keys()).includes('sv-2099-swtest-' + v) && !r.installing && !r.waiting; }, v, { timeout: 120000 });
+    const active = async v => {
+      const until = Date.now() + 120000;
+      while (Date.now() < until) {
+        const ready = await P.page.evaluate(async v => { const r = await navigator.serviceWorker.getRegistration(); return !!r?.active && !!navigator.serviceWorker.controller && (await caches.keys()).includes('sv-2099-swtest-' + v) && !r.installing && !r.waiting; }, v);
+        if (ready) return;
+        await P.page.waitForTimeout(200);
+      }
+      throw new Error('service worker version ' + v + ' did not finish activating');
+    };
     const build = () => P.page.evaluate(() => fetch('/js/build.js').then(r => r.text()).then(t => /BUILD = '([^']+)'/.exec(t)?.[1]));
     const update = () => P.page.evaluate(() => navigator.serviceWorker.getRegistration().then(r => r.update()).catch(e => String(e)));
     await active('a'); await P.page.waitForTimeout(500);

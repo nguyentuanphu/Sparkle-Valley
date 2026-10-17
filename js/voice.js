@@ -1,3 +1,4 @@
+import { createVoiceIndex, voiceLanguages } from './voice-index.js';
 // Talking voice in English and Vietnamese using the device's own natural voices.
 // Premium/enhanced/neural voices are picked first; grown-ups can choose a voice in settings.
 import { settings, saveSettings, profiles } from './state.js';
@@ -128,9 +129,9 @@ async function speak(en, vi) {
 async function speakNow(en, vi) {
   en = swapNames(en, 'en'); vi = swapNames(vi, 'vi');
   const my = ++seq;
-  if (!PACK && !packTried) { await waitPack(); if (my !== seq) return; }
   try { speechSynthesis.cancel(); } catch (e) { }
   stopPlayback();
+  await waitPack(); if (my !== seq) return;
   // a family recording of exactly this line wins over any other voice
   if (settings.familyVoice) {
     const ph = FAMILY_PHRASES.find(p => p.en === en || p.vi === vi);
@@ -220,7 +221,10 @@ export function sayIn(lang, text) {
   const my = ++seq;
   try { speechSynthesis.cancel(); } catch (e) { }
   stopPlayback();
-  if (!PACK && !packTried) { waitPack().then(() => { packTried = true; if (my === seq) sayIn(lang, text); }); return; }
+  if (!voiceIndex.has(lang)) { waitPack([lang]).then(() => { if (my === seq) sayInLoaded(lang, text, my); }); return; }
+  sayInLoaded(lang, text, my);
+}
+function sayInLoaded(lang, text, my) {
   if (packSlot(lang, text)) { playPack(lang, text, my).then(ok => { if (!ok && my === seq) deviceSpeak(text, lang, my); }).catch(() => deviceSpeak(text, lang, my)); return; }
   deviceSpeak(text, lang, my);
 }
@@ -342,29 +346,30 @@ export const voicePack = () => PACK;
 // Lines asked for before the list has arrived (slow phone networks at start-up) wait for it, so they are spoken
 // with the recorded voice too instead of the phone's own voice.
 let packTried = false;
-// (round R, PERF-001) fetched on the first tap or key press, or soon after the valley is ready: nothing is spoken before a
-// child taps, so the title screen comes up without it
+// Fetch after a click has applied the language choice, or after the valley is ready.
+// Keyboard speech requests its index directly; pointerdown must not fetch the previous language.
 let packReady = null;
-let packRevision = 0;
-const loadPack = () => {
-  if (packReady) return packReady;
-  const revision = packRevision;
-  return packReady = fetch('voices/manifest.json').then(r => r.ok ? r.json() : null).then(j => {
-    if (revision !== packRevision) return; // A background refresh already supplied a newer index.
-    if (j && j.lines) { PACK = j; voiceDiag.pack = 'ok'; autoSavePack(); }
-    else { voiceDiag.pack = 'missing'; packEmit({ state: 'nopack' }); }
-  }).catch(() => { if (revision === packRevision) { voiceDiag.pack = 'offline'; packEmit({ state: 'nopack' }); } }).finally(() => { packTried = true; });
+const voiceIndex = createVoiceIndex(url => fetch(url), pack => { PACK = pack; voiceDiag.pack = 'ok'; autoSavePack(); }, async () => {
+  try { const cached = await (await caches.open('sv-voices')).match('voices/manifest.json'); return cached ? await cached.json() : null; } catch (e) { return null; }
+});
+const loadPack = (langs = voiceLanguages(settings)) => {
+  packReady = Promise.all(langs.map(lang => voiceIndex.load(lang).catch(() => {
+    voiceDiag.pack = navigator.onLine === false ? 'offline' : 'missing';
+    if (!PACK) packEmit({ state: 'nopack' });
+  }))).finally(() => { packTried = true; });
+  return packReady;
 };
 navigator.serviceWorker?.addEventListener('message', e => {
-  if (e.data?.type !== 'SV_VOICE_MANIFEST' || !e.data.manifest?.lines) return;
-  packRevision++; PACK = e.data.manifest; voiceDiag.pack = 'ok'; autoSavePack();
+  if (e.data?.type === 'SV_VOICE_LANGUAGE_MANIFEST') voiceIndex.refresh(e.data.manifest);
 });
-for (const ev of ['pointerdown', 'keydown', 'touchstart']) addEventListener(ev, loadPack, { once: true, capture: true, passive: true });
-// (owner, 11 Oct AEDT; Release, PERF-001) without a tap it comes a few seconds after the valley is ready (main.js sets
-// G.bootTimes then), not at a fixed 8 s: on a slow tablet the valley took longer than that, so the list (about 120 KB)
-// was part of the start-up download. 30 s at the latest, in case the valley never says it is ready.
-{ const t0 = Date.now(), wait = setInterval(() => { const g = window.__sv; if (packReady) return clearInterval(wait); if ((g && g.bootTimes) || Date.now() - t0 > 30000) { clearInterval(wait); setTimeout(loadPack, 3000); } }, 500); }
-const waitPack = () => PACK || packTried ? null : Promise.race([loadPack(), new Promise(r => setTimeout(r, 12000))]);
+addEventListener('click', () => loadPack(), { once: true, passive: true });
+// Language/settings changes fetch only the newly selected index. Saved MP3s are kept.
+for (const ev of ['LanguageChanged', 'SettingsChanged']) events.on(ev, () => { if (packReady) loadPack(); });
+{ const t0 = Date.now(), wait = setInterval(() => { const g = window.__sv; if (packReady) return clearInterval(wait); if ((g && g.bootTimes) || Date.now() - t0 > 30000) { clearInterval(wait); setTimeout(() => loadPack(), 3000); } }, 500); }
+const waitPack = async (langs = voiceLanguages(settings)) => {
+  let timer;
+  try { await Promise.race([loadPack(langs), new Promise(r => { timer = setTimeout(r, 12000); })]); } finally { clearTimeout(timer); }
+};
 const packListeners = []; let packLast = null;
 export const onPackProgress = f => { packListeners.push(f); if (packLast) try { f(packLast); } catch (x) { } }; // (a late listener hears where it is now)
 const packEmit = e => { packLast = e; packListeners.forEach(f => { try { f(e); } catch (x) { } }); };

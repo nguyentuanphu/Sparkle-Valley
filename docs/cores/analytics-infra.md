@@ -47,6 +47,7 @@ Blobs stores: `players`, `live`, `studio-admins`, `studio-pending`, `family-phot
 - **Release**: deploys and the live site check (Netlify).
 
 ## Owner's decisions to keep
+- 17 Oct 2026 AEDT, lighter-load helper: explicit go for measured S5 and S4 plan, preserving all-content offline play. Branch `work/lighter-load-20261017`; photos excluded; no merge/deploy. Pop-ups were not visible, so owner answered in chat.
 - 11 Oct, 3 pm AEDT: next task (watch the bug robot and workflows on r60; #36 beyond step 5 only with a go, after
   measuring on a real phone and tablet) waits until r60 is on `main` with `docs/cores/LOG-r60.md`; `main` was r59.
 - (11 Oct, 5:30 pm AEDT) Go for the 4-part plan after r60: the GitHub Pages workflow only by hand; the bug robot started

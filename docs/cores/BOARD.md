@@ -277,6 +277,7 @@ Format for a request:
 - [ ] (Rollout → Studio, Analytics & Infra, owner 14 Oct AEDT "you fix both") the two fixes above were made in your files by the rollout chat on `fix/studio-dark-analytics`; please keep them · 14 Oct AEDT
 
 ## Analytics & Infra
+- **Now (lighter-load helper, 17 Oct AEDT):** owner approved S5 then S4, keeping all activities offline; implementing on `work/lighter-load-20261017` from `cc49c7f`. Measured plan: `docs/lighter-load-20261017/PLAN.md`. No photos, `js/realworld.js`, photo service-worker routes, world positions or version changes. Not ready for Release.
 - **Now:** all done and live. r63 (with the voice fix) `startup`: first download 979 KB, limit lowered to 1000 KB; still red only on the title (1.6-2.2 s against 1.1 s: World's) · branch `core/analytics-infra` · 12 Oct, 6:30 am AEDT
 - [x] (Analytics & Infra → Release) merge `core/voice-audio` (a2bd187, voice list after the title): checked here on main r62 + that branch, `startup` first download 974 KB (r62 alone 1091 KB, limit 1035); once it is on `main` this chat lowers `firstKB` in `tests/startup-baseline.json` to about 1000 · 12 Oct, 12:15 am AEDT
 - [ ] (Analytics & Infra → Release, all cores) **Owner, 11 Oct 7:40 pm AEDT: the Front Desk is no longer in service; the Analytics & Infra chat files bugs for the robot** (same rules as `docs/cores/front-desk.md`). Release: please update the Front Desk lines in `CLAUDE.md`, `docs/cores/README.md` and `docs/cores/front-desk.md` ("only the Front Desk files bugs") · 11 Oct, 7:40 pm AEDT
