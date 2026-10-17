@@ -56,6 +56,9 @@ self.addEventListener('fetch', e => {
   const req = e.request;
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
+  // (round R privacy, 9 Oct) family photos (api/family/…) are private: never kept here, straight to the network (the
+  // game keeps its own copy in the "sv-family" cache); nor anything else under api/
+  if (url.pathname.includes('/api/')) return;
   // (owner, 17 Oct AEDT) real photos shown from Wikimedia or Flickr (js/realworld.js PHOTO_HOST): kept here once seen,
   // so they still show without the internet; the newest 150 are kept (an image from another site comes back "opaque",
   // which is fine to keep and show)
@@ -67,9 +70,6 @@ self.addEventListener('fetch', e => {
     return;
   }
   if (url.origin !== location.origin) return;
-  // (round R privacy, 9 Oct) family photos (api/family/…) are private: never kept here, straight to the network (the
-  // game keeps its own copy in the "sv-family" cache); nor anything else under api/
-  if (url.pathname.includes('/api/')) return;
   // Hashed chunks are immutable. An open previous-version game may still need its own lazy chunks.
   if (url.pathname.includes('/bundle/')) { e.respondWith(saved(req).then(hit => hit || fetch(req).then(r => { if (r.ok) e.waitUntil(caches.open(VERSION).then(c => c.put(req, r.clone()))); return r; }))); return; }
   // the voice pack: kept in its own cache (it survives game updates) and stored as lines are played
