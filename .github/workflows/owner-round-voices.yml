@@ -25,8 +25,8 @@ jobs:
       - name: Record missing fixed lines and verify coverage
         run: |
           test -n "$AZURE_SPEECH_KEY" || { echo '::error::Azure voice credential unavailable'; exit 1; }
-          node tools/make-voice-pack.mjs --engine azure
-          node tools/make-voice-pack.mjs --cover
+          node tools/make-voice-pack.mts --engine azure
+          node tools/make-voice-pack.mts --cover
       - name: Collect only new recordings and updated indexes
         run: |
           python3 - <<'PY'

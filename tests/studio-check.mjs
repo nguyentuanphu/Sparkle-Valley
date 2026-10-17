@@ -1,7 +1,7 @@
 // Sparkle Studio, both ways it runs, checked together (the exe and the online Studio must always be the same):
 //   · a pretend GitHub (in memory) stands in for the real one, so nothing real is touched
 //   · a pretend Netlify serves the site like Netlify does (netlify.toml's redirects, the two functions)
-//   · SparkleStudio's own server (studio/studio.cjs) runs on a copy of a small game folder
+//   · SparkleStudio's own server (studio/studio.cts) runs on a copy of a small game folder
 // Then the dashboard is opened in both, on a desktop and a phone, and saving, publishing and the players report
 // are tried for real.
 import http from 'http';
@@ -100,11 +100,11 @@ export function memoryBlobs() {
 export const testClock = { t: Date.now() };
 export async function fakeNetlify({ port, env, players, adminStore = memoryBlobs(), heldStore = memoryBlobs(), liveStore = memoryBlobs(), familyStore = memoryBlobs(), guardStore = memoryBlobs(), logStore = memoryBlobs(), testerStore = memoryBlobs() }) {
   Object.assign(process.env, env);
-  const { makeStudio } = await import(path.join(ROOT, 'netlify/functions/studio.mjs'));
-  const { makeHello } = await import(path.join(ROOT, 'netlify/functions/hello.mjs'));
-  const { makeLive } = await import(path.join(ROOT, 'netlify/functions/live.mjs'));
-  const { makeFamily } = await import(path.join(ROOT, 'netlify/functions/family.mjs'));
-  const { makeTester } = await import(path.join(ROOT, 'netlify/functions/tester.mjs')); // (owner, 12 Oct) tester reports
+  const { makeStudio } = await import(path.join(ROOT, 'netlify/functions/studio.mts'));
+  const { makeHello } = await import(path.join(ROOT, 'netlify/functions/hello.mts'));
+  const { makeLive } = await import(path.join(ROOT, 'netlify/functions/live.mts'));
+  const { makeFamily } = await import(path.join(ROOT, 'netlify/functions/family.mts'));
+  const { makeTester } = await import(path.join(ROOT, 'netlify/functions/tester.mts')); // (owner, 12 Oct) tester reports
   const now = () => testClock.t, tester = makeTester({ testerStore: async () => testerStore, liveStore: async () => liveStore, guardStore: async () => guardStore, now }), family = makeFamily({ familyStore: async () => familyStore, guardStore: async () => guardStore, now });
   const studio = makeStudio({ playersStore: async () => players, adminStore: async () => adminStore, heldStore: async () => heldStore, liveStore: async () => liveStore, familyStore: async () => familyStore, guardStore: async () => guardStore, logStore: async () => logStore, testerStore: async () => testerStore, now }), hello = makeHello({ playersStore: async () => players, guardStore: async () => guardStore }), live = makeLive({ liveStore: async () => liveStore });
   const MIME = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.png': 'image/png', '.jpg': 'image/jpeg', '.svg': 'image/svg+xml', '.mp3': 'audio/mpeg', '.woff2': 'font/woff2' };
@@ -135,7 +135,7 @@ export async function studioCheck(browser, open) {
   const seed = {}; for (const f of ['index.html', 'sw.js', 'js/main.js', 'js/i18n.js', 'js/build.js', 'js/packhash.js']) seed[f] = fs.readFileSync(path.join(ROOT, f));
   seed['content/custom.json'] = JSON.stringify({ message: { en: 'Hello', vi: 'Xin chào' } }); seed['voices/en/f/0000aaaa.mp3'] = 'x'; seed['voices/manifest.json'] = JSON.stringify({ version: 2, cast: { en: ['f'] }, voices: {}, lines: { '0000aaaa': 'f' }, langOf: { '0000aaaa': 'en' } }); // (like the real pack: it lists what is recorded)
   const gh = fakeGitHub(repo, seed), unroute = routeGitHub(gh), players = memoryBlobs(), adminStore = memoryBlobs(), familyStore = memoryBlobs(), logStore = memoryBlobs(), heldStore = memoryBlobs();
-  const admins = await import(path.join(ROOT, 'netlify/lib/admins.mjs')), secrets = {};
+  const admins = await import(path.join(ROOT, 'netlify/lib/admins.mts')), secrets = {};
   const net = await fakeNetlify({ port: NPORT, players, adminStore, familyStore, logStore, heldStore, env: { STUDIO_PASSWORD: PW, GITHUB_TOKEN: 'test-token', GITHUB_REPO: repo, URL: site, AZURE_KEY: '', NETLIFY_TOKEN: '' } });
   // the exe's own server, on a copy of a small game folder, with its settings in a folder of its own
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'sv-studio-')), game = path.join(tmp, 'game'), appdata = path.join(tmp, 'appdata');
@@ -149,14 +149,14 @@ export async function studioCheck(browser, open) {
   const GPORT = 8793, ghNet = http.createServer((req, res) => { let d = ''; req.on('data', c => d += c); req.on('end', async () => {
     { const m = /^\/repos\/[^/]+\/[^/]+\/contents\/([^?]+)\?ref=studio-exe$/.exec(req.url); if (m) { const f = exeBranch.get(decodeURIComponent(m[1])); res.writeHead(f ? 200 : 404, { 'Content-Type': 'application/octet-stream' }); return res.end(f || '{"message":"Not Found"}'); } } const r = await gh.handle(req.method, 'https://api.github.com' + req.url, d ? JSON.parse(d) : null); res.writeHead(r.status, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(r.j)); }); });
   await new Promise(r => ghNet.listen(GPORT, '127.0.0.1', r));
-  const exe = spawn(process.execPath, [path.join(ROOT, 'studio/studio.cjs')], { env: { ...process.env, APPDATA: appdata, STUDIO_PORT: String(SPORT), STUDIO_NO_OPEN: '1', STUDIO_GITHUB_API: `http://127.0.0.1:${GPORT}`, STUDIO_UPDATE_EXE: fakeExe, STUDIO_UPDATE_NO_RESTART: '1' }, stdio: 'ignore' });
+  const exe = spawn(process.execPath, [path.join(ROOT, 'studio/studio.cts')], { env: { ...process.env, APPDATA: appdata, STUDIO_PORT: String(SPORT), STUDIO_NO_OPEN: '1', STUDIO_GITHUB_API: `http://127.0.0.1:${GPORT}`, STUDIO_UPDATE_EXE: fakeExe, STUDIO_UPDATE_NO_RESTART: '1' }, stdio: 'ignore' });
   const notes = [];
   try {
     for (let i = 0; i < 50; i++) { try { if ((await fetch(`http://localhost:${SPORT}/studio/api/ping`)).ok) break; } catch (e) { } await new Promise(r => setTimeout(r, 200)); }
     // (Studio review, owner 10 Oct) every message the Studio's servers can send has its Vietnamese (studio/ui/vi.js)
     { const { viMessage } = await import(pathToFileURL(path.join(ROOT, 'studio/ui/vi.js')).href), seen = new Set(), miss = [];
       const NOT_SHOWN = /^(attachment;|private, no-store|error: |Sparkle Studio is already open)/;
-      for (const f of ['studio/core.cjs', 'studio/studio.cjs', 'netlify/functions/studio.mjs', 'netlify/lib/admins.mjs', 'netlify/lib/family.mjs', 'netlify/lib/guard.mjs', 'netlify/lib/accesslog.mjs'])
+      for (const f of ['studio/core.cts', 'studio/studio.cts', 'netlify/functions/studio.mts', 'netlify/lib/admins.mts', 'netlify/lib/family.mts', 'netlify/lib/guard.mts', 'netlify/lib/accesslog.mts'])
         for (const line of fs.readFileSync(path.join(ROOT, f), 'utf8').split('\n')) { if (!/Error\(|error:|\bbad\(|\.msg = |note: /.test(line)) continue;
           for (const m of line.matchAll(/'((?:[^'\\]|\\.)*)'|`((?:[^`\\]|\\.)*)`/g)) { let t = m[1] ?? m[2]; if (!/^[A-Za-z“]/.test(t) || !/ /.test(t) || t.length < 6 || NOT_SHOWN.test(t)) continue;
             t = t.replace(/(?<=[a-z])\$\{[^}]*\}/g, '').replace(/\$\{[^}]*\}/g, '12'); // a number, or the plural "s" left off
@@ -245,7 +245,7 @@ export async function studioCheck(browser, open) {
       ok(d && !d.online && d.seenAt, 'a device that left still shows online: ' + JSON.stringify(d));
       notes.push('online now: 🟢 while playing (with the child), ⚪ after leaving'); }
     // 1d. the voice relay (round O): with Cloudflare's key in Netlify the game gets short-lived relay details (never the key)
-    { const { makeTurn } = await import(path.join(ROOT, 'netlify/functions/turn.mjs'));
+    { const { makeTurn } = await import(path.join(ROOT, 'netlify/functions/turn.mts'));
       const empty = await (await makeTurn({ fetchFn: async () => { throw new Error('no'); } })(new Request('http://x/api/turn'))).json();
       ok(Array.isArray(empty.iceServers) && !empty.iceServers.length, 'the relay answered something without a key');
       Object.assign(process.env, { CF_TURN_KEY_ID: 'kid123', CF_TURN_KEY_TOKEN: 'secret-token' }); let asked = null;
@@ -287,7 +287,7 @@ export async function studioCheck(browser, open) {
     ok(!(await call('/studio/api/pending', { cookie: C })).j.files.length, 'changes still waiting after Publish');
     // (owner, 12 Oct: real photos would not publish, "error 504") many waiting photos go in steps of a dozen, each its
     // own short request, and a busy GitHub (504) is tried again instead of failing the Publish
-    { const { heldOn } = await import(path.join(ROOT, 'netlify/functions/studio.mjs')), ch = new Map();
+    { const { heldOn } = await import(path.join(ROOT, 'netlify/functions/studio.mts')), ch = new Map();
       for (let i = 1; i <= 30; i++) ch.set(`photos/test${i % 5}/${i}.jpg`, Buffer.from('JPG' + i));
       await heldOn(heldStore).put(ch); gh.failBlobsNext(1);
       let steps = 0, r; do { r = (await call('/studio/api/github/publish', { cookie: C, headers: X, body: { message: 'Photos', step: true } })).j; steps++; } while (r && r.more && steps < 20);
@@ -415,7 +415,7 @@ export async function studioCheck(browser, open) {
     { const t2 = fs.mkdtempSync(path.join(os.tmpdir(), 'sv-fresh-')), ad2 = path.join(t2, 'appdata'), exe2 = path.join(t2, 'exe', 'SparkleStudio.exe'), P2 = SPORT + 7;
       fs.mkdirSync(path.join(ad2, 'SparkleStudio'), { recursive: true }); fs.mkdirSync(path.dirname(exe2), { recursive: true });
       fs.writeFileSync(path.join(ad2, 'SparkleStudio', 'settings.json'), JSON.stringify({ githubToken: 'test-token', githubRepo: repo }));
-      const fresh = spawn(process.execPath, [path.join(ROOT, 'studio/studio.cjs')], { cwd: path.dirname(exe2), env: { ...process.env, APPDATA: ad2, STUDIO_PORT: String(P2), STUDIO_NO_OPEN: '1', STUDIO_AS_EXE: '1', STUDIO_UPDATE_EXE: exe2, STUDIO_GITHUB_API: `http://127.0.0.1:${GPORT}` }, stdio: 'ignore' });
+      const fresh = spawn(process.execPath, [path.join(ROOT, 'studio/studio.cts')], { cwd: path.dirname(exe2), env: { ...process.env, APPDATA: ad2, STUDIO_PORT: String(P2), STUDIO_NO_OPEN: '1', STUDIO_AS_EXE: '1', STUDIO_UPDATE_EXE: exe2, STUDIO_GITHUB_API: `http://127.0.0.1:${GPORT}` }, stdio: 'ignore' });
       try {
         let st = null; for (let i = 0; i < 150; i++) { await new Promise(r => setTimeout(r, 200)); try { st = await (await fetch(`http://localhost:${P2}/studio/api/sync/status`)).json(); } catch (e) { st = null; } if (st && st.state === 'done') break; }
         const dir = path.join(path.dirname(exe2), 'SparkleValley'), inf = await (await fetch(`http://localhost:${P2}/studio/api/info`)).json();
@@ -471,7 +471,7 @@ export async function studioCheck(browser, open) {
       const { [kE]: _big, ...rest } = pub; gh.commitOnMain('photos/index.json', JSON.stringify(rest), 'photos'); await new Promise(r => setTimeout(r, 15500));
       notes.push(`real photos: ${need.length} kinds of saved photo open online and in the exe (a Vietnamese-named folder, a PNG, one not yet published); a 5 MB one is marked online; one whose file is gone is taken off the list`); }
     // a fetched photo over 1.5 MB is left out for the next one (the photo sites are pretended)
-    { const { createStudio, folderStore } = (await import(path.join(ROOT, 'studio/core.cjs'))).default, d = fs.mkdtempSync(path.join(os.tmpdir(), 'sv-ph-'));
+    { const { createStudio, folderStore } = (await import(path.join(ROOT, 'studio/core.cts'))).default, d = fs.mkdtempSync(path.join(os.tmpdir(), 'sv-ph-'));
       fs.writeFileSync(path.join(d, 'index.html'), ''); fs.mkdirSync(path.join(d, 'js')); fs.writeFileSync(path.join(d, 'js/main.js'), '');
       const real = globalThis.fetch, small = Buffer.concat([Buffer.from([0xff, 0xd8, 0xff]), Buffer.alloc(9e4)]), huge = Buffer.concat([Buffer.from([0xff, 0xd8, 0xff]), Buffer.alloc(2e6)]);
       const J = o => new Response(JSON.stringify(o), { status: 200, headers: { 'content-type': 'application/json' } });
@@ -484,7 +484,7 @@ export async function studioCheck(browser, open) {
       notes.push('a fetched photo over 1.5 MB is skipped for the next one'); }
     // (owner, 17 Oct AEDT: "point photos to Wikimedia") a photo on Wikimedia or Flickr is listed by its address and nothing
     // is saved; one that does not answer is skipped; a photo from another site is still saved (the last resort, above)
-    { const { createStudio, folderStore } = (await import(path.join(ROOT, 'studio/core.cjs'))).default, d = fs.mkdtempSync(path.join(os.tmpdir(), 'sv-pl-'));
+    { const { createStudio, folderStore } = (await import(path.join(ROOT, 'studio/core.cts'))).default, d = fs.mkdtempSync(path.join(os.tmpdir(), 'sv-pl-'));
       fs.writeFileSync(path.join(d, 'index.html'), ''); fs.mkdirSync(path.join(d, 'js')); fs.writeFileSync(path.join(d, 'js/main.js'), '');
       const real = globalThis.fetch, asked = [], J = o => new Response(JSON.stringify(o), { status: 200, headers: { 'content-type': 'application/json' } });
       const urls = ['https://live.staticflickr.com/1/gone_b.jpg', 'https://live.staticflickr.com/1/a_b.jpg', 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/ab/B.jpg/1280px-B.jpg'];

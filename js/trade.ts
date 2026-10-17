@@ -1,8 +1,8 @@
 // Trading with friends in the same online room: pick a friend, choose what to give (things from your
 // backpack or coins) and what you would like back, and send the offer. The friend sees it and taps
 // "Deal!" or "No thanks". Things only change hands when both sides still have them.
-import type { TradeSide } from '../types/net';
-import type { Profile } from '../types/save';
+import type { TradeSide } from '../types/net.js';
+import type { Profile } from '../types/save.js';
 // an offer being made on the stall: what is given or wanted (types/net.d.ts TradeSide, with items and coins always there)
 type Offer = { items: Record<string, number>, coins: number, clothes?: string[] };
 import { T } from './i18n.js';

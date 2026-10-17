@@ -1,6 +1,6 @@
 // @ts-check
 // Tester reports (owner, 12 Oct 2026 AEDT; brief docs/cores/tasks/tester-reports.md): the lists, words, limits and
-// rules for tester devices, with no screen (js/tester.js draws, netlify/lib/tester.mjs keeps the reports). A device is a
+// rules for tester devices, with no screen (js/tester.js draws, netlify/lib/tester.mts keeps the reports). A device is a
 // tester when Studio's Releases page switches `tester` on for it (every device, or only the ticked ones) and the tester
 // has accepted the agreement; on a tester device reports keep the players' names, ages and progress (PRIV-016).
 

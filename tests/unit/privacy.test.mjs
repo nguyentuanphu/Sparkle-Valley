@@ -4,13 +4,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'fs';
-import * as admins from '../../netlify/lib/admins.mjs';
-import * as family from '../../netlify/lib/family.mjs';
-import { makeStudio } from '../../netlify/functions/studio.mjs';
-import { makeFamily } from '../../netlify/functions/family.mjs';
-import { makeHello, HELLO_LIMIT } from '../../netlify/functions/hello.mjs';
-import { makeLive } from '../../netlify/functions/live.mjs';
-import { inbox, LINES } from '../../netlify/lib/players.mjs';
+import * as admins from '../../netlify/lib/admins.mts';
+import * as family from '../../netlify/lib/family.mts';
+import { makeStudio } from '../../netlify/functions/studio.mts';
+import { makeFamily } from '../../netlify/functions/family.mts';
+import { makeHello, HELLO_LIMIT } from '../../netlify/functions/hello.mts';
+import { makeLive } from '../../netlify/functions/live.mts';
+import { inbox, LINES } from '../../netlify/lib/players.mts';
 
 const mem = () => { const m = new Map(); return { get: async (k, o) => m.has(k) ? (o && o.type === 'json' ? JSON.parse(m.get(k)) : m.get(k)) : null, set: async (k, v) => { m.set(k, String(v)); }, setJSON: async (k, v) => { m.set(k, JSON.stringify(v)); }, delete: async k => { m.delete(k); }, list: async ({ prefix = '' } = {}) => ({ blobs: [...m.keys()].filter(k => k.startsWith(prefix)).map(key => ({ key })) }), _m: m }; };
 const JPEG = Buffer.concat([Buffer.from([0xff, 0xd8, 0xff, 0xe0]), Buffer.from('photo')]);
@@ -121,7 +121,7 @@ test('the service worker never keeps family photos', () => {
 
 test('Studio engine: photos go to the family store, the move to private storage, a photo taken off is deleted', async () => {
   const os = await import('os'), path = await import('path'), { createRequire } = await import('module');
-  const core = createRequire(import.meta.url)('../../studio/core.cjs');
+  const core = createRequire(import.meta.url)('../../studio/core.cts');
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'sv-priv-')); fs.mkdirSync(path.join(dir, 'js')); fs.writeFileSync(path.join(dir, 'index.html'), ''); fs.writeFileSync(path.join(dir, 'js/main.js'), '');
   fs.mkdirSync(path.join(dir, 'content/faces'), { recursive: true }); fs.mkdirSync(path.join(dir, 'content/album'));
   fs.writeFileSync(path.join(dir, 'content/faces/ba-nam.jpg'), JPEG); fs.writeFileSync(path.join(dir, 'content/album/f1.jpg'), JPEG);

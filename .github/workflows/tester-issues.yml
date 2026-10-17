@@ -1,5 +1,5 @@
 # (owner, 12 Oct AEDT: tester reports, docs/cores/tasks/tester-reports.md) Every hour, and by hand (Actions → Tester
-# issues → Run workflow): tools/tester-issues.mjs reads the problems tester devices found on the website and keeps one
+# issues → Run workflow): tools/tester-issues.mts reads the problems tester devices found on the website and keeps one
 # GitHub issue per problem (labels bug, tester, the likely core, small or big; an idea gets `idea` and no bug), keeps the
 # counts up to date, closes an issue when its problem is marked fixed (and opens it again if it comes back), and once a
 # day after 9 am AEDT adds the "Tester daily summary". The bug robot picks up the bug issues as it does every other.
@@ -29,9 +29,9 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
       - name: Tester reports to issues
         env:
           STUDIO_KEY: ${{ secrets.STUDIO_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: node tools/tester-issues.mjs ${{ inputs.summary && '--summary' || '' }}
+        run: node tools/tester-issues.mts ${{ inputs.summary && '--summary' || '' }}

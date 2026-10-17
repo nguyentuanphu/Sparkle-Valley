@@ -4,8 +4,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { lunarDay, easter, nthWeekday } from '../../js/lunar.js';
 import { FESTCAL } from '../../js/content/festcal.js';
-import { cleanLive } from '../../netlify/lib/live.mjs';
-import { makeLive } from '../../netlify/functions/live.mjs';
+import { cleanLive } from '../../netlify/lib/live.mts';
+import { makeLive } from '../../netlify/functions/live.mts';
 
 test('Vietnamese lunar dates', () => {
   assert.deepEqual([2025, 2026, 2027, 2028, 2029].map(y => lunarDay(1, 1, y)), ['2025-01-29', '2026-02-17', '2027-02-06', '2028-01-26', '2029-02-13']);

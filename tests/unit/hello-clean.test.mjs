@@ -1,7 +1,7 @@
-// The hello a device sends (netlify/lib/hello-clean.mjs): kept only as the text or numbers the rules allow.
+// The hello a device sends (netlify/lib/hello-clean.mts): kept only as the text or numbers the rules allow.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { clean } from '../../netlify/lib/hello-clean.mjs';
+import { clean } from '../../netlify/lib/hello-clean.mts';
 const NOW = Date.UTC(2026, 9, 14, 7);
 
 test('a value that only looks like text after coercion is kept as text, never as itself', () => {

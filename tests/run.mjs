@@ -25,8 +25,8 @@ async function pairKeys(A, B) {
 const sampled = name => process.env.SV_SAMPLE === '1' && !(process.env.SV_FULL || '').split(',').includes(name);
 const SEED = Number(process.env.SV_SEED) || Math.floor(Date.now() / 36e5);
 // (owner, 16 Oct AEDT: TypeScript, batch 0) the game's .ts files are made into the .js the browser loads before any
-// check runs (tools/build.mjs; suite.mjs does it once for all its runs and says so with SV_BUILT)
-if (!process.env.SV_BUILT) { const { execFileSync } = await import('child_process'); execFileSync(process.execPath, ['../tools/build.mjs'], { stdio: 'inherit' }); }
+// check runs (tools/build.mts; suite.mjs does it once for all its runs and says so with SV_BUILT)
+if (!process.env.SV_BUILT) { const { execFileSync } = await import('child_process'); execFileSync(process.execPath, ['../tools/build.mts'], { stdio: 'inherit' }); }
 const only = process.argv.slice(2).filter(a => !a.startsWith('--'));
 const want = k => !only.length || only.includes(k);
 const results = [];
@@ -57,7 +57,7 @@ const check = async (name, fn) => {
 };
 const ok = (c, msg) => { if (!c) throw new Error(msg); };
 fs.mkdirSync('out', { recursive: true });
-// ---- (Analytics & Infra, 11 Oct, #36) the packed copy the website serves (tools/bundle.mjs), built once a run in
+// ---- (Analytics & Infra, 11 Oct, #36) the packed copy the website serves (tools/bundle.mts), built once a run in
 // out/packed (the big folders are linked, not copied), and a little server for a folder on 127.0.0.2 (the game skips its
 // service worker on localhost): compressed like Netlify when asked, and able to stop answering (a dead connection) ----
 let packedDir = null;
@@ -67,8 +67,8 @@ async function packedSite() {
   fs.rmSync(dir, { recursive: true, force: true }); fs.mkdirSync(dir, { recursive: true });
   for (const f of ['index.html', 'sw.js']) fs.copyFileSync(path.join(repo, f), path.join(dir, f));
   for (const f of ['manifest.webmanifest', 'css', 'fonts', 'icons', 'js', 'vendor', 'content', 'videos', 'voices', 'photos']) if (fs.existsSync(path.join(repo, f))) fs.symlinkSync(path.join(repo, f), path.join(dir, f));
-  execFileSync(process.execPath, [path.join(repo, 'tools/bundle.mjs'), dir], { encoding: 'utf8' });
-  ok(fs.existsSync(path.join(dir, 'bundle')), 'the packed copy was not built (tools/bundle.mjs: esbuild missing?)');
+  execFileSync(process.execPath, [path.join(repo, 'tools/bundle.mts'), dir], { encoding: 'utf8' });
+  ok(fs.existsSync(path.join(dir, 'bundle')), 'the packed copy was not built (tools/bundle.mts: esbuild missing?)');
   return (packedDir = dir);
 }
 async function serveFolder(root, { gzip = false } = {}) {
@@ -787,9 +787,9 @@ await check('ownervoicewifi', async () => {
 await check('voicecover', async () => {
   // (round R item 12) the coverage check: every line the game can speak has its recordings (both voices), is in the
   // pack's list and in an area; lines with changing words are templates whose fixed pieces, gap words and numbers are
-  // recorded as parts; what can't be listed in advance is counted with its reason (tools/make-voice-pack.mjs --cover)
+  // recorded as parts; what can't be listed in advance is counted with its reason (tools/make-voice-pack.mts --cover)
   const { execFileSync } = await import('child_process');
-  let out = ''; try { out = execFileSync(process.execPath, ['../tools/make-voice-pack.mjs', '--cover'], { encoding: 'utf8', maxBuffer: 1 << 26 }); } catch (e) { out = (e.stdout || '') + ''; }
+  let out = ''; try { out = execFileSync(process.execPath, ['../tools/make-voice-pack.mts', '--cover'], { encoding: 'utf8', maxBuffer: 1 << 26 }); } catch (e) { out = (e.stdout || '') + ''; }
   const r = JSON.parse(out.trim().split('\n').pop());
   ok(!r.bad.length, `${r.bad.length} lines not covered: ` + r.bad.slice(0, 12).join(' | '));
   // in the game: a line with a number is put together from recorded parts, and a gap that is a name is left out; the
@@ -1091,9 +1091,9 @@ await check('tales', async () => {
 });
 
 await check('emoji', async () => {
-  // every emoji the game uses has a drawing in js/art.js (tools/emoji-audit.mjs)
+  // every emoji the game uses has a drawing in js/art.js (tools/emoji-audit.mts)
   const { execFileSync } = await import('child_process'), { fileURLToPath } = await import('url');
-  let out = ''; try { out = execFileSync(process.execPath, ['../tools/emoji-audit.mjs'], { encoding: 'utf8' }); } catch (e) { out = (e.stdout || '') + ''; ok(false, out.split('\n').slice(0, 12).join(' | ')); }
+  let out = ''; try { out = execFileSync(process.execPath, ['../tools/emoji-audit.mts'], { encoding: 'utf8' }); } catch (e) { out = (e.stdout || '') + ''; ok(false, out.split('\n').slice(0, 12).join(' | ')); }
   // (owner, round R: "don't use emoji at all, including in all our docs, only our drawings") no emoji in the docs either
   const EMO = /\p{Extended_Pictographic}|[\u{1F1E6}-\u{1F1FF}]/u, ARROWS = /^[\u2190-\u21FF\u25A0-\u25FF\u2B05-\u2B07\u23E9-\u23FA©®™‼⁉〰]$/u, inDocs = [];
   for (const f of execFileSync('git', ['ls-files', '*.md', '*.txt'], { cwd: '..', encoding: 'utf8' }).split('\n').filter(Boolean)) {
@@ -1871,7 +1871,7 @@ await check('halves', async () => {
 await check('preload', async () => {
   // (round R, faster launch) index.html lists every start-up script so the browser fetches them all at once
   const { execFileSync } = await import('child_process'), { fileURLToPath } = await import('url');
-  try { return execFileSync(process.execPath, [fileURLToPath(new globalThis.URL('../tools/preload.mjs', import.meta.url)), '--check'], { encoding: 'utf8' }).trim(); }
+  try { return execFileSync(process.execPath, [fileURLToPath(new globalThis.URL('../tools/preload.mts', import.meta.url)), '--check'], { encoding: 'utf8' }).trim(); }
   catch (e) { throw new Error((e.stdout || e.message).trim()); }
 });
 await check('story', async () => {
@@ -4455,8 +4455,8 @@ await check('tradeclothes', async () => {
 await check('bilingual', async () => {
   // (Round U, owner 11 Oct: Grandma Huệ spoke Vietnamese with English set) no English slot of an [English, Vietnamese]
   // pair (an array, T(…, …) or { en, vi }) holds a Vietnamese sentence; names, songs and sayings that stay Vietnamese
-  // on purpose are listed with a reason in tools/lang-allow.json (tools/lang-audit.mjs)
-  const { audit } = await import('../tools/lang-audit.mjs'), r = audit();
+  // on purpose are listed with a reason in tools/lang-allow.json (tools/lang-audit.mts)
+  const { audit } = await import('../tools/lang-audit.mts'), r = audit();
   ok(!r.length, r.slice(0, 12).map(x => `${x.file}:${x.line} "${x.en}"`).join(' | '));
   return 'every English line is English (names, songs and sayings on the allow list)';
 });
@@ -4465,7 +4465,7 @@ await check('rules', async () => {
   // the rule registry (architecture step 0): js/content/rules.js is exactly what docs/ARCHITECTURE.md §9 says, and every
   // rule id the code and the checks name (ROAD-003, VEH-001, PRIV-004…) is in it
   const { execFileSync } = await import('child_process');
-  try { execFileSync(process.execPath, ['../tools/rules-from-doc.mjs', '--check'], { encoding: 'utf8' }); } catch (e) { ok(false, (e.stdout || '') + ''); }
+  try { execFileSync(process.execPath, ['../tools/rules-from-doc.mts', '--check'], { encoding: 'utf8' }); } catch (e) { ok(false, (e.stdout || '') + ''); }
   const { RULES } = await import('../js/content/rules.js');
   const src = ['../js/validate.js', 'run.mjs', 'perf-baseline.json'].map(f => fs.readFileSync(f, 'utf8')).join('\n');
   const named = [...new Set([...src.matchAll(/\b([A-Z]{2,8}-\d{3})\b/g)].map(m => m[1]))], missing = named.filter(id => !RULES[id]);
@@ -5117,12 +5117,14 @@ await check('chests', async () => {
 
 await check('types', async () => {
   // type checking (owner, round 30): the files that start with // @ts-check are checked against their JSDoc types
-  // (js/state.js, js/netmsg.js, studio/core.cjs; tests/tsconfig.json lists them). Needs: cd tests && npm install
+  // (js/state.js, js/netmsg.js; tests/tsconfig.json lists them), then the .mts and .cts files (tests/tsconfig.server.json). Needs: cd tests && npm install
   const { execFileSync } = await import('child_process'), tsc = 'node_modules/.bin/tsc';
   if (!fs.existsSync(tsc)) return 'skipped (run npm install in tests)';
   try { execFileSync(tsc, ['-p', '.'], { encoding: 'utf8' }); execFileSync(tsc, ['-p','tsconfig-contracts.json'], {encoding:'utf8'}); } catch (e) { ok(false, ((e.stdout || '') + '').split('\n').slice(0, 8).join(' | ')); }
-  const n = JSON.parse(fs.readFileSync('tsconfig.json', 'utf8')).files.length;
-  return `${n} explicit files type-checked; detector/outbox/family-backup modules additionally strict-checked; no errors`;
+  // (owner, 16-17 Oct AEDT: TypeScript batches 1 and 2) the website's server pieces, the Studio engine and the tools, as Node runs them
+  let server = ''; try { server = execFileSync(tsc, ['-p', 'tsconfig.server.json', '--listFilesOnly'], { encoding: 'utf8' }); execFileSync(tsc, ['-p', 'tsconfig.server.json'], { encoding: 'utf8' }); } catch (e) { ok(false, 'tsconfig.server.json: ' + ((e.stdout || '') + '').split('\n').slice(0, 8).join(' | ')); }
+  const n = JSON.parse(fs.readFileSync('tsconfig.json', 'utf8')).files.length, ts = server.split('\n').filter(f => /\.(mts|cts)$/.test(f) && !f.includes('node_modules')).length;
+  return `${n} explicit files type-checked; detector/outbox/family-backup modules additionally strict-checked; ${ts} TypeScript files of the server, Studio and tools; no errors`;
 });
 
 await check('perf', async () => {

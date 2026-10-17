@@ -1,4 +1,4 @@
-// (Voice & Audio, 12 Oct) tools/voice-daily.mjs: the daily voice workflow keeps only inbox lines the game itself has;
+// (Voice & Audio, 12 Oct) tools/voice-daily.mts: the daily voice workflow keeps only inbox lines the game itself has;
 // a line that may carry a friend's or pet's name is held, never added to the voice list (HANDOFF rule 11)
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -19,7 +19,7 @@ test('voice-daily: game lines pass, a pet name is held, nothing else changes', (
     { lang: 'vi', text: 'Ngủ ngon nhé, Mướp!', n: 1 },
     { lang: 'fr', text: 'Bonjour', n: 1 }]));
   try {
-    const out = execFileSync(process.execPath, ['tools/voice-daily.mjs', '--inbox', inbox], { cwd: ROOT, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
+    const out = execFileSync(process.execPath, ['tools/voice-daily.mts', '--inbox', inbox], { cwd: ROOT, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
     const s = JSON.parse(fs.readFileSync(summary, 'utf8'));
     assert.equal(s.inbox, 4, out);
     assert.equal(s.held, 2, out); // the two lines with a pet's name

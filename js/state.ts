@@ -1,5 +1,5 @@
 // @ts-check
-import type { Profile, Farm, Settings } from '../types/save';
+import type { Profile, Farm, Settings } from '../types/save.js';
 // Settings, player profiles and saving. Everything lives in localStorage on this device;
 // grown-ups can export/import a backup file to move progress between devices.
 import { BUILD } from './build.js';

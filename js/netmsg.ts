@@ -1,5 +1,5 @@
 // @ts-check
-import type { TradeSide, Msg } from '../types/net';
+import type { TradeSide, Msg } from '../types/net.js';
 // Every message that comes from another device, checked in one place before the game sees it (hard rule PRIV-003,
 // architecture step "net message schema"). For each kind of message: which fields it may have and what they may
 // hold, how big it may be, and how often one player may send it. Anything else is dropped:

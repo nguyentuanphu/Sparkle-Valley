@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import manifests from '../../tools/voice-manifests.cjs';
+import manifests from '../../tools/voice-manifests.cts';
 import { createVoiceIndex, voiceLanguages, voicePackSignature } from '../../js/voice-index.js';
 const all = JSON.parse(fs.readFileSync(new URL('../../voices/manifest.json', import.meta.url)));
 const shards = manifests.splitManifest(all);

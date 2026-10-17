@@ -1,4 +1,4 @@
-// Sparkle Studio dashboard (runs in the browser, talks to studio.cjs on this computer).
+// Sparkle Studio dashboard (runs in the browser, talks to studio.cts on this computer).
 import { viMessage, PERM_VI } from './vi.js';
 const $ = s => document.querySelector(s);
 let LANG = localStorage.getItem('studioLang') || 'vi';
@@ -111,7 +111,7 @@ const SECTIONS = [
 const ROLE = () => (INFO && INFO.me && INFO.me.role) || 'owner';
 // (round R privacy) Security and the Access log are the owner's, online only
 const ONLINE_ONLY = ['admins', 'security', 'accesslog'], OWNER_ONLY = ['security', 'accesslog'];
-// (owner, 14 Oct AEDT) each account has its own permissions (netlify/lib/admins.mjs PERMS): a page shows only to those
+// (owner, 14 Oct AEDT) each account has its own permissions (netlify/lib/admins.mts PERMS): a page shows only to those
 // who may open it, the rest of the dashboard follows. The exe on the family computer is the owner's: everything.
 const CAN = k => ROLE() === 'owner' || ((INFO && INFO.me && INFO.me.perms) || []).includes(k);
 const PAGE_NEEDS = { players: 'analytics', testers: 'testers', familycode: 'family', album: 'family', publish: 'publish' };
@@ -846,7 +846,7 @@ PAGES.children = async P => {
   };
 };
 // ---------- voices ----------
-// The same lines the game speaks (tools/voice-lines.mjs), worked out here from the game's own files, plus the
+// The same lines the game speaks (tools/voice-lines.mts), worked out here from the game's own files, plus the
 // family's stories, quiz and message. Each missing recording can be made with Azure, Piper (free, on this computer)
 // or recorded with the microphone.
 const VI = /[ăâđêôơưáàảãạấầẩẫậắằẳẵặéèẻẽẹếềểễệíìỉĩịóòỏõọốồổỗộớờởỡợúùủũụứừửữựýỳỷỹỵ]/i;
@@ -871,7 +871,7 @@ async function allJobs() {
   for (const [en, vi] of seen.values()) { put('en', swapNames(en, 'en')); put('vi', swapNames(vi, 'vi')); }
   for (const [lang, L] of Object.entries(LEARN)) for (const w of L.words) put(lang, w[3]);
   const cities = SRC.cities, re = /\['([^'\\]+)', '(?:[^'\\]|\\.)*', '(?:[^'\\]|\\.)*', '(zh|hi)'\]/g; let m; while ((m = re.exec(cities))) put(m[2], m[1]);
-  // lines built while playing (names, numbers, colours…): collected by tools/voice-harvest.mjs and sent from devices
+  // lines built while playing (names, numbers, colours…): collected by tools/voice-harvest.mts and sent from devices
   for (const l of await api('voices/extra').catch(() => [])) if (CAST[l.lang]) put(l.lang, l.text);
   // the inbox: lines the children's devices had to say with the machine voice, sent by themselves
   INBOX = await api('voices/inbox').catch(() => []);
@@ -1371,7 +1371,7 @@ PAGES.settings = async P => {
 };
 // Sydney time is AEDT (UTC+11) in daylight saving and AEST (UTC+10) the rest of the year
 const sydneyZone = d => /GMT\+11|AEDT/.test(new Date(d).toLocaleString('en-AU', { timeZone: 'Australia/Sydney', timeZoneName: 'short' })) ? 'AEDT' : 'AEST';
-// ---------- players: how many children play (anonymous counts from the website, netlify/lib/players.mjs) ----------
+// ---------- players: how many children play (anonymous counts from the website, netlify/lib/players.mts) ----------
 PAGES.players = async P => {
   const myRender = P.dataset.render, stale = () => cur !== 'players' || P.dataset.render !== myRender;
   P.innerHTML = `<h2>📊 ${T('Analytics', 'Phân tích')}</h2><div class="card">${T('Asking the website…', 'Đang hỏi trang web…')}</div>`;
@@ -1486,9 +1486,9 @@ PAGES.players = async P => {
 };
 // ---------- 👥 Admins (online, round O) ----------
 const ROLE_NAMES = { viewer: ['👀 Viewer: Analytics only', '👀 Xem: chỉ Phân tích'], editor: ['✏️ Editor: every page and Publish', '✏️ Sửa: mọi trang và Phát hành'], owner: ['👑 Owner: everything, also admins', '👑 Chủ: tất cả, cả quản trị viên'], custom: ['🧩 Chosen: only what is ticked', '🧩 Tự chọn: chỉ những gì được đánh dấu'] };
-// (owner, 14 Oct AEDT) the permissions one by one (the server's list, netlify/lib/admins.mjs PERMS): ticked = allowed
+// (owner, 14 Oct AEDT) the permissions one by one (the server's list, netlify/lib/admins.mts PERMS): ticked = allowed
 const permList = (perms, on, name) => `<div class="perms">${Object.entries(perms || {}).map(([k, [i, en, vi]]) => `<label class="perm"><input type="checkbox" data-perm="${k}" ${on.includes(k) ? 'checked' : ''} ${name ? '' : 'disabled'}> ${i} ${T(en, vi)}</label>`).join('')}</div>`;
-// (owner, 12 Oct) Tester reports: what tester devices found (netlify/lib/tester.mjs). The day's summary; each problem with
+// (owner, 12 Oct) Tester reports: what tester devices found (netlify/lib/tester.mts). The day's summary; each problem with
 // how often, on how many devices and versions, where, and its status; filters; a problem's details (the notes, the
 // players, the errors, the last 30 seconds as steps, the screenshots) with Fixed in…, Being fixed, Not a bug, Same as…;
 // and the testers: their reports, the ones that helped, their badge and this week's star, and Stop tester.

@@ -15,7 +15,7 @@ Build `docs/cores/ROUND-R.md` Part 2 **item 12 exactly as written**:
 - Keep: recorded voices always play first on every device including iPhone (HANDOFF rule 11); Vietnamese words inside English lines use the Vietnamese voice (`js/viwords.js`); what is downloaded stays offline; only new voices download (round O).
 
 ## You may change
-`js/voice.js`, `js/packbar.js`, `js/packhash.js`, `tools/voice-lines.mjs`, `tools/make-voice-pack.mjs`, `tools/voice-harvest.mjs`, `voices/manifest.json` (generated), `sw.js` (voice caching only; tell Analytics & Infra on the board), `js/ui.js` (one Grown-ups setting; tell Kid UI on the board), `tests/run.mjs` (your checks), `docs/cores/voice-audio.md`.
+`js/voice.js`, `js/packbar.js`, `js/packhash.js`, `tools/voice-lines.mts`, `tools/make-voice-pack.mts`, `tools/voice-harvest.mts`, `voices/manifest.json` (generated), `sw.js` (voice caching only; tell Analytics & Infra on the board), `js/ui.js` (one Grown-ups setting; tell Kid UI on the board), `tests/run.mjs` (your checks), `docs/cores/voice-audio.md`.
 
 ## Checks
 Your core's checks (`docs/cores/voice-audio.md`), plus `viwords boot perf iphone`, a new `voicecover` (coverage) and `voicearea` (by-area download) check, then the full suite. Put the start-up download size before and after in the report.

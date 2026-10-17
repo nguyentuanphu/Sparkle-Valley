@@ -1,5 +1,5 @@
 {
-  "//": "TypeScript for the whole game (owner, 16 Oct AEDT: TypeScript everywhere, in batches; docs/cores/tasks/typescript-plan-20261016.md). Only type notes: erasableSyntaxOnly (no enum, namespace or parameter properties), so Node's type stripping (tools/build.mjs, the Studio exe) can make each .ts into its .js with every line unchanged. Imports keep the .js name. Each check's tsconfig extends this one.",
+  "//": "TypeScript for the whole game (owner, 16 Oct AEDT: TypeScript everywhere, in batches; docs/cores/tasks/typescript-plan-20261016.md). Only type notes: erasableSyntaxOnly (no enum, namespace or parameter properties), so Node's type stripping (tools/build.mts, the Studio exe) can make each .ts into its .js with every line unchanged. Imports keep the .js name. Each check's tsconfig extends this one.",
   "compilerOptions": {
     "target": "es2022", "module": "es2022", "moduleResolution": "bundler", "lib": ["es2022", "dom", "dom.iterable"],
     "noEmit": true, "allowJs": true, "erasableSyntaxOnly": true, "skipLibCheck": true, "resolveJsonModule": true

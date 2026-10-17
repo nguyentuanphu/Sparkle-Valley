@@ -356,7 +356,7 @@ film, Next/Stop at the end, tap outside to leave), ACT-003 (nothing a game made 
   the quests"; the button under the ladybird; problems sent at once through `autoReport` with the last 15 steps; no
   restart). `js/keepcopy.js`: progress copied when a device becomes a tester and put back in place when it stops,
   rewards kept (`KEEP_FIELDS`); Studio's tester card chooses `revert` ('progress' or 'autoplay'), kept by
-  `netlify/lib/live.mjs`.
+  `netlify/lib/live.mts`.
 - Checks (13 Oct, about 2 pm AEDT): `autoplay` (rewritten: button, walk round water, 7 steps played with a finger, no
   restart, Stop, progress back with rewards kept) `unit` (75) `studio` `tester` `boot` `phone` `a11y` `types` `arch`
   `rules` `emoji` `preload` pass. `testerrewards` fails, and fails the same on live main r69: the family's "From your

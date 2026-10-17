@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Builds studio/dist/SparkleStudio.exe: Windows Node (same version as the node running this script) with
-# studio.cjs, the Studio engine (core.cjs, the same one the online Studio runs) and the dashboard files packed
+# studio.cts, the Studio engine (core.cts, the same one the online Studio runs) and the dashboard files packed
 # inside (Node "single executable application"). Build it again whenever studio/ changes, so the exe and the
 # online Studio stay one program (studio/version.json goes up with the game's build number).
 # Needs: node 22+, npx, curl, unzip. Run from the repo root: bash studio/build-exe.sh
@@ -14,10 +14,10 @@ if [ ! -f ".build/node-$V.exe" ]; then
   [ "$(sha256sum .build/node.zip | cut -d' ' -f1)" = "$want" ] || { echo "node.zip checksum does not match"; exit 1; }
   unzip -qo -j .build/node.zip "node-$V-win-x64/node.exe" -d .build && mv .build/node.exe ".build/node-$V.exe" && rm .build/node.zip
 fi
-# (owner, 16 Oct AEDT: TypeScript) the dashboard's .ts files made into the .js packed below (tools/build.mjs)
-(cd .. && node tools/build.mjs)
-# one file: studio.cjs with core.cjs and version.json (an exe can only load what is inside it)
-npx --yes esbuild@0.25.10 studio.cjs --bundle --platform=node --format=cjs --outfile=.build/studio.bundle.cjs --log-level=warning
+# (owner, 16 Oct AEDT: TypeScript) the dashboard's .ts files made into the .js packed below (tools/build.mts)
+(cd .. && node tools/build.mts)
+# one file: studio.cts with core.cts and version.json (an exe can only load what is inside it)
+npx --yes esbuild@0.25.10 studio.cts --bundle --platform=node --format=cjs --outfile=.build/studio.bundle.cjs --log-level=warning
 cat > .build/sea-config.json <<EOF
 { "main": ".build/studio.bundle.cjs", "output": ".build/studio.blob", "disableExperimentalSEAWarning": true, "useSnapshot": false, "useCodeCache": false,
   "assets": { "index.html": "ui/index.html", "app.js": "ui/app.js", "style.css": "ui/style.css", "vi.js": "ui/vi.js", "lame.min.js": "ui/lame.min.js",

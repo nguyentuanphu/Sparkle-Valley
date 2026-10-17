@@ -4,7 +4,7 @@
 
 | ID | WO | Finding | Reproduction / proof | Disposition |
 |---|---|---|---|---|
-| DR-01 | WO-12 | Removed family devices still exhaust the 30-device limit and can block replacement or recovery | netlify/lib/family-devices.mjs counts all historical records; unit regression failed before; passed after, among102 units | Preserve revocation records; enforce capacity on active devices; validate before claiming fixed |
+| DR-01 | WO-12 | Removed family devices still exhaust the 30-device limit and can block replacement or recovery | netlify/lib/family-devices.mts counts all historical records; unit regression failed before; passed after, among102 units | Preserve revocation records; enforce capacity on active devices; validate before claiming fixed |
 | DR-02 | WO-12 | Backup import silently truncates after 60 entries | import action slices incoming entries; oversized-backup regression failed before; passed after | Reject excessive input before mutation; never silently lose backup entries |
 | DR-03 | WO-12 | Backup import can exceed 60 total photos by adding to existing photos | Union-capacity regression failed before; passed after | Retain the existing limit, validate the combined collection before mutation |
 | DR-04 | WO-12 | Revocation clears photos but leaves an unusable connection credential and hides reconnection controls | ownerfamily failed before; passed after including stale-response/offline cache proof | Clear the rejected connection when status confirms revocation; preserve unrelated game/installation data |

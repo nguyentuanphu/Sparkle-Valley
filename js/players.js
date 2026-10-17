@@ -1,6 +1,6 @@
 // Counting players, without knowing who they are, so the family can see in Sparkle Studio how many children play.
 // The first time, this device makes up a random number for itself. Every 10 minutes of play (and when the game is
-// put away) it says hello to the game's own website (netlify/functions/hello.mjs) with only:
+// put away) it says hello to the game's own website (netlify/functions/hello.mts) with only:
 //   that number · the build · the language · how many children's profiles · minutes played · which games were
 //   started and how many stories were opened since the last hello · phone, tablet or computer · installed or not
 //   · minutes played with friends online
@@ -44,7 +44,7 @@ const today = () => { const d = new Date(); return `${d.getFullYear()}-${String(
 // the outbox: { days: { 'YYYY-MM-DD': { m, g: {game: n}, t, o } }, pending?: { h, days[], v[] } }, kept on the device until the website has it
 const readOut = () => { try { const o = JSON.parse(localStorage.getItem(OUT) || '{}'); return o && o.days ? o : { days: {} }; } catch (e) { return { days: {} }; } };
 // (r80, owner 17 Oct AEDT: devices offline for a long time) the last 30 days played are kept until sent (was 14: a
-// device away for 3 weeks lost its first week), as many as the website takes (netlify/lib/hello-clean.mjs, 30 days);
+// device away for 3 weeks lost its first week), as many as the website takes (netlify/lib/hello-clean.mts, 30 days);
 // they go in batches of 42 (flush)
 const writeOut = o => { const dates=[...new Set(Object.keys(o.days).map(k=>k.slice(0,10)))].sort(); const keep=new Set(dates.slice(-30));for(const k of Object.keys(o.days))if(!keep.has(k.slice(0,10)))delete o.days[k];try { localStorage.setItem(OUT, JSON.stringify(o)); } catch (e) { } };
 const bump = f => { if (settings.countPlayers === false) return; const o = readOut(), key=today()+'|'+BUILD, d = o.days[key] = o.days[key] || { build:BUILD, m: 0, g: {}, t: 0, o: 0 }; for (const k of ['h', 'c', 'e', 's', 'q']) d[k] = d[k] || {}; d.f = d.f || [0, 0, 0]; f(d); writeOut(o); };

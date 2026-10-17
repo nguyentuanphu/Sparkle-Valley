@@ -141,7 +141,7 @@ async function speakNow(en, vi) {
   if (settings.bilingual && vi != null && en !== vi) parts.push(settings.lang === 'vi' ? ['en', en] : ['vi', vi]);
   for (const [lang, text] of parts) {
     if (my !== seq) return;
-    if (window.__svVoiceLog) window.__svVoiceLog(lang, text, !!packSlot(lang, text)); // for tools/voice-harvest.mjs
+    if (window.__svVoiceLog) window.__svVoiceLog(lang, text, !!packSlot(lang, text)); // for tools/voice-harvest.mts
     try { if (await playPack(lang, text, my)) continue; } catch (e) { }
     if (my !== seq) return;
     // (round R item 12) a line with changing words (a number, an item, a name) is put together from its recorded parts
@@ -162,7 +162,7 @@ async function speakNow(en, vi) {
   }
 }
 // ---------- (round R item 12) lines put together from recorded parts ----------
-// The pack lists the templates of lines with changing words (manifest `tpl`, from tools/voice-lines.mjs): the fixed
+// The pack lists the templates of lines with changing words (manifest `tpl`, from tools/voice-lines.mts): the fixed
 // pieces are recorded on their own, and so are the numbers 0–100 and the words that fill a gap. A line that matches a
 // template plays its pieces and gaps in order. A gap with no recording that is a name (a child's, a friend's, a pet's)
 // is left out: names are never recorded and never spoken by another voice (HANDOFF rule 11); any other word with no
@@ -338,7 +338,7 @@ function playBuffer(buf, rate = 1) {
   return new Promise(res => { s.onended = res; setTimeout(res, buf.duration / rate * 1000 + 400); });
 }
 
-// ---------- Offline voice pack (voices/, made with tools/make-voice-pack.mjs) ----------
+// ---------- Offline voice pack (voices/, made with tools/make-voice-pack.mts) ----------
 // Every line recorded once with a natural voice. Grandparents play a little slower and deeper, children a
 // little higher; men use the man's voice when the pack has one.
 let PACK = null;

@@ -14,9 +14,9 @@ make the game load or run faster. Part 2 is the speed work, and it is separate.
 - Type errors across `js/` if checked today (vendor left out): **2,030** light, **15,436** strict, in 218 of 255 files.
   About 85 % of the light ones are "a property the checker cannot see", mostly the shared game object and globals.
 - esbuild 0.25.10 already runs in three places: Netlify functions, the Studio exe (`studio/build-exe.sh`) and the
-  website pack (`tools/bundle.mjs`, which today falls back to the plain `js/` files if it fails).
+  website pack (`tools/bundle.mts`, which today falls back to the plain `js/` files if it fails).
 - Node 22.22 runs `.ts` files directly (tested).
-- The Studio exe copies the game from GitHub into a folder and serves those files (`studio/studio.cjs`), and the Studio
+- The Studio exe copies the game from GitHub into a folder and serves those files (`studio/studio.cts`), and the Studio
   pages import the game's modules by address (`studio/ui/app.js`).
 
 # Part 1: TypeScript everywhere
@@ -25,7 +25,7 @@ make the game load or run faster. Part 2 is the speed work, and it is separate.
 - Every `.js`/`.mjs`/`.cjs` file of ours becomes `.ts`/`.mts`/`.cts` **in the same place** (`js/state.ts` next to
   where `js/state.js` was). Imports keep the `.js` name (`import { settings } from './state.js'`): TypeScript finds
   `state.ts`, and the built file keeps the same import, so built files look exactly like today's.
-- **The build** (`tools/build.mjs`, built in batch 0, 17 Oct AEDT): Node's own type stripping makes each `.ts` into
+- **The build** (`tools/build.mts`, built in batch 0, 17 Oct AEDT): Node's own type stripping makes each `.ts` into
   the `.js` **beside it**, with every line and column unchanged. (Changed from the first draft's `dist/` folder: the
   same addresses as today, so the website, the offline list, the pack, the checks and Studio need no new paths, and
   no source maps are needed, because an error on a phone points at the same line of the `.ts`.) The made `.js` is
@@ -41,7 +41,7 @@ make the game load or run faster. Part 2 is the speed work, and it is separate.
 ## What changes around the build (done in batch 0 unless marked later)
 | Where | Today | After |
 |---|---|---|
-| Website (Netlify) | `node tools/bundle.mjs . \|\| true` | `node tools/build.mjs && (node tools/bundle.mjs . \|\| true)`; a failed build stops the deploy (the live site stays as it was) |
+| Website (Netlify) | `node tools/bundle.mts . \|\| true` | `node tools/build.mts && (node tools/bundle.mts . \|\| true)`; a failed build stops the deploy (the live site stays as it was) |
 | Netlify Node | not pinned | `NODE_VERSION = "22.22.0"` in `netlify.toml` |
 | Drag-and-drop zip | `build-netlify.sh`, Node optional | builds first; needs Node once any `.ts` exists |
 | Offline list (`sw.js`) | names written by hand | unchanged: the `.js` names stay |
@@ -56,7 +56,7 @@ make the game load or run faster. Part 2 is the speed work, and it is separate.
 ## Order: in batches, one core at a time (owner, 16 Oct AEDT)
 esbuild builds `.js` and `.ts` side by side and `tsc` checks both (`allowJs`), so the game works with some files
 converted and some not. No full freeze: only the core being converted pauses its code work, for its batch.
-1. **Batch 0, groundwork (Release, nobody pauses), built 17 Oct AEDT on `work/ts-batch0-20261017`:** `tools/build.mjs`,
+1. **Batch 0, groundwork (Release, nobody pauses), built 17 Oct AEDT on `work/ts-batch0-20261017`:** `tools/build.mts`,
    `tsconfig.base.json`, the build in Netlify, the zip, the tests, GitHub Pages, the daily voices and the Studio exe,
    all working on today's `.js` files. (`types/` comes with batch 3, where the first shared types are needed.)
 2. **Each later batch, two commits:** (a) rename only, no other change, so git follows the rename and other branches'

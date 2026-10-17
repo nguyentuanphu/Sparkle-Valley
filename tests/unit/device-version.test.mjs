@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { clean, hello, live, report } from '../../netlify/lib/players.mjs';
+import { clean, hello, live, report } from '../../netlify/lib/players.mts';
 const NOW=Date.UTC(2026,9,14,7), ID='device000001';
 const memory=()=>{const m=new Map();return {get:async(k,o)=>m.has(k)?o?.type==='json'?JSON.parse(m.get(k)):m.get(k):null,set:async(k,v)=>m.set(k,String(v)),setJSON:async(k,v)=>m.set(k,JSON.stringify(v)),delete:async k=>m.delete(k),list:async({prefix=''})=>({blobs:[...m.keys()].filter(k=>k.startsWith(prefix)).map(key=>({key}))})};};
 const message=(extra={})=>({id:ID,h:'batch00000000001',b:'r75',sid:'a'.repeat(16),started:NOW,l:'en',d:'phone',days:[{d:'2026-10-14',build:'r75',m:5,g:{},t:0,o:0}],...extra});

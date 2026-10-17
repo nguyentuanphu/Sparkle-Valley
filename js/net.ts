@@ -21,7 +21,7 @@ import { settings } from './state.js';
 import { micMode } from './audio.js';
 import { Channel } from './relay.js';
 import { checkMsg } from './netmsg.js';
-import type { Remote } from '../types/net';
+import type { Remote } from '../types/net.js';
 import { MAP_VERSION } from './content/map.js';
 const PREFIX = 'sparkle-valley-v2-';
 export const MAX_ROOM = 6;

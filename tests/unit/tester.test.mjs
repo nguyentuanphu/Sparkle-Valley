@@ -4,9 +4,9 @@
 // the weekly star; a device confirms a fix or says it came back. In-memory stores, no browser.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import * as T from '../../netlify/lib/tester.mjs';
-import { makeTester } from '../../netlify/functions/tester.mjs';
-import { cleanLive } from '../../netlify/lib/live.mjs';
+import * as T from '../../netlify/lib/tester.mts';
+import { makeTester } from '../../netlify/functions/tester.mts';
+import { cleanLive } from '../../netlify/lib/live.mts';
 import { testerLevel, keyOf, badgeFor, nextBadge, peeksOf } from '../../js/content/tester.js';
 
 const mem = () => { const m = new Map(); return { get: async (k, o) => m.has(k) ? (o && o.type === 'json' ? JSON.parse(m.get(k)) : m.get(k)) : null, set: async (k, v) => { m.set(k, String(v)); }, setJSON: async (k, v) => { m.set(k, JSON.stringify(v)); }, delete: async k => { m.delete(k); }, list: async ({ prefix = '' } = {}) => ({ blobs: [...m.keys()].filter(k => k.startsWith(prefix)).map(key => ({ key })) }), _m: m }; };
@@ -82,8 +82,8 @@ test('/api/tester: reports in, status out, refused for others', async () => {
   assert.equal((await h(new Request(`https://x/api/tester?id=${X}&b=r66`), { ip: '1.2.3.4' })).status, 403);
 });
 
-test('each problem goes to the core it most likely belongs to (tools/tester-issues.mjs)', async () => {
-  const { coreOf } = await import('../../tools/tester-issues.mjs');
+test('each problem goes to the core it most likely belongs to (tools/tester-issues.mts)', async () => {
+  const { coreOf } = await import('../../tools/tester-issues.mts');
   assert.equal(coreOf({ title: 'error', where: { game: 'memory' } }, null), 'play');
   assert.equal(coreOf({ title: 'x', where: {} }, { reports: [{ errors: ['boom @ roads.js:3'] }] }), 'world');
   assert.equal(coreOf({ title: 'x', where: {}, auto: 'slow', kind: 'auto' }, null), 'analytics-infra');

@@ -135,7 +135,7 @@ Sources merged here:
   - the voice list is served from the saved copy at once (slow phone data never means the phone voice);
   - Grown-ups shows why a recording could not play (`voiceDiag`).
   - Checked by `voice`: a recorded line never uses the phone voice, also with Web Audio asleep.
-- **Every new spoken line goes into the pack in the same round:** `tools/voice-harvest.mjs`, then `tools/make-voice-pack.mjs --engine azure`.
+- **Every new spoken line goes into the pack in the same round:** `tools/voice-harvest.mts`, then `tools/make-voice-pack.mts --engine azure`.
   - Lines a device still says with the machine voice reach Sparkle Studio's **inbox** by themselves (never a line with a child's name).
   - One click records them.
 - **Voices:** a woman's voice for women, girls and grandmas, a man's for men, boys and grandpas. Grandparents a little slower, children a little higher.
@@ -189,8 +189,8 @@ What may leave the device:
 - Plain JavaScript modules, three.js, no build step, no new dependency without a clear reason. Netlify functions are the only server code.
 - **One version everywhere:** `js/build.js` BUILD = the end of `sw.js` VERSION = `studio/version.json` (checked by `ground` and `studio`). Bump them every round; add new files to `FILES`.
 - **Sparkle Studio** is one program in two places:
-  - the exe (`studio/studio.cjs`) and online (`/studio/`, `netlify/functions/studio.mjs`);
-  - the same pages (`studio/ui`) and the same engine (`studio/core.cjs`);
+  - the exe (`studio/studio.cts`) and online (`/studio/`, `netlify/functions/studio.mts`);
+  - the same pages (`studio/ui`) and the same engine (`studio/core.cts`);
   - rebuild the exe whenever `studio/` changes (checked by `studio`).
 - **HARD (rule 2):** the AI never pushes or opens a pull request without the owner's "yes, push". Each round:
   1. the suite runs before and after;
@@ -274,7 +274,7 @@ What may leave the device:
 |---|---|
 | Validate every incoming network message | ids, looks, friend codes and positions from others are checked before use (`net.js`) |
 | Protect photo exchange | photos have their own pair lock (ECDH, `relay.js`) |
-| Constrain the Studio local server | localhost Host and Origin only, safe paths, size limits (`studio/studio.cjs`) |
+| Constrain the Studio local server | localhost Host and Origin only, safe paths, size limits (`studio/studio.cts`) |
 | Versioned saves | `v: 2` plus three safe copies; **migrations** are the real gap (ARCHITECTURE SAVE-002) |
 | No punishment for little ones | under-5 mode: no losing, no timers (checked by `games`) |
 

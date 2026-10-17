@@ -7,10 +7,10 @@ Read `CLAUDE.md`, `HANDOFF.md`, `docs/cores/README.md`, `docs/cores/voice-audio.
 
 Today: devices report the lines they had to say in the machine voice (the inbox on Studio's Voices page, through
 `/api/hello`), and they are recorded only when the owner clicks "Make them with Azure"; lines in new code are recorded only
-when a chat with `AZURE_SPEECH_KEY` runs `node tools/make-voice-pack.mjs --engine azure`.
+when a chat with `AZURE_SPEECH_KEY` runs `node tools/make-voice-pack.mts --engine azure`.
 
 Build: a GitHub workflow that runs once a day (and by hand) with the Azure key as a GitHub secret (the owner adds it; never
-in the repo): it reads the inbox from the website, harvests the code's new lines (`tools/voice-harvest.mjs`), records
+in the repo): it reads the inbox from the website, harvests the code's new lines (`tools/voice-harvest.mts`), records
 every missing line with Azure, and pushes them to a branch (`voices/daily`) with a draft pull request that Release merges
 in a round. Lines with a child's, friend's or pet's name are never recorded (HANDOFF rule 11). Studio's Voices page shows
 "0 waiting" when everything is done, and the date of the last run. Workflows are Analytics & Infra's to look after: put a
