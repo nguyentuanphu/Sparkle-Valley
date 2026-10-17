@@ -2732,6 +2732,343 @@ body.bigtext .theatre .th-text { --thp: clamp(20px, 3.2vw, 28px); --thm: clamp(1
 .sv2 .tt-l:nth-child(2) { font-family: 'Baloo 2', 'Segoe UI', system-ui, -apple-system, sans-serif; }
 .sv2 .tt-panel .seg.lang button { height: 48px; display: inline-flex; align-items: center; gap: 6px; }
 .sv2 .tt-panel .learnrow { height: 36px; display: flex; align-items: center; justify-content: center; gap: 6px; }
+/* ---- r79 screens (chat 1) ---- */
+/* (r79 A1, owner 16 Oct: names ran over their pictures, icons off centre, long names squeezed) every Bag tile: the
+   picture centred in a fixed 64 px box at the top, the name under it in its own space, two lines at most then "..."
+   (the whole name is said and shown when the tile is tapped); tiles in a row share one height */
+.pad .slots { align-items: stretch; }
+.pad .slot { justify-content: flex-start; padding: 10px 6px 8px; overflow: hidden; }
+.pad .slot > span:not(.sw), .pad .slot > svg, .pad .slot > .kpic, .pad .slot > .art { flex: none; width: 64px; height: 64px; min-height: 64px; margin: 4px auto 8px; display: flex; align-items: center; justify-content: center; overflow: visible; }
+.pad .slot > span:not(.sw) > svg, .pad .slot > span:not(.sw) > .art, .pad .slot > span:not(.sw) > .kpic { width: 56px; height: 56px; }
+.pad .slot > small { flex: none; width: 100%; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; text-overflow: ellipsis; overflow-wrap: anywhere; line-height: 1.2; max-height: 2.4em; }
+/* (r79 A2, owner 16 Oct: "Getting the voices ready..." floated over the Pad) the voices note stays behind every window,
+   panel and game (they start at layer 25) and fades while one is open, so it never covers their words or buttons */
+.packbar { z-index: 24; }
+body:has(.modal:not(.out), .gl, .wardrobe, .audio-tray, .dialog:not(.out), .storybook, .howto) .packbar { opacity: 0; }
+/* (r79 A3) Album "Words I learned": one tidy row per word, the picture, the words and the hear-again button inside it */
+.wordlist .wl-row { display: flex; align-items: center; gap: 10px; min-height: 56px; padding: 6px 6px 6px 10px; background: #fff; border-radius: 14px; box-shadow: 0 1px 4px rgba(80,40,140,.1); font-size: 15px; }
+.wordlist .wl-pic { flex: none; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; background: none; box-shadow: none; padding: 0; }
+.wordlist .wl-pic svg, .wordlist .wl-pic .art { width: 36px; height: 36px; }
+.wordlist .wl-txt { flex: 1 1 auto; min-width: 0; line-height: 1.3; background: none; box-shadow: none; padding: 0; }
+.wordlist .wl-flag { font-style: normal; display: inline-flex; vertical-align: -3px; }
+.wordlist .wl-flag svg, .wordlist .wl-flag .art { width: 20px; height: 20px; }
+/* (owner, 17 Oct AEDT) a big coloured "Listen / Nghe" pill instead of a round speaker nobody understood */
+.wordlist .wl-say { flex: none; min-width: 96px; height: 48px; border: 0; border-radius: 999px; background: linear-gradient(180deg, #ffb340, #ff8a1f); box-shadow: 0 3px 0 #d96a00; color: #fff; display: flex; align-items: center; justify-content: center; gap: 6px; padding: 0 14px; font-size: 16px; font-weight: 700; line-height: 1; }
+.wordlist .wl-say b { font-weight: 800; color: #fff; }
+.wordlist .wl-say:active { transform: translateY(2px); box-shadow: 0 1px 0 #d96a00; }
+.wordlist .wl-say .wl-ico { display: inline-flex; width: 24px; height: 24px; background: none; }
+.wordlist .wl-say svg, .wordlist .wl-say .art { width: 24px; height: 24px; }
+.wordlist .wl-row span { background: none; border-radius: 0; padding: 0; box-shadow: none; font-size: inherit; }
+.wordlist .wl-pic .arti, .wordlist .wl-say .arti { display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; }
+.wordlist .wl-flag .flagi { display: inline-flex; } .wordlist .wl-flag .flag { width: 22px; height: 15px; }
+/* (r79 A6, owner 16 Oct: "Big pictures" and "Trick" sat lower than the player card and off centre) on a phone they sit
+   on the same level as the player card, centred on it, and "Big pictures" keeps its whole name */
+.hud.small .hud-tl { align-items: center; }
+.hud.small .hud-tl > .simplesw, .hud.small .hud-tl > .kidrow { align-self: center; margin-top: 0; }
+.hud.small .hud-tl > .kidrow { flex-wrap: nowrap; }
+.hud.small .simplesw { width: auto; min-width: 56px; min-height: 48px; padding: 4px 8px; }
+/* (r79 A7, owner 16 Oct, with a drawing on the tablet picture) zoom in, zoom out and camera view open in one straight
+   column just to the LEFT of the View button, the middle one level with it, one above and one below */
+.zoomer .ztray { right: calc(100% + 10px); left: auto; top: 50%; bottom: auto; transform: translateY(-50%); flex-direction: column; align-items: center; gap: 8px; }
+@media (max-height: 480px) { .zoomer .ztray { top: auto; bottom: 0; transform: none; flex-direction: row-reverse; } }
+/* (r79, owner point 14) "Eat it?" is one small row at the bottom of the Bag: picture, name, "Eat it?", Eat and Not now */
+.bag-help.bag-ask { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 16px; font-size: 14px; max-width: 520px; margin: 0 auto; width: 100%; box-sizing: border-box; }
+.bag-help.bag-ask > .art, .bag-help.bag-ask > .arti, .bag-help.bag-ask > svg, .bag-help.bag-ask > .kpic { flex: none; width: 36px; height: 36px; }
+.bag-help.bag-ask > b { flex: 1 1 auto; min-width: 0; line-height: 1.2; overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+.bag-help.bag-ask > b small { display: block; font-weight: 600; color: #6a4aa0; }
+.bag-help.bag-ask button { flex: none; min-height: 44px; min-width: 64px; padding: 0 12px; }
+.bag-help.bag-ask.little button { min-height: 64px; }
+/* (r79 A4, points 17 and 18) the mirror: a big picture of the child, a tab for each kind of thing, the child's own clothes
+   in a grid (tap to wear, tap again to take off: a tick shows what is on); the shop marks the other collection as gifts */
+.mirror .whead { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.mirror .whead h2 { margin: 0; display: flex; align-items: center; gap: 8px; } .mirror .whead h2 .art { width: 36px; height: 36px; }
+.mirror .whead .x { position: static; min-width: 64px; min-height: 48px; font-size: 16px; }
+.mirror .wmirror { display: flex; justify-content: center; margin: 4px 0; }
+.mirror .wbig { width: min(240px, 60vw); aspect-ratio: 3 / 4; object-fit: contain; border-radius: 24px; background: linear-gradient(180deg, #f3ecff, #e9def5); box-shadow: inset 0 0 0 4px #fff, 0 4px 14px rgba(90, 60, 130, .15); }
+.mirror .whow { text-align: center; margin: 4px 0 8px; }
+.mirror .wtabs { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+.mirror .wtabs .ktab { position: relative; width: 56px; height: 56px; min-width: 56px; }
+.mirror .wtabs .ktab .art { width: 34px; height: 34px; }
+.mirror .wtabs .wn { position: absolute; top: -4px; right: -4px; min-width: 20px; height: 20px; border-radius: 10px; background: #8a5cf6; color: #fff; font-size: 12px; line-height: 20px; text-align: center; padding: 0 4px; }
+.mirror .wkind { text-align: center; margin: 10px 0 6px; color: #6a4aa0; }
+.mirror .wgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 10px; }
+.mirror .wit { position: relative; display: flex; flex-direction: column; align-items: center; gap: 4px; min-height: 108px; padding: 10px 6px 8px; border: 0; border-radius: 18px; background: #fff; box-shadow: 0 3px 0 rgba(90, 60, 130, .1), 0 0 0 2px rgba(90, 60, 130, .06); font: inherit; color: inherit; cursor: pointer; }
+.mirror .wit .kpic, .mirror .wit .art { width: 56px; height: 56px; flex: none; }
+.mirror .wit small { font-size: 13px; line-height: 1.2; text-align: center; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+.mirror .wit.on { box-shadow: 0 0 0 3px #8a5cf6, 0 3px 0 rgba(90, 60, 130, .1); background: #f6f0ff; }
+.mirror .wit .ktick { position: absolute; top: 6px; right: 6px; } .mirror .wit .ktick .art { width: 22px; height: 22px; }
+.mirror.little .wit { min-height: 120px; } .mirror.little .wtabs .ktab { width: 64px; height: 64px; min-width: 64px; }
+.mirror .wnone { grid-column: 1 / -1; text-align: center; }
+.kitem.gift { position: relative; } .kitem .kgift { position: absolute; top: 4px; left: 4px; } .kitem .kgift .art { width: 22px; height: 22px; }
+.kask .kgiftnote { display: flex; align-items: center; gap: 6px; font-size: 14px; color: #6a4aa0; } .kask .kgiftnote .art { width: 24px; height: 24px; }
+.mirror .whead .x { white-space: nowrap; padding: 0 16px; }
+.bag-help.bag-ask > b { display: flex; flex-direction: column; -webkit-line-clamp: unset; }
+.bag-help.bag-ask > b > span.nm { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@media (max-width: 600px) { .mirror .wbig { width: min(170px, 44vw); } }
+/* (r79 A6) on a small phone the goal chip (a hat ready to buy) is narrower, so it fits beside Big pictures and the map */
+.hud.small .kidrow .c-goal { padding: 0 8px 0 4px; gap: 2px; font-size: 11px; } .hud.small .kidrow .c-goal .art { width: 20px; height: 20px; }
+/* (r79) on a wide screen the mirror shows the child on the left and the tabs and clothes on the right, all in view */
+@media (min-width: 760px) {
+  .mirror.wardrobe-content { display: grid; grid-template-columns: minmax(200px, 260px) 1fr; grid-template-areas: "head head" "pic how" "pic tabs" "pic kind" "pic grid"; column-gap: 24px; align-items: start; align-content: start; }
+  .mirror .whead { grid-area: head; } .mirror .wmirror { grid-area: pic; position: sticky; top: 0; } .mirror .whow { grid-area: how; text-align: left; }
+  .mirror .wtabs { grid-area: tabs; justify-content: flex-start; } .mirror .wkind { grid-area: kind; text-align: left; } .mirror .wgrid { grid-area: grid; }
+  .mirror .wbig { width: 100%; }
+}
+/* (r79, steady sweep: the mirror opened on its own grew and shrank with each tab) one fixed height, the clothes scroll inside */
+.wardrobe.kward.mirror { height: min(760px, calc(100dvh - 40px)); max-height: none; overflow-y: auto; box-sizing: border-box; }
+
+
+/* r79 learning (chat 2) */
+/* (owner, 16 Oct AEDT, E1) learning games: one small reward banner under the top bar, never stacked over the puzzle;
+   a new one replaces the one showing. Calm: a short fade, no zoom. */
+.gl-reward { position: fixed; left: 50%; transform: translate(-50%, -50%); z-index: 4; display: inline-flex; align-items: center; gap: 6px; max-width: calc(100% - 32px); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; background: linear-gradient(180deg, #ff9f43, #ff5f7e); color: #fff; font-size: 16px; font-weight: 700; line-height: 1.2; padding: 5px 14px; border-radius: 999px; box-shadow: 0 3px 10px rgba(255, 95, 126, .35); pointer-events: none; animation: glRewardFade 1.4s ease forwards; }
+.gl-reward .art, .gl-reward .emo { width: 20px; height: 20px; font-size: 18px; flex: none; }
+.gl-reward.lucky { background: linear-gradient(180deg, #ffe066, #ffb020); color: #5a3a00; }
+.gl-reward.up { background: linear-gradient(180deg, #8fd8ff, #8a5cf6); }
+@keyframes glRewardFade { 0% { opacity: 0; } 15% { opacity: 1; } 80% { opacity: 1; } 100% { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .gl-reward { animation-duration: 1.4s; animation-timing-function: steps(1, end); } }
+/* (E3) on a computer the game buttons ("Hear again", "Show again", "Ready to try") have text as big as the question line */
+@media (min-width: 1024px) and (hover: hover) and (pointer: fine) {
+  .gl .gl-stage .btn, .gl .bt-repeat { font-size: 19px; }
+  .gl .gl-stage .btn .art { width: 26px; height: 26px; }
+}
+/* (E4) a soft dark layer behind "You did it!": the board is dimmed and softened, and the words sit on a dark band */
+.gl-win { background: rgba(28, 14, 44, .78); -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px); }
+.gl-win > p:not(.gl-tapout) { background: rgba(28, 14, 44, .55); border-radius: 18px; padding: 4px 18px; }
+.gl-win .gl-tapout { background: rgba(28, 14, 44, .55); border-radius: 12px; padding: 2px 12px; }
+/* (I4) the new skill sticker under "You did it!" */
+.gl-skill { display: inline-flex; align-items: center; gap: 8px; margin-top: 8px; background: #fff6e4; color: #3b2a4f; border-radius: 16px; padding: 6px 14px; font-size: 18px; box-shadow: 0 4px 0 rgba(0, 0, 0, .2); }
+.gl-skill .art { width: 44px; height: 44px; }
+/* (G2) picture-only for under-5s: the question line is hidden with its space kept, the pictures are bigger */
+.gl.pic-only .gl-help { visibility: hidden; }
+.gl.little.pic-only .choice:not(.bt-piece):not(.mc-fruit) { width: clamp(116px, 27vw, 184px); height: clamp(116px, 27vw, 184px); font-size: clamp(60px, 13vw, 92px); }
+.gl.little.pic-only .seq-item { width: clamp(72px, 16vw, 116px); height: clamp(72px, 16vw, 116px); font-size: clamp(46px, 10vw, 72px); }
+@media (max-height: 560px) { .gl.little.pic-only .choice:not(.bt-piece):not(.mc-fruit) { width: clamp(84px, 21vh, 140px); height: clamp(84px, 21vh, 140px); } }
+/* the showing hand: taps three times over the first right choice, then goes */
+.gl-hand { position: fixed; z-index: 5; width: 56px; height: 56px; pointer-events: none; animation: glHandTap 1.1s ease-in-out 3; filter: drop-shadow(0 3px 4px rgba(0, 0, 0, .35)); }
+.gl-hand .art, .gl-hand .emo { width: 56px; height: 56px; font-size: 48px; }
+@keyframes glHandTap { 0%, 100% { transform: translate(14px, 22px); } 50% { transform: translate(0, 0) scale(.9); } }
+/* (I4) the skill stickers are drawings: the same size as the emoji stickers beside them */
+.sb-tray button > .art, .sb-item > .art { width: 1.15em; height: 1.15em; vertical-align: middle; }
+/* (r79 learning) the talk-and-touch games */
+.gl .sf-tools { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
+.gl .sf-mic.on { background: #ffe1ef; box-shadow: 0 0 0 3px #ff6fae; }
+.gl .sf-mic .art { width: 26px; height: 26px; }
+.gl .choice.sf-little > .art, .gl .choice.sf-little > .emo { transform: scale(.55); }
+.gl .mc-sign { display: inline-flex; align-items: center; gap: 10px; align-self: center; background: #fff6e4; color: #3b2a4f; border-radius: 18px; padding: 6px 18px; font-size: clamp(30px, 6vw, 44px); box-shadow: 0 4px 0 rgba(90, 60, 130, .18); }
+.gl .mc-sign .art { width: 48px; height: 48px; }
+.gl .mc-basket { display: flex; flex-wrap: wrap; align-content: flex-start; justify-content: center; gap: 6px; width: min(100%, 520px); min-height: 148px; box-sizing: border-box; padding: 12px; margin: 0 auto; border-radius: 22px 22px 44px 44px; background: #e7b77a; border: 4px solid #8a5a2b; box-shadow: inset 0 -10px 0 rgba(90, 50, 20, .18); }
+.gl .mc-stall { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; width: min(100%, 560px); min-height: 72px; margin: 0 auto; padding: 8px; box-sizing: border-box; border-radius: 16px; background: rgba(255, 255, 255, .35); }
+.gl .choice.mc-fruit { width: 64px; height: 64px; min-width: 64px; min-height: 64px; border-radius: 18px; font-size: 40px; padding: 0; touch-action: none; position: relative; }
+.gl .choice.mc-fruit .art { width: 46px; height: 46px; }
+.gl .choice.mc-fruit.extra { box-shadow: 0 0 0 4px #ff5f7a; }
+.gl .mc-gap { width: 64px; height: 64px; box-sizing: border-box; border-radius: 18px; border: 3px dashed #8a5cf6; background: rgba(255, 255, 255, .5); }
+.gl .fs-card { display: flex; align-items: center; justify-content: center; gap: 14px; align-self: center; background: #fff6e4; border-radius: 22px; padding: 10px 22px; box-shadow: 0 4px 0 rgba(90, 60, 130, .18); }
+.gl .fs-card .art { width: clamp(64px, 16vw, 104px); height: clamp(64px, 16vw, 104px); }
+.gl .choice.fs-face, .gl .choice.fs-help { flex-direction: column; gap: 2px; }
+.gl .choice.fs-face small, .gl .choice.fs-help small { font-size: 15px; line-height: 1.15; text-align: center; padding: 0 4px; }
+.gl .choice.fs-face .art { width: 62%; height: 62%; }
+.gl .choice.fs-help .art { width: 48%; height: 48%; }
+.gl .sh-model .seq-item { border: 3px solid #8a5cf6; }
+.gl .mc-round { display: flex; flex-direction: column; align-items: center; gap: clamp(8px, 2vw, 14px); width: 100%; }
+.gl.little .choice.mc-fruit { width: 72px; height: 72px; }
+.gl .mc-basket { position: relative; }
+.gl .mc-basket > .mc-label { position: absolute; right: 10px; bottom: 8px; width: 40px; height: 40px; opacity: .55; pointer-events: none; }
+.gl .mc-basket > .mc-label .art { width: 100%; height: 100%; }
+/* (UX-001) learning games: the question line keeps the height of three lines; a longer explanation scrolls inside it, so
+   the board never moves when the words change */
+.gl.learn .gl-help { line-height: 1.3; height: calc(1.3em * 3); min-height: 0; max-height: none; overflow-y: auto; box-sizing: content-box; }
 /* (r78, after the release pictures: on a computer one line of story sat in a box built for four) wide screens fit about
    twice the words on a line, so the box keeps room for 2 lines of the story and 1 spoken line there; phones keep 3 + 1 */
 @media (min-width: 700px) { .theatre .th-text { height: calc(var(--thp) * 1.35 * 2 + var(--thm) * 1.35 + 4px + 16px); } }
+
+/* sticker book (chat B) — owner plan 16 Oct 2026 AEDT; design docs/ui-redesign-20261016/canvas/Stickers.dc.html
+   (STK-1 to STK-6, UI-1 to UI-10): theme tabs, a paper page of 3 x 3, count, progress bar, prize at the bottom.
+   Kit colours: pink #ff6fae, purple #8a5cf6, green #43c463, gold #ffb020, sky #29b6f6, paper #fff6e4, ink #3a2a20, butter #ffe7a8 */
+.stkbook { --ink: #3a2a20; --paper: #fff6e4; --butter: #ffe7a8; --gold: #ffb020; --purple: #8a5cf6; display: flex; flex-direction: column; gap: 10px; color: var(--ink); }
+.stkbook, .stk-more { flex: none; }
+.stkbook .stk-tabs { display: grid; grid-template-columns: repeat(auto-fill, minmax(76px, 1fr)); gap: 8px; }
+.stkbook .stk-tabs button { position: relative; min-height: 56px; padding: 4px 2px; border-radius: 16px; border: 3px solid var(--ink); background: var(--paper); color: var(--ink); box-shadow: 0 4px 0 var(--ink); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; font: 600 15px/1.05 var(--font); cursor: pointer; }
+.stkbook.little .stk-tabs button { min-height: 64px; }
+.stkbook .stk-tabs button span { display: block; width: 30px; height: 30px; font-size: 26px; line-height: 30px; }
+.stkbook .stk-tabs button span .art { width: 30px; height: 30px; }
+.stkbook .stk-tabs button small { font: 600 15px/1.05 var(--font); text-align: center; word-break: keep-all; hyphens: none; }
+.stkbook .stk-tabs button.on { background: var(--c); color: #fff; box-shadow: 0 1px 0 var(--ink); transform: translateY(3px); }
+.stkbook .stk-tabs button:active, .stkbook .stk-tile:active, .stkbook .stk-nav button:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--ink); }
+.stkbook .stk-dot, .pad-tabs .stk-count, .dk .stk-count { position: absolute; top: -8px; right: -6px; min-width: 22px; height: 22px; padding: 0 5px; box-sizing: border-box; border-radius: 999px; background: var(--purple, #8a5cf6); color: #fff; border: 2px solid #3a2a20; font: 600 13px/18px var(--font); font-style: normal; text-align: center; pointer-events: none; }
+.pad-tabs button span, .dk { position: relative; }
+.pad-tabs .stk-count { top: -4px; right: -14px; }
+/* (the Bag button's count sits inside its corner: nothing pokes out of a button, check spill) */
+.dk .stk-count { top: 2px; right: 2px; }
+.stkbook .stk-page { background: var(--paper); border: 3px solid var(--ink); border-radius: 28px; box-shadow: 0 6px 0 var(--ink); padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+.stkbook .stk-page.won { border-color: var(--gold); box-shadow: 0 0 0 4px var(--gold), 0 6px 0 4px var(--ink); }
+.stkbook .stk-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.stkbook .stk-title { font: 800 22px/1.1 'Baloo 2', var(--font); }
+.stkbook .stk-title small { font: 600 18px var(--font); color: #6b5444; }
+.stkbook .stk-got { font: 600 18px var(--font); white-space: nowrap; }
+.stkbook .stk-bar { height: 16px; border-radius: 8px; background: #fff; border: 3px solid var(--ink); overflow: hidden; }
+.stkbook .stk-bar i { display: block; height: 100%; background: var(--gold); }
+.stkbook .stk-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.stkbook .stk-tile { position: relative; min-height: 112px; border-radius: 20px; background: #fff; border: 3px solid var(--ink); box-shadow: 0 4px 0 var(--ink); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding: 6px 3px; color: var(--ink); cursor: pointer; font: inherit; }
+.stkbook.little .stk-tile { min-height: 120px; }
+.stkbook .stk-tile.miss { background: #f6ecd8; border-style: dashed; box-shadow: none; }
+.stkbook .stk-pic { position: relative; display: block; width: 60px; height: 60px; font-size: 50px; line-height: 60px; text-align: center; }
+.stkbook .stk-pic .art { width: 60px; height: 60px; }
+/* a missing sticker: its own shape in grey with a "?" (UI-10) */
+.stkbook .stk-ghost .art, .stkbook .stk-ghost .emo { filter: grayscale(1) brightness(1.6) contrast(.35); opacity: .55; }
+.stkbook .stk-q { position: absolute; inset: 0; font: 800 30px/60px 'Baloo 2', var(--font); color: #a08a6a; }
+.stkbook .stk-name { font: 600 15px/1.1 var(--font); text-align: center; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.stkbook .stk-hint { font: 500 15px/1.1 var(--font); color: #6b5444; text-align: center; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.stkbook .stk-new { position: absolute; top: -10px; right: -6px; background: var(--purple); color: #fff; border: 2px solid var(--ink); border-radius: 999px; padding: 2px 8px; font: 600 15px/1.1 var(--font); }
+.stkbook .stk-tile.shiny { background: linear-gradient(135deg, #fff 0%, #fff4c2 45%, #ffe08a 55%, #fff 100%); border-color: var(--gold); }
+.stkbook .stk-tile.shiny .stk-pic::after { content: ''; position: absolute; right: -4px; top: -4px; width: 16px; height: 16px; background: var(--gold); clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%); animation: sbTwinkle 1.6s ease-in-out infinite; }
+@keyframes sbTwinkle { 50% { transform: scale(.6) rotate(45deg); opacity: .6; } }
+body.calm .stkbook .stk-tile.shiny .stk-pic::after { animation: none; }
+.stkbook .stk-nav { display: flex; align-items: center; justify-content: center; gap: 14px; }
+.stkbook .stk-nav button { width: 56px; height: 56px; border-radius: 50%; border: 3px solid var(--ink); background: var(--paper); box-shadow: 0 4px 0 var(--ink); display: flex; align-items: center; justify-content: center; font-size: 26px; cursor: pointer; }
+.stkbook.little .stk-nav button { width: 64px; height: 64px; }
+.stkbook .stk-nav button:disabled { opacity: .35; box-shadow: none; }
+.stkbook .stk-nav button .art { width: 32px; height: 32px; }
+.stkbook .stk-dots { display: flex; gap: 6px; }
+.stkbook .stk-dots i { width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--ink); background: #fff; }
+.stkbook .stk-dots i.on { background: var(--c); }
+.stkbook .stk-dots i.full { box-shadow: 0 0 0 2px var(--gold); }
+.stkbook .stk-fly .btn { width: 100%; min-height: 56px; }
+.stkbook .stk-prize { display: flex; align-items: center; gap: 10px; background: var(--butter); border: 3px solid var(--ink); border-radius: 18px; padding: 8px 12px; font: 500 16px/1.2 var(--font); }
+.stkbook .stk-prize > span:not(.stk-frame) { flex: 1; }
+.stkbook .stk-frame { flex: none; width: 36px; height: 36px; box-sizing: border-box; border-radius: 8px; border: 5px solid var(--gold); box-shadow: inset 0 0 0 2px var(--ink), 0 0 0 2px var(--ink); }
+.stkbook .stk-prize.won { background: #fff1b8; }
+.stkbook .stk-prize .stk-song { min-height: 56px; background: #29b6f6; color: #fff; border: 3px solid var(--ink); box-shadow: 0 4px 0 var(--ink); border-radius: 16px; font: 600 16px var(--font); white-space: nowrap; }
+.stk-more { display: flex; flex-direction: column; gap: 10px; }
+@media (min-width: 700px) { .stkbook .stk-tabs { grid-template-columns: repeat(10, minmax(0, 1fr)); gap: 6px; } .stkbook .stk-tile { min-height: 128px; } .stkbook .stk-pic, .stkbook .stk-pic .art { width: 72px; height: 72px; line-height: 72px; } .stkbook .stk-q { line-height: 72px; } }
+/* feel and sound (chat A, owner plan 16 Oct AEDT; js/feel.js). The press uses the separate `scale` property, so a
+   button's own transform (its press, its centring) still works. Windows never move (UX-001). Calm mode: no movement. */
+.sv-press { scale: .94; }
+.sv-spring { animation: sv-spring .24s ease-out; }
+@keyframes sv-spring { 0% { scale: .94; } 55% { scale: 1.05; } 100% { scale: 1; } }
+.sv-wiggle { animation: sv-wiggle .42s ease-in-out; }
+@keyframes sv-wiggle { 20% { rotate: -5deg; } 45% { rotate: 4deg; } 70% { rotate: -2deg; } 100% { rotate: 0deg; } }
+.sv-jiggle { animation: sv-jiggle .4s ease-out; }
+@keyframes sv-jiggle { 30% { scale: 1.22; } 60% { scale: .95; } 100% { scale: 1; } }
+.sv-fly { position: fixed; z-index: 90; width: 34px; height: 34px; pointer-events: none; display: flex; align-items: center; justify-content: center; font-size: 28px; filter: drop-shadow(0 3px 2px rgba(58, 42, 32, .35)); }
+.sv-fly.big { width: 56px; height: 56px; font-size: 46px; }
+.sv-fly .art, .sv-fly svg { width: 100%; height: 100%; }
+/* under-5s: the action button's picture breathes slowly, so a little one sees what can be tapped */
+.hud.little .act .ai { animation: sv-breathe 2.4s ease-in-out infinite; }
+@keyframes sv-breathe { 50% { scale: 1.08; } }
+body.calm .sv-press, body.calm .sv-spring, body.calm .sv-wiggle, body.calm .sv-jiggle, body.calm .hud.little .act .ai { animation: none !important; scale: none !important; rotate: none !important; }
+/* daily adventure (chat C) — owner plan 16 Oct AEDT; js/adventure.js; design: docs/ui-redesign-20261016/canvas/Adventure.dc.html
+   and HUD.dc.html. The kit: paper panels, 3 px ink outline, solid shadows, green = go, gold = earned, pink = close,
+   sky = hear again (UI-1 to UI-10). Calm mode: nothing moves. */
+/* folding the goal row (a tap on it) hides the card too, so the row folds to its small chip as before */
+.quest.fold .advcard { display: none !important; }
+.advcard { flex-basis: 100%; display: flex; align-items: center; gap: 8px; min-width: 0; background: var(--paper); border: 3px solid var(--ink); border-radius: 22px; box-shadow: 0 4px 0 var(--ink); padding: 6px 8px 6px 6px; color: var(--ink); }
+.advcard[hidden] { display: none !important; }
+.advcard .adv-open { flex: 1; min-width: 0; min-height: 56px; display: flex; align-items: center; gap: 10px; border: 0; background: none; padding: 0; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.advcard .adv-badge { flex: none; width: 48px; height: 48px; box-sizing: border-box; border-radius: 50%; background: #8a5cf6; border: 3px solid var(--ink); display: flex; align-items: center; justify-content: center; }
+.advcard .adv-badge .art { width: 32px; height: 32px; }
+.advcard .adv-cx { min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.advcard .adv-text { font: 600 17px/1.15 var(--font); overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.adv-dots { display: flex; gap: 6px; }
+.adv-dots i { width: 22px; height: 22px; box-sizing: border-box; border-radius: 50%; border: 3px solid var(--ink); background: #fff; }
+.adv-dots i.done { background: #43c463; }
+.adv-dots i.now { background: #ffb020; box-shadow: 0 0 0 4px rgba(255, 176, 32, .4); }
+.adv-dots i.todo { border-style: dashed; }
+.advcard .adv-hear { flex: none; width: 48px; height: 48px; border-radius: 50%; background: #29b6f6; border: 3px solid var(--ink); box-shadow: 0 3px 0 #1a7fb0; display: flex; align-items: center; justify-content: center; padding: 0; cursor: pointer; }
+.hud.small .advcard .adv-text { font-size: 15px; }
+.hud.small .advcard .adv-badge, .hud.small .advcard .adv-hear { width: 44px; height: 44px; }
+.hud.small .adv-dots i { width: 18px; height: 18px; border-width: 2.5px; }
+.hud.small .advcard .adv-open { min-height: 48px; }
+/* the window */
+.modal.advwin .card { background: #8a5cf6; color: var(--ink); border: 3px solid var(--ink); border-radius: 28px; box-shadow: 0 6px 0 var(--ink); max-width: 460px; gap: 14px; padding: 18px 14px; }
+.modal.advwin .card h2 { margin: 0; font: 800 28px/1.05 'Baloo 2', var(--font); color: #fff; }
+.modal.advwin .x { position: static; flex: none; width: 56px; height: 56px; border-radius: 50%; background: #ff6fae; color: #fff; border: 3px solid var(--ink); box-shadow: 0 5px 0 #c2407e; font-size: 24px; }
+.modal.advwin .card > .x { position: absolute; top: 12px; right: 12px; }
+.advwin .adv-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.advwin .adv-giver { display: flex; align-items: flex-end; gap: 10px; }
+.advwin .adv-face { flex: none; width: 96px; height: 96px; display: flex; align-items: center; justify-content: center; background: #ffe7a8; border: 3px solid var(--ink); border-radius: 50%; }
+.advwin .adv-face .art { width: 72px; height: 72px; }
+.advwin .adv-bubble { flex: 1; margin-bottom: 26px; background: #fff; border: 3px solid var(--ink); border-radius: 22px 22px 22px 6px; padding: 10px 14px; font: 500 18px/1.3 var(--font); color: var(--ink); text-align: left; min-height: 56px; cursor: pointer; }
+.advwin .adv-bubble small { display: block; font: 600 15px var(--font); color: #8a5cf6; }
+.advwin .adv-steps { background: var(--paper); border: 3px solid var(--ink); border-radius: 28px; box-shadow: 0 6px 0 var(--ink); padding: 16px; display: flex; flex-direction: column; }
+.advwin .adv-step { display: flex; align-items: center; gap: 12px; }
+.advwin .adv-line { width: 4px; height: 14px; background: var(--ink); margin-left: 20px; border-radius: 2px; }
+.advwin .adv-dot { flex: none; width: 44px; height: 44px; box-sizing: border-box; border-radius: 50%; border: 3px solid var(--ink); background: #fff; display: flex; align-items: center; justify-content: center; font: 800 22px 'Baloo 2', var(--font); }
+.advwin .adv-step.done .adv-dot { background: #43c463; }
+.advwin .adv-step.now .adv-dot { background: #ffb020; box-shadow: 0 0 0 5px rgba(255, 176, 32, .4); }
+.advwin .adv-step.todo .adv-dot { border-style: dashed; }
+.advwin .adv-st { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.advwin .adv-pic .art { width: 34px; height: 34px; }
+.advwin .adv-tx { display: flex; flex-direction: column; gap: 4px; }
+.advwin .adv-tx b { font: 600 19px/1.2 var(--font); }
+.advwin .adv-found { display: flex; flex-wrap: wrap; gap: 4px; }
+.advwin .adv-found i { width: 28px; height: 28px; display: flex; }
+.advwin .adv-found i .art { width: 100%; height: 100%; }
+.advwin .adv-found i.miss { opacity: .35; filter: grayscale(1); outline: 2px dashed var(--ink); outline-offset: -2px; border-radius: 50%; }
+.advwin .adv-chestrow { background: #ffe7a8; border: 3px solid var(--ink); border-radius: 24px; padding: 10px 12px; display: flex; align-items: center; gap: 10px; }
+.advwin .adv-chesticon .art { width: 56px; height: 56px; }
+.advwin .adv-cx { flex: 1; display: flex; flex-direction: column; gap: 2px; }
+.advwin .adv-cx b { font: 600 18px/1.2 var(--font); } .advwin .adv-cx small { font: 500 15px/1.2 var(--font); color: #5a4636; }
+.advwin .adv-rew { flex: none; display: flex; align-items: center; gap: 2px; font: 800 22px 'Baloo 2', var(--font); }
+.advwin .adv-rew .art { width: 34px; height: 34px; }
+.adv-week { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; }
+.adv-stamp { display: flex; flex-direction: column; align-items: center; gap: 4px; color: #e5dbff; font: 600 15px var(--font); }
+.adv-stamp span { width: 40px; height: 40px; box-sizing: border-box; border-radius: 50%; background: #a98bf8; border: 3px dashed var(--ink); display: flex; align-items: center; justify-content: center; }
+.adv-stamp.got { color: #fff; } .adv-stamp.got span { background: #ffb020; border-style: solid; }
+.adv-stamp.got .art { width: 26px; height: 26px; }
+.adv-stamp.now { color: #fff; } .adv-stamp.now span { background: #fff; border-style: solid; box-shadow: 0 0 0 4px #ffe7a8; }
+.advwin .adv-go { min-height: 68px; font: 600 24px var(--font); color: #fff; background: #43c463; border: 3px solid var(--ink); border-radius: 24px; box-shadow: 0 6px 0 #2a8a40; cursor: pointer; }
+/* the chest and counting */
+.advchest .card { align-items: center; text-align: center; }
+.advchest .adv-bigchest { width: 150px; height: 150px; cursor: pointer; transition: transform .2s; }
+.advchest .adv-bigchest .art { width: 100%; height: 100%; }
+.advchest .adv-bigchest.shut { animation: adv-wobble 1.2s ease-in-out infinite; }
+.advchest .adv-bigchest.open { transform: scale(1.08); filter: drop-shadow(0 0 18px #ffe7a8); }
+@keyframes adv-wobble { 50% { rotate: -4deg; } }
+.advchest .adv-prize { display: flex; align-items: center; gap: 10px; background: var(--paper); border: 3px solid var(--ink); border-radius: 24px; padding: 8px 16px; font: 600 22px var(--font); }
+.advchest .adv-prize .art { width: 64px; height: 64px; }
+.advchest .adv-coins { display: grid; grid-template-columns: repeat(5, 56px); gap: 8px; justify-content: center; }
+.advchest .adv-coin { position: relative; width: 56px; height: 56px; border-radius: 50%; border: 3px solid var(--ink); background: var(--paper); padding: 6px; cursor: pointer; }
+.advchest .adv-coin .art { width: 100%; height: 100%; }
+.advchest .adv-coin.on { background: #ffb020; }
+.advchest .adv-coin i { position: absolute; right: -6px; top: -8px; min-width: 22px; font: 800 18px 'Baloo 2', var(--font); color: #fff; text-shadow: 0 2px 0 var(--ink); font-style: normal; }
+.advchest .adv-coins.auto .adv-coin { pointer-events: none; background: #ffb020; }
+.advchest .adv-countline { margin: 0; color: #fff; font: 600 18px var(--font); }
+.advchest .adv-go { width: 100%; }
+.advcount .card { align-items: center; text-align: center; }
+.advcount .card h2 { padding-right: 60px; }
+.advcount .adv-pile { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; background: var(--paper); border: 3px solid var(--ink); border-radius: 24px; padding: 12px; }
+.advcount .adv-pile .art { width: 48px; height: 48px; }
+.advcount .adv-nums { display: flex; gap: 12px; }
+.advcount .adv-num { width: 72px; height: 72px; border-radius: 22px; border: 3px solid var(--ink); background: var(--paper); box-shadow: 0 5px 0 var(--ink); font: 800 34px 'Baloo 2', var(--font); color: var(--ink); cursor: pointer; }
+/* the Adventures tab: today's adventure first, the rest behind one "More adventures" button (ADV-1) */
+.adv-log { display: flex; flex-direction: column; gap: 8px; background: #8a5cf6; border: 3px solid var(--ink); border-radius: 24px; padding: 10px; margin-bottom: 10px; }
+.adv-log .adv-logcard { display: flex; align-items: center; gap: 10px; min-height: 64px; background: var(--paper); border: 3px solid var(--ink); border-radius: 20px; box-shadow: 0 4px 0 var(--ink); padding: 8px 10px; color: var(--ink); text-align: left; font: inherit; cursor: pointer; }
+.adv-log .adv-face { flex: none; width: 52px; height: 52px; border-radius: 50%; background: #ffe7a8; border: 3px solid var(--ink); display: flex; align-items: center; justify-content: center; }
+.adv-log .adv-face .art { width: 36px; height: 36px; }
+.adv-log .adv-cx { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.adv-log .adv-cx b { font: 600 17px/1.2 var(--font); } .adv-log .adv-cx small { font: 500 15px/1.2 var(--font); color: #5a4636; }
+.adv-week.adv-mini .adv-stamp span { width: 32px; height: 32px; } .adv-week.adv-mini .adv-stamp .art { width: 20px; height: 20px; }
+.adv-log .adv-logcard { height: auto; white-space: normal; }
+.adv-morebtn { width: 100%; min-height: 56px; margin: 4px 0 8px; background: var(--paper); color: var(--ink); border: 3px solid var(--ink); border-radius: 20px; box-shadow: 0 4px 0 var(--ink); font: 600 18px var(--font); cursor: pointer; }
+.adv-more[hidden] { display: none !important; }
+@media (max-width: 380px) { .advwin .adv-face { width: 72px; height: 72px; } .advwin .adv-face .art { width: 54px; height: 54px; } .adv-stamp span { width: 34px; height: 34px; } .advchest .adv-coins { grid-template-columns: repeat(4, 56px); } }
+body.calm .advchest .adv-bigchest.shut, body.calm .advchest .adv-bigchest { animation: none !important; transition: none; }
+
+/* (Welcome steady, owner 16-17 Oct AEDT: "windows, panels and the Pad must stay fixed"; the r79 sweep found the Start
+   button growing and shrinking on every device) the Start button keeps one box: it no longer scales (goPulse) but
+   invites a tap with a shine, a soft band of light that sweeps across it every few seconds inside its own edges, so no
+   size changes (owner, 17 Oct AEDT: "Shine"). Calm mode and "Reduce motion": no shine. */
+.sv2 .press { animation: none; position: relative; overflow: hidden; isolation: isolate; }
+.sv2 .press::after { content: ''; position: absolute; top: 0; bottom: 0; left: 0; width: 45%; pointer-events: none; z-index: 1;
+  background: linear-gradient(105deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, .55) 50%, rgba(255, 255, 255, 0) 100%);
+  transform: translateX(-120%) skewX(-18deg); animation: tt-shine 3.2s ease-in-out infinite; }
+@keyframes tt-shine { 0%, 45% { transform: translateX(-120%) skewX(-18deg); } 85%, 100% { transform: translateX(260%) skewX(-18deg); } }
+body.calm .sv2 .press::after { animation: none; display: none; }
+@media (prefers-reduced-motion: reduce) { .sv2 .press::after { animation: none; display: none; } }
+
+/* ---- r80 (Release): on bigger screens the goal row fills the space between the corners when centring would reach them (js/hud.js fitQuest) ---- */
+.hud.quest-gap:not(.small) .quest { left: var(--quest-x); max-width: var(--quest-gap-w); }
+/* (r80, GitHub run 66: on a phone held sideways the goal row and the adventure card under it covered the middle of the
+   view, where the road signs stand) short screens: the goal row keeps to the left side */
+@media (max-height: 480px) and (orientation: landscape) { .hud.small.adv-on .quest, .hud.small.adv-on.quest-below-nav .quest { max-width: min(46%, 380px); } }

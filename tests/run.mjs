@@ -1379,7 +1379,7 @@ await check('testerrewards', async () => {
     for (let i = 0; i < 40; i++) { await P.page.waitForTimeout(500); const d = await P.page.$('.dialog'); if (d && /Ông Cú|Ong Cu/.test(await d.innerText())) break; await P.page.evaluate(() => document.querySelectorAll('.reward').forEach(r => r.click())); }
     const thank = await P.page.evaluate(() => (document.querySelector('.dialog') || {}).innerText || '');
     await P.page.evaluate(() => document.querySelectorAll('.dialog').forEach(d => d.click())); await P.page.waitForTimeout(800);
-    const r = await P.page.evaluate(async () => { const S = await import('/js/state.js'), p = S.profiles[0]; return { badge: p.look.badge, star: p.look.star, gear: ['sleuthhat', 'ladypack', 'sleuthcape'].filter(id => (p.owned.clothes || []).includes(id)), stickers: p.testerStickers, coins: S.farm.coins, tick: !(document.querySelector('.z-lb .lb-ok') || { hidden: true }).hidden, starName: !!document.querySelector('.hud .pname.starname') }; });
+    const r = await P.page.evaluate(async () => { const S = await import('/js/state.js'), SH = await import('/js/content/shop.js'), p = S.profiles[0]; return { badge: p.look.badge, star: p.look.star, gear: ['sleuthhat', 'ladypack', 'sleuthcape'].map(id => SH.versionFor(id, SH.setOf(p.look))).filter(id => (p.owned.clothes || []).includes(id)), /* (r79) each child gets their own set's version */ stickers: p.testerStickers, coins: S.farm.coins, tick: !(document.querySelector('.z-lb .lb-ok') || { hidden: true }).hidden, starName: !!document.querySelector('.hud .pname.starname') }; });
     if (!/fixed|đã được sửa/i.test(thank) || r.coins - coins0 < 25) out.push(name + ': no thank-you with coins: ' + JSON.stringify({ thank: thank.slice(0, 80), coins: r.coins - coins0 }));
     if (r.badge !== 'lb2' || !r.star || r.gear.length !== 3 || (r.stickers || []).length !== 5 || !r.tick || !r.starName) out.push(name + ': rewards ' + JSON.stringify(r));
     // the Tester's Corner and the badge drawn on the shirt
@@ -2343,17 +2343,20 @@ await check('shop', async () => {
     out.little = [...document.querySelectorAll('.modal.shopk.little .ktab, .modal.shopk.little .kitem')].filter(b => { const q = b.getBoundingClientRect(); return q.width < 64 || q.height < 64; }).length;
     document.querySelector('.modal.shopk .x').click(); await w(400);
     // the wardrobe: what is owned, worn with a tap; no shop button on a row; the Done button covers no chip; no chip cut off or overlapping
+    // (r79, owner points 18 and A4: the mirror is a big picture of the child with a tab for each kind and a grid of the child's
+    // own clothes, tap to wear and tap again to take off, no Remove chip; the same checks on its tiles)
     G.openWardrobe(0); await w(400); const wd = document.querySelector('.wardrobe.kward');
     out.noRowShop = !wd.querySelector('.toshop, [data-shop]');
-    { const dn = wd.querySelector('.x').getBoundingClientRect(), chips = [...wd.querySelectorAll('.chip')].map(c => c.getBoundingClientRect()), box = wd.getBoundingClientRect();
+    { const dn = wd.querySelector('.x').getBoundingClientRect(), chips = [...wd.querySelectorAll('.wit, .ktab')].map(c => c.getBoundingClientRect()), box = wd.getBoundingClientRect();
       const hit = (a, b) => a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;
       out.wardClear = chips.every(c => !hit(c, dn)) && chips.every((c, k) => chips.every((d, j) => j <= k || !hit(c, d))) && wd.scrollWidth <= wd.clientWidth + 1;
-      out.wardRowsFit = [...wd.querySelectorAll('.wrow')].every(r => { const q = r.getBoundingClientRect(); return [...r.querySelectorAll('.chip')].every(c => { const z = c.getBoundingClientRect(); return z.top >= q.top - 1 && z.bottom <= q.bottom + 1; }); }); void box; }
-    out.wardrobe = !!wd && wd.querySelectorAll('.wrow').length === 6 && !!wd.querySelector('[data-v="tiara"]') && !wd.querySelector('[data-v="dragon"]');
-    wd.querySelector('[data-k="hat"][data-v="none"]').click(); await w(200); out.off = p.look.hat === 'none';
+      const grid = wd.querySelector('.wgrid').getBoundingClientRect();
+      out.wardRowsFit = [...wd.querySelectorAll('.wit')].every(c => { const z = c.getBoundingClientRect(); return z.left >= grid.left - 1 && z.right <= grid.right + 1; }); }
+    out.wardrobe = !!wd && wd.querySelectorAll('[data-wtab]').length === 6 && !!wd.querySelector('.wbig') && !!wd.querySelector('[data-v="tiara"]') && !wd.querySelector('[data-v="dragon"]') && !/\bRemove\b/.test(wd.textContent);
+    wd.querySelector('.wit.on[data-k="hat"]').click(); await w(200); out.off = p.look.hat === 'none';
     document.querySelector('.wardrobe.kward .x').click(); await w(300);
-    // a child who already wore wings and a crown keeps them
-    const old = { look: { back: 'wings', hat: 'crown' }, owned: { hats: ['none'] } }; SH.adoptWorn(old); out.kept = SH.owns(old, 'wings') && SH.owns(old, 'crown');
+    // a child who already wore wings and a crown keeps them (r79: a girl, in her own set's version of the crown)
+    const old = { look: { style: 'dress', color: '#ff5fa2', back: 'wings', hat: 'crown' }, owned: { hats: ['none'] } }; SH.adoptWorn(old); out.kept = SH.owns(old, 'wings') && SH.owns(old, 'crown_g') && old.look.hat === 'crown_g';
     // the 3D character: every new piece, a few extra parts only (each new piece is one merged shape)
     const meshes = A => { let n = 0; A.root.traverse(o => { if (o.isMesh && !o.userData.outline) n++; }); return n; };
     const base = { style: 'shirt', color: '#3b6fe0', hat: 'none', back: 'none', hair: '#1d1412', hairStyle: 'short', skin: '#f6c7a5' }, n0 = meshes(buildAvatar(base));
@@ -4340,7 +4343,8 @@ await check('tradeclothes', async () => {
   const r = await P.page.evaluate(async () => {
     const G = __sv, wait = ms => new Promise(r => setTimeout(r, ms)), { Net } = await import('/js/net.js'), SH = await import('/js/content/shop.js'), { openTrade } = await import('/js/trade.js'), h = G.heroes[0], p = h.profile;
     const g = SH.CLOTHES.find(it => it.for === 'g' && !it.tester && !Object.values(p.look).includes(it.id)), bo = SH.CLOTHES.find(it => it.for === 'b' && !it.tester && !Object.values(p.look).includes(it.id));
-    p.look.set = 'girl'; p.owned.clothes = [...new Set([...(p.owned.clothes || []), g.id, bo.id])];
+    // (r79, owner 16 Oct) a girl keeps boys' clothes only as wrapped gift boxes (owned.gifts), never in her own clothes
+    p.look.set = 'girl'; p.owned.clothes = [...new Set([...(p.owned.clothes || []), g.id])]; p.owned.gifts = [bo.id];
     const sent = []; const send0 = Net.send; Net.send = d => { sent.push(d); };
     Object.defineProperty(Net, 'connected', { get: () => true, configurable: true });
     Net.remotes['peer-b'] = { name: 'Tí', look: { set: 'boy', style: 'shirt' } }; Net.remotes['peer-g'] = { name: 'Na', look: { set: 'girl', style: 'dress' } };
@@ -4446,6 +4450,41 @@ await check('familynote', async () => {
   const errs = P.errors; await P.ctx.close();
   ok(/From your family/.test(shown) && /Các con giỏi lắm/.test(shown) && !again && !errs.length, JSON.stringify({ shown, again, errs }));
   return 'the note shows once a day ("From your family"), the Vietnamese words when the English is empty; seen today is saved and it does not come back';
+});
+
+await check('studiolive', async () => {
+  // (r81, owner 17 Oct AEDT) Studio's content pages are live at once, without Publish: a Message, a Mission, a Quiz
+  // question and a Defaults switch saved live reach the game from /api/live, in English and in Vietnamese; a live section
+  // wins over the same one in content/custom.json, one never saved live keeps custom.json's (Villagers' names here); with
+  // no answer from the website (no internet) the game uses the copy it kept and still never shows the file's old message
+  const FILE = { message: { en: 'Old note from the file', vi: 'Lời nhắn cũ trong tệp' }, quiz: [{ q: ['File question?', 'Câu hỏi trong tệp?'], answers: [['a', 'a'], ['b', 'b']], right: 0 }], names: { 'Bà Tư': { en: 'File Grandma', vi: 'Bà trong tệp' } } };
+  const LIVE = { releases: {}, festivals: {}, content: { message: { en: 'Live hello from Mum', vi: 'Mẹ chào con yêu' }, missions: [{ id: 'mlive1', en: 'Water the plants', vi: 'Tưới cây' }], quiz: [{ q: ['Live question?', 'Câu hỏi mới?'], answers: [['Yes', 'Có'], ['No', 'Không']], right: 0 }], defaults: { calm: true, restMins: 45 } } };
+  const json = o => r => r.fulfill({ contentType: 'application/json', body: JSON.stringify(o) }), rows = [];
+  const read = page => page.evaluate(async () => { const C = await import('/js/custom.js'), { T } = await import('/js/i18n.js'), S = await import('/js/state.js'), G = window.__sv;
+    const m = G && G.heroes[0] ? G.parents.openFor(G.heroes[0].profile).find(x => x.id === 's_mlive1') : null, q = C.customQuiz()[0], n = C.customName('Bà Tư');
+    return { message: C.CUSTOM.message && T(C.CUSTOM.message.en, C.CUSTOM.message.vi), mission: m ? T(m.en, m.vi) : null, quiz: q ? T(q.q[0], q.q[1]) : null, name: n ? T(n.en, n.vi) : null, calm: S.settings.calm, rest: S.settings.restMins, kept: !!(JSON.parse(localStorage.getItem('sv2_live') || '{}').content || {}).message }; });
+  for (const lang of ['en', 'vi']) {
+    const want = lang === 'en' ? { message: 'Live hello from Mum', mission: 'Water the plants', quiz: 'Live question?', name: 'File Grandma' } : { message: 'Mẹ chào con yêu', mission: 'Tưới cây', quiz: 'Câu hỏi mới?', name: 'Bà trong tệp' };
+    const P = await open(b, { w: 390, h: 844, touch: true, lang, settings: { familyMsgDay: null }, route: async ctx => { await ctx.route('**/content/custom.json*', json(FILE)); await ctx.route('**/api/live**', json(LIVE)); } });
+    // (the message waits behind anything else the start shows, e.g. the family missions guide: those are closed here)
+    let shown = ''; for (let i = 0; i < 40 && !shown; i++) { shown = await P.page.evaluate(() => { const ds = [...document.querySelectorAll('.dialog')], m = ds.find(d => /Mum|Mẹ chào|trong tệp|from the file/.test(d.textContent)); if (m) return m.textContent; ds.forEach(d => d.remove()); __sv.paused = false; return ''; }); if (!shown) await P.page.waitForTimeout(1000); }
+    await clear(P.page); const on = await read(P.page);
+    // no internet: the website does not answer; the game opens again with the copy it kept
+    await P.ctx.unroute('**/api/live**'); await P.ctx.route('**/api/live**', r => r.abort()); await P.page.reload(); await P.page.waitForSelector('.screen.title', { timeout: 90000 });
+    const off = await read(P.page);
+    // (r81) the page's own update-notice switch (js/launch.js, used before the game's switch reader is ready) follows a
+    // live Defaults value kept on this device, not only content/custom.json
+    const notice = async () => P.page.evaluate(() => { document.querySelector('.update-notice')?.remove(); delete window.svFeatureOn; svOfferUpdate(); const n = !!document.querySelector('.update-notice'); document.querySelector('.update-notice')?.remove(); return n; });
+    const noticeBefore = await notice();
+    await P.page.evaluate(() => { const l = JSON.parse(localStorage.getItem('sv2_live') || '{}'); l.content = { ...(l.content || {}), features: { explain_updateNotice: false } }; localStorage.setItem('sv2_live', JSON.stringify(l)); });
+    await P.page.reload(); await P.page.waitForSelector('.screen.title', { timeout: 90000 });
+    const noticeLiveOff = await notice(), errs = P.errors; await P.ctx.close();
+    off.noticeBefore = noticeBefore; off.noticeLiveOff = noticeLiveOff;
+    const good = x => x.message === want.message && x.quiz === want.quiz && x.name === want.name && x.calm === true && String(x.rest) === '45' && x.kept;
+    rows.push({ lang, shown: shown.slice(0, 80), on, off });
+    ok(shown.includes(want.message) && !/file|tệp/i.test(shown) && good(on) && on.mission === want.mission && good(off) && off.noticeBefore === true && off.noticeLiveOff === false && !errs.length, JSON.stringify({ lang, shown, on, off, errs }));
+  }
+  return 'live Message shown, Mission, Quiz question and Defaults in English and Vietnamese with no Publish; live wins over custom.json, names fall back to it; offline the kept copy; a kept live update-notice switch reaches js/launch.js: ' + JSON.stringify(rows.map(r => [r.lang, r.on.message, r.off.quiz, r.off.noticeLiveOff]));
 });
 
 await check('mictest', async () => {
@@ -5719,7 +5758,7 @@ await check('ownerlearningcomposition', async () => {
     fs.mkdirSync('out/owner-learning-composition',{recursive:true});await P.page.screenshot({path:`out/owner-learning-composition/${id}.png`});await P.page.locator('.gl-x').click();await P.page.waitForSelector('.gl',{state:'detached'});await P.page.waitForTimeout(100);
   }
   await P.page.setViewportSize({width:844,height:390});
-  await P.page.evaluate(async()=>{const F=await import('/js/games/frame.js');window.__learning=F.openGame('remembergarden',{players:[__sv.heroes[0].profile],little:true});});await P.page.waitForSelector('.gl-help');await P.page.waitForTimeout(400);
+  await P.page.evaluate(async()=>{const F=await import('/js/games/frame.js');window.__learning=F.openGame('remembergarden',{players:[__sv.heroes[0].profile],little:true});});/* (r79 G2) under-5s: the line is hidden with its space kept, so wait for it on the page, not for it to show */await P.page.waitForSelector('.gl-help',{state:'attached'});await P.page.waitForTimeout(400);
   const overlap=await P.page.evaluate(()=>{const a=document.querySelector('.gl .starbox').getBoundingClientRect(),b=document.querySelector('.gl-help').getBoundingClientRect();return a.x<b.right&&a.right>b.x&&a.y<b.bottom&&a.bottom>b.y;});if(overlap)bad.push('landscape reward counter overlaps guidance');await P.page.locator('.gl-x').click();await P.page.waitForSelector('.gl',{state:'detached'});
   await P.page.setViewportSize({width:320,height:640});
   await P.page.evaluate(async()=>{const F=await import('/js/games/frame.js');F.register({id:'__guideprobe',icon:'🧩',name:()=> 'Guide probe',run(api){api.say('Choose the picture and think about what happens next. '.repeat(12),'Chọn hình và nghĩ xem chuyện gì xảy ra tiếp theo. '.repeat(12));const b=document.createElement('button');b.className='choice';b.textContent='Go';api.stage.appendChild(b);}});window.__learning=F.openGame('__guideprobe',{players:[__sv.heroes[0].profile],little:true});});await P.page.waitForSelector('.gl-stage .choice');await P.page.waitForTimeout(400);await P.page.locator('.gl-stage .choice').scrollIntoViewIfNeeded();
@@ -5941,6 +5980,822 @@ await check('reportdetectors', async () => {
 await check('reportstorage', async () => {
   const {execFileSync}=await import('node:child_process');
   return execFileSync(process.execPath,['owner-report-storage.mjs'],{encoding:'utf8',timeout:60000}).trim();
+});
+await check('stickers', async () => {
+  /* sticker book (chat B) */
+  // (owner plan 16 Oct 2026 AEDT, chat B; STK-1 to STK-6) the Stickers tab of the Pad: earning (a place, talking to
+  // someone, an animal, something an older system keeps), the New! badge on the Bag button and the tab, a page of 3 x 3
+  // with a count and a progress bar, grey "?" shapes with a spoken hint, a full page's golden frame and prize, the
+  // welcome sticker of an empty page, a shiny copy, both languages, an under-5 on a phone and a big kid on a computer;
+  // and every way to earn a sticker exists in the running game
+  const notes = [];
+  for (const [age, lang, w, h, touch] of [['little', 'en', 390, 844, true], ['big', 'vi', 1280, 800, false]]) {
+    const P = await open(b, { w, h, touch, lang }); await clear(P.page);
+    const r = await P.page.evaluate(async ([age, lang]) => {
+      const G = __sv, hero = G.heroes[0], p = hero.profile, wait = ms => new Promise(r => setTimeout(r, ms));
+      const SB = await import('/js/stickers.js'), C = await import('/js/content/stickers.js'), S = await import('/js/state.js'), V = await import('/js/voice.js'), A = await import('/js/audio.js');
+      const W = await import('/js/world.js'), R = await import('/js/regions.js'), GA = await import('/js/gather.js'), D = await import('/js/data.js'), SE = await import('/js/secrets.js'), PS = await import('/js/passport.js'), MH = await import('/js/myhouse.js'), FE = await import('/js/festivals.js'), SP = await import('/js/content/surprises.js');
+      const out = { age, lang };
+      // the ways to earn exist in the running game
+      const kinds = new Set(['duck', 'chicken', 'butterfly', 'bird', 'kitty']); G.scene.traverse(o => { if (o.userData && o.userData.rig) kinds.add(o.userData.rig.kind); });
+      const its = new Set(G.interactables.map(i => i.id)), lms = new Set(R.LANDMARKS.map(l => l.id)), recipes = new Set(D.RECIPES.map(x => x.id)), vend = new Set(R.VENDORS.map(v => v.id));
+      const bad = [];
+      for (const s of C.STICKERS) for (const w of s.earn) {
+        const [k, v] = Object.entries(w)[0];
+        const okk = k === 'act' ? (v.endsWith('*') ? [...its].some(x => x.startsWith(v.slice(0, -1))) : its.has(v)) : k === 'meet' ? kinds.has(v) : k === 'postcard' ? lms.has(v) : k === 'enter' ? !!W.REGION_NAMES[v]
+          : k === 'find' ? !!GA.WILD[v] : k === 'cook' ? recipes.has(v) : k === 'taste' ? vend.has(v) : k === 'secret' ? SE.SECRETS.some(x => x.id === v) : k === 'tower' ? W.TOWERS.some(x => x.id === v)
+          : k === 'stamp' ? PS.COUNTRIES.some(c => c.cc + '_full' === v) : k === 'fest' ? !!FE.FESTIVALS[v] : k === 'surprise' ? SP.SURPRISES.some(x => x.id === v) : k === 'prize' ? C.LEGACY_EMOJI.includes(v) : false;
+        if (!okk) bad.push(s.id + ':' + k + '=' + v);
+        if (typeof A.SFX[s.sound] !== 'function') bad.push(s.id + ' sound ' + s.sound);
+      }
+      for (const e of D.STICKERS) if (!C.fromEmoji(e)) bad.push('older sticker without a place ' + e);
+      for (const lm of R.LANDMARKS) if (!C.BY_ID['pc_' + lm.id]) bad.push('postcard without a sticker ' + lm.id);
+      for (const [k, w] of Object.entries(GA.WILD)) if (!C.STICKERS.some(s => s.earn.some(x => x.find === k))) bad.push('treasure without a sticker ' + k);
+      out.bad = bad;
+      // a child starting afresh
+      p.age = age; p.stickers = []; delete p.stickerBook; p.postcards = {}; p.found = {}; p.placeStickers = {}; p.visited = {}; p.keepsakes = [];
+      S.settings.voice = true; const said = []; window.__svVoiceLog = (l, t) => said.push(l + ':' + t); const sayRec = t => said.push('say:' + t); V.spoken.push(sayRec);
+      // a hen (the tap on an animal), Grandpa Owl (talking: main.js says InteractionStarted on the way), a place
+      SB.meet('chicken', hero);
+      const owl = G.interactables.find(i => i.id === 'npc_owl'); hero.place(owl.x + 1.2, owl.z); G.goAndDo(hero, owl);
+      for (let k = 0; k < 20 && !SB.has('owl', hero); k++) { await wait(200); if (k > 4) G.paused = false; }
+      document.querySelectorAll('.storybook, .dialog, .modal, .reward').forEach(e => e.remove()); G.paused = false;
+      hero.place(W.VILLAGE.x, W.VILLAGE.z + 6); for (let k = 0; k < 20 && !SB.has('place_village', hero); k++) { await wait(250); document.querySelectorAll('.storybook, .dialog, .modal, .reward').forEach(e => e.remove()); G.paused = false; }
+      document.querySelectorAll('.storybook, .dialog, .modal, .reward').forEach(e => e.remove()); G.paused = false;
+      // something an older system keeps (a postcard) is read within a few seconds and gets its New! badge
+      p.postcards.opera = true; for (let k = 0; k < 16 && !SB.has('pc_opera', hero); k++) await wait(250);
+      out.earned = ['hen', 'owl', 'place_village', 'pc_opera'].filter(id => SB.has(id, hero));
+      await wait(2300);
+      out.fresh = SB.freshIds(hero).sort(); out.bagBadge = document.querySelector('.dk.bag .stk-count')?.textContent || '';
+      // the book: Farm friends, 3 x 3
+      G.openPad(0, 'album'); await wait(500);
+      const q = s => document.querySelector(s), qa = s => [...document.querySelectorAll(s)];
+      const farmTab = q('.stk-tabs [data-th=farm]'); if (!farmTab.classList.contains('on')) { farmTab.click(); await wait(300); }
+      out.tabs = qa('.stk-tabs [data-th]').length; out.tiles = qa('.stk-grid .stk-tile').length;
+      out.count = q('.stk-got')?.textContent.trim(); out.bar = q('.stk-bar i')?.style.width; out.title = q('.stk-title')?.textContent.trim();
+      out.padTabBadge = q('.pad-tabs [data-t=album] .stk-count')?.textContent || '';
+      out.missing = qa('.stk-tile.miss').map(t => !!t.querySelector('.stk-q') && t.querySelector('.stk-hint').textContent.trim().length > 0).every(Boolean);
+      out.newOnHen = !!q('[data-sid=hen] .stk-new');
+      const rect = e => e.getBoundingClientRect(), minTab = Math.min(...qa('.stk-tabs button').map(e => Math.min(rect(e).width, rect(e).height)));
+      const minTile = Math.min(...qa('.stk-tile').map(e => Math.min(rect(e).width, rect(e).height)));
+      out.sizes = { minTab: Math.round(minTab), minTile: Math.round(minTile) };
+      out.inView = qa('.stk-tile').every(e => rect(e).left >= 0 && rect(e).right <= innerWidth + 1);
+      // tapping a sticker: its name (both languages: the chosen one and the other) and the New! badge goes
+      said.length = 0; q('[data-sid=hen]').click(); await wait(900);
+      out.henSaid = said.slice(); out.henSeen = !SB.freshIds(hero).includes('hen') && !q('[data-sid=hen] .stk-new');
+      // tapping a missing one says its hint
+      said.length = 0; const miss = q('.stk-tile.miss'); const missId = miss.dataset.miss; miss.click(); await wait(400);
+      const hint = C.BY_ID[missId].hint; out.hintSaid = said.some(t => t.includes(lang === 'vi' ? hint[1] : hint[0]));
+      // a full page: a golden frame, the song and a decoration for the house (once)
+      C.PAGES.find(x => x.key === 'farm.0').stickers.forEach(s => SB.give(s.id, hero, { quiet: true }));
+      farmTab.click(); await wait(500);
+      out.full = { won: !!q('.stk-page.won'), frame: !!q('.stk-prize.won .stk-frame'), song: !!q('.stk-song'), decor: (p.keepsakes || []).includes('sb_farm_0') && !!MH.DECOR.sb_farm_0, count: q('.stk-got')?.textContent.trim() };
+      // an empty page gets its welcome sticker (STK-3)
+      q('.stk-tabs [data-th=rare]').click(); await wait(500);
+      out.rareCount = q('.stk-got')?.textContent.trim(); out.rareStarter = SB.has(C.PAGES.find(x => x.key === 'rare.0').stickers.find(s => s.starter).id, hero);
+      // a page further on: the arrows (Places in Vietnam has 5 pages)
+      q('.stk-tabs [data-th=vietnam]').click(); await wait(400); q('.stk-next').click(); await wait(400);
+      out.page2 = q('.stk-title small')?.textContent.trim();
+      // a sticker earned again can turn shiny (1 in 20; here the dice says so)
+      SB.give('hen', hero, { rnd: () => 0, quiet: true }); q('.stk-tabs [data-th=farm]').click(); await wait(400);
+      out.shiny = !!q('[data-sid=hen].shiny');
+      out.lang = { tab: q('.stk-tabs [data-th=farm] small').textContent.trim(), title: q('.stk-title').textContent.trim() };
+      S.settings.voice = false; delete window.__svVoiceLog; V.spoken.splice(V.spoken.indexOf(sayRec), 1);
+      return out;
+    }, [age, lang]);
+    const errs = P.errors; await P.ctx.close();
+    const want = age === 'little' ? 64 : 56;
+    ok(!r.bad.length, 'ways to earn that do not exist: ' + r.bad.slice(0, 12).join(', '));
+    ok(r.earned.length === 4, 'earned: ' + JSON.stringify(r.earned));
+    ok(['hen', 'owl', 'pc_opera', 'place_village'].every(id => r.fresh.includes(id)) && +r.bagBadge >= 4 && +r.padTabBadge >= 4, 'New! badges: ' + JSON.stringify([r.fresh, r.bagBadge, r.padTabBadge]));
+    ok(r.tabs === 10 && r.tiles === 9 && /^\d \/ 9$/.test(r.count) && r.bar && r.missing && r.newOnHen, 'the page: ' + JSON.stringify(r));
+    ok(r.sizes.minTab >= want && r.sizes.minTile >= want && r.inView, `sizes (at least ${want} px): ` + JSON.stringify(r.sizes) + ' in view ' + r.inView);
+    const other = lang === 'vi' ? 'en:Hen' : 'vi:Gà mái', mine = lang === 'vi' ? 'vi:Gà mái' : 'en:Hen';
+    ok(r.henSaid.includes(mine) && r.henSaid.includes(other) && r.henSeen, 'tap: both names said and the badge gone: ' + JSON.stringify(r.henSaid));
+    ok(r.hintSaid, 'a missing sticker says its hint');
+    ok(r.full.won && r.full.frame && r.full.song && r.full.decor && r.full.count === '9 / 9', 'full page: ' + JSON.stringify(r.full));
+    ok(r.rareCount === '1 / 9' && r.rareStarter, 'empty page welcome: ' + r.rareCount);
+    ok(r.page2 === '2/5', 'page arrows: ' + r.page2);
+    ok(r.shiny, 'shiny copy');
+    ok(lang === 'vi' ? r.lang.tab === 'Nông trại' && r.lang.title.startsWith('Bạn nông trại') : r.lang.tab === 'Farm' && r.lang.title.startsWith('Farm friends'), 'language: ' + JSON.stringify(r.lang));
+    ok(!errs.length, errs.join(' | '));
+    notes.push(`${age === 'little' ? 'under-5 phone EN' : 'big kid computer VI'}: tabs ${r.sizes.minTab} px, tiles ${r.sizes.minTile} px`);
+  }
+  // (S6) a new child: Grandpa Owl's sticker and the place they start in within seconds, a hen by 3 minutes of play
+  { const P = await open(b, { w: 900, h: 700, pre: () => { try { const a = JSON.parse(localStorage.getItem('sv2_profiles') || '[]'); a.forEach(p => { delete p.stickerBook; }); localStorage.setItem('sv2_profiles', JSON.stringify(a)); } catch (e) { } } });
+    const r = await P.page.evaluate(async () => { const G = __sv, h = G.heroes[0], wait = ms => new Promise(r => setTimeout(r, ms)), SB = await import('/js/stickers.js'), C = await import('/js/content/stickers.js');
+      for (let k = 0; k < 40 && !SB.has('owl', h); k++) { await wait(500); document.querySelectorAll('.storybook, .dialog, .modal, .reward').forEach(e => e.remove()); G.paused = false; }
+      const soon = C.FIRST_THREE.filter(id => SB.has(id, h)); G.stickerFx().firstMinutes.played = 180; await wait(5600);
+      return { soon, later: C.FIRST_THREE.filter(id => SB.has(id, h)) }; });
+    const errs = P.errors; await P.ctx.close();
+    ok(r.soon.includes('owl') && r.soon.includes('place_plateau') && r.later.length === 3 && !errs.length, 'first minutes: ' + JSON.stringify(r) + errs.join(' | '));
+    notes.push('first minutes: ' + r.later.join(', ')); }
+  return 'earning (animal, talking, place, an older system), New! badges, 3 x 3 page, hints, both names, full page prize, welcome sticker, shiny; ' + notes.join('; ');
+});
+await check('feel', async () => {
+  // feel and sound (chat A, owner plan 16 Oct AEDT; js/feel.js, rules UI-7 and UI-8): every button sinks and makes one
+  // soft sound, a window only makes sounds and never moves (the owner's stable-window rule), earned coins fly into their counter, the Grown-ups
+  // "Tap sounds" switch silences the press, calm mode keeps sounds and drops movement, under-5s' action picture breathes
+  const notes = [];
+  for (const [tag, w, h, touch] of [['computer', 1180, 760, false], ['phone', 390, 844, true]]) {
+    const P = await open(b, { w, h, touch, settings: { sound: true, calm: false } });
+    const r = await P.page.evaluate(async () => {
+      const A = await import('/js/audio.js'), S = await import('/js/state.js'), U = await import('/js/popups.js');
+      let osc = 0; const make = AudioContext.prototype.createOscillator; AudioContext.prototype.createOscillator = function () { osc++; return make.call(this); };
+      const log = []; for (const k of ['press', 'open', 'shut', 'pop', 'shhk', 'no', 'tada']) { const f = A.SFX[k]; A.SFX[k] = (...a) => { log.push(k); return f(...a); }; }
+      const wait = ms => new Promise(r => setTimeout(r, ms));
+      const down = b => { const r = b.getBoundingClientRect(); b.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, clientX: r.left + r.width / 2, clientY: r.top + r.height / 2 })); };
+      const up = () => dispatchEvent(new PointerEvent('pointerup', { bubbles: true }));
+      const out = {};
+      // every visible HUD button sinks while pressed and springs back
+      const btns = [...document.querySelectorAll('.hud button')].filter(b => b.getClientRects().length && getComputedStyle(b).visibility !== 'hidden').slice(0, 12);
+      let sank = 0; for (const b of btns) { down(b); if (b.classList.contains('sv-press') && getComputedStyle(b).scale !== 'none' && getComputedStyle(b).scale !== '1') sank++; up(); }
+      out.buttons = btns.length; out.sank = sank; out.sprung = !document.querySelector('.sv-press');
+      // one tap is heard once: the press sound, and the screen's own SFX.tap right after it is left out
+      await wait(500); let o0 = osc; down(btns[0]); up(); A.SFX.tap(); out.oneSound = osc - o0;
+      // a window: sounds only, and it never moves (the owner's stable-window rule)
+      log.length = 0; const m = U.modal('feeltest', '<h2>Test</h2><p>Window</p>'); const c = m.querySelector('.card');
+      const y0 = c.getBoundingClientRect().top; await wait(120); const y1 = c.getBoundingClientRect().top; await wait(250); const y2 = c.getBoundingClientRect().top;
+      m.close(); await wait(260); out.window = { sounds: log.slice(), still: Math.abs(y0 - y1) < 1 && Math.abs(y1 - y2) < 1, gone: !document.querySelector('.modal.feeltest') };
+      // coins fly into the counter and land with a climbing note
+      log.length = 0; S.farm.coins += 30; await wait(200); out.flying = document.querySelectorAll('.sv-fly').length; await wait(1200);
+      out.landed = log.filter(k => k === 'pop').length; out.flyGone = !document.querySelector('.sv-fly');
+      // Grown-ups → Tap sounds off: no press sound, other sounds stay
+      S.settings.tapSounds = false; await wait(500); o0 = osc; down(btns[0]); up(); A.SFX.tap(); out.tapOff = osc - o0; o0 = osc; A.SFX.ok(); out.otherStill = osc - o0; S.settings.tapSounds = true;
+      // calm mode: the sound stays, nothing moves, rewards land without flying
+      S.settings.calm = true; S.applyComfort && S.applyComfort(); document.body.classList.add('calm');
+      log.length = 0; down(btns[0]); out.calmPressed = btns[0].classList.contains('sv-press'); up(); out.calmSound = log.includes('press');
+      log.length = 0; S.farm.coins += 30; await wait(200); out.calmFly = document.querySelectorAll('.sv-fly').length; await wait(600); out.calmLanded = log.includes('pop');
+      out.little = !!document.querySelector('.hud.little');
+      // the Grown-ups "Tap sounds" switch
+      const UI = await import('/js/ui.js'); UI.openGrownups(() => { }); await wait(700);
+      const sw = document.querySelector('#gTapSnd'); out.tapSwitch = !!sw && sw.checked && /Tap sounds/.test(sw.closest('label').textContent);
+      document.querySelectorAll('.modal').forEach(x => x.close ? x.close() : x.remove()); await wait(250);
+      return out;
+    });
+    ok(r.buttons >= 3 && r.sank === r.buttons && r.sprung, `${tag}: buttons did not all sink and spring back ${JSON.stringify(r)}`);
+    ok(r.oneSound > 0 && r.oneSound <= 2, `${tag}: a tap should be heard once (press only), got ${r.oneSound} oscillators`);
+    ok(r.window.sounds.includes('open') && r.window.sounds.includes('shut') && r.window.still && r.window.gone, `${tag}: window ${JSON.stringify(r.window)}`);
+    ok(r.flying > 0 && r.landed > 0 && r.flyGone, `${tag}: coins did not fly and land ${JSON.stringify(r)}`);
+    ok(r.tapOff === 0 && r.otherStill > 0, `${tag}: Tap sounds off ${JSON.stringify(r)}`);
+    ok(!r.calmPressed && r.calmSound && r.calmFly === 0 && r.calmLanded, `${tag}: calm mode ${JSON.stringify(r)}`);
+    ok(r.tapSwitch, `${tag}: no Tap sounds switch in Grown-ups`);
+    ok(!P.errors.length, P.errors.join(' | '));
+    notes.push(`${tag}: ${r.sank}/${r.buttons} buttons sink, one sound a tap, window still, coins fly, tap sounds off, calm still${r.little ? ', under-5 breathing' : ''}`);
+    await P.ctx.close();
+  }
+  return notes.join('; ');
+});
+/* daily adventure (chat C) */
+// (owner plan 16 Oct AEDT; js/adventure.js, js/content/adventures.js) the goal card, the window (ADV-1 to ADV-6), every
+// step's spot really in the valley, one adventure played from start to end by an under-5 on a phone in English and a
+// big kid on a computer in Vietnamese (counting, D12), talk, play and cook steps, a missed day keeping its stamps,
+// Grandpa Owl remembering yesterday (D11), the week chest (D10), the Tricky timer only for 5 and over, and the switch
+await check('dailyadventure', async () => {
+  for (const [w, h, touch, age, lang] of [[390, 844, true, 'little', 'en'], [1280, 800, false, 'big', 'vi']]) {
+    const P = await open(b, { w, h, touch, lang }); await clear(P.page);
+    await P.page.waitForFunction(() => window.__sv && __sv.adventure, null, { timeout: 30000 });
+    await P.page.addStyleTag({ content: '.htoast { display: none !important; }' });
+    const tag = `${w} ${age} ${lang}`;
+    // every spot the adventures use is in this valley
+    const miss = await P.page.evaluate(async () => { const { ADVENTURES } = await import('/js/content/adventures.js'), out = [];
+      for (const a of ADVENTURES) for (const s of a.steps) if (s.at && !__sv.adventure.where(s.at)) out.push(a.id + ':' + s.at); return out; });
+    ok(!miss.length, `${tag}: spots not in the valley: ${miss.join(', ')}`);
+    await P.page.evaluate(age => { __sv.heroes[0].profile.age = age; __sv.adventure.force(0, 'house'); }, age);
+    await P.page.waitForTimeout(600);
+    // HUD-4: the goal card shows the step, 3 dots and hear-again; a tap opens the window
+    const card = await P.page.evaluate(() => { const c = document.querySelector('.hud .advcard'); if (!c || c.hidden) return null; const r = c.getBoundingClientRect(), hear = c.querySelector('.adv-hear').getBoundingClientRect();
+      return { text: c.querySelector('.adv-text').textContent, dots: c.querySelectorAll('.adv-dots i').length, now: c.querySelectorAll('.adv-dots i.now').length, hear: Math.min(hear.width, hear.height), right: r.right, quest: getComputedStyle(document.querySelector('.hud .q-say')).display }; });
+    ok(card && card.dots === 3 && card.now === 1 && card.hear >= 44 && card.right <= w + 1 && card.quest !== 'none', `${tag}: goal card under the goal row, which stays (owner, 17 Oct AEDT: "show both") ${JSON.stringify(card)}`);
+    ok(lang === 'vi' ? /Phố Hai Quê/.test(card.text) : /Two Homes Street/.test(card.text), `${tag}: the step in the language (${card.text})`);
+    await P.page.click('.hud .advcard .adv-open'); await P.page.waitForTimeout(500);
+    const win = await P.page.evaluate(() => { const m = document.querySelector('.modal.advwin'); if (!m) return null; const R = e => e.getBoundingClientRect();
+      const go = m.querySelector('.adv-go'), x = m.querySelector('.x');
+      return { steps: m.querySelectorAll('.adv-step').length, stamps: m.querySelectorAll('.adv-stamp').length, chest: !!m.querySelector('.adv-chestrow .adv-rew'), mains: m.querySelectorAll('.adv-go').length, go: R(go).height, x: R(x).width, goBottom: R(go).bottom, wide: [...m.querySelectorAll('*')].some(e => R(e).right > innerWidth + 1), txt: m.innerText }; });
+    ok(win && win.steps === 3 && win.stamps === 7 && win.chest && win.mains === 1, `${tag}: window ${JSON.stringify(win && { ...win, txt: '' })}`);
+    ok(win.go >= 64 && win.x >= 56 && win.goBottom <= h + 1 && !win.wide, `${tag}: big buttons, all on screen (${win.go}, ${win.x}, ${win.goBottom})`);
+    ok(lang === 'vi' ? win.txt.includes('Phiêu lưu hôm nay') && !win.txt.includes("Today's adventure") : win.txt.includes("Today's adventure"), `${tag}: the window in the language`);
+    await P.page.screenshot({ path: `out/dailyadventure-window-${w}.png` });
+    await P.page.click('.modal.advwin .adv-go'); await P.page.waitForTimeout(500);
+    ok(await P.page.evaluate(() => !document.querySelector('.modal.advwin') && __sv.adventure.trails.size === 1), `${tag}: Let's go closes the window and shows the way`);
+    // play it: walk in, find, give (big kids count first), the chest
+    const coins0 = await P.page.evaluate(async () => { const S = await import('/js/state.js'); return S.farm.coins; });
+    await P.page.evaluate(async () => { const G = __sv, h = G.heroes[0], V = (await import('/js/content/map.js')).anchorOf('town'); h.pos.x = V[0]; h.pos.z = V[1] + 4; h.pos.y = (await import('/js/world.js')).heightAt(h.pos.x, h.pos.z); });
+    await P.page.waitForFunction(() => __sv.adventure.today(__sv.heroes[0]).step === 1, null, { timeout: 15000 });
+    const things = await P.page.evaluate(() => { const G = __sv, h = G.heroes[0], L = G.adventure.live(h); const n = L.things.length; L.things.forEach(t => t.it.act(h)); return n; });
+    ok(things === (age === 'big' ? 5 : 3), `${tag}: ${things} things to find (D12: 3 for under-5s, 5 for big kids)`);
+    ok(await P.page.evaluate(() => __sv.adventure.today(__sv.heroes[0]).step === 2), `${tag}: finding them all moves on`);
+    await P.page.evaluate(() => { const G = __sv, it = G.interactables.find(i => i.id === 'adv_give'); it.act(G.heroes[0]); });
+    await P.page.waitForTimeout(700);
+    const counting = await P.page.evaluate(() => !!document.querySelector('.modal.advcount'));
+    ok(counting === (age === 'big'), `${tag}: big kids count what they bring, under-5s do not (${counting})`);
+    if (counting) {
+      await P.page.click('.adv-num:not([data-k="5"])'); await P.page.waitForTimeout(400);
+      ok(await P.page.evaluate(() => !!document.querySelector('.modal.advcount')), `${tag}: a wrong number is never a loss: count again`);
+      await P.page.click('.adv-num[data-k="5"]');
+    }
+    await P.page.waitForSelector('.modal.advchest', { timeout: 10000 }); await P.page.waitForTimeout(1500);
+    if (age === 'big') { const n = await P.page.$$eval('.adv-coin', c => c.length); for (let k = 0; k < n; k++) await P.page.click(`.adv-coin[data-k="${k}"]`); }
+    await P.page.waitForSelector('.advchest .adv-go:not([hidden])', { timeout: 5000 });
+    await P.page.screenshot({ path: `out/dailyadventure-chest-${w}.png` });
+    await P.page.click('.advchest .adv-go'); await P.page.waitForTimeout(500);
+    const end = await P.page.evaluate(async () => { const S = await import('/js/state.js'), p = __sv.heroes[0].profile; return { coins: S.farm.coins, sticker: !!(p.stickerBook && p.stickerBook.got.hue), r: p.adventure, card: !document.querySelector('.hud .advcard')?.hidden }; });
+    ok(end.r.done && end.r.stamps.length === 1 && end.sticker && end.coins - coins0 === 10, `${tag}: the chest gives the sticker and 10 coins and a stamp (${end.coins - coins0}, ${end.sticker}, ${end.r.stamps})`);
+    ok(!end.card, `${tag}: done for today: the usual goal row comes back`);
+    // talk, play and cook steps listen for what already happens
+    const kinds = await P.page.evaluate(async () => { const G = __sv, h = G.heroes[0], A = G.adventure, { events } = await import('/js/core/events.js'), { id } = await import('/js/core/ids.js'), me = id('player', h.profile.id || 'guest'), out = {};
+      const pause = ms => new Promise(r => setTimeout(r, ms));
+      // close each chest the way a child does (coins counted, Hooray); one may still be on its way (it waits until the child is free)
+      const chests = async () => { for (let k = 0; k < 16; k++) { await pause(500); document.querySelectorAll('.advchest .adv-coin:not(.on)').forEach(c => c.click()); document.querySelectorAll('.advchest .adv-go:not([hidden])').forEach(b => b.click()); } };
+      A.force(0, 'bunny'); events.emit('InteractionStarted', { playerId: me, entityId: 'interaction:bear', action: 'act', it: 'bear' }); await new Promise(r => setTimeout(r, 700)); out.talk = A.today(h).step;
+      A.force(0, 'kite'); A.today(h).step = 2; A.sync(h); events.emit('InteractionStarted', { playerId: me, entityId: 'interaction:g-kite', action: 'act', it: 'g_kite' }); await new Promise(r => setTimeout(r, 500));
+      events.emit('ActivityStarted', { activityId: 'act:kite/1', kind: 'game', defId: 'game:kite', players: [me], source: 'folk' }); events.emit('ActivityCompleted', { activityId: 'act:kite/1', defId: 'game:kite', players: [me], result: { won: true } }); out.play = A.today(h).done; await chests();
+      A.force(0, 'supper'); A.today(h).step = 1; A.sync(h); const before = (h.profile.inv || {}).mushroom || 0; A.live(h).things.forEach(t => t.it.act(h)); out.bag = ((h.profile.inv || {}).mushroom || 0) - before;
+      G.onCooked(h, { id: 'nam' }); out.cook = A.today(h).done; await chests(); out.paused = G.paused;
+      return out; });
+    ok(kinds.talk === 1 && kinds.play === true && kinds.bag >= 3 && kinds.cook === true && !kinds.paused, `${tag}: talk, play and cook steps ${JSON.stringify(kinds)}`);
+    // the Tricky timer: only for 5 and over (ADV-5)
+    const timer = await P.page.evaluate(async () => { const G = __sv, h = G.heroes[0], A = G.adventure, S = await import('/js/state.js'); S.settings.advLevel = 'tricky';
+      A.force(0, 'house'); A.next(h); const t = A.today(h).timer; S.settings.advLevel = 'gentle'; return !!t; });
+    ok(timer === (age === 'big'), `${tag}: a Tricky timer only for 5 and over (${timer})`);
+    // a missed day keeps its stamps; Grandpa Owl remembers yesterday's (D11); 7 stamps open the week chest (D10)
+    const days = await P.page.evaluate(async () => { const G = __sv, h = G.heroes[0], A = G.adventure, r = A.today(h), d = r.day;
+      Object.assign(r, { day: d - 1, stamps: [d - 5, d - 3], last: 'house', lastDay: d - 1, done: true, told: false });
+      const r2 = A.today(h); const kept = r2.stamps.length, fresh = r2.id && !r2.done && r2.day === d;
+      await new Promise(res => setTimeout(res, 1600)); const told = r2.told === d;
+      r2.stamps = [d - 6, d - 5, d - 4, d - 3, d - 2, d - 1]; const pet = h.profile.lanterns = h.profile.lanterns || {}; pet.pet = pet.pet || {}; pet.pet.hats = [];
+      r2.prizes = []; A.finish(h); await new Promise(res => setTimeout(res, 2500)); document.querySelectorAll('.advchest .adv-coin').forEach(c => c.click());
+      for (let k = 0; k < 20 && document.querySelector('.modal.advchest'); k++) { document.querySelectorAll('.advchest .adv-go:not([hidden])').forEach(b => b.click()); await new Promise(res => setTimeout(res, 500)); }
+      return { kept, fresh, told, chests: r2.chests, stamps: r2.stamps.length, hat: (h.profile.lanterns.pet.hats || []).includes('party') }; });
+    ok(days.kept === 2 && days.fresh, `${tag}: a missed day takes no stamp away; a new adventure today ${JSON.stringify(days)}`);
+    ok(days.told, `${tag}: Grandpa Owl remembers yesterday's adventure`);
+    ok(days.chests === 1 && days.stamps === 0 && days.hat, `${tag}: seven stamps open the week chest: a hat ${JSON.stringify(days)}`);
+    // the Adventures tab: today's on top, the rest behind "More adventures"; the switch off: as before
+    await P.page.evaluate(() => __sv.openPad(0, 'log')); await P.page.waitForTimeout(500);
+    const tab = await P.page.evaluate(() => ({ log: !!document.querySelector('.pad-body .adv-log'), more: !!document.querySelector('.adv-morebtn'), hidden: !!document.querySelector('.adv-more[hidden]') }));
+    ok(tab.log && tab.more && tab.hidden, `${tag}: Adventures tab ${JSON.stringify(tab)}`);
+    await P.page.screenshot({ path: `out/dailyadventure-tab-${w}.png` });
+    await P.page.click('.adv-morebtn'); ok(await P.page.evaluate(() => !document.querySelector('.adv-more[hidden]')), `${tag}: More adventures opens the older lists`);
+    await P.page.evaluate(async () => { (await import('/js/state.js')).settings.dailyAdventure = false; document.querySelector('.modal.pad .x').click(); });
+    await P.page.waitForTimeout(500); await P.page.evaluate(() => __sv.openPad(0, 'log')); await P.page.waitForTimeout(500);
+    const off = await P.page.evaluate(() => ({ tab: !!document.querySelector('.adv-log, .adv-morebtn'), card: !document.querySelector('.hud .advcard')?.hidden }));
+    ok(!off.tab && !off.card, `${tag}: switched off in Grown-ups: no card, the tab as before ${JSON.stringify(off)}`);
+    await P.page.evaluate(async () => { (await import('/js/state.js')).settings.dailyAdventure = true; });
+    ok(!P.errors.length, `${tag}: ${P.errors.join(' | ')}`);
+    await P.ctx.close();
+  }
+});
+await check('r79bagtiles', async () => {
+  // (r79 A1, A2) Bag tiles on a phone, the owner's phone, a computer and with the biggest text: every picture centred in
+  // its tile and clear of its name, every name two lines at most; the voices note never shows over an open Pad
+  const rows = [];
+  for (const [dev, w, h, touch, textSize] of [['phone', 390, 844, true, 0], ['bigphone', 430, 932, true, 2], ['computer', 1280, 800, false, 0]]) {
+    const P = await open(b, { w, h, touch, settings: { textSize } }); await clear(P.page);
+    await P.page.evaluate(() => { const p = __sv.heroes[0].profile; p.bought = { h_tauhu: 1, h_traicay: 1 }; p.inv = { ...(p.inv || {}), ruby: 1, crystal: 1, fossil: 1, bone: 2, pebble: 4, apple: 3 }; });
+    await P.page.evaluate(() => { const n = document.createElement('div'); n.className = 'packbar'; n.innerHTML = '<span>Getting the voices ready… 6%</span><i><b></b></i>'; document.body.appendChild(n); });
+    await P.page.evaluate(() => __sv.openPad(0, 'bag')); await P.page.waitForSelector('.pad .slot'); await P.page.waitForTimeout(900);
+    const r = await P.page.evaluate(() => {
+      const bad = [];
+      for (const s of document.querySelectorAll('.pad .slot')) {
+        const pic = s.querySelector(':scope > span:not(.sw), :scope > svg, :scope > .kpic, :scope > .art'), lab = s.querySelector(':scope > small');
+        if (!pic || !lab) continue;
+        const t = s.getBoundingClientRect(), a = pic.getBoundingClientRect(), l = lab.getBoundingClientRect(), name = lab.textContent.trim().slice(0, 24);
+        // the drawn shape too (a picture can spill past its box)
+        let drawnBottom = a.bottom; const g = pic.tagName === 'svg' ? pic : pic.querySelector('svg');
+        try { if (g && g.getBBox) { const bb = g.getBBox(), m = g.getScreenCTM(); drawnBottom = Math.max(drawnBottom, (bb.y + bb.height) * m.d + m.f); } } catch (e) { }
+        const lines = Math.round(l.height / parseFloat(getComputedStyle(lab).lineHeight));
+        if (drawnBottom > l.top + 1) bad.push(name + ': picture over name by ' + Math.round(drawnBottom - l.top) + ' px');
+        if (lines > 2) bad.push(name + ': ' + lines + ' lines');
+        if (Math.abs((a.left + a.right) / 2 - (t.left + t.right) / 2) > 2) bad.push(name + ': picture off centre');
+        if (l.bottom > t.bottom + 1) bad.push(name + ': name spills out of its tile');
+      }
+      const pb = document.querySelector('.packbar'), pr = pb.getBoundingClientRect(), top = document.elementFromPoint(pr.left + pr.width / 2, pr.top + pr.height / 2);
+      return { tiles: document.querySelectorAll('.pad .slot').length, bad, packbarOver: !!(top && top.closest('.packbar')) || getComputedStyle(pb).opacity !== '0' };
+    });
+    rows.push(dev + ': ' + r.tiles + ' tiles');
+    ok(r.tiles >= 7, dev + ': the seeded Bag should show at least 7 tiles, got ' + r.tiles);
+    ok(!r.bad.length, dev + ': ' + r.bad.join('; '));
+    ok(!r.packbarOver, dev + ': the voices note shows over the open Pad');
+    ok(!P.errors.length, P.errors.join(' | ')); await P.ctx.close();
+  }
+  return rows.join(', ') + '; pictures centred and clear of names, names at most two lines, voices note hidden behind the Pad';
+});
+await check('r79albumwords', async () => {
+  // (r79 A3) Album "Words I learned": each row holds its picture and its hear-again button (44 px or more) inside it, lined
+  // up, with no empty white circles (a drawn picture inside the row must not get the row's own white box)
+  const rows = [];
+  for (const [dev, w, h, touch] of [['phone', 390, 844, true], ['computer', 1280, 800, false]]) {
+    const P = await open(b, { w, h, touch }); await clear(P.page);
+    await P.page.evaluate(() => { __sv.heroes[0].profile.words = { 'vn:bowl': true, 'vn:pineapple': true, 'vn:corn': true, "au:G'day": true, 'au:Mate': true, 'vs:Hết sảy': true }; __sv.openPad(0, 'album'); });
+    await P.page.waitForSelector('.wordlist .wl-row'); await P.page.evaluate(() => document.querySelector('.wordlist').scrollIntoView({ block: 'center' })); await P.page.waitForTimeout(700);
+    const r = await P.page.evaluate(() => [...document.querySelectorAll('.wordlist .wl-row')].map(row => {
+      const R = row.getBoundingClientRect(), bad = [], name = row.textContent.trim().slice(0, 20);
+      const inside = (e, what) => { const a = e.getBoundingClientRect(); if (a.top < R.top - 1 || a.bottom > R.bottom + 1 || a.left < R.left - 1 || a.right > R.right + 1) bad.push(name + ': ' + what + ' outside its row'); return a; };
+      const pic = row.querySelector('.wl-pic svg'), say = row.querySelector('.wl-say');
+      if (!pic) bad.push(name + ': no picture'); else { const a = inside(pic, 'picture'); if (Math.abs((a.top + a.bottom) / 2 - (R.top + R.bottom) / 2) > 4) bad.push(name + ': picture not lined up'); }
+      if (!say) bad.push(name + ': no hear button'); else { const a = inside(say, 'hear button'); if (Math.min(a.width, a.height) < 44) bad.push(name + ': hear button under 44 px'); }
+      for (const e of row.querySelectorAll('span, i')) { const cs = getComputedStyle(e); if (cs.backgroundColor !== 'rgba(0, 0, 0, 0)' || cs.boxShadow !== 'none') bad.push(name + ': a white box inside the row (' + e.className + ')'); }
+      return bad;
+    }));
+    await P.page.locator('.wordlist .wl-say').first().click();
+    rows.push(dev + ': ' + r.length + ' rows'); ok(r.length === 6, dev + ': 6 word rows expected, got ' + r.length); ok(!r.flat().length, dev + ': ' + r.flat().join('; '));
+    ok(!P.errors.length, P.errors.join(' | ')); await P.ctx.close();
+  }
+  return rows.join(', ') + '; pictures and 44 px hear buttons inside each row, lined up, no empty circles';
+});
+await check('r79hudtrays', async () => {
+  // (r79 A5-A8) the top buttons and the two trays, on two phones, a tablet and a computer: the Audio row opens in one row
+  // directly under the speaker (and the chat button beside it), each switch centred under a top button at their spacing; Big pictures and
+  // Trick sit level with the player card on a phone and never under the map; zoom in, zoom out and camera view open in one
+  // column just left of the View button, the middle one level with it (owner's drawing, 16 Oct); the View button is not the eye
+  const rows = [];
+  for (const [dev, w, h, touch] of [['phone', 390, 844, true], ['bigphone', 430, 932, true], ['tablet', 820, 1180, true], ['computer', 1280, 800, false]]) {
+    const P = await open(b, { w, h, touch }); await clear(P.page);
+    await P.page.evaluate(() => { const p = __sv.heroes[0].profile; p.lanterns = { ...(p.lanterns || {}), companion: 'dragon', pet: { feeds: 6, hats: [], fed: Math.floor((Date.now() + 10 * 3600e3) / 864e5) } }; });
+    await P.page.waitForTimeout(1500);
+    const bad = [];
+    const box = (sel, root = document) => { const e = [...root.querySelectorAll(sel)].find(x => !x.hidden && x.getClientRects().length); return e ? e.getBoundingClientRect().toJSON() : null; };
+    // A6: the chips beside the player card
+    const top = await P.page.evaluate(() => { const H = document.querySelector('.hud'), r = s => { const e = [...H.querySelectorAll(s)].find(x => !x.hidden && x.getClientRects().length); return e && e.getBoundingClientRect().toJSON(); };
+      return { small: H.classList.contains('small'), card: r('.pcard'), big: r('.simplesw'), chips: [...H.querySelectorAll('.kidrow .chip')].filter(x => !x.hidden && x.getClientRects().length).map(x => x.getBoundingClientRect().toJSON()), map: r('.mini-wrap') }; });
+    if (top.small) {
+      const mid = b => (b.top + b.bottom) / 2, c = mid(top.card);
+      for (const x of [top.big, ...top.chips]) { if (Math.abs(mid(x) - c) > 3) bad.push('a top button is not level with the player card (' + Math.round(mid(x) - c) + ' px)'); if (x.right > top.map.left - 2 && x.top < top.map.bottom) bad.push('a top button runs under the map'); }
+      if (!top.chips.length) bad.push('the Trick chip is missing');
+    }
+    // A5: the Audio row
+    await P.page.locator('.hud .dk.snd').click(); await P.page.waitForSelector('.audio-tray'); await P.page.waitForTimeout(300);
+    const au = await P.page.evaluate(() => { const r = e => e.getBoundingClientRect().toJSON(), snd = document.querySelector('.hud .dk.snd'), chat = [...snd.parentElement.querySelectorAll(':scope > .dk')].filter(b => b !== snd && !b.hidden && b.getClientRects().length).map(r).filter(b => Math.abs(b.top - r(snd).top) < 8 && Math.min(Math.abs(b.left - r(snd).right), Math.abs(r(snd).left - b.right)) < 24);
+      return { snd: r(snd), mates: chat, sw: [...document.querySelectorAll('.audio-tray .ss-sw > span')].map(r), sideways: document.scrollingElement.scrollWidth > innerWidth + 1 || scrollX !== 0 }; });
+    if (au.sideways) bad.push('the open Audio row makes the page scroll sideways');
+    const rowR = Math.max(au.snd.right, ...au.mates.map(m => m.right)), rowB = Math.max(au.snd.bottom, ...au.mates.map(m => m.bottom));
+    if (au.sw.length !== 3) bad.push('the Audio row should hold 3 switches'); else {
+      if (au.sw.some(s => Math.abs(s.top - au.sw[0].top) > 1)) bad.push('the Audio switches are not in one row');
+      if (Math.min(...au.sw.map(s => s.top)) < rowB) bad.push('the Audio row is not under the speaker');
+      // (owner, 16 Oct, second drawing) each switch sits in a column with a top button: the last under the last top button,
+      // the one before under the one before, at the same spacing
+      const cx = b => (b.left + b.right) / 2, tops = [au.snd, ...au.mates].sort((p, q) => p.left - q.left).map(cx), sws = au.sw.map(cx).sort((p, q) => p - q);
+      for (let k = 1; k <= tops.length; k++) { const d = sws[sws.length - k] - tops[tops.length - k]; if (Math.abs(d) > 2) bad.push('an Audio switch is not centred under its top button (' + Math.round(d) + ' px)'); }
+      if (tops.length > 1 && Math.abs((sws[2] - sws[1]) - (tops[1] - tops[0])) > 2) bad.push('the Audio switches are not spaced like the top buttons');
+      const xs = au.sw.map(s => s.left).sort((a, c) => a - c); if (Math.abs((xs[1] - xs[0]) - (xs[2] - xs[1])) > 1) bad.push('the Audio switches are not evenly spaced');
+    }
+    await P.page.keyboard.press('Escape'); await P.page.waitForTimeout(200);
+    // A7, A8: the View column
+    await P.page.locator('.hud .z-tray').click(); await P.page.waitForTimeout(400);
+    const vw = await P.page.evaluate(() => { const r = e => e.getBoundingClientRect().toJSON(), t = document.querySelector('.hud .z-tray');
+      return { tray: r(t), btns: [...document.querySelectorAll('.hud .zoomer .ztray > button')].filter(x => x.getClientRects().length).map(r), snd: r(document.querySelector('.hud .dk.snd')), eye: /M5 24c5-9/.test(t.innerHTML) }; });
+    if (vw.eye) bad.push('the View button still shows the eye');
+    if (vw.btns.length < 3) bad.push('the View column should hold zoom in, zoom out and camera view'); else for (const x of vw.btns) {
+      if (x.right > vw.tray.left - 2) bad.push('a View button is not to the left of the View button');
+      if (Math.abs((x.left + x.right) / 2 - (vw.btns[0].left + vw.btns[0].right) / 2) > 1) bad.push('the View buttons are not in one straight column');
+      if (x.top < vw.snd.bottom && x.bottom > vw.snd.top && x.left < vw.snd.right && x.right > vw.snd.left) bad.push('the View column covers the speaker');
+      if (x.top < 0) bad.push('the View column goes off the top');
+    }
+    // (owner's drawing) the middle one level with the View button, one above and one below
+    if (vw.btns.length >= 3) { const mid = vw.btns[1], cy = b => (b.top + b.bottom) / 2; if (Math.abs(cy(mid) - cy(vw.tray)) > 2) bad.push('the middle View button is not level with the View button (' + Math.round(cy(mid) - cy(vw.tray)) + ' px)'); if (!(vw.btns[0].bottom <= vw.tray.top + vw.tray.height / 2 && vw.btns[2].top >= vw.tray.top + vw.tray.height / 2)) bad.push('the View column is not one above and one below'); }
+    fs.mkdirSync('out/r79', { recursive: true }); await P.page.screenshot({ path: `out/r79/hudtrays-${dev}.png` });
+    rows.push(dev); ok(!bad.length, dev + ': ' + [...new Set(bad)].join('; '));
+    ok(!P.errors.length, P.errors.join(' | ')); await P.ctx.close();
+  }
+  return rows.join(', ') + ': Audio switches each centred under a top button, at their spacing; Big pictures and Trick level with the card; View column left of the camera-icon View button, the middle one level with it';
+});
+await check('r79clothes', async () => {
+  // (r79 points 6, 7, 12, 14, 17, 18 and A4; owner 16 Oct AEDT: "boy wears boys clothes ... other genders clothes for
+  // gifting only") on a phone and a computer, as a little girl with clothes from an older save: the mirror shows a big
+  // picture of her, a tab for each kind, only her own set's clothes, tap to wear and tap again to take off, no Remove;
+  // Done goes back to the Shop at the same scroll; the Shop marks the boys' collection as gifts; a gift box in the Bag goes
+  // to her brother; "Eat it?" is one small row; every Bag thing explains itself; a game from the Pad's Games page closes
+  // back to that page
+  const rows = [];
+  for (const [dev, w, h, touch] of [['phone', 390, 844, true], ['computer', 1280, 800, false]]) {
+    const P = await open(b, { w, h, touch }); await clear(P.page); const bad = [];
+    await P.page.evaluate(async () => { const p = __sv.heroes[0].profile, C = await import('/js/content/shop.js');
+      p.owned = { ...(p.owned || {}), clothes: ['bow', 'dress_yellow', 'jeans', 'sunhat', 'cap', 'pearls'], gifts: ['cape'] }; p.look.hat = 'bow'; C.adoptWorn(p);
+      p.bought = { h_tauhu: 1 }; p.inv = { ...(p.inv || {}), crystal: 1 }; p.levels = { ...(p.levels || {}), counting: 1 }; });
+    // the shop in the Pad, scrolled; then the mirror
+    await P.page.evaluate(() => __sv.openPad(0, 'shop')); await P.page.waitForSelector('[data-go="wardrobe"]');
+    const y0 = await P.page.evaluate(() => { const s = document.querySelector('.pad .pad-body'); s.scrollTop = 300; return s.scrollTop; });
+    await P.page.evaluate(() => document.querySelector('[data-set="b"]').click()); await P.page.waitForTimeout(300);
+    const giftTiles = await P.page.evaluate(() => [...document.querySelectorAll('.kitem')].map(k => k.classList.contains('gift')));
+    if (!giftTiles.length || !giftTiles.every(Boolean)) bad.push('the boys\' collection is not marked as gifts for a girl');
+    await P.page.evaluate(() => document.querySelector('[data-set="g"]').click()); await P.page.waitForTimeout(200);
+    await P.page.evaluate(() => { const s = document.querySelector('.pad .pad-body'); s.scrollTop = 300; document.querySelector('[data-go="wardrobe"]').click(); });
+    await P.page.waitForSelector('.mirror .wbig'); await P.page.waitForTimeout(400);
+    const mr = await P.page.evaluate(() => { const M = document.querySelector('.mirror'), img = M.querySelector('.wbig').getBoundingClientRect();
+      return { img: img.width, tabs: M.querySelectorAll('[data-wtab]').length, remove: /\bRemove\b|Bỏ ra/.test(M.textContent), items: [...M.querySelectorAll('.wit')].map(b => b.dataset.v) }; });
+    if (mr.img < 150) bad.push('the mirror picture is small (' + Math.round(mr.img) + ' px)'); if (mr.tabs !== 6) bad.push('the mirror should have 6 tabs'); if (mr.remove) bad.push('the mirror still says Remove');
+    if (mr.items.includes('cap')) bad.push('the boys\' cap shows in her mirror'); if (!mr.items.includes('bow')) bad.push('her bow is missing from the mirror');
+    const t = await P.page.evaluate(async () => { const p = __sv.heroes[0].profile, w = ms => new Promise(r => setTimeout(r, ms)), pick = () => [...document.querySelectorAll('.mirror .wit')].find(b => b.dataset.v === 'sunhat');
+      pick().click(); await w(200); const on = p.look.hat, tick = !!pick().querySelector('.ktick'); pick().click(); await w(200); const off = p.look.hat;
+      document.querySelector('.mirror [data-wtab="bottom"]').click(); await w(200); const bottoms = [...document.querySelectorAll('.mirror .wit')].map(b => b.dataset.v);
+      return { on, tick, off, bottoms }; });
+    if (t.on !== 'sunhat' || !t.tick) bad.push('tapping the sun hat did not put it on'); if (t.off !== 'none') bad.push('tapping it again did not take it off');
+    if (!t.bottoms.includes('jeans_g') || t.bottoms.includes('jeans')) bad.push('her old jeans did not become the girls\' version (' + t.bottoms + ')');
+    await P.page.evaluate(() => document.querySelector('.mirror .x').click()); await P.page.waitForTimeout(400);
+    const y1 = await P.page.evaluate(() => ({ y: document.querySelector('.pad .pad-body').scrollTop, shop: !!document.querySelector('.pad [data-go="wardrobe"]') }));
+    if (!y1.shop) bad.push('Done did not go back to the Shop in the Pad'); if (Math.abs(y1.y - y0) > 6) bad.push('Done did not keep the Shop\'s place (' + y1.y + ' vs ' + y0 + ')');
+    // the Bag: a gift box to her brother, the small "Eat it?", and a treasure that explains itself
+    await P.page.evaluate(() => document.querySelector('.pad-tabs [data-t="bag"]').click()); await P.page.waitForSelector('[data-gift]');
+    await P.page.evaluate(() => document.querySelector('[data-gift="cape"]').click()); await P.page.waitForSelector('.bh-give');
+    await P.page.evaluate(() => document.querySelector('.bh-give').click()); await P.page.waitForTimeout(400);
+    const gv = await P.page.evaluate(async () => { const S = await import('/js/state.js'), bin = S.profiles.find(q => q.id === 'kbin'); return { mine: __sv.heroes[0].profile.owned.gifts, his: bin.owned.clothes, box: !!document.querySelector('[data-gift="cape"]') }; });
+    if (gv.mine.includes('cape') || !gv.his.includes('cape') || gv.box || !gv.mine.includes('cap')) bad.push('the gift box did not go to her brother: ' + JSON.stringify(gv));
+    await P.page.evaluate(() => document.querySelector('[data-snack]').click()); await P.page.waitForSelector('.bag-ask');
+    const ask = await P.page.evaluate(() => { const a = document.querySelector('.bag-ask'), r = a.getBoundingClientRect(); return { h: r.height, btn: Math.min(...[...a.querySelectorAll('button')].map(b => b.getBoundingClientRect().height)), text: a.textContent }; });
+    if (ask.h > 96) bad.push('"Eat it?" is not small (' + Math.round(ask.h) + ' px tall)'); if (ask.btn < 64) bad.push('"Eat it?" buttons under 64 px for a little one'); if (!/Eat it\?/.test(ask.text)) bad.push('"Eat it?" is not asked');
+    await P.page.evaluate(() => document.querySelector('.bag-ask .bh-close').click());
+    const helps = await P.page.evaluate(async () => { const out = [], w = ms => new Promise(r => setTimeout(r, ms));
+      for (const sel of ['[data-sellgem]', '[data-wear]', '[data-unwear]']) { const b = document.querySelector(sel); if (!b) { out.push(sel + ': missing'); continue; } b.click(); await w(150); const c = document.querySelector('.bag-help p'); if (!c || !c.textContent.trim() || /Keep this item in your Backpack/.test(c.textContent)) out.push(sel + ': no explanation'); document.querySelector('.bag-help .bh-close')?.click(); await w(80); }
+      return out; });
+    bad.push(...helps);
+    // point 7: a game from the Pad's Games page closes back to that page
+    await P.page.evaluate(() => document.querySelector('.pad-tabs [data-t="games"]').click()); await P.page.waitForSelector('.gcard:not(.locked)');
+    await P.page.evaluate(() => document.querySelector('.gcard:not(.locked)').click()); await P.page.waitForSelector('.gl .gl-x', { timeout: 30000 });
+    await P.page.waitForTimeout(500); await P.page.evaluate(() => document.querySelector('.gl .gl-x').click());
+    const back = await P.page.waitForFunction(() => document.querySelector('.pad .gamelist') ? true : null, null, { timeout: 15000 }).then(() => true).catch(() => false);
+    if (!back) bad.push('closing a game from the Pad\'s Games page did not go back to it');
+    fs.mkdirSync('out/r79', { recursive: true }); await P.page.screenshot({ path: `out/r79/clothes-${dev}.png` });
+    rows.push(dev); ok(!bad.length, dev + ': ' + bad.join('; ')); ok(!P.errors.length, P.errors.join(' | ')); await P.ctx.close();
+  }
+  return rows.join(', ') + ': mirror (big picture, 6 tabs, own set only, tap on/off, no Remove, Done keeps the Shop\'s place); boys\' collection marked as gifts; gift box given to a brother; small "Eat it?"; Bag things explain themselves; Pad game returns to the Pad';
+});
+await check('r79learning', async () => {
+  // r79 learning (chat 2)
+  // (r79 learning, chat 2, owner 16 Oct AEDT) the check `r79learning` (called from tests/run.mjs):
+  //  games  the four talk-and-touch games (Say It Find It, Market Counting, How Do They Feel?, First Sound Hunt) at
+  //         under-5, Easy, Medium and Hard, in English and Vietnamese, on a phone: played to the end with one wrong tap
+  //         each; never a single choice; every wrong tap says why (not just "Try again"); buttons 64 px for under-5s and
+  //         44 px otherwise; nothing off screen; the levels differ
+  //  E1     three right in a row in a learning game: one small reward banner under the top bar, never two, never over the
+  //         puzzle, and no old stacked "Combo" banner
+  //  E3     on a computer "Hear again" and "Ready to try" have 18 to 20 px text
+  //  E4     "You did it!" has a dark layer behind it (dark, blurred background; the words on a dark band)
+  //  I1     three right in a row make the next round one step harder; two misses one step easier; at most one step from
+  //         the start; under-5s never change; Flower Path's step carries to "Play again" of the same game only
+  //  I2     the rule a child missed most comes back first; a miss counts up and a clean answer counts down; old saves of
+  //         any shape get a clean record; the record is kept after a reload
+  //  I4     finishing Hard in a reasoning game gives its skill sticker once (not for under-5s); the sticker book draws it
+  //  G2     under-5s: question line hidden (space kept), bigger pictures, and a hand shows the first move the first time
+  //         only; bigger children see neither
+  //  mic    Say It, Find It: without speech recognition there is no microphone button and tapping works; with it, saying
+  //         the word counts like a tap, a refused microphone hides the button, and nothing breaks
+  const NEW = ['sayfind', 'marketcount', 'feelings', 'soundhunt'];
+  const MODES = [['under-5', true, 1], ['Easy', false, 1], ['Medium', false, 2], ['Hard', false, 3]];
+  const VI_MARK = /[ăâđêôơưàáảãạèéẻẽẹìíỉĩịòóỏõọùúủũụỳýỷỹỵ]/i;
+  const EN_WORDS = /\b(the|is|are|find|that|put|where|yes|we|need|take|add|feels|you|picture|starts|ends|basket|well done)\b/i;
+  const openGame = (P, id, little, level, extra = {}) => P.page.evaluate(async ({ id, little, level, extra }) => { const F = await import('/js/games/frame.js'); __sv.paused = true; window.__r79 = F.openGame(id, { players: [__sv.heroes[0].profile], little, level, ...extra }); }, { id, little, level, extra });
+  const finishWin = async P => { await P.page.waitForTimeout(650); await P.page.locator('.gl-win p').first().click(); await P.page.waitForSelector('.gl', { state: 'detached' }); return P.page.evaluate(() => window.__r79); };
+  const leave = async P => { await P.page.locator('.gl-x').click(); await P.page.waitForSelector('.gl', { state: 'detached' }); };
+  // play the open game through the auto play hooks with real taps: one wrong tap first (when there is a wrong choice),
+  // then right ones; measures every question on the way
+  const PLAY = async ({ wrongs = 1, rightsOnly = false } = {}) => {
+    const F = await import('/js/games/frame.js'), wait = ms => new Promise(res => setTimeout(res, ms));
+    const help = () => document.querySelector('.gl-help').textContent.trim();
+    let wrongLeft = rightsOnly ? 0 : wrongs, asks = 0, minChoices = 99, maxChoices = 0, small = [], off = [], askHelp = new Set(), wrongHelp = [], banners = 0, stacked = 0, rounds = [];
+    const until = Date.now() + 60000;
+    while (Date.now() < until && !document.querySelector('.gl-win')) {
+      banners = Math.max(banners, document.querySelectorAll('.gl-reward').length); stacked += document.querySelectorAll('.gl-combo').length;
+      const ask = F.playWatch.ask;
+      if (ask) {
+        const live = ask.els.filter(b => b.isConnected && !b.disabled && b.getClientRects().length);
+        if (live.length) {
+          asks++; minChoices = Math.min(minChoices, live.length); maxChoices = Math.max(maxChoices, live.length); askHelp.add(help());
+          rounds.push({ tier: +document.querySelector('.gl').dataset.tier, choices: live.length, examples: document.querySelectorAll('.gl-stage .seq .seq-item:not(.q)').length, stage: document.querySelectorAll('.gl-stage .choices .choice').length });
+          const minSize = document.querySelector('.gl.little') ? 63 : 43.5;
+          for (const x of document.querySelectorAll('.gl-stage button')) { if (x.disabled || !x.getClientRects().length) continue; const q = x.getBoundingClientRect(); if (Math.min(q.width, q.height) < minSize) small.push(x.className + ' ' + Math.round(q.width) + 'x' + Math.round(q.height)); if (q.left < -1 || q.right > innerWidth + 1) off.push(x.className); }
+          // (in Market Counting moving a fruit is a move that is counted aloud, not an answer: the answer is "That's it!")
+          const bad = live.find(b => !ask.check(b) && !b.classList.contains('mc-fruit')) || live.find(b => !ask.check(b));
+          if (wrongLeft > 0 && bad) { wrongLeft--; bad.click(); await wait(150); wrongHelp.push(help()); }
+          else live.find(ask.check)?.click();
+        }
+      } else { const next = F.playWatch.plan?.(); if (next && !next.disabled) next.click(); }
+      await wait(70);
+    }
+    return { won: !!document.querySelector('.gl-win'), asks, minChoices, maxChoices, wrongHelp, askHelp: [...askHelp], small: [...new Set(small)], off: [...new Set(off)], sideways: document.scrollingElement.scrollWidth > innerWidth + 1, banners, stacked, rounds };
+  };
+
+  const notes = [], rows = [];
+  fs.mkdirSync('out/r79-learning', { recursive: true });
+
+  // ---------- the four new games, every level, both languages ----------
+  for (const lang of ['en', 'vi']) {
+    const P = await open(b, { w: 390, h: 844, touch: true, lang }); await clear(P.page);
+    for (const id of NEW) for (const [mode, little, level] of MODES) {
+      await openGame(P, id, little, level); await P.page.waitForSelector('.gl');
+      const r = await P.page.evaluate(PLAY, { wrongs: 1 });
+      await P.page.screenshot({ path: `out/r79-learning/${id}-${lang}-${mode}.png` });
+      const row = { id, lang, mode, ...r, rounds: undefined, first: r.rounds[0] }; rows.push(row); const say = JSON.stringify(row);
+      ok(r.won && r.asks > 1, 'did not finish: ' + say);
+      ok(r.minChoices >= 2, 'a single-choice question: ' + say);
+      ok(r.wrongHelp.length && r.wrongHelp.every(t => t && !/^(Try again|Thử lại)/i.test(t)), 'a wrong tap must say why: ' + say);
+      ok(!r.small.length && !r.off.length && !r.sideways, 'small or off-screen buttons, or sideways scroll: ' + say);
+      ok(r.banners <= 1 && !r.stacked, 'more than one reward banner: ' + say);
+      // Vietnamese: the question has Vietnamese letters, and no line has English words (short Vietnamese words such as
+      // "cua", "kem" or a counted "Hai" have no accent marks, so the other lines are checked for English instead)
+      if (lang === 'vi') ok(VI_MARK.test(r.askHelp[0]) && [...r.askHelp, ...r.wrongHelp].every(t => !EN_WORDS.test(t)), 'English words in a Vietnamese game: ' + say);
+      ok((await finishWin(P)).won, 'the reward must finish the game: ' + say);
+    }
+    ok(!P.errors.length, P.errors.join('\n')); await P.ctx.close();
+  }
+  // the levels differ: more pictures from under-5 to Easy to Medium; Hard asks for something harder
+  for (const lang of ['en', 'vi']) {
+    const one = (id, mode) => rows.find(x => x.id === id && x.mode === mode && x.lang === lang);
+    ok(one('sayfind', 'under-5').first.choices === 2 && one('sayfind', 'Easy').first.choices === 4 && one('sayfind', 'Medium').first.choices === 6, 'Say It, Find It: 2, 4, 6 pictures: ' + lang);
+    ok(one('sayfind', 'Hard').askHelp.some(t => /big|little| to | nhỏ/.test(t)), 'Say It, Find It Hard asks with two words: ' + JSON.stringify(one('sayfind', 'Hard').askHelp));
+    ok(one('feelings', 'under-5').first.choices === 2 && one('feelings', 'Easy').first.choices === 4, 'How Do They Feel?: 2 then 4 faces: ' + lang);
+    ok(one('feelings', 'Hard').askHelp.some(t => /What could you do|Con có thể làm gì/.test(t)), 'How Do They Feel? Hard asks what could help');
+    ok(one('soundhunt', 'under-5').first.choices === 2 && one('soundhunt', 'Easy').first.choices === 4 && one('soundhunt', 'Medium').first.choices === 6, 'First Sound Hunt: 2, 4, 6 pictures: ' + lang);
+    ok(one('soundhunt', 'Hard').askHelp.some(t => lang === 'vi' ? /dấu|thanh/.test(t) : /ends like/.test(t)), 'First Sound Hunt Hard: end sounds or tones: ' + JSON.stringify(one('soundhunt', 'Hard').askHelp));
+    ok(one('marketcount', 'Hard').askHelp.some(t => /Add 2 more|Take 1 away|thêm hai|Lấy ra một/.test(t)), 'Market Counting Hard: add or take away');
+  }
+  notes.push(`games ${rows.length} runs`);
+
+  const P = await open(b, { w: 390, h: 844, touch: true, lang: 'en' }); await clear(P.page);
+  const prof = f => P.page.evaluate(f);
+  // ---------- E1: one small banner under the top bar, not over the puzzle ----------
+  await openGame(P, 'rulefinder', false, 1); await P.page.waitForSelector('.gl-stage .choice');
+  const e1 = await P.page.evaluate(async () => {
+    const F = await import('/js/games/frame.js'), wait = ms => new Promise(r => setTimeout(r, ms)); let k = 0, most = 0, over = [], old = 0;
+    while (k < 3) { const ask = F.playWatch.ask; if (ask) { const e = ask.els.find(x => !x.disabled && ask.check(x)); if (e) { e.click(); k++; } } await wait(450); }
+    for (let i = 0; i < 12; i++) {
+      const bs = [...document.querySelectorAll('.gl-reward')]; most = Math.max(most, bs.length); old += document.querySelectorAll('.gl-combo').length;
+      const head = document.querySelector('.gl-head').getBoundingClientRect(), keep = [...document.querySelectorAll('.gl-stage .seq, .gl-stage .choices, .gl-help, .gl-head button')].map(x => x.getBoundingClientRect());
+      for (const b of bs) { const r = b.getBoundingClientRect(); if (r.top < head.top - 1 || r.bottom > head.bottom + 1 || keep.some(p => r.bottom > p.top && r.top < p.bottom && r.right > p.left && r.left < p.right) || r.height > 40) over.push(Math.round(r.top) + '/' + Math.round(r.height)); }
+      await wait(60);
+    }
+    return { most, over: [...new Set(over)], old };
+  });
+  ok(e1.most === 1 && !e1.over.length && !e1.old, 'E1 reward banner: ' + JSON.stringify(e1));
+  await P.page.screenshot({ path: 'out/r79-learning/e1-banner.png' }); await leave(P);
+
+  // ---------- E4: the dark layer behind "You did it!" ----------
+  await openGame(P, 'patternpicnic', true, 1); await P.page.waitForSelector('.gl');
+  await P.page.evaluate(PLAY, { rightsOnly: true }); await P.page.waitForSelector('.gl-win'); await P.page.waitForTimeout(1700);
+  const e4 = await P.page.evaluate(() => { const w = getComputedStyle(document.querySelector('.gl-win')), p = getComputedStyle(document.querySelector('.gl-win > p')); const a = +(w.backgroundColor.match(/[\d.]+\)$/) || ['1'])[0].replace(')', ''); return { alpha: a, blur: /blur/.test(w.backdropFilter || w.webkitBackdropFilter || ''), band: p.backgroundColor }; });
+  ok(e4.alpha >= .75 && e4.blur && e4.band !== 'rgba(0, 0, 0, 0)', 'E4 win layer: ' + JSON.stringify(e4));
+  await P.page.screenshot({ path: 'out/r79-learning/e4-win.png' }); await finishWin(P);
+
+  // ---------- I1: the level follows the child ----------
+  // Easy, all right: rounds 1-3 Easy (2 examples), round 4 one step harder (3 examples), never Hard (4 choices)
+  await openGame(P, 'rulefinder', false, 1); await P.page.waitForSelector('.gl');
+  const up = await P.page.evaluate(PLAY, { rightsOnly: true }); await finishWin(P);
+  const ex = up.rounds.map(r => r.tier);
+  ok(ex.join('') === '1112' && up.rounds.at(-1).examples === 3 && up.maxChoices <= 3, 'I1 three right in a row: one step harder, at most one step: ' + JSON.stringify(up.rounds));
+  // Medium, two misses in round 1: round 2 one step easier (2 examples)
+  await openGame(P, 'rulefinder', false, 2); await P.page.waitForSelector('.gl');
+  const down = await P.page.evaluate(PLAY, { wrongs: 2 }); await finishWin(P);
+  const dEx = down.rounds.map(r => r.tier).join('');
+  ok(/^2+1+2*$/.test(dEx) && down.rounds.every(r => r.tier >= 1), 'I1 two misses: one step easier: ' + JSON.stringify(down.rounds) + dEx);
+  // under-5: always 2 choices, however well they do
+  await openGame(P, 'rulefinder', true, 1); await P.page.waitForSelector('.gl');
+  const u5 = await P.page.evaluate(PLAY, { rightsOnly: true }); await finishWin(P);
+  ok(u5.maxChoices === 2 && u5.minChoices === 2 && u5.rounds.every(r => r.tier === 0), 'I1 under-5s stay at their level: ' + JSON.stringify(u5.rounds));
+  // Flower Path (one board): the step carries to "Play again" of the same game, and to nothing else
+  // dead ends: flower squares (not the start) touching only one other flower or the flag (the path never touches itself)
+  const deadEnds = () => P.page.evaluate(() => { const cells = [...document.querySelector('.think-path').children], n = Math.round(Math.sqrt(cells.length)), on = i => i >= 0 && i < cells.length && /flower|flag/i.test(cells[i].getAttribute('aria-label'));
+    return cells.filter((c, i) => i > 0 && /flower/i.test(c.getAttribute('aria-label')) && [i - n, i + n, i % n ? i - 1 : -1, (i + 1) % n ? i + 1 : -1].filter(on).length === 1).length; });
+  await openGame(P, 'steppingpath', false, 1); await P.page.waitForSelector('.think-path');
+  const flowersEasy = await deadEnds();
+  await P.page.evaluate(PLAY, { rightsOnly: true }); await P.page.waitForTimeout(1800);
+  await P.page.locator('.gl-nx[data-n="again"]').click(); await P.page.waitForSelector('.gl', { state: 'detached' });
+  const againRes = await P.page.evaluate(() => window.__r79); ok(againRes.next === 'again', 'Play again result: ' + JSON.stringify(againRes));
+  await openGame(P, 'steppingpath', false, 1); await P.page.waitForSelector('.think-path');
+  const carried = { size: await P.page.evaluate(() => Math.round(Math.sqrt(document.querySelector('.think-path').children.length))), deadEnds: await deadEnds() };
+  await leave(P);
+  await openGame(P, 'steppingpath', false, 1); await P.page.waitForSelector('.think-path');
+  const fresh = { size: await P.page.evaluate(() => Math.round(Math.sqrt(document.querySelector('.think-path').children.length))), deadEnds: await deadEnds() }; await leave(P);
+  ok(flowersEasy === 0 && carried.size === 4 && carried.deadEnds >= 1 && fresh.size === 4 && fresh.deadEnds === 0, 'I1 Flower Path: the step carries to Play again only: ' + JSON.stringify({ flowersEasy, carried, fresh }));
+  notes.push(`I1 Easy tiers ${ex.join('')}, Medium with two misses ${dEx}`);
+
+  // ---------- I2: the rule missed most comes back first ----------
+  await prof(() => { const p = __sv.heroes[0].profile; p.learn = { v: 1, miss: { rulefinder: { clothes: 2, fruit: 1 } }, seen: {} }; });
+  await openGame(P, 'rulefinder', false, 1); await P.page.waitForSelector('.gl');
+  const i2 = await P.page.evaluate(async () => {
+    const F = await import('/js/games/frame.js'), wait = ms => new Promise(r => setTimeout(r, ms));
+    while (!F.playWatch.ask) await wait(50);
+    const ask = F.playWatch.ask; ask.els.find(b => !ask.check(b)).click(); await wait(150);
+    return { help: document.querySelector('.gl-help').textContent, miss: JSON.parse(JSON.stringify(__sv.heroes[0].profile.learn.miss.rulefinder)) };
+  });
+  ok(/things to wear/.test(i2.help) && i2.miss.clothes === 3, 'I2 the missed rule comes first and counts up: ' + JSON.stringify(i2));
+  await leave(P);
+  // a clean answer counts it down
+  await prof(() => { __sv.heroes[0].profile.learn.miss.rulefinder = { clothes: 1 }; });
+  await openGame(P, 'rulefinder', false, 1); await P.page.waitForSelector('.gl');
+  await P.page.evaluate(PLAY, { rightsOnly: true }); await finishWin(P);
+  const after = await prof(() => __sv.heroes[0].profile.learn.miss.rulefinder || {});
+  ok(!after.clothes, 'I2 a clean answer counts the miss down: ' + JSON.stringify(after));
+  // old saves of any shape (stable saved data) and the record kept after a reload
+  const mig = await P.page.evaluate(async () => {
+    const S = await import('/js/state.js');
+    const a = S.normalizeProfile({ name: 'Old', stickers: ['🦄'], levels: { counting: 3 } });
+    const b2 = S.normalizeProfile({ name: 'Odd', learn: 'junk' });
+    const c = S.normalizeProfile({ name: 'Mixed', learn: { miss: { rulefinder: { fly: '2', red: -1, x: 'no' }, bad: [] }, seen: { feelings: true, x: 0 } } });
+    return { a: a.learn, kept: a.stickers.length === 1 && a.levels.counting === 3, b: b2.learn, c: c.learn };
+  });
+  ok(JSON.stringify(mig.a) === '{"v":1,"miss":{},"seen":{}}' && mig.kept && JSON.stringify(mig.b) === '{"v":1,"miss":{},"seen":{}}' && JSON.stringify(mig.c) === '{"v":1,"miss":{"rulefinder":{"fly":2}},"seen":{"feelings":1}}', 'I2 old saves: ' + JSON.stringify(mig));
+  await prof(async () => { __sv.heroes[0].profile.learn.miss.gardenorder = { 'Snow falls.': 2 }; (await import('/js/state.js')).saveProfiles(true); });
+  await P.page.waitForTimeout(300); await P.page.reload(); await P.page.waitForSelector('.screen.title', { timeout: 90000 });
+  const kept = await P.page.evaluate(async () => (await import('/js/state.js')).profiles[0].learn.miss.gardenorder);
+  ok(kept && kept['Snow falls.'] === 2, 'I2 the record is kept after a reload: ' + JSON.stringify(kept));
+  ok(!P.errors.length, P.errors.join('\n')); await P.ctx.close();
+
+  // ---------- I4: skill stickers ----------
+  const Q = await open(b, { w: 390, h: 844, touch: true, lang: 'vi' }); await clear(Q.page);
+  await Q.page.evaluate(() => { const p = __sv.heroes[0].profile; p.stickers = []; });
+  await openGame(Q, 'rulefinder', true, 3); await Q.page.waitForSelector('.gl'); await Q.page.evaluate(PLAY, { rightsOnly: true }); await Q.page.waitForSelector('.gl-win');
+  const littleSticker = await Q.page.evaluate(() => ({ shown: !!document.querySelector('.gl-skill'), has: __sv.heroes[0].profile.stickers.includes('skill:rulefinder') }));
+  await finishWin(Q);
+  ok(!littleSticker.shown && !littleSticker.has, 'I4 no skill sticker for under-5s: ' + JSON.stringify(littleSticker));
+  await openGame(Q, 'rulefinder', false, 3); await Q.page.waitForSelector('.gl'); await Q.page.evaluate(PLAY, { rightsOnly: true }); await Q.page.waitForSelector('.gl-win'); await Q.page.waitForTimeout(1700);
+  const won = await Q.page.evaluate(() => { const s = document.querySelector('.gl-skill'), r = s && s.getBoundingClientRect(); return { text: s && s.textContent.trim(), svg: !!(s && s.querySelector('svg')), inside: !!r && r.left >= 0 && r.right <= innerWidth && r.bottom <= innerHeight, n: __sv.heroes[0].profile.stickers.filter(x => x === 'skill:rulefinder').length }; });
+  await Q.page.screenshot({ path: 'out/r79-learning/i4-sticker-vi.png' }); await finishWin(Q);
+  ok(won.text && /Tìm quy luật/.test(won.text) && won.svg && won.inside && won.n === 1, 'I4 the sticker at Hard: ' + JSON.stringify(won));
+  await openGame(Q, 'rulefinder', false, 3); await Q.page.waitForSelector('.gl'); await Q.page.evaluate(PLAY, { rightsOnly: true }); await Q.page.waitForSelector('.gl-win');
+  const twice = await Q.page.evaluate(() => ({ shown: !!document.querySelector('.gl-skill'), n: __sv.heroes[0].profile.stickers.filter(x => x === 'skill:rulefinder').length })); await finishWin(Q);
+  ok(!twice.shown && twice.n === 1, 'I4 only once: ' + JSON.stringify(twice));
+  // every reasoning game has a drawn sticker, and the sticker book draws it (never the key as words)
+  const book = await Q.page.evaluate(async () => {
+    const A = await import('/js/art.js'), R = await import('/js/games/registry.js');
+    const drawn = Object.values(R.SKILLS).every(s => A.hasArt(s.key));
+    __sv.heroes[0].profile.stickers.push('skill:gardenorder'); __sv.openScrapbook(__sv.heroes[0]);
+    await new Promise(r => setTimeout(r, 400));
+    const tray = document.querySelector('.sb-tray'), btn = tray && tray.querySelector('[data-s="skill:rulefinder"]');
+    return { drawn, svg: !!(btn && btn.querySelector('svg')), words: /skill:/.test(tray ? tray.innerText : 'skill:'), label: btn && btn.getAttribute('aria-label'), size: btn ? Math.round(btn.getBoundingClientRect().width) : 0 };
+  });
+  ok(book.drawn && book.svg && !book.words && book.label === 'Tìm quy luật' && book.size >= 44, 'I4 sticker book: ' + JSON.stringify(book));
+  await Q.page.screenshot({ path: 'out/r79-learning/i4-scrapbook-vi.png' });
+  await Q.page.evaluate(() => document.querySelector('.modal.scrap .x, .scrap .x')?.click()); await Q.page.waitForTimeout(300);
+  ok(!Q.errors.length, Q.errors.join('\n')); await Q.ctx.close();
+
+  // ---------- G2: picture-only mode and the showing hand ----------
+  const R = await open(b, { w: 390, h: 844, touch: true, lang: 'en' }); await clear(R.page);
+  await R.page.evaluate(() => { __sv.heroes[0].profile.learn = { v: 1, miss: {}, seen: {} }; });
+  await openGame(R, 'gardenorder', true, 1); await R.page.waitForSelector('.gl-stage .choice'); await R.page.waitForTimeout(500);
+  const g2 = await R.page.evaluate(async () => {
+    const F = await import('/js/games/frame.js'), layer = document.querySelector('.gl'), help = document.querySelector('.gl-help'), hand = document.querySelector('.gl-hand');
+    const ask = F.playWatch.ask, right = ask && ask.els.find(ask.check), rr = right && right.getBoundingClientRect(), hr = hand && hand.getBoundingClientRect();
+    const choice = document.querySelector('.gl-stage .choice').getBoundingClientRect();
+    return { picOnly: layer.classList.contains('pic-only'), hidden: getComputedStyle(help).visibility === 'hidden', helpHeight: help.getBoundingClientRect().height, text: help.textContent.length,
+      hand: !!hand, onRight: !!(hr && rr && hr.left + 28 > rr.left - 4 && hr.left + 28 < rr.right + 4 && hr.top > rr.top - 30 && hr.top < rr.bottom), choice: Math.round(choice.width), seen: __sv.heroes[0].profile.learn.seen.gardenorder };
+  });
+  await R.page.screenshot({ path: 'out/r79-learning/g2-hand.png' }); await leave(R);
+  ok(g2.picOnly && g2.hidden && g2.helpHeight > 0 && g2.text > 0 && g2.hand && g2.onRight && g2.choice >= 112 && g2.seen === 1, 'G2 under-5 first time: ' + JSON.stringify(g2));
+  await openGame(R, 'gardenorder', true, 1); await R.page.waitForSelector('.gl-stage .choice'); await R.page.waitForTimeout(500);
+  const g2b = await R.page.evaluate(() => !!document.querySelector('.gl-hand')); await leave(R);
+  ok(!g2b, 'G2 the hand shows only the first time');
+  await openGame(R, 'rulefinder', false, 1); await R.page.waitForSelector('.gl-stage .choice'); await R.page.waitForTimeout(500);
+  const g2c = await R.page.evaluate(() => ({ picOnly: document.querySelector('.gl').classList.contains('pic-only'), hand: !!document.querySelector('.gl-hand'), help: getComputedStyle(document.querySelector('.gl-help')).visibility }));
+  await leave(R);
+  ok(!g2c.picOnly && !g2c.hand && g2c.help === 'visible', 'G2 bigger children: words and no hand: ' + JSON.stringify(g2c));
+  // Market Counting's first move is a fruit, shown by the hand too
+  await openGame(R, 'marketcount', true, 1); await R.page.waitForSelector('.mc-fruit'); await R.page.waitForTimeout(400);
+  const g2d = await R.page.evaluate(() => !!document.querySelector('.gl-hand')); await leave(R);
+  ok(g2d, 'G2 Market Counting shows the hand the first time');
+  ok(!R.errors.length, R.errors.join('\n')); await R.ctx.close();
+
+  // ---------- E3: bigger button text on a computer ----------
+  const C = await open(b, { w: 1280, h: 800, touch: false, lang: 'en' }); await clear(C.page);
+  await openGame(C, 'remembergarden', false, 1); await C.page.waitForSelector('.bt-repeat');
+  const e3 = await C.page.evaluate(() => [...document.querySelectorAll('.gl-stage .btn')].map(b => ({ t: b.textContent.trim(), px: parseFloat(getComputedStyle(b).fontSize) })));
+  await C.page.screenshot({ path: 'out/r79-learning/e3-computer.png' }); await leave(C);
+  ok(e3.length >= 2 && e3.every(x => x.px >= 18 && x.px <= 20), 'E3 computer button text: ' + JSON.stringify(e3));
+  ok(!C.errors.length, C.errors.join('\n')); await C.ctx.close();
+  // and on a phone the buttons keep their size (the rule is for computers only)
+  const Pp = await open(b, { w: 390, h: 844, touch: true, lang: 'en' }); await clear(Pp.page);
+  await openGame(Pp, 'remembergarden', false, 1); await Pp.page.waitForSelector('.bt-repeat');
+  const e3p = await Pp.page.evaluate(() => parseFloat(getComputedStyle(document.querySelector('.bt-repeat')).fontSize)); await leave(Pp);
+  ok(e3p < 18, 'E3 phone text unchanged: ' + e3p); await Pp.ctx.close();
+
+  // ---------- the microphone in Say It, Find It ----------
+  // no speech recognition: no button, tapping works (the game matrix above played every level by tapping)
+  const N = await open(b, { w: 390, h: 844, touch: true, lang: 'en', pre: () => { for (const k of ['SpeechRecognition', 'webkitSpeechRecognition']) { try { delete window[k]; } catch (e) { } Object.defineProperty(window, k, { value: undefined, configurable: true }); } } });
+  await clear(N.page); await openGame(N, 'sayfind', false, 1); await N.page.waitForSelector('.sf-pic');
+  const noMic = await N.page.evaluate(() => !!document.querySelector('.sf-mic')); await leave(N);
+  ok(!noMic, 'no microphone button without speech recognition');
+  ok(!N.errors.length, N.errors.join('\n')); await N.ctx.close();
+  // a pretend recogniser: hears the target's word (counts as the right tap), then refuses (the button goes, tapping still works)
+  const M = await open(b, { w: 390, h: 844, touch: true, lang: 'en', pre: () => {
+    class FakeSR { start() { setTimeout(() => { const w = window.__heard; if (w === 'deny') this.onerror && this.onerror({ error: 'not-allowed' }); else this.onresult && this.onresult({ results: [[{ transcript: w }]] }); this.onend && this.onend(); }, 60); } stop() { } abort() { } }
+    window.webkitSpeechRecognition = FakeSR; window.SpeechRecognition = FakeSR;
+  } });
+  await clear(M.page); await openGame(M, 'sayfind', false, 1); await M.page.waitForSelector('.sf-mic');
+  const mic = await M.page.evaluate(async () => {
+    const F = await import('/js/games/frame.js'), wait = ms => new Promise(r => setTimeout(r, ms));
+    while (!F.playWatch.ask) await wait(50);
+    const btn = document.querySelector('.sf-mic'), size = btn.getBoundingClientRect();
+    const target = F.playWatch.ask.els.find(F.playWatch.ask.check), word = target.getAttribute('aria-label');
+    const dotsBefore = document.querySelectorAll('.gl-dots i.on').length;
+    window.__heard = 'it is the ' + word; btn.click();
+    for (let i = 0; i < 60 && document.querySelectorAll('.gl-dots i.on').length === dotsBefore; i++) await wait(100);
+    const counted = document.querySelectorAll('.gl-dots i.on').length > dotsBefore;
+    for (let i = 0; i < 40 && !document.querySelector('.sf-mic'); i++) await wait(100);
+    window.__heard = 'deny'; document.querySelector('.sf-mic').click(); await wait(500);
+    return { word, counted, size: Math.round(Math.min(size.width, size.height)), gone: !document.querySelector('.sf-mic'), help: document.querySelector('.gl-help').textContent };
+  });
+  ok(mic.counted && mic.size >= 44 && mic.gone && /microphone is off/i.test(mic.help), 'microphone: ' + JSON.stringify(mic));
+  const rest = await M.page.evaluate(PLAY, { rightsOnly: true });
+  ok(rest.won, 'tapping still finishes after the microphone was refused: ' + JSON.stringify(rest));
+  await finishWin(M);
+  ok(!M.errors.length, M.errors.join('\n')); await M.ctx.close();
+
+  fs.writeFileSync('out/r79-learning/results.json', JSON.stringify({ rows, e1, e3, e4, i2, mig, won, book, g2, mic }, null, 1));
+  return notes.join('; ') + '; E1 E3 E4 I1 I2 I4 G2 mic pass';
+});
+await check('welcomesteady', async () => {
+  // (owner, 16 Oct AEDT: "windows, panels and the Pad must stay fixed: never move up and down, bounce or recentre as the
+  // content changes"; the r79 sweep found the Welcome screen's Start button growing and shrinking on every device) the
+  // Welcome screen holds still on a phone, a tablet and a computer, in English and in Vietnamese: the Start button, the
+  // cover, the logo and the language panel keep their boxes (within 2 px) for 2.5 s after it opens, after each language
+  // tap and the Chinese switch, and the Start button keeps one size in both languages
+  const PARTS = [['start', '.screen.title .press'], ['cover', '.screen.title .tt-cover'], ['logo', '.screen.title .logo'], ['languages', '.screen.title .tt-panel']];
+  const TAPS = [['Tieng Viet', '.screen.title .seg.lang button[data-l="vi"]'], ['English', '.screen.title .seg.lang button[data-l="en"]'],
+    ['learn Chinese on', '.screen.title .learnrow [data-learn="zh"]'], ['learn Chinese off', '.screen.title .learnrow [data-learn="zh"]']];
+  const moved = [], notes = [];
+  for (const [dev, w, h, touch] of [['phone', 390, 844, true], ['tablet', 820, 1180, true], ['computer', 1280, 800, false]]) for (const lang of ['en', 'vi']) {
+    const P = await open(b, { w, h, touch, lang, play: false, settings: { calm: false } });
+    const boxes = () => P.page.evaluate(parts => Object.fromEntries(parts.map(([k, sel]) => { const e = document.querySelector(sel); if (!e) return [k, null]; const r = e.getBoundingClientRect(); return [k, [r.left, r.top, r.width, r.height].map(v => Math.round(v * 10) / 10)]; })), PARTS);
+    const watch = async (what, ms) => {
+      const first = await boxes(), t0 = Date.now(); let n = 0;
+      while (Date.now() - t0 < ms) {
+        await P.page.waitForTimeout(100); const now = await boxes(); n++;
+        for (const [k] of PARTS) { if (!first[k] || !now[k]) continue; const d = Math.max(...now[k].map((v, i) => Math.abs(v - first[k][i]))); if (d > 2) { moved.push(`${dev} ${lang} ${what}: ${k} moved ${d.toFixed(1)} px`); return first; } }
+      }
+      return first;
+    };
+    const open0 = await watch('opening', 2500);
+    ok(PARTS.every(([k]) => open0[k]), `${dev} ${lang}: a part of the Welcome screen is missing ${JSON.stringify(open0)}`);
+    const sizes = {};
+    for (const [label, sel] of TAPS) {
+      const btn = await P.page.$(sel); if (!btn) continue;
+      await btn.click({ force: true }); const after = await watch(`after "${label}"`, 1500);
+      if (/Tieng|English/.test(label) && after.start) sizes[label] = after.start;
+    }
+    // the Start button is the same size in English and Vietnamese
+    if (sizes['Tieng Viet'] && sizes.English) { const d = Math.max(Math.abs(sizes['Tieng Viet'][2] - sizes.English[2]), Math.abs(sizes['Tieng Viet'][3] - sizes.English[3])); if (d > 2) moved.push(`${dev} ${lang}: the Start button is ${d.toFixed(1)} px bigger in one language`); }
+    ok(!P.errors.length, P.errors.join(' | '));
+    notes.push(`${dev} ${lang}`);
+    await P.ctx.close();
+  }
+  ok(!moved.length, 'the Welcome screen moved: ' + moved.slice(0, 8).join('; '));
+  return `Welcome screen still within 2 px (Start button, cover, logo, language panel) opening, after both language taps and the Chinese switch, one Start size in both languages: ${notes.join(', ')}`;
+});
+await check('swupdate', async () => {
+  // (r80, owner 17 Oct AEDT: "users must have the latest r") on its own small server (the game's files, its service
+  // worker made version A, B or C, js/build.js saying which): (1) after an update the page gets the NEW version's files,
+  // never the older copy kept for open games (r78 ran r77's files); (2) a file failing part way keeps what was saved and
+  // the next try fetches only what is missing; (3) on the start screens the new version takes over and the page reloads
+  // by itself, no tap; (4) while playing it takes over without a reload and the notice offers it; (5) the game coming
+  // back to the screen asks the website for a newer version
+  const http = await import('http'), path = await import('path');
+  const root = path.resolve(process.env.SV_ROOT || '..'), TY = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.webmanifest': 'application/manifest+json', '.png': 'image/png', '.woff2': 'font/woff2', '.mp3': 'audio/mpeg' };
+  let ver = 'a'; const fail = new Set(), asked = {};
+  const srv = http.createServer((q, r) => {
+    let u = decodeURIComponent(q.url.split('?')[0]); if (u.endsWith('/')) u += 'index.html'; asked[u] = (asked[u] || 0) + 1;
+    if (fail.has(u)) { fail.delete(u); r.writeHead(500); return r.end(); }
+    const f = path.join(root, u); if (!f.startsWith(root) || !fs.existsSync(f) || !fs.statSync(f).isFile()) { r.writeHead(404); return r.end(); }
+    let body = fs.readFileSync(f);
+    if (u === '/sw.js') body = String(body).replace(/const VERSION = '[^']+'/, `const VERSION = 'sv-2099-swtest-${ver}'`);
+    if (u === '/js/build.js') body = String(body).replace(/BUILD = '[^']+'/, `BUILD = 'sw${ver}'`);
+    r.writeHead(200, { 'Content-Type': TY[path.extname(f)] || 'application/octet-stream', 'Cache-Control': 'no-cache' }); r.end(body);
+  });
+  await new Promise(res => srv.listen(0, '127.0.0.2', res));
+  try {
+    const url = `http://127.0.0.2:${srv.address().port}/`;
+    const P = await open(b, { w: 390, h: 760, touch: true, url, play: false });
+    const active = v => P.page.waitForFunction(async v => { const r = await navigator.serviceWorker.getRegistration(); return !!r?.active && navigator.serviceWorker.controller && (await caches.keys()).includes('sv-2099-swtest-' + v) && !r.installing && !r.waiting; }, v, { timeout: 120000 });
+    const build = () => P.page.evaluate(() => fetch('/js/build.js').then(r => r.text()).then(t => /BUILD = '([^']+)'/.exec(t)?.[1]));
+    const update = () => P.page.evaluate(() => navigator.serviceWorker.getRegistration().then(r => r.update()).catch(e => String(e)));
+    await active('a'); await P.page.waitForTimeout(500);
+    const first = await build();
+    // (2) version B, one file failing the first time
+    ver = 'b'; fail.add('/js/main.js'); await update(); await P.page.waitForTimeout(4000);
+    const partial = await P.page.evaluate(() => caches.open('sv-2099-swtest-b').then(c => c.keys()).then(k => k.length));
+    const before = { ...asked };
+    await P.page.evaluate(() => { window.__same = 1; });
+    await update();
+    // (3) the start screens: B takes over by itself and the page reloads into it
+    await P.page.waitForFunction(() => !window.__same, null, { timeout: 120000 }).catch(() => { });
+    await active('b'); await P.page.waitForSelector('.screen.title', { timeout: 60000 });
+    const refetched = Object.keys(before).filter(u => u.startsWith('/js/') && u !== '/js/main.js' && u !== '/js/build.js' && (asked[u] || 0) > before[u] && before[u] >= 1 && !/launch|custom|sw\.js/.test(u)).length;
+    const second = await build(), reloaded = await P.page.evaluate(() => !window.__same);
+    const keys = await P.page.evaluate(() => caches.keys());
+    // (4) playing: C takes over without a reload; the notice offers it
+    await start(P.page); await P.page.evaluate(() => { window.__same = 1; });
+    ver = 'c'; await update(); await active('c'); await P.page.waitForTimeout(1500);
+    const playing = await P.page.evaluate(() => ({ same: window.__same === 1, notice: !!document.querySelector('.update-notice'), heroes: window.__sv.heroes.length }));
+    const third = await build();
+    // (5) back on the screen: it asks for sw.js again
+    const n0 = asked['/sw.js'] || 0; await P.page.evaluate(() => { window.svUpdateGap = 0; document.dispatchEvent(new Event('visibilitychange')); }); await P.page.waitForTimeout(1500);
+    const asks = (asked['/sw.js'] || 0) - n0;
+    const errs = P.errors.filter(e => !/Failed to fetch|NetworkError|aborted|500/i.test(e)); await P.ctx.close();
+    const r = { first, partial, refetched, second, reloaded, keys, playing, third, asks, errs };
+    ok(first === 'swa', 'version A: ' + JSON.stringify(r));
+    ok(partial > 0 && refetched === 0, 'an update stopped part way keeps what it saved and fetches only the rest: ' + JSON.stringify(r));
+    ok(second === 'swb' && reloaded && keys.includes('sv-2099-swtest-a'), 'the new version, not the older copy kept beside it, on the start screens with no tap: ' + JSON.stringify(r));
+    ok(playing.same && playing.notice && playing.heroes === 1 && third === 'swc', 'while playing: no reload, the notice offers it: ' + JSON.stringify(r));
+    ok(asks >= 1 && !errs.length, 'coming back to the screen asks for a newer version: ' + JSON.stringify(r));
+    return `the new version's files after an update (not the copy kept beside it); a stopped update kept ${partial} files and fetched only the rest; start screens: took over and reloaded by itself; playing: no reload, the notice offered it; back on screen: asked the website again`;
+  } finally { srv.closeAllConnections(); srv.close(); }
 });
 await b.close();
 const failed = results.filter(r => !r[1]);

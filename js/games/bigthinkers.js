@@ -16,7 +16,9 @@ const instructions = {
 };
 for (const [id, lines] of Object.entries(instructions)) HOWTO[id] = { steps: lines.map(([en, vi]) => ({ pic: '🧩', en, vi })) };
 // 0 under-5, 1 Easy, 2 Medium, 3 Hard (the level already includes the child's progress, as in the other new games)
-const tier = api => api.little ? 0 : api.level >= 3 ? 3 : api.level >= 2 ? 2 : 1;
+// (r79 learning, I1) the frame's tier follows the child inside the game (api.tier); simple test frames fall back to the level
+const tier = api => api.tier ? api.tier() : api.little ? 0 : api.level >= 3 ? 3 : api.level >= 2 ? 2 : 1;
+const nextRound = api => api.nextRound ? api.nextRound() : tier(api);
 // a "Hear again" button: the guidance is spoken, so a child who cannot read can always ask for it again
 function repeat(api, line) {
   const button = el('button', 'btn bt-repeat', pic('🔁') + T('Hear again', 'Nghe lại'));
@@ -41,23 +43,26 @@ const RULES = [
   { id: 'animals', right: ['Yes! They are all animals.', 'Đúng rồi! Tất cả đều là con vật.'], miss: ['Not that one. Look again: they are all animals.', 'Chưa đúng. Nhìn lại nhé: tất cả đều là con vật.'], yes: ['🐶', '🐱', '🐰', '🐮', '🐷', '🐔', '🦆', '🐴'], near: ['🧸'], also: CREATURES },
   { id: 'clothes', right: ['Yes! They are all things to wear.', 'Đúng rồi! Tất cả đều là đồ để mặc.'], miss: ['Not that one. Look again: they are all things to wear.', 'Chưa đúng. Nhìn lại nhé: tất cả đều là đồ để mặc.'], yes: ['👕', '👟', '👒', '🧦', '🧢'], near: ['🧺'] },
   { id: 'vehicles', right: ['Yes! They all take us places.', 'Đúng rồi! Tất cả đều chở mình đi.'], miss: ['Not that one. Look again: they all take us places.', 'Chưa đúng. Nhìn lại nhé: tất cả đều chở mình đi.'], yes: ['🚗', '🚌', '🚲', '⛵', '🚂', '✈️'], near: ['🏠'] },
-  { id: 'flowers', right: ['Yes! They are all flowers.', 'Đúng rồi! Tất cả đều là hoa.'], miss: ['Not that one. Look again: they are all flowers.', 'Chưa đúng. Nhìn lại nhé: tất cả đều là hoa.'], yes: ['🌸', '🌻', '🌷'], near: ['🌳', '🌱'], from: 2 },
+  { id: 'flowers', right: ['Yes! They are all flowers.', 'Đúng rồi! Tất cả đều là hoa.'], miss: ['Not that one. Look again: they are all flowers.', 'Chưa đúng. Nhìn lại nhé: tất cả đều là hoa.'], yes: ['🌸', '🌻', '🌷', '🪷', '🌺'], near: ['🌳', '🌱'], from: 2 },  // (r79) five flowers, so Medium and Hard can show three examples and an answer
   { id: 'water', right: ['Yes! They all live in the water.', 'Đúng rồi! Tất cả đều sống dưới nước.'], miss: ['Not that one. Look again: they all live in the water.', 'Chưa đúng. Nhìn lại nhé: tất cả đều sống dưới nước.'], yes: ['🐟', '🐠', '🐙', '🐳', '🦀'], near: ['🐶', '🐱', '🐔'], also: ['🦆', '🐢', '🐸', '⛵'], from: 2 },
   { id: 'fly', right: ['Yes! They can all fly.', 'Đúng rồi! Tất cả đều biết bay.'], miss: ['Not that one. Look again: they can all fly.', 'Chưa đúng. Nhìn lại nhé: tất cả đều biết bay.'], yes: ['🦋', '🐝', '🐦', '🦉', '✈️', '🎈'], near: ['🐌', '🐢', '🐟', '🐶'], only: true, from: 3 },
   { id: 'red', right: ['Yes! They are all red.', 'Đúng rồi! Tất cả đều màu đỏ.'], miss: ['Not that one. Look again: they are all red.', 'Chưa đúng. Nhìn lại nhé: tất cả đều màu đỏ.'], yes: ['🍎', '🍓', '🍅', '🟥', '🔴'], near: ['🍌', '🍋', '🟦', '🟨', '🫐'], only: true, from: 3 },
   { id: 'yellow', right: ['Yes! They are all yellow.', 'Đúng rồi! Tất cả đều màu vàng.'], miss: ['Not that one. Look again: they are all yellow.', 'Chưa đúng. Nhìn lại nhé: tất cả đều màu vàng.'], yes: ['🍌', '🍋', '🌻', '🟨', '🟡'], near: ['🍎', '🍓', '🟥', '🔵', '🫐'], only: true, from: 3 }
 ];
-register({ id: 'rulefinder', icon: '🧩', name: () => T('Find the Rule', 'Tìm Quy Luật'), async run(api) {
-  const level = tier(api), rounds = level === 0 ? 3 : 4;
-  // examples shown, choices offered, and which rules may appear at this level
-  const examples = [2, 2, 3, 3][level], choices = [2, 3, 3, 4][level];
+register({ id: 'rulefinder', icon: '🧩', learn: true, name: () => T('Find the Rule', 'Tìm Quy Luật'), async run(api) {
+  const start = tier(api), rounds = start === 0 ? 3 : 4;
   // Hard keeps one colour or "can fly" rule in every game, so it really is harder than Medium
-  const open = RULES.filter(r => (r.from || 0) <= Math.max(1, level));
-  let rules = shuffle(open);
-  if (level === 3) { const hard = pick(open.filter(r => r.from === 3), 1)[0]; rules = shuffle([hard, ...pick(open.filter(r => r !== hard), rounds - 1)]); }
+  // (r79 learning, I2) the rule this child missed most comes first
+  const hardOne = start === 3 ? pick(RULES.filter(r => r.from === 3), 1)[0] : null;
+  const order = api.favour ? api.favour(shuffle(RULES), r => r.id) : shuffle(RULES), used = new Set();
   for (let round = 0; round < rounds; round++) {
     if (api.closed) return; api.dots(rounds, round); api.stage.innerHTML = '';
-    const rule = rules[round % rules.length], shown = pick(rule.yes, examples + 1), right = shown.pop();
+    // (r79 learning, I1) examples shown, choices offered and the rules that may appear follow the level now
+    const level = round ? nextRound(api) : tier(api), examples = [2, 2, 3, 3][level], choices = [2, 3, 3, 4][level];
+    const fitsLevel = r => (r.from || 0) <= Math.max(1, level) && !used.has(r);
+    const rule = (round === rounds - 1 && hardOne && !used.has(hardOne) && ![...used].some(r => r.from === 3) ? hardOne : order.find(fitsLevel)) || order.find(r => !used.has(r)) || order[0];
+    used.add(rule);
+    const shown = pick(rule.yes, examples + 1), right = shown.pop();
     // wrong choices: under-5 and Easy get pictures from other groups; Medium mixes in one near picture; Hard mostly near
     const fits = v => rule.yes.includes(v) || (rule.also || []).includes(v);
     const others = rule.only ? [] : RULES.flatMap(r => r.yes).filter(v => !fits(v));
@@ -69,7 +74,9 @@ register({ id: 'rulefinder', icon: '🧩', name: () => T('Find the Rule', 'Tìm 
     const buttons = choiceButtons(api, shuffle([right, ...wrongs]), value => pic(value));
     repeat(api, line);
     // a wrong tap names the rule, so the child learns it rather than guessing again
-    if (!await untilRightWhy(api, buttons, b => b._v === right, () => rule.miss)) return;
+    let missedIt = false;
+    if (!await untilRightWhy(api, buttons, b => b._v === right, () => { if (!missedIt && api.missed) api.missed(rule.id); missedIt = true; return rule.miss; })) return;
+    if (!missedIt && api.got) api.got(rule.id);
     api.say(...rule.right); api.praise(); await wait(500);
   }
   return api.win();
@@ -86,13 +93,16 @@ const STORIES = [
   [['🌾', 'The rice grows.', 'Lúa lớn lên.'], ['🧺', 'Harvest the rice.', 'Gặt lúa.'], ['🍚', 'Cook the rice.', 'Nấu cơm.'], ['🥢', 'Eat together.', 'Cùng nhau ăn cơm.']],
   [['🌱', 'A little shoot.', 'Một mầm nhỏ.'], ['💧', 'Water it.', 'Tưới nước.'], ['🌷', 'A flower opens.', 'Hoa nở.'], ['🐝', 'A bee visits.', 'Ong đến thăm.']]
 ];
-register({ id: 'gardenorder', icon: '🌱', name: () => T('Garden Steps', 'Các Bước Làm Vườn'), async run(api) {
-  const level = tier(api), rounds = level === 0 ? 1 : level === 3 ? 3 : 2;
-  // under-5s order three steps; bigger children four. Pictures that do not belong join the choices from Medium.
-  const steps = level === 0 ? 3 : 4, extra = [1, 1, 2, 2][level];
-  const stories = pick(STORIES, rounds);
+register({ id: 'gardenorder', icon: '🌱', learn: true, name: () => T('Garden Steps', 'Các Bước Làm Vườn'), async run(api) {
+  const start = tier(api), rounds = start === 0 ? 1 : start === 3 ? 3 : 2;
+  // (r79 learning, I2) the story this child missed most comes first (stories are known by their first step's words)
+  const stories = api.favour ? api.favour(pick(STORIES, STORIES.length), s => s[0][1]).slice(0, rounds) : pick(STORIES, rounds);
   for (let round = 0; round < rounds; round++) {
     if (api.closed) return; api.stage.innerHTML = '';
+    // under-5s order three steps; bigger children four. Pictures that do not belong join the choices from Medium.
+    // (r79 learning, I1) the number of stray pictures follows the level now
+    const level = round ? nextRound(api) : tier(api), steps = level === 0 ? 3 : 4, extra = [1, 1, 2, 2][level];
+    let missedIt = false;
     const story = stories[round].slice(0, steps), mine = story.map(s => s[0]);
     // the extra pictures come from other stories and never look like a step of this one
     const strays = pick(STORIES.filter(s => s !== stories[round]).flat().map(s => s[0]).filter(v => !mine.includes(v)), extra).map(v => [v, '', '']);
@@ -106,13 +116,13 @@ register({ id: 'gardenorder', icon: '🌱', name: () => T('Garden Steps', 'Các 
       const choices = shuffle([...story.slice(i), ...strays]);
       api.say(...line(i));
       const old = api.stage; api.stage = controls; const buttons = choiceButtons(api, choices, value => pic(value[0])); api.stage = old;
-      const why = b => !mine.includes(b._v[0]) ? ['That picture is not part of this story.', 'Hình đó không thuộc câu chuyện này.']
-        : ['That comes later. What has to happen before it?', 'Việc đó xảy ra sau. Trước đó phải có gì?'];
+      const why = b => { if (!missedIt && api.missed) api.missed(story[0][1]); missedIt = true; return !mine.includes(b._v[0]) ? ['That picture is not part of this story.', 'Hình đó không thuộc câu chuyện này.']
+        : ['That comes later. What has to happen before it?', 'Việc đó xảy ra sau. Trước đó phải có gì?']; };
       if (!await untilRightWhy(api, buttons, b => b._v[0] === story[i][0], why)) return;
       done.children[i].classList.remove('q'); done.children[i].innerHTML = pic(story[i][0]);
       api.say(story[i][1], story[i][2]); await wait(700);
     }
-    again.remove(); api.praise(); await wait(500);
+    again.remove(); if (!missedIt && api.got) api.got(story[0][1]); api.praise(); await wait(500);
   }
   return api.win();
 } });
@@ -145,7 +155,7 @@ function branches(size, route, nb, want) {
   }
   return out;
 }
-register({ id: 'steppingpath', icon: '🗺️', name: () => T('Flower Path', 'Đường Hoa'), async run(api) {
+register({ id: 'steppingpath', icon: '🗺️', learn: true, name: () => T('Flower Path', 'Đường Hoa'), async run(api) {
   const level = tier(api), size = [3, 4, 4, 5][level], want = [0, 0, 2, 3][level];
   // some winding paths leave no room for a dead end: draw another until Medium and Hard have at least one
   let route, nb, decoys;

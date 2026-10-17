@@ -232,7 +232,9 @@ async function details(S, sums, now) {
   // (battery round) by kind of device, `power`: the middle of each kind's devices
   const mid = a => { const v = a.filter(x => x != null).sort((x, y) => x - y); return v.length ? v[v.length >> 1] : null; };
   const power = {}; for (const k of ['phone', 'tablet', 'computer']) { const ds = devices.filter(d => d.kind === k && d.power); if (ds.length) power[k] = { devices: ds.length, fps: mid(ds.map(d => d.power.fps)), frameMs: mid(ds.map(d => d.power.frameMs)), draws: mid(ds.map(d => d.power.draws)), batteryPerHour: mid(ds.map(d => d.power.batteryPerHour)) }; }
-  return { latestBuilds:count(d=>d.build),startup, power, onlineNow: devices.filter(d => d.online).length, hours, places: top(places, 15), devices:devices.slice(0,100), deviceListTotal:devices.length, deviceListLimit:100, os: count(d => d.os), browsers: count(d => d.br), locations: count(d => d.loc ? [d.loc.city, d.loc.region, d.loc.country].filter(Boolean).join(', ') : '?'), problems, tips: tips.slice(0, 20) };
+  // (r80, owner 17 Oct AEDT) installations not seen for 30 days or more, by the version they last had
+  const away = day(now - 30 * 864e5), away30 = {}; for (const d of devices) if (d.last && d.last < away) away30[d.build] = (away30[d.build] || 0) + 1;
+  return { away30, latestBuilds:count(d=>d.build),startup, power, onlineNow: devices.filter(d => d.online).length, hours, places: top(places, 15), devices:devices.slice(0,100), deviceListTotal:devices.length, deviceListLimit:100, os: count(d => d.os), browsers: count(d => d.br), locations: count(d => d.loc ? [d.loc.city, d.loc.region, d.loc.country].filter(Boolean).join(', ') : '?'), problems, tips: tips.slice(0, 20) };
 }
 // a name the family gives a device in Studio ("Na's iPad")
 export async function setLabel(S, id, label) { if (!ID.test(id || '')) return false; const l = String(label || '').replace(/[<>\u0000-\u001f]/g, '').trim().slice(0, 40); if (l) await S.set('label/' + id, l); else await S.delete('label/' + id); return true; }

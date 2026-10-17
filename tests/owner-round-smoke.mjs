@@ -13,7 +13,7 @@ try {
     assert.equal(await page.locator('.modal.pad').count(), 1); assert.equal(await page.locator('.modal.shopk').count(), 0);
     assert.equal(await page.locator('.shop-collections button').count(), 3);
     await page.click('.pad [data-go="wardrobe"]'); await page.waitForSelector('.pad .wardrobe-content');
-    assert.equal(await page.locator('.pad .shop-preview').count(), 1); await page.screenshot({ path: `out/owner-round/mirror-${w}-${lang}.png` });
+    assert.equal(await page.locator('.pad .mirror .wbig').count(), 1); // (r79: the mirror shows one big picture of the child) await page.screenshot({ path: `out/owner-round/mirror-${w}-${lang}.png` });
     await page.click('.pad .whead .x'); await page.click('.pad [data-t="bag"]');
     await page.evaluate(async () => { const S = await import('/js/state.js'); S.profiles[0].dishes = { ...(S.profiles[0].dishes || {}), steamedrice: 1 }; });
     const sizes = await page.locator('.pad .slot > svg').evaluateAll(nodes => nodes.map(n => { const r = n.getBoundingClientRect(); return [r.width,r.height]; }));

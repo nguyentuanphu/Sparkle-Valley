@@ -17,3 +17,4 @@ import './money.js'; // (round S, owner plan 8 Oct) the ten money games
 
 import './bigthinkers.js';
 import './bigthinkers2.js';
+import './talkgames.js'; // (r79 learning) Say It Find It, Market Counting, How Do They Feel?, First Sound Hunt

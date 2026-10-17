@@ -8,8 +8,9 @@ import { el, wait, esc } from '../util.js';
 import { openHowTo } from '../howto.js';
 import { pic } from '../art.js';
 import { featureOn } from '../custom.js';
+import { saveProfiles, normalizeLearn } from '../state.js';
 
-import { GAMES, register } from './registry.js';
+import { GAMES, register, SKILLS } from './registry.js';
 import { playWatch, tell, setPlan } from './playwatch.js';
 export { GAMES, register }; // (the list itself is in registry.js)
 // Each kind of game has its own song.
@@ -19,6 +20,7 @@ const GAME_MUSIC = {
   hanoi: 'strategy', robot: 'strategy', maze: 'strategy', goat: 'folk', oanquan: 'strategy', caro: 'strategy', hopscotch: 'folk', tug: 'village2', mrwolf: 'folk', datnieu: 'folk', kite: 'fly', chichi: 'folk', sackrace: 'party2', cricket: 'village2', parcel: 'none', words: 'twinkle', snap: 'village2', tienlen: 'village2', tienlenbac: 'village2', oantuti: 'folk', nemlon: 'party2', familyquiz: 'twinkle', moreless: 'think', days: 'twinkle', bodyparts: 'twinkle', eggs: 'farm', sudoku: 'think', dacau: 'party2', chuyen: 'village2', dragon: 'folk', marbles: 'strategy', skipping: 'party2',
   market: 'money', order: 'farm', sortout: 'money', bunny: 'farm', jigsaw: 'twinkle', oddone: 'pond', tower: 'think', duckmaze: 'pond',
   balloon: 'fly', bubbles: 'party2', tune: 'none',
+  sayfind: 'twinkle', marketcount: 'money', soundhunt: 'twinkle',   // (r79 learning) the talk-and-touch games
   clock: 'think', sums: 'twinkle', opposites: 'think', animalsounds: 'farm', phonics: 'twinkle', feelings: 'twinkle'
 };
 const PRIZES = ['🦄', '🦖', '🚀', '🧸', '🎈', '🍭', '🪁', '🐬', '🌈', '👑', '🎨', '🛼', '🪀', '🍦', '🐼'];
@@ -33,6 +35,8 @@ export { playWatch };
 // levelPick (round M, owner: "a choice of difficulty inside each game"): { value: 'easy'|'medium'|'hard' } shows a
 // button in the game's top bar; choosing another level closes the game with { restart: level } and it starts again
 const LEVELS = [['easy', 'Easy', 'Dễ'], ['medium', 'Medium', 'Vừa'], ['hard', 'Hard', 'Khó']];
+// (r79 learning, owner 16 Oct AEDT, I1) the level a learning game moved to, kept for "Play again" of the same game only
+let carry = null;
 export function openGame(id, { players, level = 1, style = 'shrine', partnerName = null, little = true, strong = false, nextId = null, online = null, levelPick = null }) {
   const def = GAMES[id]; if (!def) return Promise.resolve({ won: false });
   const nextName = nextId && GAMES[nextId] ? GAMES[nextId].name() : '';
@@ -43,6 +47,11 @@ export function openGame(id, { players, level = 1, style = 'shrine', partnerName
     // (owner, 16 Oct) Studio can hide the game's question line on screen; the game still says it aloud. Its space
     // stays, so nothing in the game moves (UX-001)
     if (!featureOn('explain_gameLine', true)) layer.classList.add('no-help');
+    // (r79 learning, owner 16 Oct AEDT, G2) picture-only for under-5s in learning games: the question line is hidden
+    // (still spoken, its space kept) and the pictures are bigger
+    if (def.learn && little) layer.classList.add('pic-only');
+    // (r79 learning, UX-001) learning games keep one height for the question line, so a longer explanation never moves the board
+    if (def.learn) layer.classList.add('learn');
     layer.innerHTML = `
       <div class="gl-head">
         <button class="gl-x" aria-label="${T('Leave', 'Rời đi')}">✕</button>
@@ -78,9 +87,22 @@ export function openGame(id, { players, level = 1, style = 'shrine', partnerName
       onCleanup: f => cleanups.push(f),
       // Test autoplay still uses real UI taps; a strategy supplies the next legal target, not a synthetic win.
       plan: (f, { maxActions = 0 } = {}) => { cleanups.push(setPlan(f, maxActions)); },
+      // (r79 learning, I1) the game's tier now: 0 under-5, 1 Easy, 2 Medium, 3 Hard. The level the game started at
+      // (Easy, Medium or Hard) is the starting point; the child's answers move it at most one step either way, and
+      // under-5s always stay at the under-5 tier.
+      tier: () => tierNow(),
+      // call at the start of each round: three right in a row made it one step harder, two misses one step easier
+      nextRound() { if (pending) { const before = tierNow(); shift = Math.max(-1, Math.min(1, shift + pending)); if (tierNow() > before) banner(T('A bit harder!', 'Khó hơn một chút!'), 'up'); } pending = 0; roundMisses = 0; layer.dataset.tier = tierNow(); return tierNow(); },
+      // (r79 learning, I2) what this child finds hard in this game (a rule, a story, a word): missed() counts it, got()
+      // counts it down again, and favour() puts the most-missed first so it comes back first next time
+      missed(key) { const m = missBook(); if (!m) return; m[key] = Math.min(9, (m[key] || 0) + 1); trimBook(m); saveProfiles(); },
+      got(key) { const m = missBook(); if (!m || !m[key]) return; if (--m[key] <= 0) delete m[key]; saveProfiles(); },
+      favour(list, keyOf = x => x) { const m = missBook() || {}, top = Object.keys(m).sort((a, b) => m[b] - m[a])[0]; const i = top == null ? -1 : list.findIndex(x => String(keyOf(x)) === top); if (i > 0) list.unshift(list.splice(i, 1)[0]); return list; },
+      // (r79 learning, G2) the first time an under-5 opens this learning game, a drawn hand shows the first move
+      hand: target => showHand(target),
       dots(n, done) { tell('dots'); dots.innerHTML = Array.from({ length: n }, (_, i) => `<i class="${i < done ? 'on' : ''}"></i>`).join(''); },
-      right(e) { tell('right', e); SFX.ok(); if (e) { e.classList.remove('wrong'); e.classList.add('right'); } reward(e); streak++; rights++; if (streak >= 3) combo(streak); else if (Math.random() < .08) lucky(); },
-      wrong(e, en = 'Try again!', vi = 'Thử lại nhé!') { tell('wrong', e); SFX.no(); streak = 0; misses++; if (e) { e.classList.remove('wrong'); void e.offsetWidth; e.classList.add('wrong'); } mascot('hmm', T('Hmm… try again!', 'Ừm… thử lại nhé!')); say(en, vi); },
+      right(e) { tell('right', e); SFX.ok(); hideHand(); if (e) { e.classList.remove('wrong'); e.classList.add('right'); } reward(e); streak++; rights++; if (++run >= 3) { run = 0; pending = 1; } if (streak >= 3) combo(streak); else if (Math.random() < .08) lucky(); },
+      wrong(e, en = 'Try again!', vi = 'Thử lại nhé!') { tell('wrong', e); SFX.no(); hideHand(); streak = 0; misses++; run = 0; if (++roundMisses >= 2) pending = -1; if (e) { e.classList.remove('wrong'); void e.offsetWidth; e.classList.add('wrong'); } mascot('hmm', T('Hmm… try again!', 'Ừm… thử lại nhé!')); if (en !== null) say(en, vi); },
       praise() { const p = [['Great job!', 'Giỏi quá!'], ['Well done!', 'Làm tốt lắm!'], ['Yes! Clever!', 'Đúng rồi! Thông minh quá!'], ['Super!', 'Tuyệt vời!'], ['You got it!', 'Con làm được rồi!']]; const [e, v] = p[Math.floor(Math.random() * p.length)]; say(e, v); mascot('cheer', T(e, v)); },
       get closed() { return closed; },
       async win(extra = {}) {
@@ -88,8 +110,10 @@ export function openGame(id, { players, level = 1, style = 'shrine', partnerName
         tell('win'); SFX.fanfare();
         // 1 to 3 stars (little ones always get 3), then a treasure chest pops open with a surprise
         const n = little ? 3 : misses <= 1 ? 3 : misses <= 4 ? 2 : 1, prize = PRIZES[Math.floor(Math.random() * PRIZES.length)];
+        // (r79 learning, I4) finishing Hard in a reasoning game gives its skill sticker for the sticker book, once
+        const skill = skillSticker();
         const c = el('div', 'gl-win', `<div class="gl-stars">${[0, 1, 2].map(k => `<i class="${k < n ? 'on' : ''}" style="--d:${k * .25}s">⭐</i>`).join('')}</div>
-          <div class="gl-chest"><span class="lid">🎁</span><span class="prize">${prize}</span></div><p>${esc(extra.title || T('You did it!', 'Con làm được rồi!'))}</p>
+          <div class="gl-chest"><span class="lid">🎁</span><span class="prize">${prize}</span></div><p>${esc(extra.title || T('You did it!', 'Con làm được rồi!'))}</p>${skill ? `<div class="gl-skill">${pic(skill.key)}<b>${esc(T('New sticker:', 'Hình dán mới:'))} ${esc(T(skill.en, skill.vi))}</b></div>` : ''}
           <div class="gl-next">${nextName ? `<button class="gl-nx go" data-n="next"><span>${pic('▶️')}</span><b>${T('Next game', 'Trò tiếp theo')}</b><small>${esc(nextName)}</small></button>` : ''}<button class="gl-nx again" data-n="again"><span>${pic('🔁')}</span><b>${T('Play again', 'Chơi lại')}</b></button></div><p class="gl-tapout">${T('Tap anywhere else to finish', 'Chạm chỗ khác để kết thúc')}</p>`);
         layer.appendChild(c); { const ad = gameEndAd(); if (ad) c.appendChild(ad); } say(extra.title || 'You did it!', extra.titleVi || 'Con làm được rồi!');
         burstConfetti(layer);
@@ -98,10 +122,49 @@ export function openGame(id, { players, level = 1, style = 'shrine', partnerName
         setTimeout(() => c.classList.add('ask'), 1600);
         // tapping anywhere outside the two buttons finishes (there is no Done button any more)
         const next = await new Promise(r => { let t = 0, fin = false; const done = k => { if (fin) return; fin = true; clearTimeout(t); removeEventListener('pointerdown', out, true); r(k); }; const out = e => { if (e.target.closest && e.target.closest('.gl-nx, .gl-ad')) return; if (!layer.contains(e.target)) return; /* (audit: the other child's half keeps its taps) */ e.stopPropagation(); e.preventDefault(); SFX.tap(); done('stop'); }; t = setTimeout(() => done('stop'), 30000); setTimeout(() => { if (!fin) addEventListener('pointerdown', out, true); }, 400); c.querySelectorAll('.gl-nx').forEach(b => { b.onclick = e => { e.stopPropagation(); SFX.tap(); done(b.dataset.n); }; }); });
+        if (next === 'again' && def.learn) carry = { id, shift: Math.max(-1, Math.min(1, shift + pending)) };
         finish(true, Object.assign({ stars: n, next }, extra));
       }
     };
     let streak = 0, rights = 0, misses = 0;
+    // (r79 learning, I1) run: right answers in a row since the last miss or step; pending: the step the next round takes
+    const again = carry && carry.id === id ? carry : null; carry = null;
+    let run = 0, roundMisses = 0, pending = 0, shift = again && def.learn ? again.shift : 0;
+    const baseTier = little ? 0 : level >= 3 ? 3 : level >= 2 ? 2 : 1;
+    function tierNow() { return little || !def.learn ? baseTier : Math.max(0, Math.min(3, baseTier + shift)); }
+    layer.dataset.tier = tierNow();   // (for the checks: the level the game is at now)
+    // (r79 learning, I2) the child's record for this game: profile.learn.miss[game] = { key: times missed }
+    const kid = players && players[0];
+    function missBook() { if (!def.learn || !kid || online) return null; const L = kid.learn = normalizeLearn(kid.learn); return (L.miss[id] = L.miss[id] || {}); }
+    function trimBook(m) { const keys = Object.keys(m).sort((a, b) => m[b] - m[a]); keys.slice(12).forEach(k => delete m[k]); }
+    // (r79 learning, I4) the skill sticker for this game, when it was finished at Hard (and not by an under-5)
+    function skillSticker() {
+      const sk = SKILLS[id]; if (!sk || little || online || !kid || tierNow() < 3) return null;
+      if (!Array.isArray(kid.stickers)) kid.stickers = [];
+      if (kid.stickers.includes(sk.key)) return null;
+      kid.stickers.push(sk.key); saveProfiles(); return sk;
+    }
+    // (r79 learning, G2) the showing hand: once per child and game, over the first right choice, for under-5s
+    let handEl = null, handDue = !!(def.learn && little && kid && !online && !normalizeLearn(kid.learn).seen[id]);
+    function showHand(target) {
+      if (!handDue || !target || closed) return; handDue = false;
+      const L = kid.learn = normalizeLearn(kid.learn); L.seen[id] = 1; saveProfiles();
+      handEl = el('div', 'gl-hand', pic('👆')); layer.appendChild(handEl);
+      const place = () => { if (!handEl || !target.isConnected) return; const r = target.getBoundingClientRect(); handEl.style.left = r.left + r.width / 2 - 28 + 'px'; handEl.style.top = r.top + r.height / 2 - 6 + 'px'; };
+      place(); const t = setInterval(place, 200); handEl._t = t; setTimeout(hideHand, 4200);
+    }
+    function hideHand() { if (!handEl) return; clearInterval(handEl._t); handEl.remove(); handEl = null; }
+    cleanups.push(hideHand);
+    // (r79 learning, E1) one small reward banner in the top bar, over the game's name between the Leave and How to play
+    // buttons, so it never covers the question line or the puzzle; a new one replaces the one showing
+    let bannerEl = null;
+    function banner(text, kind = '') {
+      if (bannerEl) bannerEl.remove();
+      const title = layer.querySelector('.gl-title').getBoundingClientRect(), x = layer.querySelector('.gl-x').getBoundingClientRect(), how = layer.querySelector('.gl-how').getBoundingClientRect();
+      const b = bannerEl = el('div', 'gl-reward' + (kind ? ' ' + kind : ''), text);
+      b.style.top = Math.round(title.top + title.height / 2) + 'px'; b.style.left = Math.round((x.right + how.left) / 2) + 'px'; b.style.maxWidth = Math.max(120, Math.round(how.left - x.right - 16)) + 'px';
+      layer.appendChild(b); setTimeout(() => { b.remove(); if (bannerEl === b) bannerEl = null; }, 1400);
+    }
     // side by side with friends (round H): a game not made for playing together is played by each child on their own
     // device at the same time; a strip shows everyone's stars as they come in, and a flag for whoever finished first
     if (online && !def.online) {
@@ -116,12 +179,14 @@ export function openGame(id, { players, level = 1, style = 'shrine', partnerName
     }
     // three right in a row: a combo with extra stars
     function combo(k) {
-      const b = el('div', 'gl-combo', `🔥 ${T('Combo', 'Liên tiếp')} ×${k}`); layer.appendChild(b); setTimeout(() => b.remove(), 1100);
+      if (def.learn) banner(`${pic('🔥')} ${esc(T('Combo', 'Liên tiếp'))} ×${k}`);
+      else { const b = el('div', 'gl-combo', `🔥 ${T('Combo', 'Liên tiếp')} ×${k}`); layer.appendChild(b); setTimeout(() => b.remove(), 1100); }
       stars += 1; starEl.textContent = stars; SFX.chime();
     }
     // now and then a lucky golden star bursts out
     function lucky() {
-      const b = el('div', 'gl-combo lucky', `🌟 ${T('Lucky star! +3', 'Sao may mắn! +3')}`); layer.appendChild(b); setTimeout(() => b.remove(), 1300);
+      if (def.learn) banner(`${pic('🌟')} ${esc(T('Lucky star! +3', 'Sao may mắn! +3'))}`, 'lucky');
+      else { const b = el('div', 'gl-combo lucky', `🌟 ${T('Lucky star! +3', 'Sao may mắn! +3')}`); layer.appendChild(b); setTimeout(() => b.remove(), 1300); }
       stars += 3; starEl.textContent = stars; SFX.secret && SFX.secret();
     }
     // Ông Cú cheers in the corner; every right answer sends a star flying to the star counter.
@@ -193,7 +258,7 @@ export async function untilRight(api, els, check) {
   const arm = () => { clearTimeout(t); if (api.little) t = setTimeout(hint, misses >= 2 ? 0 : HINT_AFTER); };
   try {
     for (;;) {
-      arm(); playWatch.ask = { els, check };
+      arm(); playWatch.ask = { els, check }; if (api.hand) api.hand(els.find(x => check(x)));
       const e = await tapOne(els, api); playWatch.ask = null;
       if (!e || api.closed) return null;
       if (check(e)) { e.classList.remove('hint'); api.right(e); return e; }

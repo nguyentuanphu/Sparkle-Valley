@@ -23,9 +23,8 @@ from, where it shows (a signboard or the card), and, if there is a link, one tha
 tracking (`utm_...`, `fbclid`, `gclid`) and is not a link shortener. "Show ads" is not saved while an active ad is not
 ready.
 
-Examples of good ads: the five ready-made videos about Sparkle Valley in English and Vietnamese
-(`marketing/ads-r60/` on the branch `claude/exciting-feynman-5nxzz8`:
-https://github.com/nguyentuanphu/Sparkle-Valley/tree/claude/exciting-feynman-5nxzz8/marketing/ads-r60).
+Examples of good ads: the ten ready-made videos about Sparkle Valley, each in English and in Vietnamese
+(`marketing/ads-r82/`: https://github.com/nguyentuanphu/Sparkle-Valley/tree/main/marketing/ads-r82).
 
 To make the pictures again (after the game's look changes):
 

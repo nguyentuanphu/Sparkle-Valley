@@ -2,7 +2,7 @@
 // the catalogue is balanced for girls and boys, worn things count as owned, and buying takes game coins only.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { DAY_COINS, priceOf, CLOTHES, ITEM, SLOTS, DEFAULT_OUTFITS, outfitOf, adoptWorn, owns, buy, wear, wearing } from '../../js/content/shop.js';
+import { DAY_COINS, priceOf, CLOTHES, ITEM, SLOTS, DEFAULT_OUTFITS, outfitOf, adoptWorn, owns, buy, wear, wearing, sortClothes, giveGift, GIRL_OF, versionFor } from '../../js/content/shop.js';
 
 test('prices: a nice thing costs about one day of play', () => {
   const by = t => CLOTHES.filter(x => x.tier === t).map(priceOf);
@@ -39,7 +39,8 @@ test('what a child already wears counts as owned', () => {
   const won = { look: {}, owned: { hats: ['crown'] } }; assert.ok(owns(won, 'crown'), 'a hat won another way counts');
 });
 test('buying takes game coins and never more than there are', () => {
-  const p = { look: { hat: 'none' }, owned: { hats: ['none'] } }, price = priceOf(ITEM.tiara);
+  // (r79: the tiara is girls' clothes, so this child is a girl; a boy buying it gets a gift box, tested below)
+  const p = { look: { style: 'dress', color: '#ff5fa2', hat: 'none' }, owned: { hats: ['none'] } }, price = priceOf(ITEM.tiara);
   assert.deepEqual(buy(p, price - 1, 'tiara'), { ok: false, why: 'coins', price });
   assert.ok(!owns(p, 'tiara'));
   assert.deepEqual(buy(p, price, 'tiara'), { ok: true, price }); assert.ok(owns(p, 'tiara'));
@@ -71,4 +72,47 @@ test('clothes in a trade: the same set both ways; the other set only as a gift o
   assert.ok(!clothesOk({ clothes: [g.id] }, {}, 'girl', 'boy'), 'not a girls\' piece to a boy');
   assert.ok(!clothesOk({ clothes: ['nope'] }, {}, 'girl', 'girl'), 'unknown clothes refused');
   assert.ok(clothesOk({ items: { apple: 1 } }, { coins: 10 }, 'girl', 'boy'), 'no clothes: any trade as before');
+});
+
+// (r79, owner 16 Oct AEDT: "boy wears boys clothes, user can buy other genders clothes but for gifting only")
+const GIRL = () => ({ look: { style: 'dress', color: '#ff5fa2', hat: 'none', back: 'none' }, owned: { hats: ['none'] } });
+const BOY = () => ({ look: { style: 'shirt', color: '#3b6fe0', hat: 'none', back: 'none' }, owned: { hats: ['none'] } });
+test('r79: nothing is shared; every thing for both sets has a girls\' version in its own colour', () => {
+  assert.ok(!CLOTHES.some(x => x.for === 'both'), 'no shared clothes');
+  assert.ok(Object.keys(GIRL_OF).length >= 17, 'the old shared things all have a girls\' version');
+  for (const [b, g] of Object.entries(GIRL_OF)) {
+    assert.equal(ITEM[b].for, 'b'); assert.equal(ITEM[g].for, 'g'); assert.equal(ITEM[g].slot, ITEM[b].slot); assert.equal(ITEM[g].shape, ITEM[b].shape);
+    assert.notEqual(ITEM[g].color.toLowerCase() + (ITEM[g].trim || ''), ITEM[b].color.toLowerCase() + (ITEM[b].trim || ''), 'its own colour: ' + g);
+    assert.notEqual(ITEM[g].en, ITEM[b].en, 'its own name: ' + g); assert.equal(!!ITEM[g].tester, !!ITEM[b].tester, 'tester rewards stay tester rewards');
+  }
+  assert.equal(versionFor('crown', 'girl'), 'crown_g'); assert.equal(versionFor('crown_g', 'boy'), 'crown'); assert.equal(versionFor('tiara', 'girl'), 'tiara');
+});
+test('r79: a child wears only their own set; the other set is bought as a gift box, never worn', () => {
+  const b = BOY(), price = priceOf(ITEM.tiara);
+  assert.deepEqual(buy(b, price, 'tiara'), { ok: true, price, gift: true }, 'a boy buys the tiara as a gift');
+  assert.deepEqual(b.owned.gifts, ['tiara']); assert.ok(!b.owned.clothes.includes('tiara'));
+  assert.ok(!wear(b, 'hat', 'tiara'), 'never worn by the boy');
+  assert.ok(buy(b, price, 'tiara').gift, 'a second one for another friend'); assert.equal(b.owned.gifts.length, 2);
+  assert.equal(buy(b, price - 1, 'tiara').why, 'coins', 'a gift still needs the coins');
+  const g = GIRL(); g.owned.clothes = ['cap'];
+  assert.ok(!wear(g, 'hat', 'cap'), 'a girl cannot put on a boys\' cap she somehow owns');
+  assert.ok(buy(g, 999, 'crown_g').ok && wear(g, 'hat', 'crown_g'), 'her own rose-gold crown she can wear');
+});
+test('r79: an older save is put right once: shared things become her set\'s version, the other set becomes gift boxes', () => {
+  const g = { look: { style: 'dress', color: '#ff5fa2', hat: 'bunny', top: 'tee_red', bottom: 'jeans', back: 'none' }, owned: { clothes: ['bunny', 'tee_red', 'jeans', 'bow', 'cape'] } };
+  adoptWorn(g);
+  assert.equal(g.look.hat, 'bunny_g', 'wears the girls\' bunny ears'); assert.equal(g.look.bottom, 'jeans_g'); assert.equal(g.look.top, 'none', 'the boys\' tee comes off');
+  assert.deepEqual([...g.owned.clothes].sort(), ['bow', 'bunny_g', 'jeans_g'].sort());
+  assert.deepEqual([...g.owned.gifts].sort(), ['cape', 'tee_red'].sort(), 'nothing lost: wrapped as gifts');
+  const again = JSON.stringify(g); assert.equal(sortClothes(g), false, 'nothing more to do the second time'); assert.equal(JSON.stringify(g), again);
+  const b = { look: { style: 'shirt', color: '#3b6fe0', hat: 'bunny', back: 'wings' }, owned: { clothes: ['bunny', 'wings'] } };
+  adoptWorn(b); assert.equal(b.look.hat, 'bunny', 'a boy keeps the (boys\') bunny ears'); assert.equal(b.look.back, 'none'); assert.deepEqual(b.owned.gifts, ['wings']);
+  const won = { look: { style: 'dress', color: '#ff5fa2' }, owned: { hats: ['crown'] } }; assert.ok(owns(won, 'crown_g'), 'a crown won counts as her rose-gold one');
+});
+test('r79: a gift box goes only to a child of the set it was made for', () => {
+  const g = GIRL(), b = BOY(); g.owned.gifts = ['cape', 'cape'];
+  assert.equal(giveGift(g, GIRL(), 'cape').why, 'set', 'not to another girl');
+  assert.equal(giveGift(g, b, 'tiara').why, 'nogift', 'only what is wrapped');
+  assert.ok(giveGift(g, b, 'cape').ok); assert.deepEqual(g.owned.gifts, ['cape']); assert.ok(owns(b, 'cape') && wear(b, 'back', 'cape'), 'he wears it');
+  assert.ok(giveGift(g, b, 'cape').ok); assert.deepEqual(b.owned.gifts, ['cape'], 'a second one is kept as a gift to pass on'); assert.deepEqual(g.owned.gifts, []);
 });

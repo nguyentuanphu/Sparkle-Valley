@@ -665,3 +665,17 @@ export const pic = (e, cls = '') => { const k = keyOf(e); return k ? ART[k].repl
 // the raw SVG text, for drawing onto a canvas (3D bubbles)
 export const artSVG = e => { const k = keyOf(e); return k ? ART[k].replace('<svg ', '<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" ') : null; };
 export const ART_COUNT = () => Object.keys(ART).length;
+
+// r79 learning (chat 2)
+// (owner, 16 Oct AEDT, I4) the skill stickers for finishing Hard in each reasoning game: a gold rosette with ribbon tails
+// and the skill's own little picture in the middle (Rule finder, Story sorter, Path planner, Pattern spotter, Shape
+// builder, Memory keeper). Keys are not emoji, so they only ever show through pic() / artSVG().
+const rosette = (fill, inner) => `<path d="M16 34l-5 11 6-2 3 5 4-12M32 34l5 11-6-2-3 5-4-12" fill="#ff6fae" ${W}/>` +
+  `<path d="M24 3l4 3 5-1 2 4 5 2-1 5 3 4-3 4 1 5-5 2-2 4-5-1-4 3-4-3-5 1-2-4-5-2 1-5-3-4 3-4-1-5 5-2 2-4 5 1z" fill="#ffb020" ${W}/>` +
+  circ(24, 21, 12.5, fill) + inner;
+def('skill:rulefinder', rosette('#fff6e4', `${dot(17, 17, 2.4, '#ff5f7a')}${dot(23, 17, 2.4, '#ff5f7a')}${dot(17, 23, 2.4, '#ff5f7a')}` + g('a-bob', `<circle cx="25" cy="22" r="5.5" fill="#dff4ff" ${W}/><path d="M29 26l4 4" stroke="${O}" stroke-width="3" stroke-linecap="round"/>`)));
+def('skill:gardenorder', rosette('#fff6e4', `<rect x="14" y="16" width="6" height="9" rx="1.5" fill="#a8e6a1" ${W}/><rect x="21" y="14" width="6" height="11" rx="1.5" fill="#5fd3ff" ${W}/><rect x="28" y="12" width="6" height="13" rx="1.5" fill="#ff7eb8" ${W}/>` + g('a-sway', `<path d="M24 31v-5M24 28c-3 0-4-2-4-3 2 0 4 1 4 3zM24 27c2 0 4-1 4-3-2 0-4 1-4 3z" fill="#43c463" stroke="${O}" stroke-width="1.4"/>`, '24px 31px')));
+def('skill:steppingpath', rosette('#a8e6a1', `${circ(16, 27, 2.6, '#ff6fae')}${circ(21, 22, 2.6, '#ff6fae')}${circ(26, 18, 2.6, '#ff6fae')}<path d="M30 10v12" ${W}/>` + g('a-sway', `<path d="M30 10l6 2.5-6 2.5z" fill="#ff5f7a" ${W}/>`, '30px 12px')));
+def('skill:patternpicnic', rosette('#fff6e4', `${circ(15, 21, 3.4, '#e8433a')}${circ(22, 21, 3.4, '#ff9ed0')}${circ(29, 21, 3.4, '#e8433a')}` + g('a-twinkle', `<text x="33" y="25" font-size="9" font-weight="900" fill="${O}">?</text>`, '35px 21px')));
+def('skill:shapebuilders', rosette('#dff4ff', `<path d="M24 11l7 7H17z" fill="#ff7a3a" ${W}/><rect x="18" y="18" width="12" height="10" fill="#ffd23f" ${W}/>` + g('a-bob', circ(24, 23, 2.6, '#5fb6ff'))));
+def('skill:remembergarden', rosette('#fff6e4', `<rect x="15" y="13" width="18" height="15" rx="2.5" fill="#dff4ff" ${W}/><path d="M24 26v-5" stroke="#43c463" stroke-width="2"/>${circ(24, 19, 3.2, '#ff6fae')}` + g('a-twinkle', sparkle(33, 13, .8), '33px 13px')));

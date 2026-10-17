@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Grown-ups</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&amp;family=Fredoka:wght@500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#5b34c4}a:hover{color:#3a2a20}
+</style>
+</helmet>
+<div style="width: 1180px; height: 760px; box-sizing: border-box; background: #fff6e4; font-family: 'Fredoka', sans-serif; color: #3a2a20; display: flex">
+
+<nav aria-label="Grown-ups" style="width: 240px; flex: none; background: #3b2558; color: #fff6e4; padding: 28px 16px; box-sizing: border-box; display: flex; flex-direction: column; gap: 6px">
+<div style="font-family: 'Baloo 2', sans-serif; font-weight: 800; font-size: 26px; padding: 0 12px 18px">Grown-ups</div>
+<a href="#" style="display: block; padding: 12px 14px; border-radius: 14px; background: #fff6e4; color: #3b2558; font-weight: 600; font-size: 17px; text-decoration: none">Children</a>
+<a href="#" style="display: block; padding: 12px 14px; border-radius: 14px; color: #fff6e4; font-weight: 500; font-size: 17px; text-decoration: none">Play time</a>
+<a href="#" style="display: block; padding: 12px 14px; border-radius: 14px; color: #fff6e4; font-weight: 500; font-size: 17px; text-decoration: none">Learning</a>
+<a href="#" style="display: block; padding: 12px 14px; border-radius: 14px; color: #fff6e4; font-weight: 500; font-size: 17px; text-decoration: none">Voices and sound</a>
+<a href="#" style="display: block; padding: 12px 14px; border-radius: 14px; color: #fff6e4; font-weight: 500; font-size: 17px; text-decoration: none">Family devices</a>
+<a href="#" style="display: block; padding: 12px 14px; border-radius: 14px; color: #fff6e4; font-weight: 500; font-size: 17px; text-decoration: none">Settings</a>
+<a href="HUD.dc.html" style="margin-top: auto; display: block; padding: 12px 14px; border-radius: 14px; border: 2px solid #fff6e4; color: #fff6e4; font-weight: 600; font-size: 17px; text-decoration: none; text-align: center">Back to the game</a>
+</nav>
+
+<main style="flex: 1; padding: 32px 36px; display: flex; flex-direction: column; gap: 22px; min-width: 0">
+<div style="display: flex; justify-content: space-between; align-items: center">
+<h1 style="margin: 0; font-family: 'Baloo 2', sans-serif; font-weight: 800; font-size: 34px">Children · Các con</h1>
+<button type="button" style="font-family: inherit; font-weight: 600; font-size: 17px; color: #ffffff; background: #43c463; border: 3px solid #3a2a20; border-radius: 16px; padding: 10px 20px; box-shadow: 0 4px 0 #2a8a40">Add a child</button>
+</div>
+
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px">
+<section style="background: #ffffff; border: 3px solid #3a2a20; border-radius: 24px; padding: 20px; display: flex; flex-direction: column; gap: 14px; box-shadow: 0 5px 0 #3a2a20">
+<div style="display: flex; align-items: center; gap: 14px">
+<span style="width: 60px; height: 60px; border-radius: 50%; background: #ffd9b8; border: 3px solid #3a2a20; box-sizing: border-box; flex: none"></span>
+<div style="flex: 1"><div style="font-family: 'Baloo 2', sans-serif; font-weight: 800; font-size: 24px; line-height: 1">Na</div><div style="font-size: 15px; color: #6b5444">Age 4 · Little ones (under 5)</div></div>
+<a href="#" style="font-weight: 600; font-size: 15px">Edit</a>
+</div>
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px">
+<div style="background: #fff6e4; border-radius: 16px; padding: 10px 12px"><div style="font-size: 13px; color: #6b5444">This week</div><div style="font-weight: 600; font-size: 22px">[min]</div></div>
+<div style="background: #fff6e4; border-radius: 16px; padding: 10px 12px"><div style="font-size: 13px; color: #6b5444">Stickers</div><div style="font-weight: 600; font-size: 22px">[n] / [total]</div></div>
+<div style="background: #fff6e4; border-radius: 16px; padding: 10px 12px"><div style="font-size: 13px; color: #6b5444">New words</div><div style="font-weight: 600; font-size: 22px">[n]</div></div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 6px">
+<div style="font-size: 15px; font-weight: 600">Difficulty</div>
+<div role="radiogroup" aria-label="Na's difficulty" style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px">
+<button type="button" role="radio" aria-checked="true" style="font-family: inherit; font-weight: 600; font-size: 15px; height: 44px; border-radius: 14px; border: 3px solid #3a2a20; background: #29b6f6; color: #ffffff">Gentle</button>
+<button type="button" role="radio" aria-checked="false" style="font-family: inherit; font-weight: 600; font-size: 15px; height: 44px; border-radius: 14px; border: 3px solid #3a2a20; background: #ffffff; color: #3a2a20">Normal</button>
+<button type="button" role="radio" aria-checked="false" style="font-family: inherit; font-weight: 600; font-size: 15px; height: 44px; border-radius: 14px; border: 3px solid #3a2a20; background: #ffffff; color: #3a2a20">Tricky</button>
+</div>
+</div>
+</section>
+
+<section style="background: #ffffff; border: 3px solid #3a2a20; border-radius: 24px; padding: 20px; display: flex; flex-direction: column; gap: 14px; box-shadow: 0 5px 0 #3a2a20">
+<div style="display: flex; align-items: center; gap: 14px">
+<span style="width: 60px; height: 60px; border-radius: 50%; background: #e3a36a; border: 3px solid #3a2a20; box-sizing: border-box; flex: none"></span>
+<div style="flex: 1"><div style="font-family: 'Baloo 2', sans-serif; font-weight: 800; font-size: 24px; line-height: 1">Bin</div><div style="font-size: 15px; color: #6b5444">Age 7 · Big kids</div></div>
+<a href="#" style="font-weight: 600; font-size: 15px">Edit</a>
+</div>
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px">
+<div style="background: #fff6e4; border-radius: 16px; padding: 10px 12px"><div style="font-size: 13px; color: #6b5444">This week</div><div style="font-weight: 600; font-size: 22px">[min]</div></div>
+<div style="background: #fff6e4; border-radius: 16px; padding: 10px 12px"><div style="font-size: 13px; color: #6b5444">Stickers</div><div style="font-weight: 600; font-size: 22px">[n] / [total]</div></div>
+<div style="background: #fff6e4; border-radius: 16px; padding: 10px 12px"><div style="font-size: 13px; color: #6b5444">New words</div><div style="font-weight: 600; font-size: 22px">[n]</div></div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 6px">
+<div style="font-size: 15px; font-weight: 600">Difficulty</div>
+<div role="radiogroup" aria-label="Bin's difficulty" style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px">
+<button type="button" role="radio" aria-checked="false" style="font-family: inherit; font-weight: 600; font-size: 15px; height: 44px; border-radius: 14px; border: 3px solid #3a2a20; background: #ffffff; color: #3a2a20">Gentle</button>
+<button type="button" role="radio" aria-checked="true" style="font-family: inherit; font-weight: 600; font-size: 15px; height: 44px; border-radius: 14px; border: 3px solid #3a2a20; background: #29b6f6; color: #ffffff">Normal</button>
+<button type="button" role="radio" aria-checked="false" style="font-family: inherit; font-weight: 600; font-size: 15px; height: 44px; border-radius: 14px; border: 3px solid #3a2a20; background: #ffffff; color: #3a2a20">Tricky</button>
+</div>
+</div>
+</section>
+</div>
+
+<section style="background: #ffffff; border: 3px solid #3a2a20; border-radius: 24px; padding: 20px 22px; display: flex; flex-direction: column; gap: 14px; box-shadow: 0 5px 0 #3a2a20">
+<h2 style="margin: 0; font-family: 'Baloo 2', sans-serif; font-weight: 800; font-size: 22px">Daily adventure and play time</h2>
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px">
+<label style="display: flex; align-items: center; justify-content: space-between; gap: 10px; background: #fff6e4; border-radius: 16px; padding: 12px 14px; font-size: 16px; font-weight: 500">Daily adventure from Grandpa Owl<input type="checkbox" checked style="width: 24px; height: 24px; accent-color: #43c463"></label>
+<label style="display: flex; align-items: center; justify-content: space-between; gap: 10px; background: #fff6e4; border-radius: 16px; padding: 12px 14px; font-size: 16px; font-weight: 500">Owl says goodnight after<select style="font-family: inherit; font-size: 16px; border: 2px solid #3a2a20; border-radius: 10px; padding: 4px 8px; background: #ffffff"><option>30 min</option><option>45 min</option><option>60 min</option><option>Never</option></select></label>
+<label style="display: flex; align-items: center; justify-content: space-between; gap: 10px; background: #fff6e4; border-radius: 16px; padding: 12px 14px; font-size: 16px; font-weight: 500">Weekly email to grown-ups<input type="checkbox" style="width: 24px; height: 24px; accent-color: #43c463"></label>
+</div>
+</section>
+</main>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1180,"height":760}}'>
+class Component extends DCLogic {
+renderVals() { return {}; }
+}
+</script>
+</body>
+</html>
