@@ -1,3 +1,4 @@
+import { loadTale } from './tale-loader.js';
 // The tale theatre: a fairy tale read aloud page by page (in the language chosen in settings), over a
 // living picture (tales with a film are acted in 3D instead: js/film.js, js/content/films.js). Each page's pictures become little actors on a painted stage: birds fly, frogs hop,
 // fish swim, rain falls, trees sway, the moon glows. The stage (sky, sea, forest, palace, night…) is
@@ -35,10 +36,8 @@ export const stageOf = en => (STAGES.find(([re]) => re.test(en)) || [0, 'meadow'
 
 // sync (round H, reading together online): { send(page), listen(fn) } — a page turned here turns for every friend reading
 export async function openTheatre(tale, { name = '', onDone, startPage = 0, sync = null } = {}) {
-  if (tale.load) {
-    try { tale = await tale.load(); } catch (e) { window.svModuleGone?.(e); return false; }
-    if (!tale) return false;
-  }
+  try { ({ tale, sync, startPage } = await loadTale(tale, sync, startPage)); }
+  catch (e) { window.svModuleGone?.(e); return null; }
   return new Promise(resolve => {
     let k = startPage, auto = true, alive = true, token = 0;
     let displayed = false;
