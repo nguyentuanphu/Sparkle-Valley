@@ -89,13 +89,14 @@ import { startPackBar } from './packbar.js';
 import { codeHTML, bindCode, padHTML, boxHTML, animalSay } from './roomcode.js';
 // the family's defaults from Sparkle Studio: applied once each time they change there (a grown-up can still change
 // them on the device afterwards)
-{ const D = CUSTOM.defaults, sig = D ? JSON.stringify(D) : '';
+// (r81, owner 17 Oct AEDT) Studio's Defaults are live: applied again as soon as the website's answer brings new ones
+{ const packDefaults = () => { const D = CUSTOM.defaults, sig = D ? JSON.stringify(D) : '';
   if (D && typeof D === 'object' && settings.packDefaults !== sig) {
     const ok = { restMins: v => +v >= 0 && +v <= 120 && String(+v), lang: v => ['en', 'vi'].includes(v) && v, currency: v => ['AUD', 'VND'].includes(v) && v, bilingual: v => typeof v === 'boolean' && { v }, captions: v => typeof v === 'boolean' && { v }, calm: v => typeof v === 'boolean' && { v }, music: v => typeof v === 'boolean' && { v }, textSize: v => [0, 1, 2].includes(+v) && { v: +v } };
     for (const [k, f] of Object.entries(ok)) if (k in D) { const r = f(D[k]); if (r !== false && r != null) settings[k] = typeof r === 'object' ? r.v : r; }
     if (['AUD', 'VND'].includes(D.currency)) settings.curPinned = true; // (round S) a family's own pick stops it following the language
     settings.packDefaults = sig; saveSettings();
-  } }
+  } }; packDefaults(); onLive(packDefaults); }
 import { setupTrading, openTrade } from './trade.js';
 import { createSecrets, SECRETS } from './secrets.js';
 import { PROLOGUE, showStory, storyCheck, showQuestTale, QUEST_TALES } from './story.js';
@@ -1514,9 +1515,12 @@ function startSession(mode, chosen) {
   if (G.valleyGrew) setTimeout(grownMoment, 2500);
   resize(); G.paused = false; playing = true; G.listenFriends();
   // a note from the grown-ups (Sparkle Studio), once a day
-  { const M = CUSTOM.message, today = new Date().toDateString();
+  // (r81, owner 17 Oct AEDT) Studio's message is live: a new one that arrives while playing is shown too (once)
+  { const familyMsg = () => { const M = CUSTOM.message, today = new Date().toDateString(), sig = M ? String(M.en || '') + '|' + String(M.vi || '') : '';
+    const seen = () => settings.familyMsgDay === today && (settings.familyMsgSig == null || settings.familyMsgSig === sig);
     // (audit, 9 Oct) marked as seen only once it is really shown: it waits while a story, a game or a panel is open
-    if (M && (M.en || M.vi) && settings.familyMsgDay !== today) { let tries = 0; const tryShow = () => { if (settings.familyMsgDay === today || ++tries > 200) return; if (G.paused) { setTimeout(tryShow, 3000); return; } settings.familyMsgDay = today; saveSettings(); G.paused = true; dialog('💌 ' + T('From your family', 'Lời nhắn của gia đình'), [[String(M.en || M.vi).slice(0, 400), String(M.vi || M.en).slice(0, 400)]]).then(() => { G.paused = false; }); }; setTimeout(tryShow, 4000); } }
+    if (M && (M.en || M.vi) && !seen()) { let tries = 0; const tryShow = () => { if (seen() || ++tries > 200 || CUSTOM.message !== M) return; if (G.paused) { setTimeout(tryShow, 3000); return; } settings.familyMsgDay = today; settings.familyMsgSig = sig; saveSettings(); G.paused = true; dialog('💌 ' + T('From your family', 'Lời nhắn của gia đình'), [[String(M.en || M.vi).slice(0, 400), String(M.vi || M.en).slice(0, 400)]]).then(() => { G.paused = false; }); }; setTimeout(tryShow, 4000); } };
+    familyMsg(); if (!G._familyMsgLive) { G._familyMsgLive = true; onLive(familyMsg); } }
   $('#huds').hidden = false;
   const p = chosen[0];
   // the welcome is words on the screen, not a voice (owner, round 30: with the child's name in it, only the phone's

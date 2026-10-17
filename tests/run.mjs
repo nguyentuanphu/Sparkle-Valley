@@ -4452,6 +4452,41 @@ await check('familynote', async () => {
   return 'the note shows once a day ("From your family"), the Vietnamese words when the English is empty; seen today is saved and it does not come back';
 });
 
+await check('studiolive', async () => {
+  // (r81, owner 17 Oct AEDT) Studio's content pages are live at once, without Publish: a Message, a Mission, a Quiz
+  // question and a Defaults switch saved live reach the game from /api/live, in English and in Vietnamese; a live section
+  // wins over the same one in content/custom.json, one never saved live keeps custom.json's (Villagers' names here); with
+  // no answer from the website (no internet) the game uses the copy it kept and still never shows the file's old message
+  const FILE = { message: { en: 'Old note from the file', vi: 'Lời nhắn cũ trong tệp' }, quiz: [{ q: ['File question?', 'Câu hỏi trong tệp?'], answers: [['a', 'a'], ['b', 'b']], right: 0 }], names: { 'Bà Tư': { en: 'File Grandma', vi: 'Bà trong tệp' } } };
+  const LIVE = { releases: {}, festivals: {}, content: { message: { en: 'Live hello from Mum', vi: 'Mẹ chào con yêu' }, missions: [{ id: 'mlive1', en: 'Water the plants', vi: 'Tưới cây' }], quiz: [{ q: ['Live question?', 'Câu hỏi mới?'], answers: [['Yes', 'Có'], ['No', 'Không']], right: 0 }], defaults: { calm: true, restMins: 45 } } };
+  const json = o => r => r.fulfill({ contentType: 'application/json', body: JSON.stringify(o) }), rows = [];
+  const read = page => page.evaluate(async () => { const C = await import('/js/custom.js'), { T } = await import('/js/i18n.js'), S = await import('/js/state.js'), G = window.__sv;
+    const m = G && G.heroes[0] ? G.parents.openFor(G.heroes[0].profile).find(x => x.id === 's_mlive1') : null, q = C.customQuiz()[0], n = C.customName('Bà Tư');
+    return { message: C.CUSTOM.message && T(C.CUSTOM.message.en, C.CUSTOM.message.vi), mission: m ? T(m.en, m.vi) : null, quiz: q ? T(q.q[0], q.q[1]) : null, name: n ? T(n.en, n.vi) : null, calm: S.settings.calm, rest: S.settings.restMins, kept: !!(JSON.parse(localStorage.getItem('sv2_live') || '{}').content || {}).message }; });
+  for (const lang of ['en', 'vi']) {
+    const want = lang === 'en' ? { message: 'Live hello from Mum', mission: 'Water the plants', quiz: 'Live question?', name: 'File Grandma' } : { message: 'Mẹ chào con yêu', mission: 'Tưới cây', quiz: 'Câu hỏi mới?', name: 'Bà trong tệp' };
+    const P = await open(b, { w: 390, h: 844, touch: true, lang, settings: { familyMsgDay: null }, route: async ctx => { await ctx.route('**/content/custom.json*', json(FILE)); await ctx.route('**/api/live**', json(LIVE)); } });
+    // (the message waits behind anything else the start shows, e.g. the family missions guide: those are closed here)
+    let shown = ''; for (let i = 0; i < 40 && !shown; i++) { shown = await P.page.evaluate(() => { const ds = [...document.querySelectorAll('.dialog')], m = ds.find(d => /Mum|Mẹ chào|trong tệp|from the file/.test(d.textContent)); if (m) return m.textContent; ds.forEach(d => d.remove()); __sv.paused = false; return ''; }); if (!shown) await P.page.waitForTimeout(1000); }
+    await clear(P.page); const on = await read(P.page);
+    // no internet: the website does not answer; the game opens again with the copy it kept
+    await P.ctx.unroute('**/api/live**'); await P.ctx.route('**/api/live**', r => r.abort()); await P.page.reload(); await P.page.waitForSelector('.screen.title', { timeout: 90000 });
+    const off = await read(P.page);
+    // (r81) the page's own update-notice switch (js/launch.js, used before the game's switch reader is ready) follows a
+    // live Defaults value kept on this device, not only content/custom.json
+    const notice = async () => P.page.evaluate(() => { document.querySelector('.update-notice')?.remove(); delete window.svFeatureOn; svOfferUpdate(); const n = !!document.querySelector('.update-notice'); document.querySelector('.update-notice')?.remove(); return n; });
+    const noticeBefore = await notice();
+    await P.page.evaluate(() => { const l = JSON.parse(localStorage.getItem('sv2_live') || '{}'); l.content = { ...(l.content || {}), features: { explain_updateNotice: false } }; localStorage.setItem('sv2_live', JSON.stringify(l)); });
+    await P.page.reload(); await P.page.waitForSelector('.screen.title', { timeout: 90000 });
+    const noticeLiveOff = await notice(), errs = P.errors; await P.ctx.close();
+    off.noticeBefore = noticeBefore; off.noticeLiveOff = noticeLiveOff;
+    const good = x => x.message === want.message && x.quiz === want.quiz && x.name === want.name && x.calm === true && String(x.rest) === '45' && x.kept;
+    rows.push({ lang, shown: shown.slice(0, 80), on, off });
+    ok(shown.includes(want.message) && !/file|tệp/i.test(shown) && good(on) && on.mission === want.mission && good(off) && off.noticeBefore === true && off.noticeLiveOff === false && !errs.length, JSON.stringify({ lang, shown, on, off, errs }));
+  }
+  return 'live Message shown, Mission, Quiz question and Defaults in English and Vietnamese with no Publish; live wins over custom.json, names fall back to it; offline the kept copy; a kept live update-notice switch reaches js/launch.js: ' + JSON.stringify(rows.map(r => [r.lang, r.on.message, r.off.quiz, r.off.noticeLiveOff]));
+});
+
 await check('mictest', async () => {
   // (Round V, owner 13 Oct: the microphone does nothing in Friends or in voice control) the grown-ups' microphone test in
   // Friends works without a room and says exactly what the device answered: on with a sound bar, or the error's name and
