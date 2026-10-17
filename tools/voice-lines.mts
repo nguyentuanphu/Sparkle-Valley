@@ -1,5 +1,5 @@
 // Lists every line the game speaks (English + Tiếng Việt), with the character who says it, so a voice
-// pack can be made. Usage: node tools/voice-lines.mjs > tools/voice-lines.json
+// pack can be made. Usage: node tools/voice-lines.mts > tools/voice-lines.json
 // Lines that contain a child's name or other changing words (`${…}`) can't be recorded in advance, so the game
 // speaks a fixed version instead (round F: dialog lines [shown en, shown vi, spoken en, spoken vi]).
 import fs from 'fs';
@@ -120,7 +120,7 @@ export function collectTemplates() {
   return out;
 }
 // say(…) calls whose words are not written in the call (a variable, a list, a function): their lines are built while
-// playing, so tools/voice-harvest.mjs collects them into tools/voice-extra.json; counted for the coverage check
+// playing, so tools/voice-harvest.mts collects them into tools/voice-extra.json; counted for the coverage check
 export function dynamicSays() {
   const out = [];
   for (const f of files) {
@@ -154,7 +154,7 @@ const FILE_AREA = {
 };
 const AREA_OF = new Map(Object.entries(FILE_AREA).flatMap(([a, fs]) => fs.map(f => [f, a])));
 // how early a core line comes (the order of FILE_AREA.core: the start first): when the core is over its size, the
-// last ones go to their own area instead (tools/make-voice-pack.mjs CORE_MB); 40 = a line said in many games
+// last ones go to their own area instead (tools/make-voice-pack.mts CORE_MB); 40 = a line said in many games
 export const corePri = fromFiles => Math.min(40, ...fromFiles.map(f => { const i = FILE_AREA.core.indexOf(f); return i < 0 ? 40 : i; }));
 // where a core line goes if the core is full: the area of its other files, else the games or the world
 export const nonCoreArea = fromFiles => { const a = [...new Set(fromFiles.map(areaOfFile))].filter(x => x !== 'core').sort((x, y) => (x === 'world') - (y === 'world'))[0]; return a || (fromFiles.some(f => f.startsWith('js/games/')) ? 'games' : 'world'); };
@@ -176,7 +176,7 @@ export function areaOfLine(fromFiles, heard) {
 }
 export function readWhere() { try { return JSON.parse(fs.readFileSync(path.join(ROOT, 'tools/voice-where.json'), 'utf8')); } catch (e) { return {}; } }
 
-if (process.argv[1] && process.argv[1].endsWith('voice-lines.mjs')) {
+if (process.argv[1] && process.argv[1].endsWith('voice-lines.mts')) {
 const lines = collectLines();
 const chars = lines.reduce((a, l) => a + l.en.length + l.vi.length, 0);
 if (process.argv.includes('--count')) { console.log(JSON.stringify({ lines: lines.length, characters: chars, en: lines.reduce((a, l) => a + l.en.length, 0), vi: lines.reduce((a, l) => a + l.vi.length, 0) })); }

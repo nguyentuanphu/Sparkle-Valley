@@ -7,7 +7,7 @@
 //   - a problem marked fixed (Studio, or a pull request that names it) closes its issue with the version;
 //   - lines with no recording are left to the daily voices job (.github/workflows/voices-daily.yml), not filed.
 // Once a day (the run after 9 am AEDT) it also updates one issue "Tester daily summary" (label `tester-summary`).
-//   STUDIO_KEY=… GITHUB_TOKEN=… GITHUB_REPOSITORY=owner/repo node tools/tester-issues.mjs [--site https://…] [--dry]
+//   STUDIO_KEY=… GITHUB_TOKEN=… GITHUB_REPOSITORY=owner/repo node tools/tester-issues.mts [--site https://…] [--dry]
 const arg = k => { const i = process.argv.indexOf(k); return i > 0 ? process.argv[i + 1] : ''; };
 const SITE = (arg('--site') || process.env.SV_SITE || 'https://sparklevalley.au').replace(/\/$/, ''), KEY = process.env.STUDIO_KEY || '';
 const GH = process.env.GITHUB_TOKEN || '', REPO = process.env.GITHUB_REPOSITORY || 'nguyentuanphu/Sparkle-Valley', DRY = process.argv.includes('--dry');

@@ -4,14 +4,14 @@
 // tools/voice-extra.json the ones the game itself has: the same words are in the game's code, the lines heard while
 // playing, the family's Studio content (content/custom.json) or the Releases and Festivals saved on the website
 // (/api/live). Every other line is held: it may carry a friend's or pet's name, which is never recorded (HANDOFF rule
-// 11; owner's choice, 12 Oct). Held lines are counted, never written down here. tools/make-voice-pack.mjs then records
+// 11; owner's choice, 12 Oct). Held lines are counted, never written down here. tools/make-voice-pack.mts then records
 // everything missing.
-//   STUDIO_KEY=… node tools/voice-daily.mjs [--site https://sparklevalley.netlify.app] [--inbox file.json]
+//   STUDIO_KEY=… node tools/voice-daily.mts [--site https://sparklevalley.netlify.app] [--inbox file.json]
 // It also writes tools/voice-daily.json (the run's summary, read by Studio's Voices page).
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { collectLines } from './voice-lines.mjs';
+import { collectLines } from './voice-lines.mts';
 
 globalThis.document = { documentElement: {} }; // i18n.js expects a browser
 globalThis.localStorage = { getItem: () => null, setItem: () => { } };
@@ -38,7 +38,7 @@ async function readInbox() {
 // ---------- everything the game itself says ----------
 const known = new Set(), put = (lang, text) => { const t = norm(text); if (t) known.add(lang + '|' + t); };
 for (const l of collectLines()) { put('en', swapNames(l.en, 'en')); put('vi', swapNames(l.vi, 'vi')); put('en', l.en); put('vi', l.vi); }
-const inCode = new Set(known); // already recorded by tools/make-voice-pack.mjs, nothing to add
+const inCode = new Set(known); // already recorded by tools/make-voice-pack.mts, nothing to add
 let extra = []; try { extra = JSON.parse(fs.readFileSync(EXTRA, 'utf8')); } catch (e) { }
 for (const l of extra) put(l.lang, l.text);
 // the family's content and the website's Releases and Festivals: every [en, vi] pair, and every plain string in both

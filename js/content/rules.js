@@ -1,5 +1,5 @@
 // The rule registry (architecture §9.7, step 0): every hard rule by its id, with its words, severity and how it is
-// checked. MADE FROM docs/ARCHITECTURE.md §9 by tools/rules-from-doc.mjs — change the document, then run the tool;
+// checked. MADE FROM docs/ARCHITECTURE.md §9 by tools/rules-from-doc.mts — change the document, then run the tool;
 // never edit this file by hand (the "rules" check compares the two).
 // Checkers report problems by id (js/validate.js); RULES tells how serious each one is.
 export const RULES = {

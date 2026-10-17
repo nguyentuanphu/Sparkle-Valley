@@ -2,7 +2,7 @@
 // to show it, on a fresh device, on a slow phone connection, and with the game saved on the device (service worker) both
 // offline and on a connection that never answers ("Wi-Fi with no internet"). For the round report; not a pass/fail check
 // (the `offline` and `perf` checks are).
-//   cd tests && node ../tools/startup-time.mjs [folder]      (folder: the copy to measure, default the repo; e.g. ../netlify-site)
+//   cd tests && node ../tools/startup-time.mts [folder]      (folder: the copy to measure, default the repo; e.g. ../netlify-site)
 // It serves the folder itself on 127.0.0.2 (the game skips its service worker on localhost and 127.0.0.1) and can make
 // that server stop answering.
 import http from 'http';

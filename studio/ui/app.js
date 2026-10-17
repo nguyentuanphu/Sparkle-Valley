@@ -846,7 +846,7 @@ PAGES.children = async P => {
   };
 };
 // ---------- voices ----------
-// The same lines the game speaks (tools/voice-lines.mjs), worked out here from the game's own files, plus the
+// The same lines the game speaks (tools/voice-lines.mts), worked out here from the game's own files, plus the
 // family's stories, quiz and message. Each missing recording can be made with Azure, Piper (free, on this computer)
 // or recorded with the microphone.
 const VI = /[ăâđêôơưáàảãạấầẩẫậắằẳẵặéèẻẽẹếềểễệíìỉĩịóòỏõọốồổỗộớờởỡợúùủũụứừửữựýỳỷỹỵ]/i;
@@ -871,7 +871,7 @@ async function allJobs() {
   for (const [en, vi] of seen.values()) { put('en', swapNames(en, 'en')); put('vi', swapNames(vi, 'vi')); }
   for (const [lang, L] of Object.entries(LEARN)) for (const w of L.words) put(lang, w[3]);
   const cities = SRC.cities, re = /\['([^'\\]+)', '(?:[^'\\]|\\.)*', '(?:[^'\\]|\\.)*', '(zh|hi)'\]/g; let m; while ((m = re.exec(cities))) put(m[2], m[1]);
-  // lines built while playing (names, numbers, colours…): collected by tools/voice-harvest.mjs and sent from devices
+  // lines built while playing (names, numbers, colours…): collected by tools/voice-harvest.mts and sent from devices
   for (const l of await api('voices/extra').catch(() => [])) if (CAST[l.lang]) put(l.lang, l.text);
   // the inbox: lines the children's devices had to say with the machine voice, sent by themselves
   INBOX = await api('voices/inbox').catch(() => []);

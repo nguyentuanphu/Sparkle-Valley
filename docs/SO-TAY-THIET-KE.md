@@ -135,7 +135,7 @@ Sources merged here:
   - the voice list is served from the saved copy at once (slow phone data never means the phone voice);
   - Grown-ups shows why a recording could not play (`voiceDiag`).
   - Checked by `voice`: a recorded line never uses the phone voice, also with Web Audio asleep.
-- **Every new spoken line goes into the pack in the same round:** `tools/voice-harvest.mjs`, then `tools/make-voice-pack.mjs --engine azure`.
+- **Every new spoken line goes into the pack in the same round:** `tools/voice-harvest.mts`, then `tools/make-voice-pack.mts --engine azure`.
   - Lines a device still says with the machine voice reach Sparkle Studio's **inbox** by themselves (never a line with a child's name).
   - One click records them.
 - **Voices:** a woman's voice for women, girls and grandmas, a man's for men, boys and grandpas. Grandparents a little slower, children a little higher.

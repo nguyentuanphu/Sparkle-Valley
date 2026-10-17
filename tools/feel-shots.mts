@@ -1,6 +1,6 @@
 // (feel and sound, chat A, owner plan 16 Oct AEDT) pictures of the new feel on a phone, a tablet and a computer:
 // a coin flying into its counter, a button pressed down, and the Grown-ups "Tap sounds" switch.
-// Usage (game served on :8765, from tools/): node feel-shots.mjs → docs/plans-20261016/evidence/feel-<device>-<what>.png
+// Usage (game served on :8765, from tools/): node feel-shots.mts → docs/plans-20261016/evidence/feel-<device>-<what>.png
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { launch, open } from '../tests/harness.mjs';

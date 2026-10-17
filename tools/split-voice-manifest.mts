@@ -1,7 +1,7 @@
 // Rebuild the language indexes without recording or touching MP3s.
 import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import manifests from './voice-manifests.cjs';
+import manifests from './voice-manifests.cts';
 const dir = new URL('../voices/', import.meta.url);
 const all = JSON.parse(fs.readFileSync(new URL('manifest.json', dir), 'utf8'));
 for (const [lang, shard] of Object.entries(manifests.splitManifest(all))) {

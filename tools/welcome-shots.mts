@@ -1,6 +1,6 @@
 // (Welcome steady, owner 16-17 Oct AEDT) pictures of the Welcome screen in English and Vietnamese on a phone, a tablet
 // and a computer, for the before and after of the steady Start button.
-// Usage (game served on :8765, from tools/): node welcome-shots.mjs <folder> → docs/owner-repair-20261014/evidence/<folder>/<device>-<lang>.png
+// Usage (game served on :8765, from tools/): node welcome-shots.mts <folder> → docs/owner-repair-20261014/evidence/<folder>/<device>-<lang>.png
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';

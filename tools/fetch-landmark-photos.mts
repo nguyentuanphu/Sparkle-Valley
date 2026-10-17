@@ -4,13 +4,13 @@
 // rule PRIV-011.) A developer runs it on a computer with the internet. A grown-up can take a photo off in Studio
 // (photos/blocked.json is respected here too).
 //
-//   node tools/fetch-landmark-photos.mjs                 places without photos, 4 each
-//   node tools/fetch-landmark-photos.mjs --max 5         3 to 5 per place
-//   node tools/fetch-landmark-photos.mjs --only opera,uluru   just these landmarks (ids from js/realworld.js REAL)
-//   node tools/fetch-landmark-photos.mjs --force         fetch again for places that already have photos
-//   node tools/fetch-landmark-photos.mjs --kinds         also the kinds of houses and the symbol animals
-//   node tools/fetch-landmark-photos.mjs --dry           only list what would be fetched
-// In the cloud sandbox: NODE_USE_ENV_PROXY=1 NODE_EXTRA_CA_CERTS=/root/.ccr/ca-bundle.crt node tools/fetch-landmark-photos.mjs
+//   node tools/fetch-landmark-photos.mts                 places without photos, 4 each
+//   node tools/fetch-landmark-photos.mts --max 5         3 to 5 per place
+//   node tools/fetch-landmark-photos.mts --only opera,uluru   just these landmarks (ids from js/realworld.js REAL)
+//   node tools/fetch-landmark-photos.mts --force         fetch again for places that already have photos
+//   node tools/fetch-landmark-photos.mts --kinds         also the kinds of houses and the symbol animals
+//   node tools/fetch-landmark-photos.mts --dry           only list what would be fetched
+// In the cloud sandbox: NODE_USE_ENV_PROXY=1 NODE_EXTRA_CA_CERTS=/root/.ccr/ca-bundle.crt node tools/fetch-landmark-photos.mts
 //
 // photos/index.json: { "<key>": [{ "src": "photos/<key>/1.jpg", "file": "File:….jpg", "caption": "…", "credit": "Artist ·
 // CC BY-SA 4.0 · Wikimedia Commons", "licence": "CC BY-SA 4.0", "page": "https://commons.wikimedia.org/wiki/File:…" }] }

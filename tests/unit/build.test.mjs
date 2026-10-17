@@ -1,4 +1,4 @@
-// The TypeScript build (owner, 16 Oct AEDT: "TypeScript everywhere", batch 0): tools/build.mjs makes each .ts into the
+// The TypeScript build (owner, 16 Oct AEDT: "TypeScript everywhere", batch 0): tools/build.mts makes each .ts into the
 // .js beside it, same lines and columns, listed in .gitignore. node --test tests/unit
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -7,7 +7,7 @@ import os from 'os';
 import path from 'path';
 import { execFileSync } from 'child_process';
 import { pathToFileURL } from 'url';
-const BUILD = path.resolve(path.dirname(new URL(import.meta.url).pathname), '../../tools/build.mjs');
+const BUILD = path.resolve(path.dirname(new URL(import.meta.url).pathname), '../../tools/build.mts');
 const run = (dir, ...a) => { try { return { code: 0, out: execFileSync(process.execPath, [BUILD, dir, ...a], { encoding: 'utf8', stdio: 'pipe' }) }; } catch (e) { return { code: e.status, out: String(e.stdout) + String(e.stderr) }; } };
 const game = () => { const d = fs.mkdtempSync(path.join(os.tmpdir(), 'sv-build-')); fs.mkdirSync(path.join(d, 'js/games'), { recursive: true }); fs.writeFileSync(path.join(d, '.gitignore'), 'node_modules\n'); return d; };
 const TS = `import { b } from './b.js';
@@ -24,10 +24,10 @@ test('build: a .ts becomes the .js beside it, every line where it was, and it ru
   const r = run(d); assert.equal(r.code, 0, r.out);
   const js = fs.readFileSync(path.join(d, 'js/a.js'), 'utf8'), src = TS.split('\n'), out = js.split('\n');
   for (let i = 0; i < src.length - 1; i++) assert.equal(out[i].length, src[i].length, `line ${i + 1} moved`);
-  assert.match(js, /made from a\.ts by tools\/build\.mjs/); assert.doesNotMatch(js, /interface|: string|<string, number>/);
+  assert.match(js, /made from a\.ts by tools\/build\.mts/); assert.doesNotMatch(js, /interface|: string|<string, number>/);
   assert.equal(fs.readFileSync(path.join(d, 'js/b.js'), 'utf8'), "export const b = '!';\n", 'a plain .js was changed');
   assert.ok(!fs.existsSync(path.join(d, 'js/games/c.js')), 'a .d.ts was built');
-  const gi = fs.readFileSync(path.join(d, '.gitignore'), 'utf8'); assert.match(gi, /^node_modules\n# --- made by tools\/build\.mjs[^\n]*\n\/js\/a\.js\n# --- end of tools\/build\.mjs ---\n$/);
+  const gi = fs.readFileSync(path.join(d, '.gitignore'), 'utf8'); assert.match(gi, /^node_modules\n# --- made by tools\/build\.mts[^\n]*\n\/js\/a\.js\n# --- end of tools\/build\.mts ---\n$/);
   const m = await import(pathToFileURL(path.join(d, 'js/a.js')).href); assert.equal(m.hello({ name: 'Mi' }), 'MiMi!2');
   assert.equal(run(d, '--check').code, 0); assert.equal(run(d).out.trim(), 'build: 1 TypeScript files, 0 made');
   fs.rmSync(d, { recursive: true, force: true });

@@ -1,7 +1,7 @@
 // Which emoji in the game still have no drawing in js/art.js? (HANDOFF rule 13: no phone emoji in the look of the game.)
-//   node tools/emoji-audit.mjs            the undrawn emoji, with how often and where they are used
-//   node tools/emoji-audit.mjs --all      every emoji found, drawn or not
-//   node tools/emoji-audit.mjs --keys     only the undrawn emoji, space-separated (handy for a test page)
+//   node tools/emoji-audit.mts            the undrawn emoji, with how often and where they are used
+//   node tools/emoji-audit.mts --all      every emoji found, drawn or not
+//   node tools/emoji-audit.mts --keys     only the undrawn emoji, space-separated (handy for a test page)
 // Scans js/**/*.js, index.html, content/*.json and Sparkle Studio's pages (studio/ui), leaving out comments. art.js is imported as it is (no DOM at module level).
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, relative, dirname } from 'node:path';

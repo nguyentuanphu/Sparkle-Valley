@@ -1,6 +1,6 @@
 // Packs the game's scripts into a few small files for the website (Analytics & Infra, 10 Oct, task infra-speed): the
 // start-up download shrinks (minified, ~150 files become a handful) and the phone makes far fewer requests.
-//   node tools/bundle.mjs <folder>        pack the game inside <folder> (a copy: build-netlify.sh's netlify-site, or
+//   node tools/bundle.mts <folder>        pack the game inside <folder> (a copy: build-netlify.sh's netlify-site, or
 //                                         Netlify's own checkout); the repository itself is never changed
 // What it does in <folder>:
 //   - bundle/: js/main.js and everything it imports, minified, split into chunks (stories and games that load later
@@ -21,7 +21,7 @@ const HERE = path.dirname(new URL(import.meta.url).pathname);
 // esbuild is installed outside the site (never published): the system's temp folder
 const TOOL = path.join(os.tmpdir(), 'sv-esbuild-' + ESBUILD);
 const dir = path.resolve(process.argv[2] || '');
-if (!process.argv[2] || !fs.existsSync(path.join(dir, 'index.html')) || !fs.existsSync(path.join(dir, 'sw.js'))) { console.error('usage: node tools/bundle.mjs <folder with index.html, sw.js and js/>'); process.exit(2); }
+if (!process.argv[2] || !fs.existsSync(path.join(dir, 'index.html')) || !fs.existsSync(path.join(dir, 'sw.js'))) { console.error('usage: node tools/bundle.mts <folder with index.html, sw.js and js/>'); process.exit(2); }
 if (path.resolve(dir) === path.resolve(HERE, '..') && !process.env.NETLIFY) { console.error('bundle: refusing to change the repository itself; give it a copy (build-netlify.sh does)'); process.exit(2); }
 
 async function loadEsbuild() {
@@ -58,7 +58,7 @@ const start = new Set(), walk = k => { for (const i of outputs[k].imports || [])
 walk(entry);
 // index.html: start the bundle, preload its start-up chunks
 const idx = path.join(dir, 'index.html'); let html = fs.readFileSync(idx, 'utf8');
-const pre = '<!-- preload:start (tools/bundle.mjs) -->\n' + [...start].map(f => `<link rel="modulepreload" href="${rel(f)}">`).join('\n') + '\n<!-- preload:end -->';
+const pre = '<!-- preload:start (tools/bundle.mts) -->\n' + [...start].map(f => `<link rel="modulepreload" href="${rel(f)}">`).join('\n') + '\n<!-- preload:end -->';
 if (!/<!-- preload:start[\s\S]*?<!-- preload:end -->/.test(html) || !html.includes('src="js/launch.js"')) throw new Error('index.html: no preload block or js/launch.js script');
 const imap = {}; for (const [k, o] of Object.entries(outputs)) if (o.entryPoint && SHARED.includes(rel(o.entryPoint))) imap['/' + rel(o.entryPoint)] = './' + rel(k);
 const mapTag = `<script type="importmap">${JSON.stringify({ imports: imap })}</script>`;

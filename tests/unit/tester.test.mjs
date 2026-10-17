@@ -82,8 +82,8 @@ test('/api/tester: reports in, status out, refused for others', async () => {
   assert.equal((await h(new Request(`https://x/api/tester?id=${X}&b=r66`), { ip: '1.2.3.4' })).status, 403);
 });
 
-test('each problem goes to the core it most likely belongs to (tools/tester-issues.mjs)', async () => {
-  const { coreOf } = await import('../../tools/tester-issues.mjs');
+test('each problem goes to the core it most likely belongs to (tools/tester-issues.mts)', async () => {
+  const { coreOf } = await import('../../tools/tester-issues.mts');
   assert.equal(coreOf({ title: 'error', where: { game: 'memory' } }, null), 'play');
   assert.equal(coreOf({ title: 'x', where: {} }, { reports: [{ errors: ['boom @ roads.js:3'] }] }), 'world');
   assert.equal(coreOf({ title: 'x', where: {}, auto: 'slow', kind: 'auto' }, null), 'analytics-infra');

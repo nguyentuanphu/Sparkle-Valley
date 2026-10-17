@@ -1,6 +1,6 @@
 // (r79, owner 16 Oct AEDT) pictures of the screens the owner reported, on a phone, a tablet and a computer (EN), with a
 // Bag that holds the items from the owner's picture (long names, treasures, food from stalls).
-// Usage (from tools/): node r79-shots.mjs <folder name> [screens, e.g. bag,album,wardrobe,hud,camera] [devices]
+// Usage (from tools/): node r79-shots.mts <folder name> [screens, e.g. bag,album,wardrobe,hud,camera] [devices]
 // Pictures go to docs/owner-repair-20261014/evidence/<folder name>/<device>-<screen>.png
 import fs from 'node:fs';
 import path from 'node:path';

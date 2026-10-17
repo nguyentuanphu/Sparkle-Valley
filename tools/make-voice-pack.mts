@@ -9,15 +9,15 @@
 //   हिन्दी Hindi  – a man (m)                      the Hindi learning words and sayings
 // Men, boys and grandpas in the game use the man's voice, everyone else the woman's.
 //
-//   node tools/make-voice-pack.mjs --count                  how many characters the whole pack needs (no key)
-//   node tools/make-voice-pack.mjs --key sk_... --dry       the same, plus what your plan has left
-//   node tools/make-voice-pack.mjs --key sk_...             make (or finish) the pack
+//   node tools/make-voice-pack.mts --count                  how many characters the whole pack needs (no key)
+//   node tools/make-voice-pack.mts --key sk_... --dry       the same, plus what your plan has left
+//   node tools/make-voice-pack.mts --key sk_...             make (or finish) the pack
 //   choose voices: --voice-en-f <id> --voice-en-m <id> --voice-vi-f <id> --voice-vi-m <id> --voice-zh-m <id> --voice-hi-m <id>
 //   other options: --model <id> (default eleven_flash_v2_5)  --limit <n> (make only n files now)  --force
 //
 // Microsoft Azure instead of ElevenLabs (same cast, same voices/ folder, same offline use):
-//   node tools/make-voice-pack.mjs --engine azure --count                         cost only
-//   node tools/make-voice-pack.mjs --engine azure --key <KEY 1> --region <e.g. australiaeast>
+//   node tools/make-voice-pack.mts --engine azure --count                         cost only
+//   node tools/make-voice-pack.mts --engine azure --key <KEY 1> --region <e.g. australiaeast>
 //   voices default to en-AU Natasha / William, vi-VN Hoài My / Nam Minh, zh-CN Yunxi, hi-IN Madhur;
 //   change with --voice-en-f en-AU-FreyaNeural etc. The free (F0) tier allows about 20 requests a minute,
 //   so it goes slowly by itself (--per-minute 180 on a paid S0 resource makes it faster).
@@ -26,8 +26,8 @@
 // Keep the key secret: it is only used for this run and is never written into the game.
 import fs from 'fs';
 import path from 'path';
-import manifests from './voice-manifests.cjs';
-import { collectLines, collectTemplates, partText, NUMBERS, areaOfLine, areaOfFile, readWhere, GROUPS, dynamicSays, corePri, nonCoreArea } from './voice-lines.mjs';
+import manifests from './voice-manifests.cts';
+import { collectLines, collectTemplates, partText, NUMBERS, areaOfLine, areaOfFile, readWhere, GROUPS, dynamicSays, corePri, nonCoreArea } from './voice-lines.mts';
 
 globalThis.document = { documentElement: {} };            // i18n.js expects a browser
 globalThis.localStorage = { getItem: () => null, setItem: () => { } };
@@ -53,7 +53,7 @@ const CAST = { en: ['f', 'm'], vi: ['f', 'm'], zh: ['m'], hi: ['m'] };
 const LANG_NAME = { en: 'English', vi: 'Vietnamese', zh: 'Chinese', hi: 'Hindi' };
 
 // ---------- what to say ----------
-// (round R item 12) every line also gets the area it downloads with (tools/voice-lines.mjs areaOfLine)
+// (round R item 12) every line also gets the area it downloads with (tools/voice-lines.mts areaOfLine)
 const jobs = [], where = readWhere(), heard = (lang, text) => where[lang + '|' + text];
 // a line and its translation download together: the area either was heard in. A line in a file that holds many places
 // (js/cities.js, js/heritage.js…) that was not heard while playing goes with the nearest line in the same file that was
@@ -96,7 +96,7 @@ for (const t of collectTemplates()) {
   for (const opts of t.fills) for (const w of opts) jobs.push({ lang: t.lang, text: swapNames(w, t.lang), area, part: true, pri, alt });
 }
 for (const lang of ['en', 'vi']) for (const n of NUMBERS) jobs.push({ lang, text: n, area: +n <= 20 ? 'core' : 'games', part: true, pri: 0 });
-// lines built while playing (names, numbers, colours…), collected by tools/voice-harvest.mjs or sent from devices via Sparkle Studio
+// lines built while playing (names, numbers, colours…), collected by tools/voice-harvest.mts or sent from devices via Sparkle Studio
 try {
   for (const l of JSON.parse(fs.readFileSync(new URL('./voice-extra.json', import.meta.url), 'utf8'))) {
     if (!l || !CAST[l.lang] || !l.text) continue;
@@ -195,7 +195,7 @@ if (flag('cover')) {
   if (!tpl) bad.push('the manifest lists no templates (run --areas)');
   const dyn = dynamicSays(), parts = list.filter(([, j]) => j.part).length;
   const res = { lines: list.length - parts, parts, templates: tpl, areas: Object.keys(areas.groups).length,
-    reasons: { 'built while playing (say with a variable): collected by tools/voice-harvest.mjs into tools/voice-extra.json': dyn.length, 'a child\'s, friend\'s or pet\'s name: shown, never recorded or spoken (HANDOFF rule 11)': 'every gap that is a name' }, bad };
+    reasons: { 'built while playing (say with a variable): collected by tools/voice-harvest.mts into tools/voice-extra.json': dyn.length, 'a child\'s, friend\'s or pet\'s name: shown, never recorded or spoken (HANDOFF rule 11)': 'every gap that is a name' }, bad };
   console.log(JSON.stringify(res));
   process.exit(bad.length ? 1 : 0);
 }

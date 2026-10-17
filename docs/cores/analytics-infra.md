@@ -68,7 +68,7 @@ Blobs stores: `players`, `live`, `studio-admins`, `studio-pending`, `family-phot
   places)”, with a folded list of everything that uses the internet. When it is on, the game never asks again (the real
   place's Google map opens straight away; PRIV-011 reworded).
 - (10 Oct) Parents and children never see “Sparkle Studio” or “Studio”: it is for the admin only (check `nostudio`).
-- (10 Oct) The website serves a packed copy of the scripts (`tools/bundle.mjs`, Netlify build and `build-netlify.sh`);
+- (10 Oct) The website serves a packed copy of the scripts (`tools/bundle.mts`, Netlify build and `build-netlify.sh`);
   the fast checks run on GitHub for every pull request (`.github/workflows/checks.yml`).
 - (11 Oct, #36 slow start) Go for the whole start-up plan: a `startup` check at tablet speed on the packed copy (time to
   title, "Who's playing?", valley ready, longest freeze, each a ratchet); PERF-001 measures the packed copy; the

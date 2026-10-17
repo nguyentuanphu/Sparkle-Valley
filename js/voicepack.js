@@ -13,7 +13,7 @@ let PACK = null, packEmit = e => { }, hereArea = () => null, packStarted = false
 // (round R item 12, owner 10 Oct: "wifi should automatically, ask user to allow download over mobile") only the
 // languages this family's children hear are downloaded; a small core (the start, home, Làng Sen, the menus, the Simple
 // screen, the commonest game lines) comes first on any connection, then on Wi-Fi the rest area by area (voices/areas.json,
-// made by tools/make-voice-pack.mjs): the place the child is in, the places they have been, games, stories, festivals,
+// made by tools/make-voice-pack.mts): the place the child is in, the places they have been, games, stories, festivals,
 // the other places. On mobile data a grown-up is asked first (press and hold); the answer is kept, and Grown-ups can
 // change it. A line not downloaded yet still plays its recording from the internet (and is kept).
 export function startPack(pack, emit, here) {

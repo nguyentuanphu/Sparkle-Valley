@@ -287,7 +287,7 @@ const server = http.createServer(async (req, res) => {
       const f = safeJoin(GAME, gp || 'index.html'); if (!f) return send(res, 403, 'no', 'text/plain');
       const file = fs.existsSync(f) && fs.statSync(f).isDirectory() ? path.join(f, 'index.html') : f;
       // (owner, 16 Oct AEDT: TypeScript) the game folder comes from GitHub, which has a converted file's .ts only: its .js
-      // is made here as it is asked for, the same way tools/build.mjs makes it (Node's type stripping, lines unchanged)
+      // is made here as it is asked for, the same way tools/build.mts makes it (Node's type stripping, lines unchanged)
       if (!fs.existsSync(file) && /\.js$/.test(file) && fs.existsSync(file.slice(0, -3) + '.ts')) {
         try { return send(res, 200, Buffer.from(require('module').stripTypeScriptTypes(fs.readFileSync(file.slice(0, -3) + '.ts', 'utf8'), { mode: 'strip' })), MIME['.js']); }
         catch (e) { return send(res, 500, `${gp.replace(/\.js$/, '.ts')}: ${String(e && e.message || e).split('\n')[0]}`, 'text/plain'); }

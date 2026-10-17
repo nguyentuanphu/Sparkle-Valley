@@ -2,8 +2,8 @@
 // Finds every pair of strings written [English, Vietnamese] (an array of two strings, or T('…', '…')) whose English
 // slot is really Vietnamese: most of its words carry Vietnamese letters, or it is the same sentence as the Vietnamese one.
 // Names and dish words inside an English line are fine (a few words); a whole Vietnamese sentence is not.
-//   node tools/lang-audit.mjs           list the faults (file:line, the English slot)
-//   node tools/lang-audit.mjs --json    the same as JSON (tests: "bilingual")
+//   node tools/lang-audit.mts           list the faults (file:line, the English slot)
+//   node tools/lang-audit.mts --json    the same as JSON (tests: "bilingual")
 // English slots that stay Vietnamese on purpose (names, songs, sayings) are listed with a reason in tools/lang-allow.json.
 import fs from 'fs';
 import path from 'path';
@@ -38,7 +38,7 @@ export function audit(root = ROOT) {
   }
   return out;
 }
-if (process.argv[1] && process.argv[1].endsWith('lang-audit.mjs')) {
+if (process.argv[1] && process.argv[1].endsWith('lang-audit.mts')) {
   const r = audit();
   if (process.argv.includes('--json')) console.log(JSON.stringify(r));
   else { for (const x of r) console.log(`${x.file}:${x.line}  ${x.en}`); console.log(`${r.length} English slots in Vietnamese`); }

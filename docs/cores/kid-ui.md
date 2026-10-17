@@ -7,7 +7,7 @@ album…), menus, settings and Grown-ups, pop-ups, icons and pictures, text size
 ## You own
 - Screens and menus: `js/ui.js`, `js/hud.js`, `js/simple.js`, `js/songs.js` (the Songs page), `js/popups.js`, `js/packbar.js`, `js/install.js`, `js/credits.js`, `js/extras.js`, `js/report.js`, `js/chat.js`, `js/commands.js`, `js/listen.js`, `js/photos.js`
 - The real-photo viewer and 360° window: `js/realworld.js` (except the landmark list `REAL`, which World keeps);
-  the photos themselves: `photos/` and `photos/index.json` (filled by Studio's Real photos page or `tools/fetch-landmark-photos.mjs`)
+  the photos themselves: `photos/` and `photos/index.json` (filled by Studio's Real photos page or `tools/fetch-landmark-photos.mts`)
 - Pictures: `js/art.js`, `js/icons.js`, `js/symbols.js`, `js/avatar.js`
 - Words: `js/i18n.js` (English and Vietnamese)
 - Children's profiles and settings: `js/state.js`
@@ -115,11 +115,11 @@ A changed screen layout is re-recorded with `node run.mjs contract --update-cont
   - Clashes settled:
     - #31's Change player button in Grown-ups has the id `gChange`, because `gWho` is already the "Who's here" box.
     - The Pad map keeps #28's city chips; the old Change player quick button is gone.
-    - `voices/manifest.json` was rebuilt with `tools/make-voice-pack.mjs` (0 new lines).
+    - `voices/manifest.json` was rebuilt with `tools/make-voice-pack.mts` (0 new lines).
   - Fixes to the robot's work found by the full suite:
     - `hubmap` (test): #28 shows one city at a time, so the check now taps every city chip in order. It keeps its north-to-south test and adds one: Hạ Long must be on Hà Nội's page, Huế on Đà Nẵng's. Not weakened.
     - `arch`: #41 made `js/credits.js` import `js/ui.js`, which imports it back. `ui.js` now passes `hideCaption` to `openCredits(onClose)`. Closing the credits still hides a caption that was showing (checked in the browser: shown before, hidden after).
-    - `rules`: #30 changed A11Y-003 and A11Y-006 in `docs/ARCHITECTURE.md`; `js/content/rules.js` is regenerated with `tools/rules-from-doc.mjs`.
+    - `rules`: #30 changed A11Y-003 and A11Y-006 in `docs/ARCHITECTURE.md`; `js/content/rules.js` is regenerated with `tools/rules-from-doc.mts`.
     - `types`: #32's `dropOldFestival` in `js/state.js` returns a count, like `dropOldVoice`; it behaves the same.
   - Full suite, run one check at a time:
     - Most of it ran on commit `f7854eac`. The four fixes above came during the run (`0c010ede`, `3ffdc81e`, `f4d8e92b`, `f2204a90`).
@@ -186,7 +186,7 @@ A changed screen layout is re-recorded with `node run.mjs contract --update-cont
     - Step 1: the Releases switch `tester` (Studio picks the devices, each at level "auto reports only" or "ladybird"), the agreement a tester accepts (English and Vietnamese, privacy only, no Studio, GitHub or Netlify), the tester mark under the clock, rule PRIV-016.
     - Step 2: automatic reports (errors, a game that does not open or close, a frozen or slow screen, a stuck explorer, buttons off the screen), each with a small picture and the last 30 seconds; the ladybird button (tap: the report panel; long press: a quick report); a queue kept while offline; `/api/tester` (limits in PRIV-014); Studio's Tester reports page (Analytics) and the tester card on the Releases page.
     - Step 3: rewards: Bug Hunter badges (Bronze, Silver, Gold, Rainbow) worn on the explorer's shirt, which friends see online too; Ông Cú's "Fixed!" thank-you with the child's name shown (never spoken) and coins; tester gear (the bug hunter's hat, the ladybird backpack, the detective cape); the sticker album; the weekly star by the name; the Tester's Corner; sneak peeks.
-    - Step 4: a nightly auto play on tester devices (while charging or between midnight and 6 am, idle), a fixed problem replayed on the new version, reports grouped into problems, `tools/tester-issues.mjs` with the hourly workflow `.github/workflows/tester-issues.yml` (one GitHub issue per problem, plus a daily summary; it needs the secret `STUDIO_KEY`).
+    - Step 4: a nightly auto play on tester devices (while charging or between midnight and 6 am, idle), a fixed problem replayed on the new version, reports grouped into problems, `tools/tester-issues.mts` with the hourly workflow `.github/workflows/tester-issues.yml` (one GitHub issue per problem, plus a daily summary; it needs the secret `STUDIO_KEY`).
     - New spoken lines: the tester lines and new texts, 84 files recorded with Azure.
   - Full suite at `19487a36`, one check at a time: 124 of 125 passed (7 online skipped).
     - Passed: every check but `startup`, including the new `tester`, `testerreport` and `testerrewards`, and `studio`, `unit`, `phone`, `iphone`, `perf`, `types`, `arch`, `rules`, `emoji`, `preload`, `voicecover`, `voicearea` and `reading`.

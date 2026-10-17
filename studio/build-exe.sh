@@ -14,8 +14,8 @@ if [ ! -f ".build/node-$V.exe" ]; then
   [ "$(sha256sum .build/node.zip | cut -d' ' -f1)" = "$want" ] || { echo "node.zip checksum does not match"; exit 1; }
   unzip -qo -j .build/node.zip "node-$V-win-x64/node.exe" -d .build && mv .build/node.exe ".build/node-$V.exe" && rm .build/node.zip
 fi
-# (owner, 16 Oct AEDT: TypeScript) the dashboard's .ts files made into the .js packed below (tools/build.mjs)
-(cd .. && node tools/build.mjs)
+# (owner, 16 Oct AEDT: TypeScript) the dashboard's .ts files made into the .js packed below (tools/build.mts)
+(cd .. && node tools/build.mts)
 # one file: studio.cts with core.cts and version.json (an exe can only load what is inside it)
 npx --yes esbuild@0.25.10 studio.cts --bundle --platform=node --format=cjs --outfile=.build/studio.bundle.cjs --log-level=warning
 cat > .build/sea-config.json <<EOF

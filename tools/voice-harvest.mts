@@ -1,7 +1,7 @@
 // Plays through the game in a test browser (both languages) and writes every spoken line that is built while
 // playing (names, numbers, colours, items…) to tools/voice-extra.json, so the voice pack can record them too.
 // Needs the game served on SV_URL (default http://localhost:8765/) and the test browser (cd tests && npm install).
-//   node tools/voice-harvest.mjs [--passes 3] [--no-world]
+//   node tools/voice-harvest.mts [--passes 3] [--no-world]
 // (round R item 12) it also writes down where each line was heard, to tools/voice-where.json: the games it was said in
 // and the area (place id, e.g. "village", "hanoi") of the thing that said it, so the pack can be downloaded area by area.
 import fs from 'fs';

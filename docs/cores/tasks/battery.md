@@ -44,7 +44,7 @@ position changes), `js/voicepack.js` (pacing only), `js/players.js`, `tests/run.
 ## Checks
 A new `battery` check (computer capped at 60, idle drawing slows, the pixel ratio capped on Auto, the title screen slower,
 the statistics recorded and sent only with Analytics on), then `perf`, `playhub` (phones 30 a second), `startup`, `phone`,
-`noemoji`, then the full suite. Rules in `docs/ARCHITECTURE.md` §9 (PERF), then `node tools/rules-from-doc.mjs`.
+`noemoji`, then the full suite. Rules in `docs/ARCHITECTURE.md` §9 (PERF), then `node tools/rules-from-doc.mts`.
 
 ## Owner's decisions
 - (12 Oct, 1:50 pm AEDT) Go with the plan as recommended; the full suite is run by the Release core, not this chat.

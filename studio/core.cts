@@ -8,7 +8,7 @@
 // exe compares itself with the online Studio on the Check page.
 'use strict';
 const fs = require('fs'), path = require('path'), crypto = require('crypto');
-const { splitManifest } = require('../tools/voice-manifests.cjs');
+const { splitManifest } = require('../tools/voice-manifests.cts');
 const STUDIO_VERSION = require('./version.json').studio;
 
 // ---------- where the files live ----------

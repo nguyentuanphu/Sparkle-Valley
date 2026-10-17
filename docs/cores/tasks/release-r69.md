@@ -61,7 +61,7 @@ r69 = live main (r68) + `core/play`. Every other branch carries only board or no
 1. `git fetch`; merge `core/play` into a release branch from main (or open a pull request from `core/play`); fix the AI
    review's findings, if any.
 2. Bump to **r69**: `js/build.js`, `sw.js` VERSION (`sv-2026-10-13-r69` or the day you ship), `studio/version.json`.
-3. `node tools/make-voice-pack.mjs --engine azure` (expect 0 new).
+3. `node tools/make-voice-pack.mts --engine azure` (expect 0 new).
 4. Full suite: `cd tests && node run.mjs` (one browser run at a time; keep a local server on port 8765 running).
 5. HANDOFF: finish the r69 entry with the checks; board; `release.md` notes.
 6. The Netlify zip (`git archive` line in `release.md`).

@@ -1,7 +1,7 @@
 // Makes js/content/rules.js (the rule registry, architecture §9.7) from the hard-rule tables in docs/ARCHITECTURE.md §9,
 // so the document and the code can never disagree about a rule's id, words or severity.
-//   node tools/rules-from-doc.mjs            write js/content/rules.js
-//   node tools/rules-from-doc.mjs --check    exit 1 if js/content/rules.js is not what the document says (tests: "rules")
+//   node tools/rules-from-doc.mts            write js/content/rules.js
+//   node tools/rules-from-doc.mts --check    exit 1 if js/content/rules.js is not what the document says (tests: "rules")
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -21,7 +21,7 @@ export function rulesFromDoc(md) {
   return out;
 }
 export const render = rules => `// The rule registry (architecture §9.7, step 0): every hard rule by its id, with its words, severity and how it is
-// checked. MADE FROM docs/ARCHITECTURE.md §9 by tools/rules-from-doc.mjs — change the document, then run the tool;
+// checked. MADE FROM docs/ARCHITECTURE.md §9 by tools/rules-from-doc.mts — change the document, then run the tool;
 // never edit this file by hand (the "rules" check compares the two).
 // Checkers report problems by id (js/validate.js); RULES tells how serious each one is.
 export const RULES = ${JSON.stringify(rules, null, 1).replace(/\n\s*/g, ' ').replace(/ \}, "/g, ' },\n  "').replace(/^\{ /, '{\n  ').replace(/ \}$/, '\n}')};
@@ -29,8 +29,8 @@ export const SEVERITIES = ['BLOCKER', 'MAJOR', 'MINOR'];
 /** @param {string} id */
 export const ruleOf = id => RULES[id] || null;
 `;
-if (process.argv[1] && process.argv[1].endsWith('rules-from-doc.mjs')) {
+if (process.argv[1] && process.argv[1].endsWith('rules-from-doc.mts')) {
   const want = render(rulesFromDoc(fs.readFileSync(path.join(ROOT, 'docs/ARCHITECTURE.md'), 'utf8'))), file = path.join(ROOT, 'js/content/rules.js');
-  if (process.argv.includes('--check')) { const same = fs.existsSync(file) && fs.readFileSync(file, 'utf8') === want; console.log(same ? 'js/content/rules.js matches docs/ARCHITECTURE.md §9' : 'js/content/rules.js differs from docs/ARCHITECTURE.md §9: run node tools/rules-from-doc.mjs'); process.exitCode = same ? 0 : 1; }
+  if (process.argv.includes('--check')) { const same = fs.existsSync(file) && fs.readFileSync(file, 'utf8') === want; console.log(same ? 'js/content/rules.js matches docs/ARCHITECTURE.md §9' : 'js/content/rules.js differs from docs/ARCHITECTURE.md §9: run node tools/rules-from-doc.mts'); process.exitCode = same ? 0 : 1; }
   else { fs.writeFileSync(file, want); console.log('wrote js/content/rules.js:', Object.keys(rulesFromDoc(fs.readFileSync(path.join(ROOT, 'docs/ARCHITECTURE.md'), 'utf8'))).length, 'rules'); }
 }
