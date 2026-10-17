@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import manifests from '../../tools/voice-manifests.cjs';
-import { createVoiceIndex, voiceLanguages } from '../../js/voice-index.js';
+import { createVoiceIndex, voiceLanguages, voicePackSignature } from '../../js/voice-index.js';
 const all = JSON.parse(fs.readFileSync(new URL('../../voices/manifest.json', import.meta.url)));
 const shards = manifests.splitManifest(all);
 const response = j => ({ ok: true, json: async () => j });
@@ -47,4 +47,13 @@ test('an old offline aggregate can seed only the selected language without fetch
   assert.equal(reads, 1);
   assert.deepEqual(result.lines, shards.vi.lines);
   assert.deepEqual(Object.keys(result.signatures), ['vi']);
+});
+
+test('offline completion ignores unselected EN/VI but includes explicitly loaded learning-language recordings', () => {
+  const pack = { signatures: { en: 'english', vi: 'vietnamese' } };
+  assert.equal(voicePackSignature(pack, ['en']), 'en:english');
+  assert.equal(voicePackSignature({ signatures: { en: 'english' } }, ['en']), voicePackSignature(pack, ['en']));
+  pack.signatures.hi = 'hindi';
+  assert.equal(voicePackSignature(pack, ['en']), 'en:english|hi:hindi');
+  assert.equal(voicePackSignature({ lines: { test: 'fm' }, version: 2, made: 'test' }, ['en']), '1:2:test');
 });

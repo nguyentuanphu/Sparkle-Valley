@@ -43,3 +43,9 @@ export function legacyLanguage(man, lang) {
   const lines = Object.fromEntries(Object.entries(man.lines).filter(([h]) => (man.langOf?.[h] || other.get(h) || 'en') === lang));
   return { ...man, language: lang, lines, other: lang === 'en' ? {} : { [lang]: Object.keys(lines).join(' ') }, tpl: { [lang]: man.tpl?.[lang] || [] } };
 }
+// Ignore unselected EN/VI indexes, but include an explicitly requested learning language in offline completion.
+export function voicePackSignature(pack, languages) {
+  if (!pack.signatures) return Object.keys(pack.lines).length + ':' + (pack.version || 1) + ':' + (pack.made || '');
+  const wanted = [...languages, ...['zh', 'hi'].filter(lang => pack.signatures[lang])];
+  return wanted.map(lang => lang + ':' + (pack.signatures[lang] || 'pending')).join('|');
+}
