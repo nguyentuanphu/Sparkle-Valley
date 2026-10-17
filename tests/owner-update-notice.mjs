@@ -16,6 +16,8 @@ const shots = process.argv[2] ? path.join(repoRoot, 'docs/owner-repair-20261014/
 const copy = fs.mkdtempSync(path.join(os.tmpdir(), 'sv-update-'));
 for (const f of execFileSync('git', ['-C', repoRoot, 'ls-files', '-co', '--exclude-standard'], { encoding: 'utf8', maxBuffer: 64 << 20 }).split('\n'))
   if (f && !/^(voices|docs|tests|tools|studio|marketing|netlify)\//.test(f) && fs.existsSync(path.join(repoRoot, f)) && fs.statSync(path.join(repoRoot, f)).isFile()) { fs.mkdirSync(path.dirname(path.join(copy, f)), { recursive: true }); fs.copyFileSync(path.join(repoRoot, f), path.join(copy, f)); }
+// (r82, TypeScript) the .js made from each .ts is never committed, so the copy is built as the website builds it
+execFileSync(process.execPath, [path.join(repoRoot, 'tools/build.mts'), copy], { stdio: 'ignore' });
 const server = spawn('python3', ['-m', 'http.server', String(port), '--bind', '127.0.0.2'], { cwd: copy, stdio: 'ignore' });
 const fail = m => { throw Error(m); }, result = {};
 const browser = await launch();
