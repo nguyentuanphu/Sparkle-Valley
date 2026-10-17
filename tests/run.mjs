@@ -6367,7 +6367,7 @@ await check('r79bagtiles', async () => {
   const rows = [];
   for (const [dev, w, h, touch, textSize] of [['phone', 390, 844, true, 0], ['bigphone', 430, 932, true, 2], ['computer', 1280, 800, false, 0]]) {
     const P = await open(b, { w, h, touch, settings: { textSize } }); await clear(P.page);
-    await P.page.evaluate(() => { const p = __sv.heroes[0].profile; p.bought = { h_tauhu: 1, h_traicay: 1 }; p.inv = { ...(p.inv || {}), ruby: 1, crystal: 1, fossil: 1, bone: 2, pebble: 4, apple: 3 }; });
+    await P.page.evaluate(() => { const p = __sv.heroes[0].profile; p.bought = { h_tauhu: 1, h_traicay: 1 }; p.dishes = { ...(p.dishes || {}), pho: 1 }; p.inv = { ...(p.inv || {}), ruby: 1, crystal: 1, fossil: 1, bone: 2, pebble: 4, apple: 3 }; });
     await P.page.evaluate(() => { const n = document.createElement('div'); n.className = 'packbar'; n.innerHTML = '<span>Getting the voices ready… 6%</span><i><b></b></i>'; document.body.appendChild(n); });
     await P.page.evaluate(() => __sv.openPad(0, 'bag')); await P.page.waitForSelector('.pad .slot'); await P.page.waitForTimeout(900);
     const r = await P.page.evaluate(() => {
@@ -6377,12 +6377,15 @@ await check('r79bagtiles', async () => {
         if (!pic || !lab) continue;
         const t = s.getBoundingClientRect(), a = pic.getBoundingClientRect(), l = lab.getBoundingClientRect(), name = lab.textContent.trim().slice(0, 24);
         // the drawn shape too (a picture can spill past its box)
-        let drawnBottom = a.bottom; const g = pic.tagName === 'svg' ? pic : pic.querySelector('svg');
-        try { if (g && g.getBBox) { const bb = g.getBBox(), m = g.getScreenCTM(); drawnBottom = Math.max(drawnBottom, (bb.y + bb.height) * m.d + m.f); } } catch (e) { }
+        // (owner, 17 Oct AEDT: "the food items are not in centre") and its drawn middle: the box was centred while the drawing
+        // inside spilled 13 px to the right
+        let drawnBottom = a.bottom, drawnMid = (a.left + a.right) / 2; const g = pic.tagName === 'svg' ? pic : pic.querySelector('svg');
+        try { if (g && g.getBBox) { const bb = g.getBBox(), m = g.getScreenCTM(); drawnBottom = Math.max(drawnBottom, (bb.y + bb.height) * m.d + m.f); drawnMid = (bb.x + bb.width / 2) * m.a + m.e; } } catch (e) { }
         const lines = Math.round(l.height / parseFloat(getComputedStyle(lab).lineHeight));
         if (drawnBottom > l.top + 1) bad.push(name + ': picture over name by ' + Math.round(drawnBottom - l.top) + ' px');
         if (lines > 2) bad.push(name + ': ' + lines + ' lines');
         if (Math.abs((a.left + a.right) / 2 - (t.left + t.right) / 2) > 2) bad.push(name + ': picture off centre');
+        if (Math.abs(drawnMid - (t.left + t.right) / 2) > 4) bad.push(name + ': drawing ' + Math.round(drawnMid - (t.left + t.right) / 2) + ' px off centre');
         if (l.bottom > t.bottom + 1) bad.push(name + ': name spills out of its tile');
       }
       const pb = document.querySelector('.packbar'), pr = pb.getBoundingClientRect(), top = document.elementFromPoint(pr.left + pr.width / 2, pr.top + pr.height / 2);
@@ -6395,6 +6398,36 @@ await check('r79bagtiles', async () => {
     ok(!P.errors.length, P.errors.join(' | ')); await P.ctx.close();
   }
   return rows.join(', ') + '; pictures centred and clear of names, names at most two lines, voices note hidden behind the Pad';
+});
+await check('articentre', async () => {
+  // (owner, 17 Oct AEDT: "not in centre and not balanced, please check everywhere") a drawn emoji comes wrapped in .arti; a
+  // window rule that sizes the drawing but not its wrapper pushes it off centre (the Bag's food 13 px right, the Passport's
+  // question marks out of their stamps). Every Pad tab, every part folded open, and the games hub, on a phone and a computer
+  const rows = [];
+  const scan = () => { const bad = new Set();
+    for (const w of document.querySelectorAll('.arti')) { const g = w.querySelector(':scope > svg'); if (!g) continue;
+      const a = w.getBoundingClientRect(), r = g.getBoundingClientRect(); if (!a.width || !r.width) continue;
+      const dx = Math.round((r.left + r.right) / 2 - (a.left + a.right) / 2), dy = Math.round((r.top + r.bottom) / 2 - (a.top + a.bottom) / 2);
+      if (Math.abs(dx) > 2 || Math.abs(dy) > 2) bad.add(w.parentElement.tagName.toLowerCase() + '.' + w.parentElement.className + ' in .' + (w.parentElement.parentElement || {}).className + ' (' + w.dataset.e + ' ' + dx + ',' + dy + ')'); }
+    return [...bad]; };
+  for (const [dev, w, h, touch, lang] of [['phone', 430, 873, true, 'vi'], ['computer', 1280, 800, false, 'en']]) {
+    const P = await open(b, { w, h, touch, lang }); await clear(P.page);
+    await P.page.evaluate(() => { const p = __sv.heroes[0].profile; p.bought = { h_tauhu: 1 }; p.dishes = { ...(p.dishes || {}), pho: 1 }; p.inv = { ...(p.inv || {}), ruby: 1, apple: 3, egg: 1 }; __sv.openPad(0, 'map'); });
+    await P.page.waitForSelector('.pad-tabs button');
+    const tabs = await P.page.evaluate(() => [...document.querySelectorAll('.pad-tabs button')].map(x => x.dataset.t)), bad = [];
+    for (const t of tabs) {
+      await P.page.evaluate(t => document.querySelector(`.pad-tabs button[data-t="${t}"]`).click(), t); await P.page.waitForTimeout(600);
+      await P.page.evaluate(() => document.querySelectorAll('.pad-body [aria-expanded="false"]').forEach(x => x.click())); await P.page.waitForTimeout(300);
+      bad.push(...(await P.page.evaluate(scan)).map(x => t + ': ' + x));
+    }
+    await P.page.evaluate(() => document.querySelector('.pad .x').click()); await P.page.waitForTimeout(400);
+    await P.page.evaluate(() => __sv.openGamesHub(0, () => {})); await P.page.waitForTimeout(900);
+    bad.push(...(await P.page.evaluate(scan)).map(x => 'games: ' + x));
+    rows.push(dev + ': ' + tabs.length + ' tabs and the games hub');
+    ok(!bad.length, dev + ': drawn pictures off their centre: ' + bad.slice(0, 8).join('; '));
+    ok(!P.errors.length, P.errors.join(' | ')); await P.ctx.close();
+  }
+  return rows.join(', ') + '; every drawn picture centred in its place';
 });
 await check('r79albumwords', async () => {
   // (r79 A3) Album "Words I learned": each row holds its picture and its hear-again button (44 px or more) inside it, lined
@@ -7035,6 +7068,31 @@ await check('swupdate', async () => {
     return `the new version's files after an update (not the copy kept beside it); a stopped update kept ${partial} files and fetched only the rest; start screens: took over and reloaded by itself; playing: no reload, the notice offered it; back on screen: asked the website again`;
   } finally { srv.closeAllConnections(); srv.close(); }
 });
+await check('offscreenpanels', async () => {
+  // (owner, 17 Oct AEDT) about 190 "button off the screen" tester issues came from devices on r69 to r74, each one window
+  // whose buttons below the fold were all reported at once. The tester device's own detector (js/tester-detection.js),
+  // run here on the real windows at those devices' sizes, reports none of them: every window's buttons can be scrolled to.
+  const SIZES = [['phone', 390, 844, true], ['iPhone', 430, 873, true], ['tablet', 820, 1180, true], ['Android tablet', 1600, 960, true], ['computer', 1260, 1337, false]];
+  const bad = [];
+  for (const [name, w, h, touch] of SIZES) {
+    const P = await open(b, { w, h, touch }); await clear(P.page);
+    const r = await P.page.evaluate(async () => {
+      const U = await import('/js/ui.js'), D = await import('/js/tester-detection.js'), G = window.__sv, out = {};
+      const windows = { grownups: () => U.openGrownups(() => { }), settings: () => U.openQuick(G, 0), play: () => U.openGamesHub(G, 0, () => { }), pad: () => U.openPad(G, 0) };
+      for (const [k, openIt] of Object.entries(windows)) {
+        document.querySelectorAll('.modal').forEach(m => m.remove()); openIt(); await new Promise(res => setTimeout(res, 900));
+        const top = D.activeReportPanel(document), bs = [...document.querySelectorAll('.modal button, .hud button, .gl button, .dialog button')];
+        out[k] = { top: top ? top.className : '', buttons: bs.length, off: bs.filter(x => D.unreachableControl(x, top)).map(x => (x.textContent || '').trim().slice(0, 30)) };
+      }
+      document.querySelectorAll('.modal').forEach(m => m.remove()); return out;
+    });
+    for (const [k, v] of Object.entries(r)) { if (!v.top || v.buttons < 3) bad.push(`${name} ${k}: did not open (${v.top || 'no window'}, ${v.buttons} buttons)`); if (v.off.length) bad.push(`${name} ${k}: ${v.off.length} off the screen: ${v.off.slice(0, 5).join(' | ')}`); }
+    await P.ctx.close();
+  }
+  ok(!bad.length, bad.join(' · '));
+  return `Grown-ups, Settings, Play and the Pad on 5 screens (phone to computer): every button can be reached`;
+});
+
 await b.close();
 const failed = results.filter(r => !r[1]);
 console.log(`\n${results.length - failed.length}/${results.length} checks passed`);
