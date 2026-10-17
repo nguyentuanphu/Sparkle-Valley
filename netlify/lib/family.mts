@@ -1,7 +1,7 @@
 // Family photos are family-only (owner, 9 Oct, round R privacy): photo faces and Family album pictures are never
 // public files. Sparkle Studio keeps them here, in Netlify Blobs (store "family-photos"), under random names
 // (24+ letters, made with crypto), and content/custom.json names them "family:<name>", never by a path.
-// The game asks /api/family/<name> (netlify/functions/family.mjs) with the family code a grown-up typed once on the
+// The game asks /api/family/<name> (netlify/functions/family.mts) with the family code a grown-up typed once on the
 // device; without the right code nothing is given.
 //   p/<name>   the photo (JPEG, base64)
 //   code       the family code (unless FAMILY_CODE is set in Netlify's environment variables, which then wins)

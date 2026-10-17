@@ -2,8 +2,8 @@
 // "x-family-code" (typed once on the device: Grown-ups → Children → Family photos). Without the right code there is no
 // photo; ten wrong codes from one connection lock it out for 15 minutes; each connection may ask 300 times in 10
 // minutes. The answer is "private, no-store": no shared cache keeps it (the game keeps its own copy, sw.js never does).
-import { NAME, get, checkCode } from '../lib/family.mjs';
-import { ipOf, ipKey, count, locked, failed } from '../lib/guard.mjs';
+import { NAME, get, checkCode } from '../lib/family.mts';
+import { ipOf, ipKey, count, locked, failed } from '../lib/guard.mts';
 
 const famBlobs = () => import('@netlify/blobs').then(m => m.getStore({ name: 'family-photos', consistency: 'strong' }));
 const guardBlobs = () => import('@netlify/blobs').then(m => m.getStore({ name: 'guard', consistency: 'strong' }));

@@ -5108,7 +5108,7 @@ await check('chests', async () => {
 
 await check('types', async () => {
   // type checking (owner, round 30): the files that start with // @ts-check are checked against their JSDoc types
-  // (js/state.js, js/netmsg.js, studio/core.cjs; tests/tsconfig.json lists them). Needs: cd tests && npm install
+  // (js/state.js, js/netmsg.js, studio/core.cts; tests/tsconfig.json lists them). Needs: cd tests && npm install
   const { execFileSync } = await import('child_process'), tsc = 'node_modules/.bin/tsc';
   if (!fs.existsSync(tsc)) return 'skipped (run npm install in tests)';
   try { execFileSync(tsc, ['-p', '.'], { encoding: 'utf8' }); execFileSync(tsc, ['-p','tsconfig-contracts.json'], {encoding:'utf8'}); } catch (e) { ok(false, ((e.stdout || '') + '').split('\n').slice(0, 8).join(' | ')); }

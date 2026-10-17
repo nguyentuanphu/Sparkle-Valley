@@ -19,9 +19,9 @@ Keep this file current in the same round as any change to hosting, servers, keys
 | **Family content** | Message, names, faces, tales, quiz, villagers, buildings, defaults, the Family album (postcards) | Read at start by `js/custom.js` | `content/custom.json`, `content/faces/`, `content/album/` (photos ≤ 1000 px, ≤ 600 KB) |
 | **Live website** | Netlify site **sparklevalley**, linked to GitHub `main` | Netlify CDN | whole repo (`netlify.toml`: publish `.`, build command `node tools/bundle.mjs .`) |
 | **Checks on GitHub** | The fast checks on every pull request and branch push (unit, rules, preload, emoji, arch, types, names) and a packed Netlify zip | GitHub Actions | `.github/workflows/checks.yml` |
-| **Player counter** | Anonymous "hello" from devices | Netlify Function `/api/hello` + Netlify Blobs store `players` | `netlify/functions/hello.mjs`, `netlify/lib/players.mjs`, `js/players.js` |
-| **Sparkle Studio online** | Grown-ups' dashboard at `/studio/` | Netlify Function `/studio/api/*` | `netlify/functions/studio.mjs` + `studio/core.cjs` + `studio/ui/` |
-| **Sparkle Studio exe** | The same dashboard on Windows | `SparkleStudio.exe` → local server 127.0.0.1:7777 | `studio/studio.cjs` + `studio/core.cjs` + `studio/ui/` (built by `studio/build-exe.sh`) |
+| **Player counter** | Anonymous "hello" from devices | Netlify Function `/api/hello` + Netlify Blobs store `players` | `netlify/functions/hello.mts`, `netlify/lib/players.mts`, `js/players.js` |
+| **Sparkle Studio online** | Grown-ups' dashboard at `/studio/` | Netlify Function `/studio/api/*` | `netlify/functions/studio.mts` + `studio/core.cts` + `studio/ui/` |
+| **Sparkle Studio exe** | The same dashboard on Windows | `SparkleStudio.exe` → local server 127.0.0.1:7777 | `studio/studio.cts` + `studio/core.cts` + `studio/ui/` (built by `studio/build-exe.sh`) |
 | **Online play** | Rooms of up to 6, voice, friends | Peer-to-peer (PeerJS/WebRTC) + public MQTT brokers as the cloud relay | `js/net.js`, `js/relay.js`, `js/roomcode.js` |
 | **Google Drive mirror** | A second source of truth: every pushed branch, copied file by file | GitHub Action `drive-mirror.yml` (rclone) → the owner's Drive folder "Sparkle Valley" / "GitHub mirror" / branch | `.github/workflows/drive-mirror.yml` (secrets `RCLONE_CONF`, `DRIVE_FOLDER_ID`) |
 | **Bug robot** | The moment a bug is filed, labelled or gets the owner's "go" (5-minute timer as a backup) it picks up open GitHub issues labelled `bug` plus a core label; small bugs are fixed and pushed to their own `bugfix/<core>-<issue>` branch with a draft pull request, big bugs get a plan and wait for the owner's "go"; it never pushes to `main` (see `docs/cores/front-desk.md`) | GitHub Action `bug-fixer.yml` | `.github/workflows/bug-fixer.yml` |
@@ -112,7 +112,7 @@ Parents see the same list in plain words, folded under the Use the internet swit
 ### 6.2 Running it
 
 - **Game:** in `game/`, run `python3 -m http.server 8765` → http://localhost:8765. Any static server works; the service worker needs `localhost` or https.
-- **Studio exe:** put `SparkleStudio.exe` in `game/` and double-click it (or `node studio/studio.cjs` with Node 22) → http://127.0.0.1:7777.
+- **Studio exe:** put `SparkleStudio.exe` in `game/` and double-click it (or `node studio/studio.cts` with Node 22) → http://127.0.0.1:7777.
 - **On a phone on the same Wi-Fi:** open `http://<computer-ip>:8765`.
   - The service worker and microphone need https on a phone, so offline install, voice chat and the voice pack won't work.
   - Use a Netlify deploy preview for full phone tests.

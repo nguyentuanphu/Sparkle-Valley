@@ -1,5 +1,5 @@
 // @ts-check
-// What a device sends in its "hello" (js/players.js), checked before anything is kept (netlify/lib/players.mjs): the
+// What a device sends in its "hello" (js/players.js), checked before anything is kept (netlify/lib/players.mts): the
 // device's random id, its build and session, the days it played and what was played. Anything odd is dropped; a value is
 // kept only as the text or number the rule allows (a list or object that merely looks like text is not kept as itself).
 // (owner repair round, 15 Oct AEDT: identity, build and version data are type-checked, `types` check.)

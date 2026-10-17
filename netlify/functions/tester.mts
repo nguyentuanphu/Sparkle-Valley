@@ -1,10 +1,10 @@
-// Tester reports (owner, 12 Oct 2026 AEDT; netlify/lib/tester.mjs). POST /api/tester: a tester device sends a report,
+// Tester reports (owner, 12 Oct 2026 AEDT; netlify/lib/tester.mts). POST /api/tester: a tester device sends a report,
 // or says it accepted the agreement or that a fixed problem stayed fixed; GET /api/tester?id=&b=: its reports' status
 // (the fixed tick, the retest, the rewards, the open problems for "already reported"). Only devices the Releases
 // switch `tester` covers are heard (PRIV-016); a connection may send 150 reports a day, a device 60 (PRIV-014).
-import { addReport, deviceStatus, deviceSays, TLIMITS } from '../lib/tester.mjs';
-import { readLive } from '../lib/live.mjs';
-import { ipOf, ipKey, count } from '../lib/guard.mjs';
+import { addReport, deviceStatus, deviceSays, TLIMITS } from '../lib/tester.mts';
+import { readLive } from '../lib/live.mts';
+import { ipOf, ipKey, count } from '../lib/guard.mts';
 
 const store = name => () => import('@netlify/blobs').then(m => m.getStore({ name, consistency: 'strong' }));
 export const TESTER_LIMIT = 120, TESTER_WINDOW = 10 * 60e3; // requests a connection in 10 minutes

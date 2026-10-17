@@ -1,4 +1,4 @@
-// The Studio's servers (studio/core.cjs, studio/studio.cjs, netlify/functions/studio.mjs and netlify/lib/) answer in
+// The Studio's servers (studio/core.cts, studio/studio.cts, netlify/functions/studio.mts and netlify/lib/) answer in
 // English; this turns each answer into Vietnamese when Studio is in Vietnamese (owner, 10 Oct: "English and Vietnamese
 // for everything"). Each line: the English (a pattern, numbers and names caught) and the Vietnamese. The `studio` check
 // reads every message the servers can send and fails if one has no line here.

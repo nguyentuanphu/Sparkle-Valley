@@ -1,5 +1,5 @@
-import { familyAction } from '../lib/family-devices.mjs';
-import { ipOf, ipKey, count } from '../lib/guard.mjs';
+import { familyAction } from '../lib/family-devices.mts';
+import { ipOf, ipKey, count } from '../lib/guard.mts';
 const blobs = name => () => import('@netlify/blobs').then(m => m.getStore({ name, consistency: 'strong' }));
 export const makeFamilyDevices = ({ familyStore = blobs('families'), guardStore = blobs('guard'), now = () => Date.now() } = {}) => async (req, ctx) => {
   const json = (value, status = 200) => new Response(JSON.stringify(value), { status, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'private, no-store', Vary: 'Authorization' } });

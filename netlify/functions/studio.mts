@@ -1,5 +1,5 @@
 // Sparkle Studio online: the same dashboard as SparkleStudio.exe (studio/ui, served at /studio/) and the same
-// engine (studio/core.cjs), on the game's own website, behind the grown-ups' password.
+// engine (studio/core.cts), on the game's own website, behind the grown-ups' password.
 // The family's files are kept in GitHub: saves go to the "studio-draft" branch, Publish puts them live (main).
 // Set these in Netlify → Site configuration → Environment variables (never in the code):
 //   STUDIO_PASSWORD   the grown-ups' password (12 characters or more, not used anywhere else)  required
@@ -9,19 +9,19 @@
 //   NETLIFY_TOKEN                                      the Website page                  optional
 //   FAMILY_CODE                                        the family code (else Studio makes one)  optional
 // (round R privacy, 9 Oct) Signing in takes two steps for everyone, the owner too: the password, then the 6-digit
-// code of an authenticator app (netlify/lib/admins.mjs). Ten wrong tries from one connection or on one account lock
-// it for 15 minutes (netlify/lib/guard.mjs). Every sign-in and every look at the players report goes into the access
-// log (netlify/lib/accesslog.mjs). "Sign everyone out" counts a generation up, and every cookie and exe key is
-// signed with it. Family photos live in the private store (netlify/lib/family.mjs), never in GitHub.
+// code of an authenticator app (netlify/lib/admins.mts). Ten wrong tries from one connection or on one account lock
+// it for 15 minutes (netlify/lib/guard.mts). Every sign-in and every look at the players report goes into the access
+// log (netlify/lib/accesslog.mts). "Sign everyone out" counts a generation up, and every cookie and exe key is
+// signed with it. Family photos live in the private store (netlify/lib/family.mts), never in GitHub.
 import crypto from 'crypto';
-import core from '../../studio/core.cjs';
-import { report, inbox, setLabel } from '../lib/players.mjs';
-import * as admins from '../lib/admins.mjs';
-import * as family from '../lib/family.mjs';
-import * as accessLog from '../lib/accesslog.mjs';
-import { ipOf, ipKey, locked, failed, cleared, tidy } from '../lib/guard.mjs';
-import { readLive, saveLive, readContent as readLiveContent, saveContent as saveLiveContent, LiveError } from '../lib/live.mjs';
-import * as tester from '../lib/tester.mjs';
+import core from '../../studio/core.cts';
+import { report, inbox, setLabel } from '../lib/players.mts';
+import * as admins from '../lib/admins.mts';
+import * as family from '../lib/family.mts';
+import * as accessLog from '../lib/accesslog.mts';
+import { ipOf, ipKey, locked, failed, cleared, tidy } from '../lib/guard.mts';
+import { readLive, saveLive, readContent as readLiveContent, saveContent as saveLiveContent, LiveError } from '../lib/live.mts';
+import * as tester from '../lib/tester.mts';
 const { createStudio, githubStore, makeToken, checkToken, samePassword } = core;
 
 const env = k => ((globalThis.Netlify && globalThis.Netlify.env.get(k)) || process.env[k] || '').trim();
@@ -46,7 +46,7 @@ const LIVE_PART = { message: 'Message', missions: 'Missions', quiz: 'Quiz', tale
 const blobs = store('players'), adminBlobs = store('studio-admins'), liveBlobs = store('live'), heldBlobs = store('studio-pending');
 const familyBlobs = store('family-photos'), guardBlobs = store('guard'), logBlobs = store('studio-log'), testerBlobs = store('testers');
 // (round R privacy) what signs a cookie: the owner's with the password, the sign-out generation and part of the two-step
-// secret; an admin's with the password and the generation (plus their own hash and secret, admins.mjs)
+// secret; an admin's with the password and the generation (plus their own hash and secret, admins.mts)
 const ownerKey = (pw, gen, t, off) => `${pw}\u0000${gen}\u0000${t && t.secret ? String(t.secret).slice(0, 8) : ''}${off ? '\u0000p' : ''}`;
 const adminKey = (pw, gen) => `${pw}\u0000${gen}`;
 // the owner's two-step belongs to this STUDIO_PASSWORD: a new password (set in Netlify) means setting it up again
@@ -64,7 +64,7 @@ export const heldOn = S => ({
   // (owner, 12 Oct) the ones a Publish step has sent to GitHub
   drop: async rels => { const ix = (await S.get('index', { type: 'json' })) || {}; for (const rel of rels) { await S.delete('f/' + rel); delete ix[rel]; } await S.setJSON('index', ix); }
 });
-// the family photos for the engine (core.cjs): the private store on the website
+// the family photos for the engine (core.cts): the private store on the website
 export const familyOn = F => ({ where: 'site', put: (n, b) => family.put(F, n, b), get: n => family.get(F, n), remove: n => family.remove(F, n), code: () => family.code(F), newCode: () => family.newCode(F) });
 const isJpeg = b => b && b.length > 3 && b[0] === 0xff && b[1] === 0xd8;
 
@@ -209,7 +209,7 @@ export const makeStudio = ({ playersStore = blobs, adminStore = adminBlobs, held
   const players = async () => report(await playersStore());
   if (p === '/studio/api/players') { await log(me.name, me.role, 'analytics'); return json(await players()); }
   if (p === '/studio/api/inbox') return json(await inbox(await playersStore()));
-  // (owner, 12 Oct) tester reports (netlify/lib/tester.mjs): the problems, the testers and the day's summary; one problem
+  // (owner, 12 Oct) tester reports (netlify/lib/tester.mts): the problems, the testers and the day's summary; one problem
   // with its reports; a report's screenshot; setting a problem's status (fixed in rNN, not a bug, the same as another)
   if (p === '/studio/api/testers') return json(await tester.overview(await testerStore(), now()));
   if (p.startsWith('/studio/api/testers/problem/')) { const r = await tester.problem(await testerStore(), p.split('/').pop()); return r ? json(r) : json({ error: 'No such problem.' }, 404); }

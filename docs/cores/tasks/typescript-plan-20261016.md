@@ -16,7 +16,7 @@ make the game load or run faster. Part 2 is the speed work, and it is separate.
 - esbuild 0.25.10 already runs in three places: Netlify functions, the Studio exe (`studio/build-exe.sh`) and the
   website pack (`tools/bundle.mjs`, which today falls back to the plain `js/` files if it fails).
 - Node 22.22 runs `.ts` files directly (tested).
-- The Studio exe copies the game from GitHub into a folder and serves those files (`studio/studio.cjs`), and the Studio
+- The Studio exe copies the game from GitHub into a folder and serves those files (`studio/studio.cts`), and the Studio
   pages import the game's modules by address (`studio/ui/app.js`).
 
 # Part 1: TypeScript everywhere

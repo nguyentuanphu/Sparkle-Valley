@@ -5,10 +5,10 @@ online now, problems), the Netlify functions and settings, offline caching (serv
 infrastructure notes.
 
 ## You own
-- `js/players.js` (what a device sends), `netlify/lib/players.mjs` (what the website keeps and the report),
-  `netlify/functions/hello.mjs`, the Netlify side of `netlify/functions/turn.mjs`
-- `netlify/lib/guard.mjs` (rate limits and lockouts), `netlify/lib/live.mjs` with Studio, and with Studio the family
-  photo door `netlify/functions/family.mjs` + `netlify/lib/family.mjs`
+- `js/players.js` (what a device sends), `netlify/lib/players.mts` (what the website keeps and the report),
+  `netlify/functions/hello.mts`, the Netlify side of `netlify/functions/turn.mts`
+- `netlify/lib/guard.mts` (rate limits and lockouts), `netlify/lib/live.mts` with Studio, and with Studio the family
+  photo door `netlify/functions/family.mts` + `netlify/lib/family.mts`
 - `netlify.toml`, `manifest.webmanifest`, `sw.js` with Release (the VERSION line is Release's)
 - `docs/INFRASTRUCTURE.md`, `.github/workflows/` (including the Google Drive mirror waiting for the owner)
 - The analytics view's data shape (Studio draws it)
@@ -24,13 +24,13 @@ nothing while hidden).
 - `/api/hello`: 60 requests a connection in 10 minutes (a home's devices share one connection and each says "still
   here" every two minutes while playing); more gets 429 and the device keeps its outbox.
 - Missing lines (the voice inbox): 10 a hello, 30 a device a day, 60 a connection a day, 200 new lines a day in all
-  (`LINES` in `players.mjs`), so a script cannot flood the inbox or the Azure budget spent recording it.
+  (`LINES` in `players.mts`), so a script cannot flood the inbox or the Azure budget spent recording it.
 - `/api/family/<name>`: the family code, 10 wrong codes lock a connection for 15 minutes, 300 requests in 10 minutes,
   `Cache-Control: private, no-store`; `sw.js` passes every `api/` request straight to the network.
 - `/api/live`: the rules and when they changed, never who changed them.
 - Counters live in the Blobs store `guard` under a keyed hash of the connection (random salt in the same store); the
   address itself is never kept. Old counters are tidied when the access log is opened.
-- What the analytics keep is written exactly at the top of `netlify/lib/players.mjs`.
+- What the analytics keep is written exactly at the top of `netlify/lib/players.mts`.
 
 ## Checks you run
 `studio report saves cloud photo boot unit familyphotos offline nostudio startup`

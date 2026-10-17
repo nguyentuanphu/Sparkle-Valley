@@ -7,7 +7,7 @@ relay and the voice relay (TURN), and keeping strangers out.
 ## You own
 - `js/net.js`, `js/netmsg.js`, `js/relay.js`, `js/roomcode.js`
 - The online wiring in `js/main.js`: the `Net.on(...)` handlers, friends (`G.autoMeet`, `friendNote`, `G.inviteFriend`, `G.joinFriend`), `G.drawOnlinePanel`, `G.netTick`
-- `netlify/functions/turn.mjs` (the voice relay details; the Netlify side is shared with Analytics & Infra)
+- `netlify/functions/turn.mts` (the voice relay details; the Netlify side is shared with Analytics & Infra)
 - `vendor/peerjs.min.js`
 
 ## Hard rules (§9.6)

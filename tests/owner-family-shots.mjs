@@ -4,7 +4,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { familyAction } from '../netlify/lib/family-devices.mjs';
+import { familyAction } from '../netlify/lib/family-devices.mts';
 import { launch, open, clear } from './harness.mjs';
 const root = fileURLToPath(new URL('../', import.meta.url)), out = path.join(root, 'docs/owner-repair-20261014/evidence', process.argv[2] || 'family-now'), lang = process.argv[3] || 'en';
 fs.mkdirSync(out, { recursive: true });

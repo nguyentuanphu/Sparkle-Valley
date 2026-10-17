@@ -1,8 +1,8 @@
 // @ts-check
 // Sparkle Studio's engine: the work behind every page (content, faces, ads, voices, photos, publishing, the website,
 // the health check, players). It is the same program in both places the Studio runs:
-//   · the exe on the family's computer (studio.cjs): files in the game folder, keys in %APPDATA%\SparkleStudio
-//   · online, on the game's own website (netlify/functions/studio.mjs): files in GitHub, keys in Netlify's
+//   · the exe on the family's computer (studio.cts): files in the game folder, keys in %APPDATA%\SparkleStudio
+//   · online, on the game's own website (netlify/functions/studio.mts): files in GitHub, keys in Netlify's
 //     environment variables, behind the grown-ups' password
 // Only where the files live (a "store") and a few computer-only things (Piper, the zip, opening folders) differ,
 // so the two never drift apart. STUDIO_VERSION goes up with the game's build number (tests check this), and the
@@ -215,10 +215,10 @@ const LOCALE = { en: 'en-AU', vi: 'vi-VN', zh: 'zh-CN', hi: 'hi-IN' };
 // ---------- family photos are family-only (owner, 9 Oct, round R privacy) ----------
 // Photo faces and Family album pictures are never written into the game's files (which are public on the website and
 // kept in GitHub). They go to a private family store under a random name, and content/custom.json says "family:<name>":
-//   online   Netlify Blobs "family-photos" (netlify/lib/family.mjs); the game fetches /api/family/<name> with the family code
+//   online   Netlify Blobs "family-photos" (netlify/lib/family.mts); the game fetches /api/family/<name> with the family code
 //   the exe  sent to the website's family store with the Studio key when the website is set in Settings, and kept in
 //            %APPDATA%\SparkleStudio\family-photos (the game run from the exe reads them there); never in the game folder
-// family = { where: 'site' | 'computer', put(name, buf), get(name), remove(name), code(), newCode() } (from studio.cjs / studio.mjs)
+// family = { where: 'site' | 'computer', put(name, buf), get(name), remove(name), code(), newCode() } (from studio.cts / studio.mts)
 const FAMREF = /^family:([\w-]{24,64})$/, FAMNAME = /^[\w-]{24,64}$/, OLDFAM = /^content\/(faces|album)\/[\w.-]+$/;
 const familyName = () => crypto.randomBytes(18).toString('base64url'); // 24 letters, nobody can guess one
 const isJpeg = b => b && b.length > 3 && b[0] === 0xff && b[1] === 0xd8;
@@ -293,7 +293,7 @@ async function gatherPhotos(sources, name, max) {
 //   store   where the game's files are (above)
 //   conf    keys and names: azureKey, azureRegion, netlifyToken, netlifySite, githubToken, githubRepo, githubBranch, …
 //   online  true on the website (computer-only things are switched off there)
-//   local   computer-only helpers from studio.cjs: tts (Piper), settings, build, deploy, open, players, info
+//   local   computer-only helpers from studio.cts: tts (Piper), settings, build, deploy, open, players, info
 /**
  * @typedef {{ tts?: Function, settings?: Function, build?: Function, deploy?: Function, open?: Function, players?: Function,
  *   info?: () => object, inbox?: Function, label?: (b: any) => Promise<any>, api?: Function, onlineVersion?: () => Promise<string>, testers?: (api: string, b: any) => Promise<any>, live?: (b: any) => Promise<any> }} LocalHelpers

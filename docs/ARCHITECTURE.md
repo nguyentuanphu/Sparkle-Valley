@@ -39,7 +39,7 @@ Nothing tagged [PROP] or [IMPR] adds a game feature. It only reorganises how exi
 |---|---|
 | Game code | 86 ES modules, ~1.6 MB of JavaScript (lines are long: `main.js` 107 KB, `ui.js` 109 KB, `world.js` 82 KB, `cities.js` 63 KB) |
 | Build step | None. three.js r160, PeerJS (online only), Web Audio, Web Speech, IndexedDB, Cache API, service worker |
-| Server pieces | 2 Netlify Functions (`hello`, `studio`) + Netlify Blobs; Sparkle Studio (Node, exe + online) sharing `studio/core.cjs` |
+| Server pieces | 2 Netlify Functions (`hello`, `studio`) + Netlify Blobs; Sparkle Studio (Node, exe + online) sharing `studio/core.cts` |
 | Shared mutable "god object" | `G`: about **95 members assigned in `main.js`** (functions, state, sub-systems: `G.heroes`, `G.npcs`, `G.dialog`, `G.give`, `G.ferries`…) and passed to almost every module |
 | Shared mutable world | `world`/`W` from `createWorld()`: arrays every feature pushes into. **Feature modules write into each other's world:** `colliders.push` 68× in 18 files, `boxes.push` 14× in 9, `interactables.push` 56× in 23, `updaters.push` 65× in 24, `scene.add` 201× in 29, `heightAt()` 220× in 26 |
 | Static world data | Module-level constants in `world.js`: `CITIES`, `ROADS`, `RIVER`, `VILLAGE`, `TOWN`, `MARKET`, `AUSSIE`, `SHRINES`, `TOWERS`, `FLATS`/`LEVELS`, `FOOTPRINTS` (filled at runtime) |
@@ -58,7 +58,7 @@ Nothing tagged [PROP] or [IMPR] adds a game feature. It only reorganises how exi
 5. **Strict separation where it already exists:**
    - the voice pack by content hash (`packhash.js`);
    - the family content pack (`custom.js`);
-   - the Studio engine shared by the exe and online (`studio/core.cjs`).
+   - the Studio engine shared by the exe and online (`studio/core.cts`).
 
 ### 1.3 Structural problems (why the architecture must change)
 
@@ -143,7 +143,7 @@ L0 CORE         ids · events · rng · math/geometry · result/errors · config
 | L5 | `app` | Boot, lifecycle, loop, wiring, error boundary |
 
 Outside the game, sharing L0–L2 where possible:
-- `studio` (exe + online, `studio/core.cjs`);
+- `studio` (exe + online, `studio/core.cts`);
 - `netlify/functions` (`hello`, `studio`);
 - `tools` (voice pack, harvest).
 
@@ -892,8 +892,8 @@ Metrics are from the r37 measurement (§1.1). No module is dead code, so nothing
 
 | Module | Class | Why |
 |---|---|---|
-| `studio/core.cjs`, `studio/studio.cjs`, `studio/ui/*` | KEEP | One engine for the exe and online (STUDIO-001). Later [IMPR]: import `gen` + `gen.validate` (pure ESM) to validate edits instead of the hidden-iframe snapshot |
-| `netlify/functions/*`, `netlify/lib/players.mjs` | KEEP | Small, tested (`studio`) |
+| `studio/core.cts`, `studio/studio.cts`, `studio/ui/*` | KEEP | One engine for the exe and online (STUDIO-001). Later [IMPR]: import `gen` + `gen.validate` (pure ESM) to validate edits instead of the hidden-iframe snapshot |
+| `netlify/functions/*`, `netlify/lib/players.mts` | KEEP | Small, tested (`studio`) |
 | `tools/*` (voice pack, harvest) | KEEP | — |
 | `sw.js` | KEEP | Offline strategy (voices, saves, manifest cache-first) |
 | `tests/run.mjs`, `tests/harness.mjs`, `tests/studio-check.mjs`, `tests/world-audit.mjs` | KEEP | Grow with §10 |

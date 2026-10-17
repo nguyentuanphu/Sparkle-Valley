@@ -1,8 +1,8 @@
-// A device saying hello (js/players.js): counted in the players report, anonymously (netlify/lib/players.mjs).
+// A device saying hello (js/players.js): counted in the players report, anonymously (netlify/lib/players.mts).
 // (round R privacy, 9 Oct) Each connection may say hello 60 times in 10 minutes (a home's devices share one: each says
 // "still here" every two minutes while playing); more is refused (429) and the device keeps its outbox for later.
-import { hello } from '../lib/players.mjs';
-import { ipOf, ipKey, count } from '../lib/guard.mjs';
+import { hello } from '../lib/players.mts';
+import { ipOf, ipKey, count } from '../lib/guard.mts';
 
 const blobs = () => import('@netlify/blobs').then(m => m.getStore({ name: 'players', consistency: 'strong' }));
 const guardBlobs = () => import('@netlify/blobs').then(m => m.getStore({ name: 'guard', consistency: 'strong' }));

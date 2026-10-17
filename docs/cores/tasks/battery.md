@@ -48,7 +48,7 @@ the statistics recorded and sent only with Analytics on), then `perf`, `playhub`
 
 ## Owner's decisions
 - (12 Oct, 1:50 pm AEDT) Go with the plan as recommended; the full suite is run by the Release core, not this chat.
-- (12 Oct AEDT) This chat may change `js/avatar.js` (people) and `netlify/lib/players.mjs` (the report keeps the numbers).
+- (12 Oct AEDT) This chat may change `js/avatar.js` (people) and `netlify/lib/players.mts` (the report keeps the numbers).
 - (12 Oct AEDT) Nothing moving for 15 s: draw 8 times a second until any input.
 - (12 Oct AEDT) Graphics gets two Pretty buttons: Pretty (60 a second) and Pretty+ (as fast as the screen).
 
@@ -63,7 +63,7 @@ the statistics recorded and sent only with Analytics on), then `perf`, `playhub`
   - `js/avatar.js`: each moving part's plain-coloured pieces merged into one shape (`compact`, the skin recoloured for a
     photo face); a far still copy (`stillOf`); screenshots before and after, near and at 30 m, look the same.
   - `js/voicepack.js`: waits for a built valley, rests 150 ms (core) / 400 ms (the rest) between batches of 6.
-  - `js/players.js` + `netlify/lib/players.mjs`: day field `b` (10 numbers, written in both files) and the report's
+  - `js/players.js` + `netlify/lib/players.mts`: day field `b` (10 numbers, written in both files) and the report's
     `power`, with the names Studio's Analytics page (r66) already reads: each device `power: { fps, frameMs, draws, ratio,
     mins, batteryPerHour, charging, idlePct }`, by kind `power: { phone|tablet|computer: { devices, fps, frameMs, draws,
     batteryPerHour } }`. `fps` counts only frames while a child plays (idle, title and menu time left out).

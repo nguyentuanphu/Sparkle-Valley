@@ -1,5 +1,5 @@
 // Sparkle Studio: the grown-ups' dashboard for Sparkle Valley, running on the family's own computer.
-// Double-click SparkleStudio.exe (or run `node studio/studio.cjs`): it starts a small private web server on this
+// Double-click SparkleStudio.exe (or run `node studio/studio.cts`): it starts a small private web server on this
 // computer only (http://localhost:7777) and opens the dashboard in the browser. It edits the game folder it sits in
 // (or the folder chosen in Settings):
 //   · content/custom.json                   the family's content pack (message, names, faces, stories, quiz, defaults)
@@ -8,12 +8,12 @@
 //   · photos/                               real photos of the landmarks (from Wikipedia/Commons, with credits)
 //   · sparkle-valley-netlify.zip            the publish zip, and an optional one-click deploy to Netlify
 // Publishing to GitHub sends only what the family changed (content, voices, photos); Netlify then updates the site.
-// The pages and their work are the same as the online Studio's (studio/ui and studio/core.cjs); see core.cjs.
+// The pages and their work are the same as the online Studio's (studio/ui and studio/core.cts); see core.cts.
 // Keys (Azure, Netlify, GitHub) are kept only on this computer, in %APPDATA%\SparkleStudio\settings.json, never in the game.
 'use strict';
 const http = require('http'), fs = require('fs'), path = require('path'), os = require('os'), zlib = require('zlib'), vm = require('vm'), { spawn, execFile } = require('child_process');
 
-const { createStudio, folderStore, MIME } = require('./core.cjs');
+const { createStudio, folderStore, MIME } = require('./core.cts');
 let sea = null; try { sea = require('node:sea'); if (!sea.isSea()) sea = null; } catch (e) { sea = null; }
 const UI_DIR = path.join(__dirname, 'ui');
 const asset = name => { if (sea) { try { return Buffer.from(sea.getAsset(name)); } catch (e) { return null; } } const p = path.join(UI_DIR, name); return fs.existsSync(p) ? fs.readFileSync(p) : null; };
@@ -217,7 +217,7 @@ async function syncFolder(force) {
 }
 
 // ---------- the server ----------
-// Everything a page asks for is done by the Studio engine (core.cjs, the same as online); this file adds what only
+// Everything a page asks for is done by the Studio engine (core.cts, the same as online); this file adds what only
 // a computer can do: the game folder, keys saved here, Piper, the publish zip, opening folders and closing.
 const store = () => folderStore(GAME);
 const site = () => (conf.siteUrl || 'https://sparklevalley.netlify.app').replace(/\/+$/, '');

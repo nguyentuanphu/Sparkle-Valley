@@ -20,7 +20,7 @@ from my family recordings" were removed (round R privacy). A line with no record
 and noted as missing (`sv2_voicemiss`), which reaches Studio's voice inbox in the backup, as before. On load, an old
 `ttsKey` and its engine and voice choices are deleted from `sv2_settings` (also from a restored backup), and the old
 online-voice cache (IndexedDB `sparkle-valley-tts`) is deleted. Studio's own Azure making (`tools/make-voice-pack.mjs`,
-the voice inbox in `studio/core.cjs`) is unchanged. Family recordings stay on the device.
+the voice inbox in `studio/core.cts`) is unchanged. Family recordings stay on the device.
 
 ## The pack by area (round R item 12)
 - **Own language only:** a device downloads the languages its children hear (the game's language, and the other one

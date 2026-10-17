@@ -1,13 +1,13 @@
-// The content pages live at once (r81, owner 17 Oct AEDT): netlify/lib/live.mjs keeps a checked section for Message,
+// The content pages live at once (r81, owner 17 Oct AEDT): netlify/lib/live.mts keeps a checked section for Message,
 // Missions, Quiz, Our stories, Villagers, Story characters, Memory Villages, Simple screen, Defaults, Ads and the photo
 // links; only their own keys, a limit on every text and on the whole answer; /api/live sends them to every device, and
 // saving them needs "Change pages" (or SparkleStudio.exe's key). Everything on in-memory stores, no browser.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { cleanContent, saveContent, readContent, saveLive, LiveError, LIVE_SECTIONS, CONTENT_MAX } from '../../netlify/lib/live.mjs';
-import { makeLive } from '../../netlify/functions/live.mjs';
-import { makeStudio } from '../../netlify/functions/studio.mjs';
-import * as admins from '../../netlify/lib/admins.mjs';
+import { cleanContent, saveContent, readContent, saveLive, LiveError, LIVE_SECTIONS, CONTENT_MAX } from '../../netlify/lib/live.mts';
+import { makeLive } from '../../netlify/functions/live.mts';
+import { makeStudio } from '../../netlify/functions/studio.mts';
+import * as admins from '../../netlify/lib/admins.mts';
 
 const mem = () => { const m = new Map(); return { get: async (k, o) => m.has(k) ? (o && o.type === 'json' ? JSON.parse(m.get(k)) : m.get(k)) : null, set: async (k, v) => { m.set(k, String(v)); }, setJSON: async (k, v) => { m.set(k, JSON.stringify(v)); }, delete: async k => { m.delete(k); }, list: async ({ prefix = '' } = {}) => ({ blobs: [...m.keys()].filter(k => k.startsWith(prefix)).map(key => ({ key })) }) }; };
 const PHOTO = 'family:' + 'a'.repeat(30);

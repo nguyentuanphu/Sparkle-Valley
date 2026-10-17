@@ -23,8 +23,8 @@
 //                  10 a hello, 30 a device a day, 60 a connection a day and 200 new lines a day, so nobody can flood
 //                  the inbox (and the Azure budget spent recording it)
 import { createHash } from 'crypto';
-// what a device sends is checked in netlify/lib/hello-clean.mjs (type-checked); the store below keeps only that
-import { ID, WORD, NAME, LINES, day, int, obj, counts, words, bat, batAdd, clean } from './hello-clean.mjs';
+// what a device sends is checked in netlify/lib/hello-clean.mts (type-checked); the store below keeps only that
+import { ID, WORD, NAME, LINES, day, int, obj, counts, words, bat, batAdd, clean } from './hello-clean.mts';
 export { LINES, clean };
 
 // a place name from the connection (Netlify's geo), cleaned
@@ -43,7 +43,7 @@ export async function live(S, b, now = Date.now()) {
   return true;
 }
 export const LIVE_MS = 5 * 60e3; // no "still here" for five minutes: offline (the phone died, or lost the internet)
-// opts.ip: a keyed hash of the connection (netlify/lib/guard.mjs), only to count its lines per day
+// opts.ip: a keyed hash of the connection (netlify/lib/guard.mts), only to count its lines per day
 export async function hello(S, body, now = Date.now(), where = {}, opts = {}) {
   if (body && body.live != null) return live(S, body, now);
   const d = clean(body, now); if (!d) return false;
