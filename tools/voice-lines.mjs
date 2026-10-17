@@ -148,8 +148,8 @@ const FILE_AREA = {
   lake: ['js/ferry.js'],
   hanoi: ['js/content/chapter2hanoi.js', 'js/content/chapter2props.js', 'js/content/chapter2films.js', 'js/content/chapter2text.js'], // (story chapter 2 happens in Hà Nội)
   sydney: ['js/content/chapter3sydney.js', 'js/content/chapter3props.js', 'js/content/chapter3films.js', 'js/content/chapter3text.js'], // (story chapter 3 happens in Sydney)
-  games: ['js/howto.js', 'js/learn.js', 'js/words.js', 'js/words2.js', 'js/symbols.js', 'js/vnfun.js', 'js/content/films.js', 'js/netgames.js', 'js/coop.js', 'js/twinchests.js'],
-  stories: ['js/talesdata.js', 'js/tales.js', 'js/story.js'],
+  games: ['js/howto.js', 'js/howto-player.js', 'js/learn.js', 'js/words.js', 'js/words2.js', 'js/symbols.js', 'js/vnfun.js', 'js/content/films.js', 'js/netgames.js', 'js/coop.js', 'js/twinchests.js'],
+  stories: ['js/talesdata.js', 'js/tales-content.js', 'js/tales.js', 'js/story.js'],
   festivals: ['js/festivals.js', 'js/content/festcal.js', 'js/hoilang.js', 'js/content/hoilang.js', 'js/content/songs.js', 'js/songs.js', 'js/content/releases.js', 'js/festdecor.js']
 };
 const AREA_OF = new Map(Object.entries(FILE_AREA).flatMap(([a, fs]) => fs.map(f => [f, a])));

@@ -1,20 +1,23 @@
-// Every mini-game, in the order they are listed (round J): the game imports this once, and Sparkle Studio imports it to
-// show each game by its own name and picture on its Simple screen page (js/content/activities.js places them).
-import './thinking.js';
-import './strategy.js';
-import './vietnam.js';
-import './market.js';
-import './farmgames.js';
-import './folk.js';
-import './folk2.js';
-import './tienlen.js';
-import './more.js';
-import './asia.js';
-import './music.js';
-import './cities.js';
-import './learning.js';
-import './money.js'; // (round S, owner plan 8 Oct) the ten money games
-
-import './bigthinkers.js';
-import './bigthinkers2.js';
-import './talkgames.js'; // (r79 learning) Say It Find It, Market Counting, How Do They Feel?, First Sound Hunt
+import './learning-meta.js';
+// Keep menu metadata synchronous; fetch each implementation group only when a game opens.
+import { register, GAMES } from './registry.js';
+import { GAME_CATALOG, GAME_LOADERS } from './catalog.js';
+const loads = new Map();
+for (const group of Object.values(GAME_LOADERS)) {
+  const load = () => {
+    if (!loads.has(group)) loads.set(group, group.load().catch(e => { loads.delete(group); throw e; }));
+    return loads.get(group);
+  };
+  for (const id of group.ids) {
+    const def = GAME_CATALOG.find(d => d.id === id);
+    if (!def) continue; // Family Quiz exists only when a grown-up supplied questions, as before.
+    const lazy = async api => {
+      await load();
+      if (api.closed) return;
+      const run = GAMES[id]?.run;
+      if (!run || run === lazy) throw new Error('Game implementation unavailable: ' + id);
+      return run(api);
+    };
+    register({ ...def, load, run: GAMES[id]?.run || lazy });
+  }
+}

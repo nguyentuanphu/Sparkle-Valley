@@ -26,6 +26,7 @@
 // Keep the key secret: it is only used for this run and is never written into the game.
 import fs from 'fs';
 import path from 'path';
+import manifests from './voice-manifests.cjs';
 import { collectLines, collectTemplates, partText, NUMBERS, areaOfLine, areaOfFile, readWhere, GROUPS, dynamicSays, corePri, nonCoreArea } from './voice-lines.mjs';
 
 globalThis.document = { documentElement: {} };            // i18n.js expects a browser
@@ -129,6 +130,11 @@ const list = [...uniq.entries()];
 
 // ---------- the cost ----------
 const PACK_DIR = path.join(ROOT, 'voices'), MAN = path.join(PACK_DIR, 'manifest.json');
+function saveManifest(man) {
+  fs.mkdirSync(PACK_DIR, { recursive: true });
+  for (const [lang, shard] of Object.entries(manifests.splitManifest(man))) fs.writeFileSync(path.join(PACK_DIR, `manifest-${lang}.json`), JSON.stringify(shard));
+  fs.writeFileSync(MAN, JSON.stringify(man));
+}
 // the manifest's `other`: { vi: 'hash hash …', zh: …, hi: … } for every line not in English (English is the default)
 const otherOf = list => { const o = {}; for (const [h, j] of list) if (j.lang !== 'en') (o[j.lang] = o[j.lang] || []).push(h); return Object.fromEntries(Object.entries(o).map(([L, hs]) => [L, hs.join(' ')])); };
 const files = list.flatMap(([h, j]) => CAST[j.lang].map(s => [s, h, j]));
@@ -172,7 +178,7 @@ if (flag('sizes')) { writeAreas(JSON.parse(fs.readFileSync(MAN, 'utf8')), true);
 if (flag('areas')) {
   // rewrite the templates and the areas for the recordings already made (no key needed)
   const man = JSON.parse(fs.readFileSync(MAN, 'utf8')); man.tpl = TPL; man.areas = 1;
-  fs.writeFileSync(MAN, JSON.stringify(man)); writeAreas(man); process.exit(0);
+  saveManifest(man); writeAreas(man); process.exit(0);
 }
 // (round R item 12) the coverage check (tests: voicecover): every line the game can speak has its recordings, in the
 // pack's list and in an area; what can't be listed in advance is counted with its reason
@@ -233,7 +239,7 @@ console.log('Voices:'); for (const [L, v] of Object.entries(voices)) console.log
 
 // ---------- make the files ----------
 const man = { version: 2, model: MODEL, made: new Date().toISOString().slice(0, 10), cast: CAST, voices, lines: {}, other: {}, tpl: TPL, areas: 1 };
-const save = () => { fs.mkdirSync(PACK_DIR, { recursive: true }); fs.writeFileSync(MAN, JSON.stringify(man)); };
+const save = () => saveManifest(man);
 man.other = otherOf(list); // (the lines that are not English, per language; English is the default)
 // what exists on disk is the truth
 for (const [h, j] of list) for (const s of CAST[j.lang]) if (fs.existsSync(path.join(PACK_DIR, j.lang, s, h + '.mp3'))) man.lines[h] = (man.lines[h] || '') + s;
@@ -271,7 +277,7 @@ async function azure() {
   const xml = t => t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   const LOCALE = { en: 'en-AU', vi: 'vi-VN', zh: 'zh-CN', hi: 'hi-IN' };
   const man = { version: 2, engine: 'azure', made: new Date().toISOString().slice(0, 10), cast: CAST, voices, lines: {}, other: otherOf(list), tpl: TPL, areas: 1 };
-  const save = () => { fs.mkdirSync(PACK_DIR, { recursive: true }); fs.writeFileSync(MAN, JSON.stringify(man)); };
+  const save = () => saveManifest(man);
   for (const [h, j] of list) { for (const sl of CAST[j.lang]) if (fs.existsSync(path.join(PACK_DIR, j.lang, sl, h + '.mp3'))) man.lines[h] = (man.lines[h] || '') + sl; }
   const limit = +arg('limit', 1e9), queue = missing.slice(0, limit), gap = 60000 / perMin;
   let done = 0, used = 0, next = Date.now();

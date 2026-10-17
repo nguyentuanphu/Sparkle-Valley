@@ -15,6 +15,7 @@ import os from 'os';
 import path from 'path';
 import { execFileSync } from 'child_process';
 import { createRequire } from 'module';
+import { gzipSync, brotliCompressSync } from 'node:zlib';
 const ESBUILD = '0.25.10';
 const HERE = path.dirname(new URL(import.meta.url).pathname);
 // esbuild is installed outside the site (never published): the system's temp folder
@@ -86,3 +87,34 @@ let cssOut = '';
   } }
 const kb = f => fs.statSync(path.join(dir, f)).size / 1024, startKB = [rel(entry), ...[...start].map(rel)].reduce((a, f) => a + kb(f), 0);
 console.log(`bundle: ${inputs.size} scripts → ${files.length} files in bundle/ (start ${1 + start.size} files, ${(startKB / 1024).toFixed(2)} MB before gzip); index.html and sw.js updated${cssOut ? `; stylesheet ${cssOut}` : ''}`);
+
+// A launcher may dynamically import main before the title: report both closures, not just modulepreload.
+const initial = new Set();
+const include = k => {
+  if (initial.has(k)) return;
+  initial.add(k);
+  for (const i of outputs[k].imports || []) if (i.kind === 'import-statement' && !i.external) include(i.path);
+};
+include(entry);
+for (const [k, o] of Object.entries(outputs)) if (o.entryPoint && rel(o.entryPoint) === 'js/main.js') include(k);
+const contributions = {};
+for (const k of initial) for (const [file, value] of Object.entries(outputs[k].inputs)) contributions[rel(file)] = (contributions[rel(file)] || 0) + value.bytesInOutput;
+const sizes = list => list.reduce((sum, f) => {
+  const data = fs.readFileSync(path.resolve(f));
+  sum.raw += data.length; sum.gzip += gzipSync(data).length; sum.brotli += brotliCompressSync(data).length; return sum;
+}, { raw: 0, gzip: 0, brotli: 0 });
+const report = { note: 'Main static dependency graph, not a browser transfer measurement. Dynamic boot imports, HTML, fonts and runtime requests are additional. Compression is estimated per file.',
+  launcherFiles: 1 + start.size, initialFiles: initial.size, initialJS: sizes([...initial]),
+  allJS: sizes(Object.keys(outputs).filter(f => f.endsWith('.js'))),
+  css: cssOut ? sizes([path.join(dir, cssOut)]) : null,
+  inputs: Object.fromEntries(Object.entries(contributions).sort((a, b) => b[1] - a[1])),
+  deferredEntries: Object.entries(outputs).filter(([k, o]) => o.entryPoint && !initial.has(k)).map(([k, o]) => ({ file: rel(o.entryPoint), bytes: o.bytes })) };
+console.log(`bundle size: main graph ${(report.initialJS.raw / 1e6).toFixed(3)} MB raw, ${(report.initialJS.gzip / 1024).toFixed(0)} KiB gzip estimate; all offline JS ${(report.allJS.raw / 1e6).toFixed(3)} MB`);
+const reportAt = process.argv.indexOf('--report');
+if (reportAt >= 0) {
+  if (!process.argv[reportAt + 1]) throw new Error('bundle: --report needs an output folder');
+  const reportDir = path.resolve(process.argv[reportAt + 1]); fs.mkdirSync(reportDir, { recursive: true });
+  fs.writeFileSync(path.join(reportDir, 'size.json'), JSON.stringify(report, null, 2) + '\n');
+  fs.writeFileSync(path.join(reportDir, 'metafile.json'), JSON.stringify(res.metafile, null, 2) + '\n');
+  fs.writeFileSync(path.join(reportDir, 'esbuild.txt'), await esbuild.analyzeMetafile(res.metafile, { verbose: true }));
+}

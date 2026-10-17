@@ -3,20 +3,11 @@ import { register, choiceButtons, untilRight } from './frame.js';
 import { T } from '../i18n.js';
 import { pic } from '../art.js';
 import { el, shuffle, wait } from '../util.js';
-import { GAME_INFO } from '../content/activities.js';
-import { HOWTO } from '../howto.js';
 
 // (r79 learning, I1) the frame's tier follows the child inside the game (api.tier); simple test frames fall back to the level
 const tier = api => api.tier ? api.tier() : api.little ? 0 : api.level >= 3 ? 3 : api.level >= 2 ? 2 : 1;
 const nextRound = api => api.nextRound ? api.nextRound() : tier(api);
-const INTRO = {
-  patternpicnic: ['Listen and look at the pattern. Choose the picture that comes next.', 'Nghe và nhìn quy luật. Chọn hình tiếp theo.'],
-  shapebuilders: ['Build the picture. Choose a shape, then tap its matching outline. You can drag the shape there too.', 'Ghép bức tranh. Chọn hình khối rồi chạm vào nét viền giống hình đó. Con cũng có thể kéo hình vào đó.'],
-  remembergarden: ['Look at the garden pictures. Put them back in the same order. You can see them again whenever you need.', 'Nhìn các hình trong vườn. Chọn lại theo đúng thứ tự. Con có thể xem lại bất cứ lúc nào.']
-};
-for (const [id, words] of Object.entries(INTRO)) {
-  GAME_INFO[id] = ['thinking', 3, 2]; HOWTO[id] = { steps: [{ pic: '🧩', en: words[0], vi: words[1] }] };
-}
+import { REASON_INTRO as INTRO } from './learning-meta.js';
 function repeat(api, speak) {
   const button = el('button', 'btn bt-repeat', pic('🔁') + T('Hear again', 'Nghe lại'));
   button.style.minHeight = '64px'; button.onclick = speak; api.stage.appendChild(button); return button;
