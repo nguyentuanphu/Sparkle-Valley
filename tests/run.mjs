@@ -5,7 +5,7 @@
 // Multiplayer runs when a local PeerJS server is up on 127.0.0.1:9000 (see the README in this folder).
 import fs from 'fs';
 import os from 'os';
-import { launch, open, clear, start, URL, seedPlayers, takeCoverage } from './harness.mjs';
+import { launch, open, clear, noWelcome, start, URL, seedPlayers, takeCoverage } from './harness.mjs';
 import { groundAudit } from './world-audit.mjs';
 import { studioCheck } from './studio-check.mjs';
 import { studioRepairCheck } from './studio-repair-check.mjs';
@@ -803,7 +803,7 @@ await check('voicecover', async () => {
     const res = {};
     for (const [key, line] of [['number', 'You rolled 47! Count with me.'], ['name', 'Zorbly is here! Hold on and kick your legs: tap, tap, tap!']]) {
       window.__speaks = 0; window.__srcs = 0; res[key] = { parts: V.lineParts('en', line) };
-      await V.sayAsync(line, line); res[key].speaks = window.__speaks; res[key].srcs = window.__srcs;
+      await V.sayAsync(line, line); res[key].speaks = window.__speaks; res[key].srcs = window.__srcs; res[key].diag = { ...V.voiceDiag }; // (why a part did not play, when it does not)
     }
     return res;
   });
@@ -5895,9 +5895,7 @@ await check('ownerheartstap', async () => {
   // (Full run 37: the daily gift's own note took the HUD note while this ran) the gift's note and voice stay quiet here
   const sw = (id, on) => P.page.evaluate(([id, on]) => import('/js/custom.js').then(C => { C.CUSTOM.features = { ...(C.CUSTOM.features || {}), [id]: on }; }), [id, on]);
   await sw('explain_gift_note', false); await sw('explain_gift_voice', false);
-  // (r82 full suite: Grandpa Owl's welcome sticker, about 2 s after a fresh child starts, put its own caption up for
-  // 4 s, inside the first tap's look on slower machines) the welcome counts as given, so only the hearts speak here
-  await P.page.evaluate(() => import('/js/stickers.js').then(S => { for (const h of __sv.heroes) S.book(h.profile).welcomed = Date.now(); }));
+  await noWelcome(P.page); // (Grandpa Owl's welcome caption fell inside the first tap's look on slower machines)
   // the voice is on here (the checks start with it off), and any way it speaks counts: a recorded file or the device voice
   await P.page.evaluate(async () => { (await import('/js/state.js')).settings.voice = true; window.__spoke = []; window.__explained = []; addEventListener('sv-explain', e => window.__explained.push(e.detail)); const s = speechSynthesis.speak.bind(speechSynthesis); speechSynthesis.speak = u => { window.__spoke.push(u.text); try { s(u); } catch (e) { } }; });
   const box = await P.page.evaluate(() => { const h = document.querySelector('.hud .hearts'), r = h.getBoundingClientRect(); return { y: r.y + r.height / 2, x: r.x + r.width / 2, hit: Math.round(r.height), role: h.getAttribute('role'), label: h.getAttribute('aria-label') }; });
