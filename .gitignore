@@ -22,6 +22,11 @@ marketing/source/out5/
 marketing/source/music5-*.wav
 marketing/source/log5-*.txt
 marketing/source/preview5-*.jpg
+marketing/source/frames10/
+marketing/source/out10/
+marketing/source/log10-*.txt
+marketing/source/preview10-*.jpg
+marketing/source/music10-*.wav
 marketing/source/make5-*.log
 tests/ads-*.mjs
 marketing/source/filmtest*.mjs
