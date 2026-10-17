@@ -34,7 +34,9 @@ function style(): void {
 .sh-wrap { display: flex; flex-direction: column; align-items: center; gap: clamp(6px, 1.4vh, 12px); width: min(96vw, 900px); margin: 0 auto; }
 .sh-text { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 4px 6px; background: rgba(255, 255, 255, .94); color: #2a2a3a; border-radius: 20px; padding: 8px 14px; box-shadow: 0 5px 0 rgba(0, 0, 0, .15); max-width: 100%; }
 .sh-text .sh-pics { display: inline-flex; gap: 2px; margin-right: 6px; } .sh-text .sh-pics .art { width: clamp(30px, 6vw, 44px); height: clamp(30px, 6vw, 44px); }
-.sh-text button { border: 0; background: none; font-size: clamp(20px, 4.4vw, 30px); font-weight: 800; line-height: 1.25; color: #3b2a4f; padding: 2px 3px; border-radius: 8px; min-height: 44px; cursor: pointer; }
+.sh-text span.w { padding: 2px 3px; border-radius: 8px; font-weight: 800; color: #3b2a4f; font-size: clamp(22px, 4.6vw, 32px); }
+.sh-text span.w.on { background: #ffd23f; }
+.sh-text button { min-width: 44px; border: 0; background: none; font-size: clamp(20px, 4.4vw, 30px); font-weight: 800; line-height: 1.25; color: #3b2a4f; padding: 2px 3px; border-radius: 8px; min-height: 44px; cursor: pointer; }
 .sh-text button.on { background: #ffd23f; }
 .sh-ear { border: 0; border-radius: 50%; width: 52px; height: 52px; background: #fff; box-shadow: 0 3px 0 rgba(0, 0, 0, .18); display: inline-flex; align-items: center; justify-content: center; padding: 8px; }
 .sh-ear .art { width: 100%; height: 100%; }
@@ -188,7 +190,9 @@ export async function play(api: Api): Promise<unknown> {
     api.dots(story.pages.length, p); api.stage.innerHTML = '';
     const page = story.pages[p], text = word(page.text), task: Task = !little && page.older ? page.older : page.task;
     const wrap = el('div', 'sh-wrap'), line = el('div', 'sh-text', `<span class="sh-pics">${page.pics.split(' ').map(x => pic(x)).join('')}</span>`);
-    const words = text.split(' ').map(w => { const b = el('button', '', esc(w)); b.onclick = () => { api.sfx.tap(); sayAsync(w.replace(/[.,!?]/g, ''), w.replace(/[.,!?]/g, '')); }; line.appendChild(b); return b; });
+    // (from 5 a word can be tapped to hear it again; an under-5 does not read yet: the words are shown, the ear reads them again)
+    const words = text.split(' ').map(w => { if (little) { const sp = el('span', 'w', esc(w)); line.appendChild(sp); return sp; }
+      const b = el('button', '', esc(w)); b.onclick = () => { api.sfx.tap(); sayAsync(w.replace(/[.,!?]/g, ''), w.replace(/[.,!?]/g, '')); }; line.appendChild(b); return b; });
     const ear = el('button', 'sh-ear', pic('👂')); ear.setAttribute('aria-label', 'Read again / Đọc lại'); ear.onclick = () => { api.sfx.tap(); readLine(api, words, text); }; line.appendChild(ear);
     wrap.appendChild(line); api.stage.appendChild(wrap);
     await readLine(api, words, text); if (api.closed) return;

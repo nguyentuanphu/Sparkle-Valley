@@ -5648,12 +5648,13 @@ await check('reading', async () => {
   const Q = await open(b, { w: 1024, h: 768, play: false }); const asked2 = []; Q.page.on('request', q => { if (/reading(menu)?\.js/.test(q.url())) asked2.push(q.url().split('/').pop()); });
   await Q.page.route('**/content/custom.json*', async r => { let j = {}; try { j = await (await r.fetch()).json(); } catch (e) { } j.features = { ...(j.features || {}), readingTrial: true }; await r.fulfill({ contentType: 'application/json', body: JSON.stringify(j) }); });
   await Q.page.reload(); await start(Q.page); await clear(Q.page);
-  await Q.page.waitForFunction(async () => Object.keys((await import('/js/games/frame.js')).GAMES).filter(k => /^rd_/.test(k)).length === 12, null, { timeout: 30000 }).catch(() => { });
+  await Q.page.waitForFunction(async () => Object.keys((await import('/js/games/frame.js')).GAMES).filter(k => /^rd_/.test(k)).length === 13, null, { timeout: 30000 }).catch(() => { });
   const on = await Q.page.evaluate(async () => { const F = await import('/js/games/frame.js'), A = await import('/js/content/activities.js'); __sv.openGamesHub(0); await new Promise(r => setTimeout(r, 300)); document.querySelector('.hubtabs [data-tab="learn"]')?.click(); await new Promise(r => setTimeout(r, 200));
     const hub = [...document.querySelectorAll('.hubbody [data-play]')].map(b => b.dataset.play), head = [...document.querySelectorAll('.hubbody .hubarea')].map(h => h.textContent); document.querySelectorAll('.modal').forEach(m => m.remove()); __sv.paused = false;
     return { games: Object.keys(F.GAMES).filter(k => /^rd_/.test(k)), big: A.gamesIn(F.GAMES, 'reading', false).map(g => g.id), little: A.gamesIn(F.GAMES, 'reading', true).map(g => g.id), hub: hub.filter(k => /^rd_/.test(k)), head }; });
-  ok(IDS.every(id => on.games.includes(id) && on.big.includes(id) && on.hub.includes(id)) && on.head.some(h => /Reading corner/.test(h)), 'with the switch on: ' + JSON.stringify(on));
-  ok(BIG_ONLY.every(id => !on.little.includes(id)) && on.little.length === IDS.length - BIG_ONLY.length && IDS.filter(id => !BIG_ONLY.includes(id)).every(id => on.little.includes(id)), 'under-5s see: ' + on.little.join(','));
+  // (owner, 18 Oct AEDT) Story Helpers joins the Reading corner too, for 2 to 8 (played through by its own check, storyhelp)
+  ok([...IDS, 'rd_storyhelp'].every(id => on.games.includes(id) && on.big.includes(id) && on.hub.includes(id)) && on.head.some(h => /Reading corner/.test(h)), 'with the switch on: ' + JSON.stringify(on));
+  ok(BIG_ONLY.every(id => !on.little.includes(id)) && on.little.length === IDS.length - BIG_ONLY.length + 1 && [...IDS.filter(id => !BIG_ONLY.includes(id)), 'rd_storyhelp'].every(id => on.little.includes(id)), 'under-5s see: ' + on.little.join(','));
   ok(!asked2.includes('reading.js'), 'the games\' code loaded before a game opened: ' + asked2.join(','));
   // every game finishes for an under-5 (no losing: three stars) and for a big kid at Easy, Medium and Hard, in both languages;
   // nothing is left behind when a game ends
@@ -6900,6 +6901,59 @@ await check('realrides', async () => {
   const errs = P.errors; await P.ctx.close();
   ok(!r.none && r.moved > 2 && Math.abs(r.moved - r.along) < 2 && r.onRoad < .5 && r.onBoard && r.planned >= 45 && r.planned <= 70 && r.off && r.home && !errs.length, JSON.stringify({ ...r, errs }));
   return `a bus to the farthest stop (${r.stop}, ${r.len} m along the roads) drives there with the child on board, planned ${r.planned} s; ${r.moved} m along the road in the first moments, on the road; the child gets off at the stop and the bus goes back to its route`;
+});
+
+await check('storyhelp', async () => {
+  // (owner, 18 Oct AEDT: "read story then ask kid to resolve puzzle or work on something … then move on, read and then
+  // more interactive", for 5 to 8 and 2 to 5) Story Helpers: every story plays through, page by page (read, then help in
+  // the picture: put, find, order), for a 5 to 8 year old in English on a phone and an under-5 in Vietnamese on a tablet;
+  // a wrong place is refused and the right one taken; buttons are 44 px or more (64 px for under-5s); one task is done
+  // by dragging; nothing errs
+  const C = await import('../js/content/storyhelp.js');
+  const solve = async (page, si, pg) => page.evaluate(async ([si, pg]) => {
+    const wait = ms => new Promise(r => setTimeout(r, ms)), C = await import('/js/content/storyhelp.js'), P = C.STORIES[si].pages[pg];
+    const little = !!document.querySelector('.gl.little'), task = !little && P.older ? P.older : P.task, small = [];
+    const min = little ? 64 : 44; document.querySelectorAll('.sh-thing, .sh-ear, .sh-text button').forEach(b => { const r = b.getBoundingClientRect(); if (r.width && Math.min(r.width, r.height) < min) small.push(b.className + ' ' + Math.round(Math.min(r.width, r.height))); });
+    let refused = null;
+    if (task.kind === 'order') { for (let i = 0; i < task.steps.length; i++) { const btn = [...document.querySelectorAll('.sh-thing:not(.gone)')].find(b => task.steps[i].word.includes(b.getAttribute('aria-label'))); btn.click(); await wait(250); } }
+    else if (task.kind === 'find') { const no = [...document.querySelectorAll('.sh-spot')].find(s => s.dataset.id !== task.at); no.click(); await wait(200); refused = !no.querySelector('.sh-hide'); document.querySelector(`.sh-spot[data-id="${task.at}"]`).click(); }
+    else { const list = little ? task.things.slice(0, 1) : [...task.things, ...(task.more || [])];
+      for (let k = 0; k < list.length; k++) { const btn = document.querySelectorAll('.sh-thing')[k]; btn.click(); await wait(150);
+        if (k === 0) { const no = [...document.querySelectorAll('.sh-spot')].find(s => s.dataset.id !== list[k].to); no.click(); await wait(200); refused = !btn.classList.contains('gone'); btn.click(); await wait(150); }
+        document.querySelector(`.sh-spot[data-id="${list[k].to}"]`).click(); await wait(300); } }
+    return { kind: task.kind, small, refused };
+  }, [si, pg]);
+  const runs = [];
+  for (const [age, lang, w, h, stories] of [['big', 'en', 390, 844, [0, 1, 2]], ['little', 'vi', 820, 1180, [3, 4, 5]]]) for (const si of stories) {
+    const P = await open(b, { w, h, touch: true, lang, settings: { voice: false } }); await clear(P.page);
+    await P.page.evaluate(async age => { await import('/js/games/readingmenu.js'); __sv.heroes[0].profile.age = age; __sv.playGame(0, 'rd_storyhelp', 'replay'); }, age);
+    await P.page.waitForSelector('.sh-book', { timeout: 60000 }); await P.page.locator('.sh-book').nth(si).click();
+    const pages = [];
+    for (let pg = 0; pg < C.STORIES[si].pages.length; pg++) {
+      const want = C.STORIES[si].pages[pg].text[lang === 'vi' ? 1 : 0].replace(/\s+/g, '');
+      await P.page.waitForFunction(w => (document.querySelector('.sh-text')?.textContent || '').replace(/\s+/g, '') === w && (document.querySelector('.sh-thing:not(.gone)') || document.querySelector('.sh-slots') || document.querySelector('.sh-spot')), want, { timeout: 90000 })
+        .catch(e => { throw new Error(`${age} ${C.STORIES[si].id} page ${pg + 1}: ${e.message.slice(0, 60)}`); });
+      await P.page.waitForTimeout(400);
+      // the very first task: done by dragging the thing onto its place, as a child would
+      if (si === stories[0] && pg === 0) {
+        const T0 = C.STORIES[si].pages[0].task, to = T0.things[0].to, from = await P.page.locator('.sh-thing').first().boundingBox(), at = await P.page.locator(`.sh-spot[data-id="${to}"]`).boundingBox();
+        await P.page.mouse.move(from.x + from.width / 2, from.y + from.height / 2); await P.page.mouse.down(); await P.page.mouse.move(at.x + at.width / 2, at.y + at.height / 2, { steps: 8 }); await P.page.mouse.up(); await P.page.waitForTimeout(400);
+        const dragged = await P.page.evaluate(() => document.querySelector('.sh-thing').classList.contains('gone'));
+        pages.push({ dragged }); if (age === 'little') { continue; }
+        // (the rest of the page's things for an older child)
+        const rest = await P.page.evaluate(async ([si]) => { const C = await import('/js/content/storyhelp.js'), t = C.STORIES[si].pages[0].task, list = [...t.things, ...(t.more || [])], wait = ms => new Promise(r => setTimeout(r, ms));
+          for (let k = 1; k < list.length; k++) { document.querySelectorAll('.sh-thing')[k].click(); await wait(150); document.querySelector(`.sh-spot[data-id="${list[k].to}"]`).click(); await wait(300); } return list.length; }, [si]);
+        pages.push({ rest }); continue;
+      }
+      pages.push(await solve(P.page, si, pg));
+    }
+    await P.page.waitForTimeout(2500);
+    const won = await P.page.evaluate(() => !!document.querySelector('.gl .win, .gl-win, .winbox, .reward, .gl.won'));
+    runs.push({ age, lang, story: C.STORIES[si].id, pages, won, errs: P.errors.slice(0, 3) }); await P.ctx.close();
+  }
+  const bad = runs.filter(r => !r.won || r.errs.length || r.pages.some(p => (p.small && p.small.length) || p.refused === false || p.dragged === false));
+  ok(!bad.length, JSON.stringify(bad).slice(0, 1500));
+  return `${runs.length} stories played through (3 by a 5 to 8 year old in English on a phone, 3 by an under-5 in Vietnamese on a tablet): every page read, then put, find or order done; wrong places refused; a drag works; buttons 44 px (64 px for under-5s) or more`;
 });
 
 await check('swupdate', async () => {
