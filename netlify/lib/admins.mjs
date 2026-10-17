@@ -96,6 +96,7 @@ export function needs(api, post) {
   if (api === 'testers' || /^testers\/(problem|shot)\/[a-f0-9]{16}$/.test(api)) return post ? 'owner' : 'testers';
   if (api === 'testers/set') return 'testerset';
   if (api === 'live') return post ? 'releases' : 'pages';
+  if (api === 'live/content') return post ? 'edit' : 'pages'; // (r81) the content pages, live at once
   if (api === 'family/code/new') return 'familycode';
   if (/^(family\/|familyphoto\/|albumphoto$)/.test(api)) return 'family';
   if (['github/merge', 'site/restore'].includes(api)) return post ? 'deploy' : 'pages';
@@ -107,8 +108,9 @@ export function needs(api, post) {
 export function allowed(me, api, post) {
   const role = typeof me === 'string' ? me : me && me.role;
   if (role === 'owner') return true;
-  // (round R privacy) SparkleStudio.exe's key: the players report, the inbox and the family photos, nothing else
-  if (role === 'exe') return post ? ['players/label', 'family/upload', 'family/remove', 'family/code/new', 'testers/set'].includes(api) : ['whoami', 'players', 'inbox', 'family/code', 'testers'].includes(api) || /^familyphoto\/[\w-]+$/.test(api) || /^testers\/(problem|shot)\/[a-f0-9]{16}$/.test(api);
+  // (round R privacy) SparkleStudio.exe's key: the players report, the inbox, the family photos and (r81) the content
+  // pages' live sections, nothing else
+  if (role === 'exe') return post ? ['players/label', 'family/upload', 'family/remove', 'family/code/new', 'testers/set', 'live/content'].includes(api) : ['whoami', 'players', 'inbox', 'family/code', 'testers', 'live/content'].includes(api) || /^familyphoto\/[\w-]+$/.test(api) || /^testers\/(problem|shot)\/[a-f0-9]{16}$/.test(api);
   const need = needs(api, post); if (need === null) return true; if (need === 'owner') return false;
   const perms = typeof me === 'string' ? PRESETS[me] || [] : Array.isArray(me && me.perms) ? me.perms : permsOf(me);
   return perms.includes(need);

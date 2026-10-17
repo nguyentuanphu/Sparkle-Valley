@@ -238,6 +238,9 @@ const local = {
   inbox: async () => { if (!conf.studioKey) return []; try { return await (await siteApi('inbox')).json(); } catch (e) { return []; } },
   // (owner, 12 Oct) tester reports live on the website too: the same pages, asked for with this computer's Studio key
   testers: async (api, b) => { if (!conf.studioKey) throw new Error('Make a Studio key online (Setup → Security) and put it in Settings.'); return (await siteApi(api, b === null ? undefined : b)).json(); },
+  // (r81, owner 17 Oct AEDT) the content pages go live at once: the same sections the online Studio saves, sent with
+  // this computer's Studio key (the game folder keeps its own copy too, so Publish still works)
+  live: async b => { if (!linked()) throw new Error('Set the website and a Studio key in Settings to put these pages live at once.'); return (await siteApi('live/content', b === null ? undefined : b)).json(); },
   onlineVersion: async () => { const r = await fetch(site() + '/studio/version.json', { cache: 'no-store' }); return r.ok ? (await r.json()).studio : null; },
   api: async (api, method, b) => {
     if (api === 'build' && method === 'POST') { const out = G('sparkle-valley-netlify.zip'); return { code: 200, body: Object.assign({ path: out }, zipFolder(GAME, PUBLISH, out)) }; }

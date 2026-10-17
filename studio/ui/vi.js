@@ -5,7 +5,12 @@
 const ENV = 'Netlify (Site configuration → Environment variables)';
 // the permissions' Vietnamese names by their English ones (filled from the server's list, studio/ui/app.js)
 export const PERM_VI = {};
+const LIVE_PART_VI = { Message: 'Lời nhắn', Missions: 'Nhiệm vụ', Quiz: 'Đố vui', 'Our stories': 'Truyện của nhà mình', Villagers: 'Nhân vật', 'Memory Villages': 'Làng Kỷ Niệm', 'Story characters': 'Nhân vật trong truyện', Ads: 'Quảng cáo', 'Family album': 'Album gia đình' };
 export const VI_MESSAGES = [
+  // (r81, owner 17 Oct AEDT) the content pages, live at once
+  [/^Set the website and a Studio key in Settings to put these pages live at once\.$/, () => 'Hãy điền trang web và khóa Studio trong Cài đặt để các trang này có hiệu lực ngay.'],
+  [/^Too much to go live at once \((\d+) KB; 200 KB at most\): make the stories or the quiz shorter, then Save again\.$/, (m) => `Quá nhiều để có hiệu lực ngay một lần (${m[1]} KB; tối đa 200 KB): hãy làm truyện hoặc câu đố ngắn lại, rồi bấm Lưu lần nữa.`],
+  [/^Some words are too long to go live \((.+): (\d+) letters at most\): make them shorter, then Save again\.$/, (m) => `Có chữ quá dài để có hiệu lực ngay (${LIVE_PART_VI[m[1]] || m[1]}: tối đa ${m[2]} chữ cái): hãy viết ngắn lại, rồi bấm Lưu lần nữa.`],
   // (owner, 12 Oct) tester reports
   [/^No such problem\.$/, () => 'Không có lỗi này.'],
   [/^Set the website address and the Studio password in Settings to see the tester reports\.$/, () => 'Hãy điền địa chỉ trang web và mật khẩu Studio trong Cài đặt để xem báo cáo của người thử.'],

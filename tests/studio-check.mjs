@@ -569,8 +569,16 @@ export async function studioCheck(browser, open) {
       }
       if (!touch) {
         await pg.evaluate(() => { location.hash = 'family/message'; }); await pg.waitForSelector('#en');
+        // (r81, owner 17 Oct AEDT) the Message is live at once: Save puts it on /api/live, nothing waits for Publish, and the
+        // page says so; the Publish feedback below is checked with a change that still waits (the music list)
+        const waiting0 = (await call('/studio/api/pending', { cookie: C })).j.files.length, badge = await pg.evaluate(() => (document.querySelector('.livebadge') || {}).textContent || '');
         await pg.fill('#en', 'Hello from the review'); await pg.click('#save'); await pg.waitForTimeout(900);
-        const shown = await pg.evaluate(() => ({ pub: !document.querySelector('#pub').hidden, state: (document.querySelector('.savestate') || {}).textContent, toast: document.querySelector('#toast').className }));
+        const said = await pg.evaluate(() => ({ state: (document.querySelector('.savestate') || {}).textContent, toast: document.querySelector('#toast').className, words: document.querySelector('#toast').textContent }));
+        const lm = await pg.evaluate(() => fetch('/api/live', { cache: 'no-store' }).then(r => r.json())), waiting1 = (await call('/studio/api/pending', { cookie: C })).j.files.length;
+        if (!(lm.content && lm.content.message && lm.content.message.en === 'Hello from the review' && waiting1 === waiting0 && /Saved|Đã lưu/.test(said.state) && /good/.test(said.toast) && /(no Publish|không cần Phát hành)/.test(said.words) && /(Live: devices get it|Có hiệu lực ngay)/.test(badge))) bad.push('online: the Message did not go live at once: ' + JSON.stringify({ said, badge, live: lm.content, waiting0, waiting1 }));
+        { const cur = (await call('/studio/api/content', { cookie: C })).j; await call('/studio/api/content', { cookie: C, headers: X, body: { ...cur, music: [...(cur.music || []), { id: 'review', file: 'content/music/review.mp3', en: 'Review tune', vi: 'Bài thử', tags: ['kids'] }] } }); }
+        await pg.click('#reload'); await pg.waitForTimeout(900);
+        const shown = await pg.evaluate(() => ({ pub: !document.querySelector('#pub').hidden, state: 'Saved', toast: 'good' }));
         await pg.click('#pub'); await pg.waitForSelector('#gpub'); await pg.click('#gpub'); await pg.waitForSelector('#gres.result', { timeout: 15000 }); await pg.waitForTimeout(500);
         const after = await pg.evaluate(() => ({ pub: !document.querySelector('#pub').hidden, res: document.querySelector('#gres').className + ' ' + document.querySelector('#gres').innerText }));
         if (!(shown.pub && /Saved|Đã lưu/.test(shown.state) && /good/.test(shown.toast) && !after.pub && /good/.test(after.res) && /(next time|lần tới)/.test(after.res))) bad.push('online: save and Publish feedback: ' + JSON.stringify({ shown, after }));
@@ -599,6 +607,11 @@ export async function studioCheck(browser, open) {
         await pe.fill('#en', before); await pe.click('#save'); await pe.waitForTimeout(800); const saved = await pe.evaluate(() => (document.querySelector('.savestate') || {}).textContent);
         let askedAfter = 0; const cnt = d => { askedAfter++; d.dismiss(); }; pe.on('dialog', cnt); await pe.click('#tabs [data-k="home"]'); await pe.waitForTimeout(500); pe.off('dialog', cnt);
         if (!(asked === 3 && /Not saved|Chưa lưu/.test(st) && stayed === 'Words not saved' && stayed2 && left && back === before && /Saved|Đã lưu/.test(saved) && !askedAfter)) bad.push('changes not saved: ' + JSON.stringify({ asked, st, stayed, stayed2, left, back, before, saved, askedAfter }));
+        // (r81, owner 17 Oct AEDT) with the website and a Studio key set, the exe's Message save goes live too, and stays in
+        // its folder so Publish still sends it
+        { await pe.evaluate(() => { location.hash = 'family/message'; }); await pe.waitForSelector('#en'); await pe.fill('#en', 'Live from the exe'); await pe.click('#save'); await pe.waitForTimeout(900);
+          const lv = await (await fetch(site + '/api/live')).json(), folder = (await ex('content')).j.message, words = await pe.evaluate(() => document.querySelector('#toast').textContent);
+          if (!(lv.content && lv.content.message && lv.content.message.en === 'Live from the exe' && folder && folder.en === 'Live from the exe' && /(no Publish|không cần Phát hành)/.test(words))) bad.push('exe: the Message did not go live: ' + JSON.stringify({ live: lv.content && lv.content.message, folder, words })); }
         // (round T) villagers and buildings made on the old map are kept aside: the Map page lists them, "Place again" puts one next to the
         // same place on the new map (named, with its offset, and the content stamped with the map), "Forget" drops one, the old circles can be forgotten
         { const M = await import(pathToFileURL(path.join(ROOT, 'js/content/map.js')).href), [vx, vz] = M.anchorOf('village'), keep = (await ex('content')).j;
@@ -670,6 +683,11 @@ export async function studioCheck(browser, open) {
         const names = async l => { await pe.evaluate(l2 => document.querySelector(`.lang [data-l="${l2}"]`).click(), l); await pe.evaluate(() => { location.hash = 'game/path'; }); await pe.waitForSelector('tr[data-id]', { timeout: 15000 }).catch(() => { }); await pe.waitForTimeout(300); return pe.evaluate(() => location.hash + ' ' + document.querySelector('#page').innerText.slice(0, 3000)); };
         const vi = await names('vi'), en = await names('en'); await names('vi');
         if (!(/Cho Thỏ Ăn/.test(vi) && !/Feed the Bunny/.test(vi) && /Feed the Bunny/.test(en))) bad.push('the Simple screen page does not follow Studio\'s language: ' + vi.slice(0, 200) + ' / ' + en.slice(0, 200));
+        // (r81) the reading games are listed too (the game registers them only while the readingTrial switch is on), in the Reading corner
+        await names('en'); const rd = await pe.evaluate(() => [...document.querySelectorAll('tr[data-id^="rd_"]')].map(r => ({ id: r.dataset.id, area: r.querySelector('[data-f="area"]').value, txt: r.textContent, head: r.closest('.card').querySelector('h3').textContent })));
+        await names('vi'); const rdVi = await pe.evaluate(() => (document.querySelector('tr[data-id="rd_trace"]') || {}).textContent || '');
+        if (!(rd.length >= 10 && rd.every(r => r.area === 'reading') && /Lantern Letters/.test((rd.find(r => r.id === 'rd_trace') || {}).txt || '') && /reading trial/.test(rd[0].head) && /Đèn Lồng Chữ Cái/.test(rdVi))) bad.push('the Simple screen page does not list the reading games: ' + JSON.stringify({ rd: rd.slice(0, 3), n: rd.length, rdVi }));
+        else notes.push(`Simple screen: ${rd.length} reading games listed`);
       }
       await pe.screenshot({ path: `out/studio-exe-${w}.png` });
       bad.push(...errs.map(e => `${w}px: ${e}`)); await ctx.close();
