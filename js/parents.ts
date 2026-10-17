@@ -29,6 +29,10 @@ import { FAMILY_MISSIONS, FAMILY_AGAIN, FAMILY_GUIDE } from './content/familymis
 import { allMissions, addMission, removeMission, tickMission, openMissions, cleanMissions, weekSummary, weekNote, aestDate, danceDue, DANCE_MOVES, MOVE_SEC,
   bedtimePhase, BED_DIM, BED_SONG, isBirthday, MISSION_COINS, PARENT_LINES } from './content/parents.js';
 
+// a family mission as the Grown-ups page lists it: a ready-made one (ready), one from Studio (studio) or one a grown-up
+// added on this device; who: one child's id, or every child
+type Mission = { id: string, en: string, vi: string, who?: string, studio?: boolean, ready?: boolean, done?: Record<string, number>, [k: string]: any };
+
 export function createParents(G, { say, save, reward }) {
   const feat = id => featureOn(id, true);
   const isFree = () => !G.paused && !gameOpen() && !document.querySelector('.dialog, .modal, .songs, .theatre, .resttime, .dancebreak');
@@ -41,7 +45,7 @@ export function createParents(G, { say, save, reward }) {
   const readyList = () => FAMILY_MISSIONS.filter(readyOn).map(M => { const id = 'r_' + M.id, d = (settings.missionsDone || {})[id] || {}, fresh = {};
     for (const [kid, at] of Object.entries(d)) if (Date.now() - at < FAMILY_AGAIN[M.kind] * 864e5 - 3 * 36e5) fresh[kid] = at;   // (3 hours early, so an evening one is back the next evening)
     return { id, en: M.en, vi: M.vi, icon: M.icon, kind: M.kind, ready: true, done: fresh }; });
-  const missions = () => [...readyList(), ...allMissions(settings.missions, CUSTOM.missions, settings.missionsDone || {})];
+  const missions = (): Mission[] => [...readyList(), ...allMissions(settings.missions, CUSTOM.missions, settings.missionsDone || {})];
   // the guide: what family play is (pictures and words, spoken)
   async function guide() { G.paused = true; await G.dialog('💛 ' + T('Family play', 'Trò chơi cả nhà'), FAMILY_GUIDE.map(([ic, en, vi]) => [`${ic} ${en}`, `${ic} ${vi}`, en, vi])); G.paused = false; }
   const guideHTML = () => `<div class="fmguide">${FAMILY_GUIDE.map(([ic, en, vi]) => `<div class="fmg">${pic(ic)}<span>${esc(T(en, vi))}</span></div>`).join('')}</div>`;
@@ -76,7 +80,7 @@ export function createParents(G, { say, save, reward }) {
 
   // ---------- (e) the dance break ----------
   let playMin = 0, lastDance = 0, dance = null;
-  function openDance(onEnd) {
+  function openDance(onEnd?) {
     if (dance) return dance;
     const kids = familySongs().filter(s => s.tags.includes('kids')); kids.forEach(s => { Music.files[s.key] = s.file; });
     const prevSong = Music.key, wasPaused = G.paused; G.paused = true; Music.pinned = true; Music.stop(); Music.play(kids.length ? kids[0].key : PARTY[0], true);
@@ -194,7 +198,7 @@ export function createParents(G, { say, save, reward }) {
   }
 
   // ---------- (c) the weekly note ----------
-  const favOf = p => { const pl = (p.stats && p.stats.played) || {}, top = Object.entries(pl).filter(([id]) => GAMES[id]).sort((a, b) => b[1] - a[1])[0]; if (!top) return null; const g = GAMES[top[0]], l = settings.lang; try { settings.lang = 'en'; const en = g.name(); settings.lang = 'vi'; return [en, g.name()]; } finally { settings.lang = l; } };
+  const favOf = p => { const pl: Record<string, number> = (p.stats && p.stats.played) || {}, top = Object.entries(pl).filter(([id]) => GAMES[id]).sort((a, b) => b[1] - a[1])[0]; if (!top) return null; const g = GAMES[top[0]], l = settings.lang; try { settings.lang = 'en'; const en = g.name(); settings.lang = 'vi'; return [en, g.name()]; } finally { settings.lang = l; } };
   const noteOf = p => weekNote(weekSummary((p.stats && p.stats.days) || {}, aestDate()), nm(p.name || ''), favOf(p));
 
   // ---------- Grown-ups: one group (Grown-ups is already behind the press-and-hold) ----------

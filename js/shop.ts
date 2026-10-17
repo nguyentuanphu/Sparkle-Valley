@@ -88,7 +88,7 @@ export function createShop(G, { say, save }) {
   // a rail of little shirts and dresses on the back wall, hats on the counter
   ['#e8434a', '#ffd23f', '#3cc7e8', '#a66bff', '#5fd39a', '#ff9f43'].forEach((c, k) => parts.push(P(new THREE.BoxGeometry(.38, .46, .06), c, [-1.3 + k * .52, 1.7, -.8]), P(new THREE.BoxGeometry(.5, .1, .06), c, [-1.3 + k * .52, 1.88, -.8])));
   parts.push(P(new THREE.CylinderGeometry(.03, .03, 3.2, 6), '#8a5a3b', [0, 2.0, -.78], [0, 0, Math.PI / 2]));
-  [['#ecd9a0', -1.1], ['#e8434a', -.3], ['#ff7eb8', .5], ['#3b6fe0', 1.2]].forEach(([c, x], k) => parts.push(k ? P(new THREE.SphereGeometry(.2, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2), c, [x, 1.05, .5]) : P(new THREE.ConeGeometry(.32, .22, 16), c, [x, 1.16, .5])));
+  ([['#ecd9a0', -1.1], ['#e8434a', -.3], ['#ff7eb8', .5], ['#3b6fe0', 1.2]] as [string, number][]).forEach(([c, x], k) => parts.push(k ? P(new THREE.SphereGeometry(.2, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2), c, [x, 1.05, .5]) : P(new THREE.ConeGeometry(.32, .22, 16), c, [x, 1.16, .5])));
   const stall = new THREE.Mesh(merge(parts), toonVC()); stall.castShadow = true; stall.position.set(spot.x, heightAt(spot.x, spot.z), spot.z); stall.rotation.y = face; scene.add(stall);
   world.colliders.push({ x: spot.x, z: spot.z, r: 1.8 }); world.stalls.push({ id: 'shop_clothes', place: 'market', kind: 'stall', x: spot.x, z: spot.z, w: 3.6, d: 2.1, face, tap: 'shop_clothes' });
   const front = { x: spot.x + Math.sin(face) * 1.8, z: spot.z + Math.cos(face) * 1.8 };
@@ -97,7 +97,7 @@ export function createShop(G, { say, save }) {
 
   // ---------- the shop screen ----------
   let tab = 'hat';
-  function openShop(i, host) {
+  function openShop(i, host?) {
     if (!host && twoOpen(i)) return;
     const h = G.heroes[i], p = h.profile; adoptWorn(p);
     const little = p.age !== 'big', m = host ? { close: () => {}, addEventListener: () => {} } : modal('kcard shopk' + (little ? ' little' : ''), ''), card = host || m.querySelector('.card');

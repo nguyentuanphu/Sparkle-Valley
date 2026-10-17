@@ -1,4 +1,5 @@
 // @ts-check
+import type { Profile, Farm, Settings } from '../types/save';
 // Settings, player profiles and saving. Everything lives in localStorage on this device;
 // grown-ups can export/import a backup file to move progress between devices.
 import { BUILD } from './build.js';
@@ -19,7 +20,7 @@ const store = {
 // the game is not opened for a while). If the main save is ever missing, the copy is put back by itself.
 const SNAP_DB = 'sparkle-valley-save', SNAP_CACHE = 'sv-save', SNAP_URL = './__sv-save.json';
 const snapshot = () => ({ app: 'sparkle-valley', v: 2, saved: Date.now(), settings: store.get(KEY_SETTINGS, {}), profiles: store.get(KEY_PROFILES, null), farm: store.get('sv2_farm', null) });
-const idb = mode => new Promise((res, rej) => { const r = indexedDB.open(SNAP_DB, 1); r.onupgradeneeded = () => r.result.createObjectStore('snap'); r.onsuccess = () => res(r.result.transaction('snap', mode).objectStore('snap')); r.onerror = () => rej(r.error); });
+const idb = (mode: IDBTransactionMode) => new Promise<IDBObjectStore>((res, rej) => { const r = indexedDB.open(SNAP_DB, 1); r.onupgradeneeded = () => r.result.createObjectStore('snap'); r.onsuccess = () => res(r.result.transaction('snap', mode).objectStore('snap')); r.onerror = () => rej(r.error); });
 // If the main save was missing and its copy could not be read in time, the copies are left alone for this
 // session (new progress goes under "new-…"), so a fresh start never overwrites the only good copy.
 let mirrorLocked = false;
@@ -32,7 +33,7 @@ async function writeMirror() {
     if (mirrorLocked) { st.put(JSON.stringify(Object.assign(snap, { fresh: true })), 'new-' + day); return; }
     st.put(text, 'latest'); st.put(text, 'day-' + day);
     // keep the last 10 daily copies
-    const q = st.getAllKeys(); q.onsuccess = () => q.result.filter(k => /^day-/.test(k)).sort().slice(0, -10).forEach(k => st.delete(k));
+    const q = st.getAllKeys(); q.onsuccess = () => q.result.filter(k => /^day-/.test(String(k))).sort().slice(0, -10).forEach(k => st.delete(k));
   } catch (e) { }
   if (mirrorLocked) return;
   try { if ('caches' in self) { const c = await caches.open(SNAP_CACHE); await c.put(SNAP_URL, new Response(text, { headers: { 'Content-Type': 'application/json' } })); } } catch (e) { }
@@ -53,7 +54,7 @@ export function claimTab() {
   try {
     const tabs = new BroadcastChannel('sv-tabs'), me = Math.random().toString(36).slice(2);
     tabs.onmessage = e => { if (e.data?.claim && e.data.claim !== me && !held) { held = true; if (mirrorT) clearTimeout(mirrorT); mirrorT = null; dispatchEvent(new CustomEvent('sv-held')); } };
-    tabs.postMessage({ claim: me }); /** @type {any} */ (tabs).unref?.(); // (Node: an open channel must not keep a check running)
+    tabs.postMessage({ claim: me }); (tabs as BroadcastChannel & { unref?: () => void }).unref?.(); // (Node: an open channel must not keep a check running)
   } catch (e) { }
 }
 // (at most 2.5 s after a change, with whatever is newest then: a timer that restarted on every save could be put
@@ -62,7 +63,7 @@ function mirrorSoon() { if (mirrorT || held) return; mirrorT = setTimeout(() => 
 async function readMirror() {
   const all = [];
   // the latest copy and the daily ones (in case the latest is damaged)
-  try { const st = await idb('readonly'); const list = await new Promise(r => { const q = st.getAll(); q.onsuccess = () => r(q.result || []); q.onerror = () => r([]); }); for (const t of list) try { all.push(JSON.parse(t)); } catch (e) { } } catch (e) { }
+  try { const st = await idb('readonly'); const list = await new Promise<string[]>(r => { const q = st.getAll(); q.onsuccess = () => r(q.result || []); q.onerror = () => r([]); }); for (const t of list) try { all.push(JSON.parse(t)); } catch (e) { } } catch (e) { }
   try { if ('caches' in self) { const c = await caches.open(SNAP_CACHE), r = await c.match(SNAP_URL); if (r) all.push(await r.json()); } } catch (e) { }
   return all.filter(x => x && x.app === 'sparkle-valley' && Array.isArray(x.profiles) && x.profiles.length).sort((a, b) => (+!!a.fresh - +!!b.fresh) || b.saved - a.saved)[0] || null;
 }
@@ -70,7 +71,7 @@ export let restoredFromCopy = false;
 try {
   // the main save is missing (cleared by the browser, or the storage was wiped): bring back the newest copy
   if (!localStorage.getItem(KEY_PROFILES)) {
-    const late = {}, snap = await Promise.race([readMirror(), new Promise(r => setTimeout(() => { late.yes = true; r(null); }, 8000))]);
+    const late: { yes?: boolean } = {}, snap = await Promise.race([readMirror(), new Promise(r => setTimeout(() => { late.yes = true; r(null); }, 8000))]);
     if (late.yes) mirrorLocked = true;
     if (snap) {
       localStorage.setItem(KEY_PROFILES, JSON.stringify(snap.profiles));
@@ -86,7 +87,7 @@ export let storagePersisted = null;
 try { if (navigator.storage && navigator.storage.persist) navigator.storage.persisted().then(p => p ? true : navigator.storage.persist()).then(p => { storagePersisted = p; }).catch(() => { }); } catch (e) { }
 setTimeout(writeMirror, 4000);
 
-export const settings = Object.assign({
+export const settings: Settings = Object.assign({
   lang: 'en',            // 'en' | 'vi'
   currency: 'AUD',       // 'AUD' | 'VND', used only when curPinned (otherwise it follows the language: js/money.js curCode)
   curPinned: false,
@@ -131,13 +132,8 @@ export const SKIN = ['#ffe3d1', '#f6c7a5', '#e0aa80', '#b47a55', '#7a4e33'];
 export const HAIRSTYLES = ['buns', 'short', 'long', 'ponytail', 'spiky'];
 export const GLIDERS = ['#e7c37a', '#ff7eb8', '#5fd3ff', '#8be07a', '#b48cff'];
 
-/**
- * A child's profile (one per child on this device).
- * @typedef {{ id: string, name: string, photo: string | null, age: 'little' | 'big', difficulty: 'easy' | 'medium' | 'hard', gameDiff?: Record<string, 'easy' | 'medium' | 'hard'>,
- *   look: Record<string, any>, created: number, levels?: Record<string, number>, pos?: any, screen?: 'simple' | 'valley', [k: string]: any }} Profile
- */
-/** @param {number} i  @returns {Profile} */
-function newProfile(i) {
+// A child's profile (one per child on this device): types/save.d.ts
+function newProfile(i: number): Profile {
   return {
     id: 'k' + Date.now().toString(36) + Math.floor(Math.random() * 1000),
     name: '',
@@ -148,15 +144,15 @@ function newProfile(i) {
     created: Date.now()
   };
 }
-/** @param {any} p a saved profile (any age of save)  @returns {Profile} */
-export function normalizeProfile(p) {
+// p: a saved profile (any age of save)
+export function normalizeProfile(p: Record<string, any>): Profile {
   const d = {
     hearts: 3, staminaMax: 1, orbs: 0, leafies: {}, shrines: {}, towers: {}, discovered: {},
     inv: { apple: 3, rice: 2 }, owned: { hats: ['none'], gliders: [0] },
     stickers: [], levels: {}, wins: {}, quests: {}, glider: false, album: [],
     pos: null, dishes: {}, stats: { games: 0, steps: 0 }
   };
-  /** @type {Profile} */ const o = Object.assign({}, d, p);
+  const o = Object.assign({} as Profile, d, p); // (filled in by the defaults and the save just below)
   if (!o.age) o.age = 'little';
   if (!['easy', 'medium', 'hard'].includes(o.difficulty)) o.difficulty = o.age === 'big' ? 'medium' : 'easy';
   // older saves stored a fixed outfit; turn it into style + colour
@@ -174,7 +170,7 @@ export function normalizeProfile(p) {
   return o;
 }
 
-export let profiles = store.get(KEY_PROFILES, null);
+export let profiles: Profile[] = store.get(KEY_PROFILES, null);
 // (round P, owner: "remove the default characters and let a new user create their own") a new device starts with
 // nobody: the Who's playing screen asks the child to make their own character first
 if (!Array.isArray(profiles)) profiles = [];
@@ -193,14 +189,14 @@ export function newFarm(coins = 30) {
     jobs: { day: '', list: [] }, order: null
   };
 }
-export let farm = Object.assign(newFarm(), store.get(KEY_FARM, {}));
+export let farm: Farm = Object.assign(newFarm(), store.get(KEY_FARM, {}));
 // carry over money from the first version of this build, where each child had a wallet
 if (store.get(KEY_FARM, null) == null) { const w = profiles.reduce((a, p) => a + (p.wallet || 0), 0); if (w) farm.coins = w; }
 export function resetFarm() { const keep = farm.coins; Object.assign(farm, newFarm(Math.min(keep, 30))); saveFarm(); }
 export function saveFarm() { store.set(KEY_FARM, farm); }
 
 let saveTimer = null;
-export function saveProfiles(now) {
+export function saveProfiles(now = false) {
   clearTimeout(saveTimer);
   const go = () => {
     saveFarm();

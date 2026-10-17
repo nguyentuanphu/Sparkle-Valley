@@ -1,6 +1,10 @@
 // Trading with friends in the same online room: pick a friend, choose what to give (things from your
 // backpack or coins) and what you would like back, and send the offer. The friend sees it and taps
 // "Deal!" or "No thanks". Things only change hands when both sides still have them.
+import type { TradeSide } from '../types/net';
+import type { Profile } from '../types/save';
+// an offer being made on the stall: what is given or wanted (types/net.d.ts TradeSide, with items and coins always there)
+type Offer = { items: Record<string, number>, coins: number, clothes?: string[] };
 import { T } from './i18n.js';
 import { Net } from './net.js';
 import { ITEMS } from './data.js';
@@ -19,9 +23,9 @@ const COIN_STEPS = [0, 10, 20, 50, 100];   // in game coins (10 = $1)
 const wearing = (p, id) => !!p.look && Object.values(p.look).includes(id);
 export const spareClothes = p => CLOTHES.filter(it => owns(p, it.id) && !wearing(p, it.id) && !it.tester).map(it => it.id);
 // (r79, owner 16 Oct) clothes of the other set are wrapped gift boxes (owned.gifts): a friend of that set can be given one
-const gifts = p => (p.owned && Array.isArray(p.owned.gifts) ? p.owned.gifts : []);
+const gifts = (p: Profile): string[] => (p.owned && Array.isArray(p.owned.gifts) ? p.owned.gifts : []);
 const has = (p, want) => Object.entries(want.items || {}).every(([k, n]) => (p.inv[k] || 0) >= n) && farm.coins >= (want.coins || 0) && (want.clothes || []).every(id => (owns(p, id) && !wearing(p, id)) || gifts(p).includes(id));
-function move(p, take, give) {
+function move(p: Profile, take: TradeSide, give: TradeSide) {
   for (const [k, n] of Object.entries(take.items || {})) p.inv[k] = (p.inv[k] || 0) - n;
   for (const [k, n] of Object.entries(give.items || {})) p.inv[k] = (p.inv[k] || 0) + n;
   farm.coins += (give.coins || 0) - (take.coins || 0); saveFarm();
@@ -68,7 +72,7 @@ export function setupTrading(G) {
 export function openTrade(G, h, toId) {
   const ids = Object.keys(Net.remotes);
   const m = modal('trade', ''), card = m.querySelector('.card');
-  const st = { to: toId && Net.remotes[toId] ? toId : ids[0], give: { items: {}, coins: 0 }, want: { items: {}, coins: 0 } };
+  const st: { to: string, give: Offer, want: Offer } = { to: toId && Net.remotes[toId] ? toId : ids[0], give: { items: {}, coins: 0 }, want: { items: {}, coins: 0 } };
   const draw = () => {
     if (!Net.connected || !ids.length) {
       card.innerHTML = `<button class="x" aria-label="${T('Close', 'Đóng')}">✕</button><h2>🏪 ${T('My market stall', 'Sạp hàng của con')}</h2>
@@ -78,7 +82,7 @@ export function openTrade(G, h, toId) {
       card.querySelector('#trOnline').onclick = () => { m.close(); G.paused = false; G.openPad && G.openPad(h.i, 'friend'); };
       return;
     }
-    const inv = Object.entries(h.profile.inv || {}).filter(([k, n]) => n > 0 && ITEMS[k]);
+    const inv = Object.entries((h.profile as Profile).inv || {}).filter(([k, n]) => n > 0 && ITEMS[k]);
     const mine = setOf(h.profile.look), theirs = setOfFriend(G, st.to), same = mine === theirs, spare = same ? spareClothes(h.profile) : [...new Set(gifts(h.profile))].filter(id => ITEM[id] && forSet(ITEM[id], theirs));
     const clothesPic = it => G.shop && G.shop.itemSVG ? G.shop.itemSVG(it) : '👕';
     const chip = (side, k) => { const n = st[side].items[k] || 0; return n ? `<b class="tr-n">${n}</b>` : ''; };
@@ -106,7 +110,7 @@ export function openTrade(G, h, toId) {
     card.querySelectorAll('[data-wantc]').forEach(b => b.onclick = () => flip('want', b.dataset.wantc));
     card.querySelector('#trClear').onclick = () => { st.give = { items: {}, coins: 0 }; st.want = { items: {}, coins: 0 }; draw(); };
     card.querySelector('#trSend').onclick = () => {
-      const clean = s => ({ items: Object.fromEntries(Object.entries(s.items).filter(([, n]) => n > 0)), coins: s.coins, ...((s.clothes || []).length ? { clothes: s.clothes.slice() } : {}) });
+      const clean = (s: Offer): Offer => ({ items: Object.fromEntries(Object.entries(s.items).filter(([, n]) => n > 0)), coins: s.coins, ...((s.clothes || []).length ? { clothes: s.clothes.slice() } : {}) });
       const give = clean(st.give), want = clean(st.want);
       if (!Object.keys(give.items).length && !give.coins && !(give.clothes || []).length) return G.toast(h, T('Choose something to give first.', 'Hãy chọn đồ để đưa trước nhé.'));
       if (!clothesOk(give, want, setOf(h.profile.look), setOfFriend(G, st.to))) return G.toast(h, T('Clothes for a friend who wears the other set are a gift: ask for nothing back.', 'Quần áo cho bạn mặc bộ khác là quà tặng: đừng xin lại gì nhé.'));

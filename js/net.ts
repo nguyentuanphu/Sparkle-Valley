@@ -21,6 +21,7 @@ import { settings } from './state.js';
 import { micMode } from './audio.js';
 import { Channel } from './relay.js';
 import { checkMsg } from './netmsg.js';
+import type { Remote } from '../types/net';
 import { MAP_VERSION } from './content/map.js';
 const PREFIX = 'sparkle-valley-v2-';
 export const MAX_ROOM = 6;
@@ -38,7 +39,7 @@ function loadPeer() {
 // most home Wi-Fi. When one friend is on mobile data or behind a strict router, the devices also need a
 // relay (TURN) server to pass the game along. Free public relays are tried by default; a grown-up can paste
 // their own relay in Grown-ups (a link from a free TURN service, or a turn: address with a name and password).
-const STUN = [{ urls: ['stun:stun.l.google.com:19302', 'stun:stun1.l.google.com:19302'] }, { urls: 'stun:stun.cloudflare.com:3478' }];
+const STUN: RTCIceServer[] = [{ urls: ['stun:stun.l.google.com:19302', 'stun:stun1.l.google.com:19302'] }, { urls: 'stun:stun.cloudflare.com:3478' }];
 // (the old free "Open Relay" TURN service now needs an account, so it is still tried but may not answer;
 // the cloud relay below keeps the game working anyway, and a grown-up can add their own TURN for voice)
 const PUBLIC_TURN = [{ urls: ['turn:openrelay.metered.ca:80', 'turn:openrelay.metered.ca:443', 'turn:openrelay.metered.ca:443?transport=tcp'], username: 'openrelayproject', credential: 'openrelayproject' }];
@@ -113,7 +114,7 @@ async function sealFor(pub, obj) { const iv = rnd(12), ct = await crypto.subtle.
 async function openFrom(pub, d) { try { if (!okPub(pub) || typeof d.iv !== 'string' || typeof d.ct !== 'string') return null; const pt = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: unb64(d.iv) }, await pairKey(pub), unb64(d.ct)); const o = JSON.parse(new TextDecoder().decode(pt)); return o && typeof o === 'object' ? o : null; } catch (e) { return null; } }
 // a smaller copy of the photo for the other players (about 5 KB)
 function smallPhoto(src, size = 128) {
-  return new Promise(res => { const im = new Image(); im.onload = () => { try { const c = document.createElement('canvas'); c.width = c.height = size; c.getContext('2d').drawImage(im, 0, 0, size, size); res(c.toDataURL('image/jpeg', .72)); } catch (e) { res(null); } }; im.onerror = () => res(null); im.src = src; });
+  return new Promise<string | null>(res => { const im = new Image(); im.onload = () => { try { const c = document.createElement('canvas'); c.width = c.height = size; c.getContext('2d').drawImage(im, 0, 0, size, size); res(c.toDataURL('image/jpeg', .72)); } catch (e) { res(null); } }; im.onerror = () => res(null); im.src = src; });
 }
 // the members' list a guest gets from the starter (each entry checked again here)
 const cleanRoster = list => Array.isArray(list) ? list.slice(0, MAX_ROOM).filter(m => m && okId(m.id)).map(m => ({ id: m.id, name: String(m.name || '').slice(0, 20), friend: okCode(m.friend) ? m.friend.toUpperCase() : null, pub: okPub(m.pub) ? m.pub : null, via: m.via === 'cloud' ? 'cloud' : 'direct', at: Number.isFinite(m.at) ? m.at : null, host: m.host === true })) : [];
@@ -135,12 +136,27 @@ export const Net = {
   members: new Map(),        // (the room's starter) everyone let in: id -> {id, name, friend, pub, via, at, known}
   roster: null,              // (a guest) the members' list the starter sent, locked for me
   secret: null,              // the room secret (the members' channel); hostPub: the starter's key (a guest)
-  remotes: {},               // everyone else in the room: id -> {id, name, look, photo, friend, s:{x,y,z,yaw,st}}
+  hostPub: null as string | null,
+  // (TypeScript, batch 3) the fields set along the way, declared here so each has a type; they start undefined, as before
+  pub: undefined as string | null | undefined,                 // my public key (js/net.ts myPub)
+  _since: undefined as number | undefined, _sT: undefined as number | undefined, _heard: undefined as number | undefined,
+  _n: undefined as number | undefined,
+  _banned: undefined as Set<string> | null | undefined,        // (the room's starter) ids sent away for good
+  _photoTo: undefined as Set<string> | null | undefined,       // whom my photo went to (id + their key)
+  _asked: undefined as Record<string, number> | null | undefined, // photos asked for: id -> times
+  _pending: undefined as any[] | undefined,
+  _micAsking: undefined as Promise<any> | null | undefined,
+  _lock: undefined as WakeLockSentinel | null | undefined,     // the screen kept on during a call
+  _quiet: undefined as MediaStream | undefined,                // a silent stream (iPhone keeps a call's sound going)
+  _mt: undefined as ReturnType<typeof setInterval> | null | undefined, _pt: undefined as ReturnType<typeof setInterval> | undefined,
+  _askT: undefined as ReturnType<typeof setTimeout> | undefined,
+  _pinWeak: undefined as boolean | undefined, _noDirect: undefined as boolean | undefined, _slowTold: undefined as boolean | undefined,
+  remotes: {} as Record<string, Remote>, // everyone else in the room: id -> {id, name, look, photo, friend, s:{x,y,z,yaw,st}}
   beacon: null,              // the friend-code listener
   handlers: {},
   on(type, f) { (this.handlers[type] = this.handlers[type] || []).push(f); },
   off(type, f) { const l = this.handlers[type]; if (l) this.handlers[type] = l.filter(x => x !== f); },
-  emit(type, d) { (this.handlers[type] || []).forEach(f => { try { f(d); } catch (e) { console.warn(e); } }); },
+  emit(type, d?) { (this.handlers[type] || []).forEach(f => { try { f(d); } catch (e) { console.warn(e); } }); },
   get connected() { return !this.knocking && ([...this.conns.values()].some(c => c.open) || (this.cloudOn && !!this.cloud && Object.keys(this.remotes).length > 0)); },
   get count() { return 1 + Object.keys(this.remotes).length; },
   get remote() { return Object.values(this.remotes)[0] || null; },  // older code: the first friend
@@ -248,7 +264,7 @@ export const Net = {
   },
   // opts.hostPub: the starter's key when it is known beforehand (an invitation or note from a saved friend who starts the
   // room): only answers locked with that key are believed
-  async join(code, hello, opts = {}) {
+  async join(code, hello, opts: { hostPub?: string } = {}) {
     if (this._off() || !okRoom(code)) return;
     // (r63, owner: "the microphone should always be off until the child turns it on"; on iPhone a try without a tap
     // could hang and every later tap did nothing) the microphone is asked for only by a tap on Mic (HUD) or in Friends
@@ -320,7 +336,7 @@ export const Net = {
   },
 
   // the members' channel (via 'cloud'), the direct link (via: the other device's id), or a message already checked
-  _recv(d, via, checked) {
+  _recv(d, via, checked?) {
     if (!d || typeof d !== 'object') return;
     const from = d.from || via;
     if (!checked && typeof d.to === 'string' && d.to !== this.me) return; // (for another player: not counted against the sender's rate)
@@ -450,7 +466,7 @@ export const Net = {
     }
     this._knockCard(id, h, was);
   },
-  _knockCard(id, h, was) {
+  _knockCard(id, h, was?) {
     if (this.role !== 'host') return;
     this.knocks.set(id, was ? Object.assign(was, h, { at: was.at }) : Object.assign(h, { at: Date.now() }));
     this._seal('door', id, h.pub).then(m => this._toDoor(id, m, h.via));
@@ -459,10 +475,10 @@ export const Net = {
   // a saved friend opened the number: straight in
   _chalr(d, id) { const c = this._chal.get(id); if (!c || d.n !== c.n) return; clearTimeout(c.t); this._chal.delete(id); this.knocks.set(id, Object.assign(c.h, { at: Date.now(), proven: true })); this.admit(id); },
   // the starter's words for one player, locked for them
-  async _seal(kind, id, pub, extra) { return Object.assign({ t: kind, pub: this.pub }, await sealFor(pub, Object.assign({ k: kind, id, map: this.mapVersion }, extra || {}))); },
+  async _seal(kind, id, pub, extra?) { return Object.assign({ t: kind, pub: this.pub }, await sealFor(pub, Object.assign({ k: kind, id, map: this.mapVersion }, extra || {}))); },
   _toDoor(id, d, via) { const c = this.conns.get(id); if (c && c.open) { try { c.send(Object.assign({ from: this.me }, d)); } catch (e) { } } if (this.door && (via === 'cloud' || !c || !c.open)) this._doorSend(Object.assign({ to: id }, d)); },
   // the welcome: my hello and everyone already in the room
-  _welcome(id, via) {
+  _welcome(id, via?) {
     if (via === 'cloud') {
       this._cloudSend(Object.assign({ t: 'hello', to: id }, noPhoto(this.hello)));
       // (everyone else a moment later: the cloud may not keep the order, and a newcomer listens to the starter first)
@@ -514,7 +530,7 @@ export const Net = {
   // (the room's starter) the members' list, locked for each guest: who they may meet, and what the grown-ups' list shows
   async _shareMembers() {
     if (this.role !== 'host') return;
-    const h = this.hello || {}, list = [{ id: this.me, name: String(h.name || '').slice(0, 20), friend: h.friend || null, pub: this.pub, via: 'direct', at: this._since, host: true }]
+    const h = this.hello || {}, list = ([{ id: this.me, name: String(h.name || '').slice(0, 20), friend: h.friend || null, pub: this.pub, via: 'direct', at: this._since, host: true }] as Array<Record<string, any>>)
       .concat([...this.members.values()].filter(m => this._admitted.has(m.id) && this.remotes[m.id]).map(m => { const r = this.remotes[m.id]; return { id: m.id, name: (r && r.name) || m.name, friend: m.friend, pub: m.pub, via: (r && r.route) || m.via, at: m.at }; }));
     for (const m of this.members.values()) if (this._admitted.has(m.id) && this.remotes[m.id] && m.pub) { const msg = await this._seal('members', m.id, m.pub, { list }); if (this.role === 'host' && this._admitted.has(m.id)) this.send(Object.assign({ to: m.id }, msg)); }
   },
@@ -690,7 +706,9 @@ export const Net = {
     const f = friendEntry(d.from); if (!f || !okPub(f.pub) || d.pub !== f.pub) return null;
     const o = await openFrom(f.pub, d);
     if (!o || o.k !== d.t || o.to !== settings.friendCode || o.from !== f.code || !(Math.abs(Date.now() - o.ts) < 30 * 60e3)) return null;
-    return { code: f.code, name: String(o.name || '').slice(0, 20), room: okRoom(o.room) ? String(o.room) : null, at: typeof o.at === 'string' && /^[\w-]{0,24}$/.test(o.at) ? o.at : '', players: Number.isInteger(o.players) && o.players >= 0 && o.players <= MAX_ROOM ? o.players : 0, host: o.host === true, hostPub: o.host === true ? f.pub : null };
+    return { code: f.code, name: String(o.name || '').slice(0, 20), room: okRoom(o.room) ? String(o.room) : null, at: typeof o.at === 'string' && /^[\w-]{0,24}$/.test(o.at) ? o.at : '', players: Number.isInteger(o.players) && o.players >= 0 && o.players <= MAX_ROOM ? o.players : 0, host: o.host === true, hostPub: o.host === true ? f.pub : null,
+      // (TypeScript, batch 3) the friend's map version, when their note has one (none does yet: BOARD, Online)
+      map: typeof o.map === 'string' && /^[\w.-]{1,16}$/.test(o.map) ? o.map : undefined };
   },
   async listenForFriends(code, onInvite) {
     this.stopListening();
@@ -708,7 +726,7 @@ export const Net = {
   // (round R privacy, 9 Oct) only "playing now" and a token made fresh each time the game opens. It says "offline" by
   // itself when the device goes away (MQTT "last will"). Where I am and my room go locked to each saved friend's inbox;
   // invites arrive there too.
-  friends: { ch: null, code: null, watching: new Set(), status: {}, onInvite: null, onChange: null, share: false, tok: null, last: null },
+  friends: { ch: null, code: null, watching: new Set(), status: {}, onInvite: null, onChange: null, share: false, tok: null, last: null, inboxTopic: undefined as string | undefined },
   async friendsStart({ code, share, onInvite, onChange }) {
     if (!settings.online) { this.friendsStop(); return; }
     const F = this.friends; F.onInvite = onInvite; F.onChange = onChange;

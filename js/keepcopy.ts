@@ -17,7 +17,7 @@ export function putCopyBack(key, G) {
   let c = null; try { c = JSON.parse(localStorage.getItem(key) || 'null'); } catch (e) { c = null; }
   dropCopy(key);
   if (!c || !Array.isArray(c.profiles) || !profiles) return false;
-  const old = new Map(c.profiles.map(p => [p.id, p]));
+  const old = new Map<string, Record<string, unknown>>(c.profiles.map((p: Record<string, unknown>) => [p.id, p]));
   // the same objects stay (the heroes and every window hold them): emptied and filled again
   for (const p of profiles) { const o = old.get(p.id); if (!o) continue; const m = normalizeProfile(keepRewards(o, p)); for (const k of Object.keys(p)) delete p[k]; Object.assign(p, m); }
   if (c.farm && farm) { for (const k of Object.keys(farm)) delete farm[k]; Object.assign(farm, c.farm); }

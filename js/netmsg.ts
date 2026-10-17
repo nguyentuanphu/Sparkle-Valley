@@ -1,4 +1,5 @@
 // @ts-check
+import type { TradeSide, Msg } from '../types/net';
 // Every message that comes from another device, checked in one place before the game sees it (hard rule PRIV-003,
 // architecture step "net message schema"). For each kind of message: which fields it may have and what they may
 // hold, how big it may be, and how often one player may send it. Anything else is dropped:
@@ -8,9 +9,9 @@
 //   · the same player sending a kind of message faster than a child ever could (a flood).
 // The transport (js/net.js) stays as it is; it calls checkMsg() for every message it receives.
 
-/** @typedef {(v: any) => any} Field  a field check: the cleaned value, or undefined to leave it out */
-/** @typedef {{ fields: Record<string, Field>, size: number, per: number, sec: number, need?: string[] }} Kind */
-/** @typedef {{ t: string, from?: string, to?: string, mid?: string, [k: string]: any }} Msg */
+// a field check: the cleaned value, or undefined to leave it out
+type Field = (v: any) => any;
+type Kind = { fields: Record<string, Field>, size: number, per: number, sec: number, need?: string[] };
 /** @type {(max?: number) => Field} */
 const word = (max = 32) => v => typeof v === 'string' && v.length <= max && /^[\w-]*$/.test(v) ? v : undefined;
 const text = max => v => typeof v === 'string' && v.length <= max && !/[\u0000-\u0008\u000b-\u001f]/.test(v) ? v : undefined;
@@ -19,12 +20,13 @@ const int = (lo, hi) => v => Number.isInteger(v) && v >= lo && v <= hi ? v : und
 const bool = v => typeof v === 'boolean' ? v : undefined;
 const any = v => v; // checked again by the code that uses it (looks, photos: net.js cleanHello / okPhoto)
 // a side of a trade: up to 12 kinds of things (1–99 each), up to 9,999 coins and up to 6 clothes (Round V)
-const side = v => {
-  if (!v || typeof v !== 'object' || Array.isArray(v)) return undefined;
-  const out = {}; if (v.coins != null) { if (!Number.isInteger(v.coins) || v.coins < 0 || v.coins > 9999) return undefined; out.coins = v.coins; }
-  if (v.items != null) { if (typeof v.items !== 'object' || Array.isArray(v.items)) return undefined; const e = Object.entries(v.items); if (e.length > 12) return undefined; out.items = {}; for (const [k, n] of e) { if (!/^\w{1,24}$/.test(k) || !Number.isInteger(n) || n < 1 || n > 99) return undefined; out.items[k] = n; } }
+const side = (value: unknown): TradeSide | undefined => {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return undefined;
+  const v = value as Record<string, unknown>, out: TradeSide = {};
+  if (v.coins != null) { if (typeof v.coins !== 'number' || !Number.isInteger(v.coins) || v.coins < 0 || v.coins > 9999) return undefined; out.coins = v.coins; }
+  if (v.items != null) { if (typeof v.items !== 'object' || Array.isArray(v.items)) return undefined; const e = Object.entries(v.items); if (e.length > 12) return undefined; out.items = {}; for (const [k, n] of e) { if (!/^\w{1,24}$/.test(k) || typeof n !== 'number' || !Number.isInteger(n) || n < 1 || n > 99) return undefined; out.items[k] = n; } }
   // (Round V) clothes: up to 6, each a clothes id
-  if (v.clothes != null) { if (!Array.isArray(v.clothes) || v.clothes.length > 6 || !v.clothes.every(x => typeof x === 'string' && /^\w{1,24}$/.test(x))) return undefined; out.clothes = [...new Set(v.clothes)]; }
+  if (v.clothes != null) { if (!Array.isArray(v.clothes) || v.clothes.length > 6 || !v.clothes.every(x => typeof x === 'string' && /^\w{1,24}$/.test(x))) return undefined; out.clothes = [...new Set(v.clothes as string[])]; }
   return out;
 };
 /** @type {Field} up to 6 player ids, each a word */
@@ -37,7 +39,7 @@ import { WORLD } from './content/map.js';
 const W = WORLD.size / 2 - 5;
 // kind → { fields, size (largest JSON in characters), per (at most this many…), sec (…in this many seconds), need (fields that must be there) }
 /** @type {Record<string, Kind>} */
-export const SCHEMA = {
+export const SCHEMA: Record<string, Kind> = {
   // (round R privacy, 9 Oct) a hello never carries the photo (it goes after admission, locked, in 'photo'); w: "I have not
   // heard the room's starter yet" (a newcomer let in through the cloud asks for the welcome again)
   // (Online, r57) map: the knocker's map layout (MAP_VERSION); a knock from another layout is turned away (js/net.js)
@@ -87,8 +89,8 @@ const ENVELOPE = { t: word(16), from: word(64), to: word(64), mid: word(40), _to
 const seen = new Map(); // `${from}|${t}` → recent times
 let lastSweep = 0;
 // → the cleaned message, or null to drop it.
-/** @param {any} d the message as it arrived  @param {string} from who sent it  @returns {Msg | null} */
-export function checkMsg(d, from) {
+// d: the message as it arrived; from: who sent it
+export function checkMsg(d: any, from: string): Msg | null {
   let size = null;
   if (!d || typeof d !== 'object' || Array.isArray(d)) return null;
   const S = Object.prototype.hasOwnProperty.call(SCHEMA, d.t) ? SCHEMA[d.t] : null; if (!S) return null;
@@ -100,7 +102,7 @@ export function checkMsg(d, from) {
   if (list.length >= S.per) { seen.set(key, list); return null; }
   list.push(now); seen.set(key, list);
   if (now - lastSweep > 30000) { lastSweep = now; for (const [k, l] of seen) if (!l.length || now - l[l.length - 1] > 60000) seen.delete(k); }
-  /** @type {any} */ const out = {};
+  const out: Msg = { t: d.t }; // (d.t is one of SCHEMA's kinds, checked above)
   for (const [k, v] of Object.entries(d)) {
     const f = S.fields[k] || ENVELOPE[k]; if (!f) continue; // not on the list: left out
     if (v === undefined || v === null) continue;
