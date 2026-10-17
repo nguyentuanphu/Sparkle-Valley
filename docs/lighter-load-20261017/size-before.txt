@@ -1,0 +1,213 @@
+{
+  "staticPreloadFiles": 1,
+  "mainEntry": [
+    "../scratch/lighter-measure/bundle/c-YVV3QPTH.js"
+  ],
+  "bootBytes": 5040,
+  "throughMainFiles": 39,
+  "bytes": 2429131,
+  "gzip": 849011,
+  "brotli": 707066,
+  "topInputs": [
+    [
+      "vendor/three.module.js",
+      660349
+    ],
+    [
+      "js/art.js",
+      140394
+    ],
+    [
+      "js/ui.js",
+      119285
+    ],
+    [
+      "js/main.js",
+      115413
+    ],
+    [
+      "js/world.js",
+      57554
+    ],
+    [
+      "js/cities.js",
+      47853
+    ],
+    [
+      "js/howto.js",
+      44709
+    ],
+    [
+      "js/talesdata.js",
+      42126
+    ],
+    [
+      "js/net.js",
+      35353
+    ],
+    [
+      "js/vehicles.js",
+      30434
+    ],
+    [
+      "js/homes.js",
+      29557
+    ],
+    [
+      "js/heritage.js",
+      28542
+    ],
+    [
+      "js/games/money.js",
+      28168
+    ],
+    [
+      "js/avatar.js",
+      28056
+    ],
+    [
+      "js/roads.js",
+      27887
+    ],
+    [
+      "js/farm.js",
+      26931
+    ],
+    [
+      "js/festivals.js",
+      26723
+    ],
+    [
+      "js/regions.js",
+      26291
+    ],
+    [
+      "js/content/stickers.js",
+      25991
+    ],
+    [
+      "js/chat.js",
+      23246
+    ],
+    [
+      "js/audio.js",
+      22124
+    ],
+    [
+      "js/games/folk.js",
+      21693
+    ],
+    [
+      "js/simple.js",
+      19831
+    ],
+    [
+      "js/games/talkgames.js",
+      18501
+    ],
+    [
+      "js/hud.js",
+      17919
+    ],
+    [
+      "js/games/folk2.js",
+      17632
+    ],
+    [
+      "js/animals.js",
+      17475
+    ],
+    [
+      "js/content/map.js",
+      16427
+    ],
+    [
+      "js/learn.js",
+      16005
+    ],
+    [
+      "js/town.js",
+      15681
+    ],
+    [
+      "js/story.js",
+      14678
+    ],
+    [
+      "js/content/festcal.js",
+      14645
+    ],
+    [
+      "js/content/releases.js",
+      14225
+    ],
+    [
+      "js/voice.js",
+      14181
+    ],
+    [
+      "js/games/farmgames.js",
+      13944
+    ],
+    [
+      "js/folkshow.js",
+      13901
+    ],
+    [
+      "js/pets.js",
+      13355
+    ],
+    [
+      "js/familydevices.js",
+      13349
+    ],
+    [
+      "js/traffic.js",
+      13139
+    ],
+    [
+      "js/vnfun.js",
+      12835
+    ],
+    [
+      "js/games/cities.js",
+      12709
+    ],
+    [
+      "js/games/frame.js",
+      12555
+    ],
+    [
+      "js/ferry.js",
+      12538
+    ],
+    [
+      "js/games/more.js",
+      12094
+    ],
+    [
+      "js/player.js",
+      11849
+    ]
+  ],
+  "groups": {
+    "games": 226608,
+    "world": 0,
+    "stories": 56804,
+    "stickers": 31511,
+    "other": 0
+  }
+}
+manifest keys [
+  'version', 'engine',
+  'made',    'cast',
+  'voices',  'lines',
+  'other',   'tpl',
+  'areas'
+] raw 365104 gzip 168430
+metadata {"version":2,"engine":"azure","made":"2026-10-16","cast":{"en":["f","m"],"vi":["f","m"],"zh":["m"],"hi":["m"]},"voices":{"en":{"f":{"id":"en-AU-NatashaNeural","name":"en-AU-NatashaNeural"},"m":{"id":"en-AU-WilliamNeural","name":"en-AU-WilliamNeural"}},"vi":{"f":{"id":"vi-VN-HoaiMyNeural","name":"vi-VN-HoaiMyNeural"},"m":{"id":"vi-VN-NamMinhNeural","name":"vi-VN-NamMinhNeural"}},"zh":{"m":{"id":"zh-CN-YunxiNeural","name":"zh-CN-YunxiNeural"}},"hi":{"m":{"id":"hi-IN-MadhurNeural","name":"hi-IN-MadhurNeural"}}},"areas":1}
+tpl shape {"en":[["A ","! Into the basket!"],["It is growing. Come back in ","!"],["No "," seeds. Mr. Bear sells them!"],["You collected ","! ","."],["",": ","! Now you have ","."],["Thank you! That is ","."],["That costs ",". Sell some things first!"],["Here is your ","!"],["All aboard! Next stop: ","."],["Hello! I am ",". Here is ",", ","."],["You found it! "," will carry the lantern."],["Come and sit down. Here is ","."],["You have found ",". Keep looking for ","!"],["Can you find "," "," hiding around here? Let's count them together!"],["You found ","! Say hello!"],["Yum yum! ","!"],["Your "," page is full! Here is a "," for you."],[""," loves you!"],["Hello ","! What a lovely name."],[""," is coming with you!"],["Oh no, you are too tired to swim! Call "," to help you!"],["","! Help!"],[""," is here! Hold on and kick your legs: tap, tap, tap!"],["You made it! "," saved you. Good ",", ","!"],["Here is the real ","!"],[""," wants to trade!"],["Here we are: ","! Bye bye!"],["Follow the footprints to ","!"],["Sold! Now you have ","."],["You gave "," to ",". How kind!"],["Yum! ","!"],["That costs ",". Play games to earn more money!"],["The "," buffalo walked away, so the "," one wins! Well pu
+language estimate (templates kept) en 5421 137234 59088
+language estimate (templates kept) vi 5255 226013 108655
+language estimate (templates kept) zh 22 1088 481
+language estimate (templates kept) hi 22 1096 486

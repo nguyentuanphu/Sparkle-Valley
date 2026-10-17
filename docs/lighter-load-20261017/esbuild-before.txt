@@ -1,0 +1,715 @@
+
+  ../scratch/lighter-measure/bundle/c-YVV3QPTH.js ─────────── 764.3kb ─ 100.0%
+   ├ js/main.js ───────────────────────────────────────────── 112.7kb ── 14.7%
+   ├ js/cities.js ──────────────────────────────────────────── 46.7kb ─── 6.1%
+   │  └ js/main.js
+   ├ js/homes.js ───────────────────────────────────────────── 28.9kb ─── 3.8%
+   │  └ js/heritage.js
+   │     └ js/main.js
+   ├ js/heritage.js ────────────────────────────────────────── 27.9kb ─── 3.6%
+   │  └ js/main.js
+   ├ js/games/money.js ─────────────────────────────────────── 27.5kb ─── 3.6%
+   │  └ js/games/all.js
+   │     └ js/main.js
+   ├ js/roads.js ───────────────────────────────────────────── 27.2kb ─── 3.6%
+   │  └ js/main.js
+   ├ js/farm.js ────────────────────────────────────────────── 26.3kb ─── 3.4%
+   │  └ js/main.js
+   ├ js/games/folk.js ──────────────────────────────────────── 21.2kb ─── 2.8%
+   │  └ js/games/all.js
+   │     └ js/main.js
+   ├ js/simple.js ──────────────────────────────────────────── 19.4kb ─── 2.5%
+   │  └ js/main.js
+   ├ js/games/talkgames.js ─────────────────────────────────── 18.1kb ─── 2.4%
+   │  └ js/games/all.js
+   │     └ js/main.js
+   ├ js/hud.js ─────────────────────────────────────────────── 17.5kb ─── 2.3%
+   │  └ js/main.js
+   ├ js/games/folk2.js ─────────────────────────────────────── 17.2kb ─── 2.3%
+   │  └ js/games/all.js
+   │     └ js/main.js
+   ├ js/learn.js ───────────────────────────────────────────── 15.6kb ─── 2.0%
+   │  └ js/main.js
+   ├ js/games/farmgames.js ─────────────────────────────────── 13.6kb ─── 1.8%
+   │  └ js/games/all.js
+   │     └ js/main.js
+   ├ js/folkshow.js ────────────────────────────────────────── 13.6kb ─── 1.8%
+   │  └ js/main.js
+   ├ js/pets.js ────────────────────────────────────────────── 13.0kb ─── 1.7%
+   │  └ js/main.js
+   ├ js/traffic.js ─────────────────────────────────────────── 12.8kb ─── 1.7%
+   │  └ js/main.js
+   ├ js/vnfun.js ───────────────────────────────────────────── 12.5kb ─── 1.6%
+   │  └ js/main.js
+   ├ js/games/cities.js ────────────────────────────────────── 12.4kb ─── 1.6%
+   │  └ js/games/all.js
+   │     └ js/main.js
+   ├ js/ferry.js ───────────────────────────────────────────── 12.2kb ─── 1.6%
+   │  └ js/main.js
+   ├ js/games/more.js ──────────────────────────────────────── 11.8kb ─── 1.5%
+   │  └ js/games/all.js
+   │     └ js/main.js
+   ├ js/player.js ──────────────────────────────────────────── 11.6kb ─── 1.5%
+   │  └ js/main.js
+   ├ js/games/vietnam.js ───────────────────────────────────── 10.8kb ─── 1.4%
+   │  └ js/games/all.js
+   │     └ js/main.js
+   ├ js/games/thinking.js ──────────────────────────────────── 10.6kb ─── 1.4%
+   │  └ js/games/all.js
+   │     └ js/main.js
+   ├ js/games/tienlen.js ───────────────────────────────────── 10.2kb ─── 1.3%
+   │  └ js/games/all.js
+   │     └ js/main.js
+   ├ js/symbols.js ─────────────────────────────────────────── 10.1kb ─── 1.3%
+   │  └ js/main.js
+   ├ js/games/bigthinkers.js ───────────────────────────────── 10.0kb ─── 1.3%
+   │  └ js/games/all.js
+   │     └ js/main.js
+   ├ js/lotus.js ────────────────────────────────────────────── 9.9kb ─── 1.3%
+   │  └ js/main.js
+   ├ js/games/strategy.js ───────────────────────────────────── 9.8kb ─── 1.3%
+   │  └ js/games/all.js
+   │     └ js/main.js
+   ├ js/asia.js ─────────────────────────────────────────────── 9.8kb ─── 1.3%
+   │  └ js/main.js
+   ├ js/suburbs.js ──────────────────────────────────────────── 9.2kb ─── 1.2%
+   │  └ js/main.js
+   ├ js/games/asia.js ───────────────────────────────────────── 9.2kb ─── 1.2%
+   │  └ js/games/all.js
+   │     └ js/main.js
+   ├ js/trade.js ────────────────────────────────────────────── 8.8kb ─── 1.1%
+   │  └ js/main.js
+   ├ js/secrets.js ──────────────────────────────────────────── 8.2kb ─── 1.1%
+   │  └ js/main.js
+   ├ js/fun.js ──────────────────────────────────────────────── 7.8kb ─── 1.0%
+   │  └ js/main.js
+   ├ js/regionsites.js ──────────────────────────────────────── 7.6kb ─── 1.0%
+   │  └ js/main.js
+   ├ js/games/bigthinkers2.js ───────────────────────────────── 7.5kb ─── 1.0%
+   │  └ js/games/all.js
+   │     └ js/main.js
+   ├ js/games/learning.js ───────────────────────────────────── 6.9kb ─── 0.9%
+   │  └ js/games/all.js
+   │     └ js/main.js
+   ├ js/emojiswap.js ────────────────────────────────────────── 6.7kb ─── 0.9%
+   │  └ js/main.js
+   ├ js/chatter.js ──────────────────────────────────────────── 5.9kb ─── 0.8%
+   │  └ js/main.js
+   ├ js/passport.js ─────────────────────────────────────────── 5.2kb ─── 0.7%
+   │  └ js/main.js
+   ├ js/commands.js ─────────────────────────────────────────── 5.1kb ─── 0.7%
+   │  └ js/main.js
+   ├ js/worldedit.js ────────────────────────────────────────── 5.0kb ─── 0.7%
+   │  └ js/main.js
+   ├ js/signposts.js ────────────────────────────────────────── 4.8kb ─── 0.6%
+   │  └ js/main.js
+   ├ js/hawkers.js ──────────────────────────────────────────── 4.8kb ─── 0.6%
+   │  └ js/main.js
+   ├ js/places.js ───────────────────────────────────────────── 4.7kb ─── 0.6%
+   │  └ js/main.js
+   ├ js/games/music.js ──────────────────────────────────────── 4.4kb ─── 0.6%
+   │  └ js/games/all.js
+   │     └ js/main.js
+   ├ js/weather.js ──────────────────────────────────────────── 4.4kb ─── 0.6%
+   │  └ js/main.js
+   ├ js/seethrough.js ───────────────────────────────────────── 3.9kb ─── 0.5%
+   │  └ js/main.js
+   ├ js/input.js ────────────────────────────────────────────── 3.6kb ─── 0.5%
+   │  └ js/main.js
+   ├ js/twinchests.js ───────────────────────────────────────── 3.5kb ─── 0.5%
+   │  └ js/main.js
+   ├ js/netgames.js ─────────────────────────────────────────── 3.2kb ─── 0.4%
+   │  └ js/main.js
+   ├ js/showcase.js ─────────────────────────────────────────── 3.0kb ─── 0.4%
+   │  └ js/main.js
+   ├ js/games/tienlenrules.js ───────────────────────────────── 3.0kb ─── 0.4%
+   │  └ js/games/tienlen.js
+   │     └ js/games/all.js
+   │        └ js/main.js
+   ├ js/kite.js ─────────────────────────────────────────────── 2.6kb ─── 0.3%
+   │  └ js/main.js
+   ├ js/reeds.js ────────────────────────────────────────────── 2.4kb ─── 0.3%
+   │  └ js/main.js
+   ├ js/coop.js ─────────────────────────────────────────────── 2.2kb ─── 0.3%
+   │  └ js/main.js
+   ├ js/songs.js ────────────────────────────────────────────── 2.2kb ─── 0.3%
+   │  └ js/main.js
+   ├ js/games/market.js ─────────────────────────────────────── 2.1kb ─── 0.3%
+   │  └ js/games/all.js
+   │     └ js/main.js
+   ├ js/games/moneylogic.js ─────────────────────────────────── 2.0kb ─── 0.3%
+   │  └ js/games/money.js
+   │     └ js/games/all.js
+   │        └ js/main.js
+   ├ js/nametags.js ─────────────────────────────────────────── 2.0kb ─── 0.3%
+   │  └ js/main.js
+   ├ vendor/RoomEnvironment.js ──────────────────────────────── 1.8kb ─── 0.2%
+   │  └ js/main.js
+   ├ js/packbar.js ──────────────────────────────────────────── 1.5kb ─── 0.2%
+   │  └ js/main.js
+   ├ js/roomcode.js ─────────────────────────────────────────── 1.3kb ─── 0.2%
+   │  └ js/main.js
+   ├ js/worldcache.js ──────────────────────────────────────── 1019b ──── 0.1%
+   │  └ js/main.js
+   ├ js/plots.js ────────────────────────────────────────────── 915b ──── 0.1%
+   │  └ js/main.js
+   ├ js/claims.js ───────────────────────────────────────────── 871b ──── 0.1%
+   │  └ js/main.js
+   └ js/rideview.js ─────────────────────────────────────────── 805b ──── 0.1%
+      └ js/main.js
+
+  ../scratch/lighter-measure/bundle/c-WDMMY3BA.js ─────────── 648.3kb ─ 100.0%
+   ├ vendor/three.module.js ───────────────────────────────── 644.9kb ── 99.5%
+   │  └ js/gfx.js
+   │     └ js/film.js
+   └ js/gfx.js ──────────────────────────────────────────────── 3.2kb ─── 0.5%
+      └ js/film.js
+
+  ../scratch/lighter-measure/bundle/c-57IWC4WO.js ─────────── 206.7kb ─ 100.0%
+   └ vendor/anthropic-sdk.mjs ─────────────────────────────── 206.6kb ─ 100.0%
+
+  ../scratch/lighter-measure/bundle/c-SKGVLEZW.js ─────────── 167.5kb ─ 100.0%
+   ├ js/ui.js ─────────────────────────────────────────────── 116.5kb ── 69.5%
+   │  └ js/myhouse.js
+   ├ js/extras.js ───────────────────────────────────────────── 9.1kb ─── 5.4%
+   │  └ js/ui.js
+   │     └ js/myhouse.js
+   ├ js/gather.js ───────────────────────────────────────────── 7.9kb ─── 4.7%
+   │  └ js/main.js
+   ├ js/icons.js ────────────────────────────────────────────── 6.3kb ─── 3.8%
+   │  └ js/main.js
+   ├ js/content/songs.js ────────────────────────────────────── 5.1kb ─── 3.0%
+   │  └ js/parents.js
+   ├ js/credits.js ──────────────────────────────────────────── 4.6kb ─── 2.8%
+   │  └ js/ui.js
+   │     └ js/myhouse.js
+   ├ js/install.js ──────────────────────────────────────────── 4.0kb ─── 2.4%
+   │  └ js/ui.js
+   │     └ js/myhouse.js
+   ├ js/report.js ───────────────────────────────────────────── 3.7kb ─── 2.2%
+   │  └ js/main.js
+   ├ js/recorder.js ─────────────────────────────────────────── 2.3kb ─── 1.4%
+   │  └ js/ui.js
+   │     └ js/myhouse.js
+   ├ js/words2.js ───────────────────────────────────────────── 2.0kb ─── 1.2%
+   │  └ js/ui.js
+   │     └ js/myhouse.js
+   ├ js/familycards.js ──────────────────────────────────────── 1.9kb ─── 1.2%
+   │  └ js/myhouse.js
+   ├ js/photos.js ───────────────────────────────────────────── 1.0kb ─── 0.6%
+   │  └ js/parents.js
+   └ js/placebook.js ────────────────────────────────────────── 819b ──── 0.5%
+      └ js/main.js
+
+  ../scratch/lighter-measure/bundle/c-7ICRULPW.js ─────────── 137.1kb ─ 100.0%
+   └ js/art.js ────────────────────────────────────────────── 137.1kb ─ 100.0%
+      └ js/film.js
+
+  ../scratch/lighter-measure/bundle/c-HMQWC6IC.js ─────────── 100.0kb ─ 100.0%
+   ├ js/regions.js ─────────────────────────────────────────── 25.7kb ── 25.7%
+   │  └ js/kidplay.js
+   ├ js/chat.js ────────────────────────────────────────────── 22.7kb ── 22.7%
+   │  └ js/main.js
+   ├ js/town.js ────────────────────────────────────────────── 15.3kb ── 15.3%
+   │  └ js/main.js
+   ├ js/story.js ───────────────────────────────────────────── 14.3kb ── 14.3%
+   │  └ js/main.js
+   ├ js/realworld.js ────────────────────────────────────────── 9.5kb ─── 9.5%
+   │  └ js/regions.js
+   │     └ js/kidplay.js
+   ├ js/words.js ────────────────────────────────────────────── 7.2kb ─── 7.2%
+   │  └ js/ui.js
+   │     └ js/myhouse.js
+   ├ js/snacks.js ───────────────────────────────────────────── 2.3kb ─── 2.3%
+   │  └ js/ui.js
+   │     └ js/myhouse.js
+   └ js/powerlines.js ───────────────────────────────────────── 1.8kb ─── 1.8%
+      └ js/main.js
+
+  ../scratch/lighter-measure/bundle/c-LVJ4DJWY.js ──────────── 71.2kb ─ 100.0%
+   ├ js/world.js ───────────────────────────────────────────── 56.2kb ── 79.0%
+   ├ js/houses.js ───────────────────────────────────────────── 9.5kb ── 13.4%
+   │  └ js/world.js
+   └ js/solids.js ───────────────────────────────────────────── 4.4kb ─── 6.2%
+      └ js/world.js
+
+  ../scratch/lighter-measure/bundle/c-WYCDFBW6.js ──────────── 66.2kb ─ 100.0%
+   └ js/content/films.js ───────────────────────────────────── 65.9kb ── 99.5%
+
+  ../scratch/lighter-measure/bundle/c-LPNNAKND.js ──────────── 63.9kb ─ 100.0%
+   ├ js/howto.js ───────────────────────────────────────────── 43.7kb ── 68.3%
+   │  └ js/games/frame.js
+   ├ js/cartoon.js ─────────────────────────────────────────── 11.2kb ── 17.5%
+   │  └ js/howto.js
+   │     └ js/games/frame.js
+   ├ js/tales.js ────────────────────────────────────────────── 8.2kb ── 12.8%
+   │  └ js/main.js
+   └ js/games/registry.js ───────────────────────────────────── 525b ──── 0.8%
+      └ js/games/frame.js
+
+  ../scratch/lighter-measure/bundle/c-Z63EEQ47.js ──────────── 45.7kb ─ 100.0%
+   └ js/film.js ────────────────────────────────────────────── 45.2kb ── 98.9%
+
+  ../scratch/lighter-measure/bundle/c-VJ24G46X.js ──────────── 44.0kb ─ 100.0%
+   ├ js/net.js ─────────────────────────────────────────────── 34.5kb ── 78.6%
+   ├ js/relay.js ────────────────────────────────────────────── 5.3kb ── 12.2%
+   │  └ js/net.js
+   └ js/netmsg.js ───────────────────────────────────────────── 3.9kb ─── 8.9%
+      └ js/net.js
+
+  ../scratch/lighter-measure/bundle/c-CAX4DQVA.js ──────────── 41.2kb ─ 100.0%
+   └ js/talesdata.js ───────────────────────────────────────── 41.1kb ── 99.8%
+
+  ../scratch/lighter-measure/bundle/c-VRLLOLSH.js ──────────── 39.1kb ─ 100.0%
+   ├ js/games/reading.js ───────────────────────────────────── 28.1kb ── 72.0%
+   └ js/content/reading.js ─────────────────────────────────── 10.5kb ── 26.9%
+      └ js/games/reading.js
+
+  ../scratch/lighter-measure/bundle/c-77BEXJ4A.js ──────────── 33.0kb ─ 100.0%
+   └ js/autoplay.js ────────────────────────────────────────── 32.1kb ── 97.3%
+
+  ../scratch/lighter-measure/bundle/c-BYYBM7JJ.js ──────────── 30.7kb ─ 100.0%
+   └ js/content/adventures.js ──────────────────────────────── 30.5kb ── 99.1%
+
+  ../scratch/lighter-measure/bundle/c-TPSMLZKE.js ──────────── 29.8kb ─ 100.0%
+   └ js/vehicles.js ────────────────────────────────────────── 29.7kb ── 99.7%
+      └ js/yard.js
+
+  ../scratch/lighter-measure/bundle/c-2ZWBXFXB.js ──────────── 29.1kb ─ 100.0%
+   ├ js/festivals.js ───────────────────────────────────────── 26.1kb ── 89.7%
+   │  └ js/adventure.js
+   └ js/lunar.js ────────────────────────────────────────────── 2.4kb ─── 8.4%
+      └ js/festivals.js
+         └ js/adventure.js
+
+  ../scratch/lighter-measure/bundle/c-R34SITNZ.js ──────────── 28.2kb ─ 100.0%
+   ├ js/tester.js ──────────────────────────────────────────── 24.4kb ── 86.4%
+   ├ js/tester-detection.js ─────────────────────────────────── 1.7kb ─── 6.0%
+   │  └ js/tester.js
+   ├ js/keepcopy.js ─────────────────────────────────────────── 809b ──── 2.8%
+   │  └ js/autoplay.js
+   └ js/report-outbox.js ────────────────────────────────────── 687b ──── 2.4%
+      └ js/tester.js
+
+  ../scratch/lighter-measure/bundle/c-BG4RDESW.js ──────────── 28.2kb ─ 100.0%
+   ├ js/content/stickers.js ────────────────────────────────── 25.4kb ── 89.9%
+   │  └ js/stickerfx.js
+   └ js/stickers.js ─────────────────────────────────────────── 2.7kb ─── 9.5%
+      └ js/stickerfx.js
+
+  ../scratch/lighter-measure/bundle/c-GZ6NDOAR.js ──────────── 27.7kb ─ 100.0%
+   └ js/avatar.js ──────────────────────────────────────────── 27.4kb ── 99.0%
+      └ js/film.js
+
+  ../scratch/lighter-measure/bundle/c-RP2AQRXG.js ──────────── 27.1kb ─ 100.0%
+   ├ js/parents.js ─────────────────────────────────────────── 18.1kb ── 66.7%
+   ├ js/content/parents.js ──────────────────────────────────── 5.1kb ── 18.7%
+   │  └ js/parents.js
+   └ js/content/familymissions.js ───────────────────────────── 3.0kb ── 11.1%
+      └ js/parents.js
+
+  ../scratch/lighter-measure/bundle/c-4AEARSCY.js ──────────── 21.8kb ─ 100.0%
+   └ js/audio.js ───────────────────────────────────────────── 21.6kb ── 99.3%
+      └ js/film.js
+
+  ../scratch/lighter-measure/bundle/c-OHZ2JJVY.js ──────────── 20.6kb ─ 100.0%
+   ├ js/yard.js ────────────────────────────────────────────── 13.4kb ── 64.9%
+   └ js/content/yard.js ─────────────────────────────────────── 6.7kb ── 32.5%
+      └ js/yard.js
+
+  ../scratch/lighter-measure/bundle/c-3UET5LRT.js ──────────── 17.7kb ─ 100.0%
+   ├ js/content/shop.js ─────────────────────────────────────── 9.7kb ── 55.0%
+   │  └ js/state.js
+   └ js/state.js ────────────────────────────────────────────── 7.6kb ── 43.0%
+
+  ../scratch/lighter-measure/bundle/c-OOZCAQEN.js ──────────── 17.6kb ─ 100.0%
+   └ js/adventure.js ───────────────────────────────────────── 16.5kb ── 94.2%
+
+  ../scratch/lighter-measure/bundle/c-47V6ZEPS.js ──────────── 17.2kb ─ 100.0%
+   └ js/animals.js ─────────────────────────────────────────── 17.1kb ── 99.4%
+      └ js/surprises.js
+
+  ../scratch/lighter-measure/bundle/c-IRBLONPN.js ──────────── 17.0kb ─ 100.0%
+   ├ js/games/frame.js ─────────────────────────────────────── 12.3kb ── 72.0%
+   ├ js/ads.js ──────────────────────────────────────────────── 4.0kb ── 23.5%
+   │  └ js/games/frame.js
+   └ js/games/playwatch.js ──────────────────────────────────── 238b ──── 1.4%
+      └ js/games/frame.js
+
+  ../scratch/lighter-measure/bundle/c-AZGHPGNE.js ──────────── 17.0kb ─ 100.0%
+   └ js/shop.js ────────────────────────────────────────────── 16.4kb ── 96.2%
+
+  ../scratch/lighter-measure/bundle/c-JNVL372Q.js ──────────── 16.7kb ─ 100.0%
+   ├ js/voice.js ───────────────────────────────────────────── 13.8kb ── 83.2%
+   │  └ js/film.js
+   ├ js/viwords.js ──────────────────────────────────────────── 2.0kb ── 11.8%
+   │  └ js/voice.js
+   │     └ js/film.js
+   └ js/packhash.js ─────────────────────────────────────────── 457b ──── 2.7%
+      └ js/voice.js
+         └ js/film.js
+
+  ../scratch/lighter-measure/bundle/c-LPZVTPM2.js ──────────── 16.4kb ─ 100.0%
+   └ js/content/films/kit.js ───────────────────────────────── 15.7kb ── 95.8%
+      └ js/content/films/cockien.js
+
+  ../scratch/lighter-measure/bundle/c-3VJFNCQH.js ──────────── 16.2kb ─ 100.0%
+   └ js/content/map.js ─────────────────────────────────────── 16.0kb ── 98.9%
+      └ js/world.js
+
+  ../scratch/lighter-measure/bundle/c-GEXE7Q5E.js ──────────── 14.3kb ─ 100.0%
+   └ js/content/festcal.js ─────────────────────────────────── 14.3kb ── 99.7%
+      └ js/myhouse.js
+
+  ../scratch/lighter-measure/bundle/c-SZOP5MYM.js ──────────── 14.0kb ─ 100.0%
+   ├ js/surprises.js ────────────────────────────────────────── 8.4kb ── 60.3%
+   └ js/content/surprises.js ────────────────────────────────── 4.6kb ── 32.9%
+      └ js/surprises.js
+
+  ../scratch/lighter-measure/bundle/c-RMBKN5PE.js ──────────── 13.9kb ─ 100.0%
+   └ js/content/releases.js ────────────────────────────────── 13.9kb ── 99.6%
+      └ js/testerrewards.js
+
+  ../scratch/lighter-measure/bundle/c-JHC3EUGV.js ──────────── 13.9kb ─ 100.0%
+   ├ js/familydevices.js ───────────────────────────────────── 13.0kb ── 93.8%
+   └ js/family-backup.js ────────────────────────────────────── 754b ──── 5.3%
+      └ js/familydevices.js
+
+  ../scratch/lighter-measure/bundle/c-DTD66J6Z.js ──────────── 13.5kb ─ 100.0%
+   ├ js/content/chapter2text.js ─────────────────────────────── 9.9kb ── 73.4%
+   │  └ js/content/chapter2films.js
+   └ js/content/chapter2props.js ────────────────────────────── 3.4kb ── 25.3%
+      └ js/content/chapter2films.js
+
+  ../scratch/lighter-measure/bundle/c-PPHTDD6W.js ──────────── 13.4kb ─ 100.0%
+   └ js/lanterns.js ────────────────────────────────────────── 12.8kb ── 95.3%
+
+  ../scratch/lighter-measure/bundle/c-CAKUVWOW.js ──────────── 13.0kb ─ 100.0%
+   └ js/content/chapter2hanoi.js ───────────────────────────── 12.3kb ── 95.2%
+
+  ../scratch/lighter-measure/bundle/c-WWU7L4WN.js ──────────── 12.0kb ─ 100.0%
+   ├ js/content/chapter3text.js ─────────────────────────────── 9.4kb ── 78.2%
+   │  └ js/content/chapter3films.js
+   └ js/content/chapter3props.js ────────────────────────────── 2.5kb ── 20.5%
+      └ js/content/chapter3films.js
+
+  ../scratch/lighter-measure/bundle/c-GCPUODBW.js ──────────── 11.7kb ─ 100.0%
+   ├ js/content/jobs.js ─────────────────────────────────────── 7.1kb ── 60.0%
+   │  └ js/jobs.js
+   └ js/jobs.js ─────────────────────────────────────────────── 4.2kb ── 36.0%
+
+  ../scratch/lighter-measure/bundle/c-52HF3ILG.js ──────────── 11.7kb ─ 100.0%
+   ├ js/boxes.js ────────────────────────────────────────────── 7.0kb ── 59.8%
+   └ js/content/boxes.js ────────────────────────────────────── 4.3kb ── 36.5%
+      └ js/boxes.js
+
+  ../scratch/lighter-measure/bundle/c-R2PNWKJR.js ──────────── 11.5kb ─ 100.0%
+   ├ js/content/festhunt.js ─────────────────────────────────── 5.9kb ── 51.5%
+   │  └ js/festhunt.js
+   └ js/festhunt.js ─────────────────────────────────────────── 5.2kb ── 45.1%
+
+  ../scratch/lighter-measure/bundle/c-KA2I6NZW.js ──────────── 10.5kb ─ 100.0%
+   └ js/hoilang.js ──────────────────────────────────────────── 9.5kb ── 90.6%
+
+  ../scratch/lighter-measure/bundle/c-W24ULHIA.js ──────────── 10.0kb ─ 100.0%
+   └ js/content/chapter3sydney.js ───────────────────────────── 9.4kb ── 94.2%
+
+  ../scratch/lighter-measure/bundle/c-OIRQEXAM.js ───────────── 8.9kb ─ 100.0%
+   └ js/players.js ──────────────────────────────────────────── 8.6kb ── 97.5%
+      └ js/tester.js
+
+  ../scratch/lighter-measure/bundle/c-BCQTTFXG.js ───────────── 8.8kb ─ 100.0%
+   └ js/data.js ─────────────────────────────────────────────── 8.7kb ── 98.2%
+      └ js/shop.js
+
+  ../scratch/lighter-measure/bundle/c-JMMAVTRA.js ───────────── 8.7kb ─ 100.0%
+   └ js/festdecor.js ────────────────────────────────────────── 8.3kb ── 95.2%
+
+  ../scratch/lighter-measure/bundle/c-6VO75C43.js ───────────── 8.0kb ─ 100.0%
+   └ js/kidplay.js ──────────────────────────────────────────── 7.3kb ── 91.7%
+
+  ../scratch/lighter-measure/bundle/c-ILQR3Q2Z.js ───────────── 7.9kb ─ 100.0%
+   └ js/custom.js ───────────────────────────────────────────── 7.7kb ── 97.2%
+
+  ../scratch/lighter-measure/bundle/c-ZFSBXLZZ.js ───────────── 7.8kb ─ 100.0%
+   └ js/voicepack.js ────────────────────────────────────────── 7.5kb ── 96.5%
+
+  ../scratch/lighter-measure/bundle/c-7UX3P5DB.js ───────────── 7.7kb ─ 100.0%
+   ├ js/vendors.js ──────────────────────────────────────────── 5.6kb ── 73.0%
+   │  └ js/pricetags.js
+   └ js/money.js ────────────────────────────────────────────── 1.9kb ── 25.0%
+      └ js/myhouse.js
+
+  ../scratch/lighter-measure/bundle/c-QWWFF4U5.js ───────────── 7.3kb ─ 100.0%
+   ├ js/content/villagerlines.js ────────────────────────────── 5.3kb ── 71.9%
+   │  └ js/villagertalk.js
+   └ js/villagertalk.js ─────────────────────────────────────── 1.7kb ── 22.6%
+
+  ../scratch/lighter-measure/bundle/c-DPCXEZPZ.js ───────────── 7.3kb ─ 100.0%
+   └ js/mictest.js ──────────────────────────────────────────── 6.5kb ── 89.7%
+
+  ../scratch/lighter-measure/bundle/c-TMFLB6LV.js ───────────── 7.2kb ─ 100.0%
+   └ js/myhouse.js ──────────────────────────────────────────── 6.7kb ── 92.3%
+
+  ../scratch/lighter-measure/bundle/c-IXDOOIAN.js ───────────── 6.7kb ─ 100.0%
+   ├ js/i18n.js ─────────────────────────────────────────────── 5.4kb ── 81.0%
+   │  └ js/film.js
+   └ js/core/events.js ──────────────────────────────────────── 1.1kb ── 16.2%
+      └ js/voicepack.js
+
+  ../scratch/lighter-measure/bundle/c-FQF4HDOP.js ───────────── 6.7kb ─ 100.0%
+   └ js/wayfind.js ──────────────────────────────────────────── 6.3kb ── 95.1%
+
+  ../scratch/lighter-measure/bundle/c-KMEKEAGT.js ───────────── 6.7kb ─ 100.0%
+   └ js/content/chapters.js ─────────────────────────────────── 6.6kb ── 99.5%
+      └ js/content/chapter2hanoi.js
+
+  ../scratch/lighter-measure/bundle/c-L663KMNP.js ───────────── 6.1kb ─ 100.0%
+   └ js/content/films/sodua.js ──────────────────────────────── 5.6kb ── 92.1%
+
+  ../scratch/lighter-measure/bundle/c-44GUL6OL.js ───────────── 5.7kb ─ 100.0%
+   └ js/content/films/tamcam.js ─────────────────────────────── 5.2kb ── 91.6%
+
+  ../scratch/lighter-measure/bundle/c-7PKXHYE4.js ───────────── 5.5kb ─ 100.0%
+   └ js/companion.js ────────────────────────────────────────── 5.4kb ── 97.8%
+      └ js/content/films.js
+
+  ../scratch/lighter-measure/bundle/c-IYK3KQGR.js ───────────── 5.5kb ─ 100.0%
+   └ js/content/films/rongtien.js ───────────────────────────── 5.0kb ── 91.2%
+
+  ../scratch/lighter-measure/bundle/c-7P7JSTTJ.js ───────────── 5.2kb ─ 100.0%
+   └ js/testerrewards.js ────────────────────────────────────── 4.7kb ── 89.0%
+
+  ../scratch/lighter-measure/bundle/c-USRJXQPP.js ───────────── 5.1kb ─ 100.0%
+   └ js/content/films/chucuoi.js ────────────────────────────── 4.6kb ── 90.6%
+
+  ../scratch/lighter-measure/bundle/c-WWG2R4EX.js ───────────── 5.1kb ─ 100.0%
+   └ js/content/films/thachsanh.js ──────────────────────────── 4.6kb ── 90.7%
+
+  ../scratch/lighter-measure/bundle/c-LTYA3XGO.js ───────────── 5.1kb ─ 100.0%
+   └ js/games/readingmenu.js ────────────────────────────────── 4.8kb ── 94.1%
+
+  ../scratch/lighter-measure/bundle/c-TVWN2HUB.js ───────────── 5.0kb ─ 100.0%
+   └ js/screencapture.js ────────────────────────────────────── 4.9kb ── 98.5%
+
+  ../scratch/lighter-measure/bundle/main-6TZW73IV.js ────────── 4.9kb ─ 100.0%
+   └ js/launch.js ───────────────────────────────────────────── 4.9kb ─ 100.0%
+
+  ../scratch/lighter-measure/bundle/c-KGLP245D.js ───────────── 4.8kb ─ 100.0%
+   └ js/content/films/quabau.js ─────────────────────────────── 4.4kb ── 90.9%
+
+  ../scratch/lighter-measure/bundle/c-2TKQHGO3.js ───────────── 4.8kb ─ 100.0%
+   └ js/content/films/greatrace.js ──────────────────────────── 4.3kb ── 89.5%
+
+  ../scratch/lighter-measure/bundle/c-4CBNGHF4.js ───────────── 4.8kb ─ 100.0%
+   └ js/content/films/maliang.js ────────────────────────────── 4.3kb ── 90.0%
+
+  ../scratch/lighter-measure/bundle/c-TWFXWBIT.js ───────────── 4.7kb ─ 100.0%
+   └ js/content/films/caytre.js ─────────────────────────────── 4.2kb ── 90.2%
+
+  ../scratch/lighter-measure/bundle/c-EAX5FQG7.js ───────────── 4.7kb ─ 100.0%
+   └ js/content/chapter2films.js ────────────────────────────── 4.1kb ── 88.7%
+
+  ../scratch/lighter-measure/bundle/c-CHBBMK5C.js ───────────── 4.5kb ─ 100.0%
+   └ js/content/films/nian.js ───────────────────────────────── 4.1kb ── 90.0%
+
+  ../scratch/lighter-measure/bundle/c-V6KC2J2V.js ───────────── 4.5kb ─ 100.0%
+   └ js/content/films/vusua.js ──────────────────────────────── 4.0kb ── 89.9%
+
+  ../scratch/lighter-measure/bundle/c-YJFNJY4S.js ───────────── 4.3kb ─ 100.0%
+   └ js/content/films/ongtao.js ─────────────────────────────── 3.9kb ── 88.8%
+
+  ../scratch/lighter-measure/bundle/c-JIX74CBH.js ───────────── 4.3kb ─ 100.0%
+   └ js/content/activities.js ───────────────────────────────── 4.1kb ── 95.9%
+      └ js/games/readingmenu.js
+
+  ../scratch/lighter-measure/bundle/c-J3ZJU3EX.js ───────────── 4.2kb ─ 100.0%
+   └ js/content/films/ganesha.js ────────────────────────────── 3.8kb ── 89.3%
+
+  ../scratch/lighter-measure/bundle/c-5SEGD2DK.js ───────────── 4.2kb ─ 100.0%
+   └ js/content/films/cockien.js ────────────────────────────── 3.7kb ── 88.3%
+
+  ../scratch/lighter-measure/bundle/c-HEHZ6KO5.js ───────────── 4.1kb ─ 100.0%
+   └ js/content/films/dotkangaroo.js ────────────────────────── 3.6kb ── 88.6%
+
+  ../scratch/lighter-measure/bundle/c-XL6YVS7J.js ───────────── 4.1kb ─ 100.0%
+   └ js/content/films/weaver.js ─────────────────────────────── 3.6kb ── 88.6%
+
+  ../scratch/lighter-measure/bundle/c-7C7JKW3U.js ───────────── 4.0kb ─ 100.0%
+   └ js/content/tester.js ───────────────────────────────────── 3.9kb ── 97.5%
+      └ js/testergate.js
+
+  ../scratch/lighter-measure/bundle/c-TFLW3YQ2.js ───────────── 4.0kb ─ 100.0%
+   └ js/content/films/emu.js ────────────────────────────────── 3.6kb ── 89.5%
+
+  ../scratch/lighter-measure/bundle/c-2B23PWP3.js ───────────── 4.0kb ─ 100.0%
+   ├ js/content/owllessons.js ───────────────────────────────── 2.8kb ── 69.3%
+   │  └ js/owlguide.js
+   └ js/owlguide.js ─────────────────────────────────────────── 933b ─── 22.8%
+
+  ../scratch/lighter-measure/bundle/c-YKULIPDB.js ───────────── 3.9kb ─ 100.0%
+   └ js/content/films/baluoiriu.js ──────────────────────────── 3.5kb ── 89.2%
+
+  ../scratch/lighter-measure/bundle/c-EPAZOTFM.js ───────────── 3.9kb ─ 100.0%
+   └ js/content/films/rainbowserpent.js ─────────────────────── 3.4kb ── 88.0%
+
+  ../scratch/lighter-measure/bundle/c-YL5HO4X2.js ───────────── 3.9kb ─ 100.0%
+   └ js/content/films/magicpudding.js ───────────────────────── 3.4kb ── 88.2%
+
+  ../scratch/lighter-measure/bundle/c-EA6MYBED.js ───────────── 3.8kb ─ 100.0%
+   └ js/content/films/kongrong.js ───────────────────────────── 3.4kb ── 88.4%
+
+  ../scratch/lighter-measure/bundle/c-BEZYKV2J.js ───────────── 3.7kb ─ 100.0%
+   └ js/popups.js ───────────────────────────────────────────── 3.4kb ── 90.8%
+      └ js/wayfind.js
+
+  ../scratch/lighter-measure/bundle/c-TJXXIV4A.js ───────────── 3.7kb ─ 100.0%
+   └ js/content/films/elephantmice.js ───────────────────────── 3.3kb ── 88.1%
+
+  ../scratch/lighter-measure/bundle/c-NVODK5Y6.js ───────────── 3.6kb ─ 100.0%
+   └ js/content/films/birdcolours.js ────────────────────────── 3.2kb ── 88.1%
+
+  ../scratch/lighter-measure/bundle/c-VG77GJA5.js ───────────── 3.6kb ─ 100.0%
+   └ js/content/films/cachep.js ─────────────────────────────── 3.2kb ── 88.1%
+
+  ../scratch/lighter-measure/bundle/c-EXVQM5G2.js ───────────── 3.6kb ─ 100.0%
+   └ js/soundsheet.js ───────────────────────────────────────── 3.4kb ── 93.4%
+
+  ../scratch/lighter-measure/bundle/c-4ISW3JRS.js ───────────── 3.6kb ─ 100.0%
+   └ js/content/films/nhacmeo.js ────────────────────────────── 3.1kb ── 87.5%
+
+  ../scratch/lighter-measure/bundle/c-HIFPRVXF.js ───────────── 3.5kb ─ 100.0%
+   └ js/content/films/thayboi.js ────────────────────────────── 3.1kb ── 87.8%
+
+  ../scratch/lighter-measure/bundle/c-AQWJL5EK.js ───────────── 3.5kb ─ 100.0%
+   └ js/content/films/crow.js ───────────────────────────────── 3.0kb ── 87.3%
+
+  ../scratch/lighter-measure/bundle/c-WTCNVZ7F.js ───────────── 3.5kb ─ 100.0%
+   └ js/content/films/bluejackal.js ─────────────────────────── 3.0kb ── 86.3%
+
+  ../scratch/lighter-measure/bundle/c-WBGWP4ID.js ───────────── 3.4kb ─ 100.0%
+   └ js/content/film-looks.js ───────────────────────────────── 3.4kb ── 99.3%
+      └ js/film.js
+
+  ../scratch/lighter-measure/bundle/c-ACK7QSAF.js ───────────── 3.3kb ─ 100.0%
+   └ js/content/films/monkey.js ─────────────────────────────── 2.9kb ── 86.9%
+
+  ../scratch/lighter-measure/bundle/c-7TH2L3VM.js ───────────── 3.3kb ─ 100.0%
+   └ js/content/films/lionrabbit.js ─────────────────────────── 2.9kb ── 86.6%
+
+  ../scratch/lighter-measure/bundle/c-IF4ECRVX.js ───────────── 3.2kb ─ 100.0%
+   └ js/content/chapter3films.js ────────────────────────────── 2.7kb ── 84.1%
+
+  ../scratch/lighter-measure/bundle/c-GCYAZEFB.js ───────────── 3.1kb ─ 100.0%
+   └ js/dayplan.js ──────────────────────────────────────────── 2.8kb ── 91.6%
+
+  ../scratch/lighter-measure/bundle/c-MGERDJOI.js ───────────── 3.1kb ─ 100.0%
+   └ js/stickerfx.js ────────────────────────────────────────── 2.7kb ── 88.1%
+
+  ../scratch/lighter-measure/bundle/c-QKNJLJUL.js ───────────── 3.0kb ─ 100.0%
+   └ js/content/films/tiddalik.js ───────────────────────────── 2.6kb ── 85.6%
+
+  ../scratch/lighter-measure/bundle/c-QYV54O7L.js ───────────── 3.0kb ─ 100.0%
+   └ js/content/films/sontinh.js ────────────────────────────── 2.6kb ── 84.8%
+
+  ../scratch/lighter-measure/bundle/c-AMOURE3Q.js ───────────── 3.0kb ─ 100.0%
+   └ js/content/films/change.js ─────────────────────────────── 2.6kb ── 84.3%
+
+  ../scratch/lighter-measure/bundle/c-TG322OJ4.js ───────────── 2.9kb ─ 100.0%
+   └ js/animalhomes.js ──────────────────────────────────────── 2.6kb ── 89.8%
+
+  ../scratch/lighter-measure/bundle/c-SAS4223A.js ───────────── 2.9kb ─ 100.0%
+   └ js/feel.js ─────────────────────────────────────────────── 2.7kb ── 93.5%
+      └ js/stickerfx.js
+
+  ../scratch/lighter-measure/bundle/c-W4D4H5Y5.js ───────────── 2.9kb ─ 100.0%
+   └ js/content/hoilang.js ──────────────────────────────────── 2.8kb ── 97.5%
+      └ js/hoilang.js
+
+  ../scratch/lighter-measure/bundle/c-WKTFNJT3.js ───────────── 2.4kb ─ 100.0%
+   └ js/content/autoplay.js ─────────────────────────────────── 2.2kb ── 95.0%
+
+  ../scratch/lighter-measure/bundle/c-4SQQNBHY.js ───────────── 2.1kb ─ 100.0%
+   └ js/dinh.js ─────────────────────────────────────────────── 2.0kb ── 96.0%
+      └ js/content/films.js
+
+  ../scratch/lighter-measure/bundle/c-7FOCQTKO.js ───────────── 2.1kb ─ 100.0%
+   ├ js/util.js ─────────────────────────────────────────────── 1.1kb ── 52.9%
+   │  └ js/film.js
+   ├ js/core/rng.js ─────────────────────────────────────────── 621b ─── 29.5%
+   │  └ js/util.js
+   │     └ js/film.js
+   └ js/core/geo.js ─────────────────────────────────────────── 241b ─── 11.5%
+      └ js/util.js
+         └ js/film.js
+
+  ../scratch/lighter-measure/bundle/c-7S2IJKC7.js ───────────── 2.0kb ─ 100.0%
+   └ js/scrollhelp.js ───────────────────────────────────────── 2.0kb ── 96.3%
+
+  ../scratch/lighter-measure/bundle/c-D3MD3JIP.js ───────────── 1.8kb ─ 100.0%
+   └ js/pricetags.js ────────────────────────────────────────── 1.6kb ── 85.9%
+
+  ../scratch/lighter-measure/bundle/c-BIZW4IGF.js ───────────── 1.7kb ─ 100.0%
+   └ js/chipinfo.js ─────────────────────────────────────────── 1.4kb ── 83.4%
+
+  ../scratch/lighter-measure/bundle/c-OJV4RIDP.js ───────────── 1.6kb ─ 100.0%
+   └ js/openspot.js ─────────────────────────────────────────── 1.5kb ── 93.4%
+      └ js/content/chapter2hanoi.js
+
+  ../scratch/lighter-measure/bundle/world-SABYAPAV.js ───────── 1.6kb ─ 100.0%
+
+  ../scratch/lighter-measure/bundle/c-6ATIPWY4.js ───────────── 1.4kb ─ 100.0%
+   └ js/content/talefilms.js ────────────────────────────────── 1.3kb ── 93.1%
+
+  ../scratch/lighter-measure/bundle/c-PH4RQDHT.js ───────────── 1.3kb ─ 100.0%
+   └ js/handpad.js ──────────────────────────────────────────── 1.2kb ── 93.9%
+      └ js/content/chapter2hanoi.js
+
+  ../scratch/lighter-measure/bundle/c-SOSPEXKO.js ───────────── 1.3kb ─ 100.0%
+   └ js/listen.js ───────────────────────────────────────────── 1.1kb ── 90.5%
+      └ js/tester.js
+
+  ../scratch/lighter-measure/bundle/c-77IPHDCU.js ───────────── 776b ── 100.0%
+
+  ../scratch/lighter-measure/bundle/state-H2I3LRER.js ───────── 720b ── 100.0%
+
+  ../scratch/lighter-measure/bundle/c-QMKNBOVB.js ───────────── 694b ── 100.0%
+
+  ../scratch/lighter-measure/bundle/c-PKVN7JX4.js ───────────── 660b ── 100.0%
+
+  ../scratch/lighter-measure/bundle/c-QCR75SAQ.js ───────────── 658b ── 100.0%
+   └ js/core/ids.js ─────────────────────────────────────────── 640b ─── 97.3%
+      └ js/stickerfx.js
+
+  ../scratch/lighter-measure/bundle/c-ISJZZ5OE.js ───────────── 603b ── 100.0%
+   └ js/content/devname.js ──────────────────────────────────── 587b ─── 97.3%
+      └ js/tester.js
+
+  ../scratch/lighter-measure/bundle/custom-ZOX7UJEE.js ──────── 602b ── 100.0%
+
+  ../scratch/lighter-measure/bundle/games-frame-CYYUQOO2.js ─── 541b ── 100.0%
+
+  ../scratch/lighter-measure/bundle/c-YYIE5AGM.js ───────────── 457b ── 100.0%
+
+  ../scratch/lighter-measure/bundle/c-WJH42XJY.js ───────────── 419b ── 100.0%
+   └ js/explain.js ──────────────────────────────────────────── 295b ─── 70.4%
+      └ js/kidplay.js
+
+  ../scratch/lighter-measure/bundle/c-7NNYJOBO.js ───────────── 401b ── 100.0%
+
+  ../scratch/lighter-measure/bundle/c-Y3PTXR5H.js ───────────── 401b ── 100.0%
+
+  ../scratch/lighter-measure/bundle/c-5QC5MXPP.js ───────────── 398b ── 100.0%
+
+  ../scratch/lighter-measure/bundle/c-U6E6QI4Z.js ───────────── 391b ── 100.0%
+   └ js/testergate.js ───────────────────────────────────────── 256b ─── 65.5%
+
+  ../scratch/lighter-measure/bundle/c-OJGS35RI.js ───────────── 334b ── 100.0%
+
+  ../scratch/lighter-measure/bundle/c-N3CETZLN.js ───────────── 274b ── 100.0%
+
+  ../scratch/lighter-measure/bundle/c-MGVOON5X.js ───────────── 273b ── 100.0%
+
+  ../scratch/lighter-measure/bundle/c-K5DFWCQH.js ───────────── 152b ── 100.0%
+
+  ../scratch/lighter-measure/bundle/c-VHNSBD2M.js ───────────── 106b ── 100.0%
