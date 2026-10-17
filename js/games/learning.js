@@ -4,7 +4,7 @@ import { register, untilRight, choiceButtons } from './frame.js';
 import { T, numWord } from '../i18n.js';
 import { settings } from '../state.js';
 import { shuffle, pick, el, wait } from '../util.js';
-import { animalCall } from '../audio.js';
+import { animalCall, loadAnimalCalls } from '../audio.js';
 
 const FRUIT = ['🍎', '🍌', '🍓', '🍊', '🥭', '🍐', '🍇', '🥝'];
 const vi = () => settings.lang === 'vi';
@@ -94,6 +94,7 @@ register({
   id: 'animalsounds', learn: true, icon: '👂', name: () => T('Who Says That?', 'Con Gì Kêu Thế?'),
   async run(api) {
     const rounds = 5, list = shuffle(VOICES).slice(0, rounds);
+    await loadAnimalCalls(); if (api.closed) return; // (owner, 17 Oct AEDT) the real animals' voices, not drawn-out tones
     for (let r = 0; r < rounds; r++) {
       api.dots(rounds, r); api.stage.innerHTML = '';
       const [snd, ic, en, vn] = list[r];

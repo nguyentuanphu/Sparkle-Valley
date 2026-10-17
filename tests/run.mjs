@@ -2933,6 +2933,13 @@ await check('boats', async () => {
       if (shallow) bad.push(`${name}: ${shallow} m too shallow (first at ${first})`);
       if (low) bad.push(`${name}: ${low} m under a deck too low for it`);
       for (const s of f.stops) { const p = s.dock && s.dock.pier && s.dock.pier.land; if (!p) continue; const rd = W.roadDist(p.x, p.z); if (!rd.road || rd.d > rd.road.w / 2 + 3) bad.push(`${name}: the pier at ${p.x.toFixed(0)},${p.z.toFixed(0)} (${s.name()}) joins no road (${rd.d.toFixed(1)} m)`); }
+      // (owner, 18 Oct AEDT: "the boat docks are too far drop off the ground") walk each pier from the bank to its end: it
+      // starts level with the ground, and no step up or down is more than a child can climb (1.2 m)
+      for (const s of f.stops) { const pr = s.dock && s.dock.pier; if (!pr || !pr.land) continue; const L = Math.hypot(pr.tip.x - pr.land.x, pr.tip.z - pr.land.z);
+        let y = W.heightAt(pr.land.x - Math.sin(pr.a), pr.land.z - Math.cos(pr.a)), worst = 0;
+        for (let k = -1; k <= L; k += .2) { const g = G.world.groundAt(pr.land.x + Math.sin(pr.a) * k, pr.land.z + Math.cos(pr.a) * k, y + .01); worst = Math.max(worst, Math.abs(g - y)); y = g; }
+        if (worst > 1.2) bad.push(`${name}: the pier at ${pr.land.x.toFixed(0)},${pr.land.z.toFixed(0)} (${s.name()}) has a ${worst.toFixed(1)} m drop`);
+        if (Math.abs(y - pr.tip.y) > .3) bad.push(`${name}: walking the pier at ${pr.land.x.toFixed(0)},${pr.land.z.toFixed(0)} ends ${(y - pr.tip.y).toFixed(1)} m off its end`); }
       info.push(`${name} ${f.stops.length} stops`);
     }
     const raft = F.find(f => f.line), want = (M.BOATS.find(b => b.id === 'raft').bridgeStops || []).map(s => s.bridge), have = raft ? raft.stops.map(s => s.bridge).filter(Boolean) : [];
@@ -2940,12 +2947,18 @@ await check('boats', async () => {
     if (!F.some(f => f.harbour)) bad.push('no Sydney Harbour ferry');
     // (round T3) every boat the map gives two piers runs: the Sydney Harbour ferry and the Sài Gòn boat to Vũng Tàu
     for (const B of M.BOATS.filter(B => B.piers)) if (!F.some(f => f.boat === B.id)) bad.push(`no boat ${B.id}`);
+    // (owner, 18 Oct AEDT: Cầu Rồng's sign stood in Sông Hồng and the map sent children there) every bridge landmark's ℹ️
+    // sign (where the map's Travel takes a child) is on dry land within 12 m of its bridge's end
+    for (const Bd of W.BRIDGES.filter(Bd => Bd.landmark)) for (const lm of G.LANDMARKS.filter(l => l.id === Bd.landmark)) {
+      const ends = Bd.axis === 'z' ? [[Bd.c, Bd.a0], [Bd.c, Bd.a1]] : [[Bd.a0, Bd.c], [Bd.a1, Bd.c]], d = Math.min(...ends.map(([x, z]) => Math.hypot(lm.x - x, lm.z - z)));
+      if (W.heightAt(lm.x, lm.z) < W.WATER + .4 || d > 12) bad.push(`${lm.id}: its sign at ${lm.x.toFixed(0)},${lm.z.toFixed(0)} is ${d.toFixed(0)} m from its bridge${W.heightAt(lm.x, lm.z) < W.WATER + .4 ? ', in the water' : ''}`);
+    }
     return { bad, info };
   });
   const errs = P.errors; await P.ctx.close();
   ok(!r.bad.length, r.bad.slice(0, 10).join('; '));
   ok(!errs.length, errs.join(' | '));
-  return r.info.join(', ') + '; every route deep enough, under high enough decks, every pier on a road or path';
+  return r.info.join(', ') + '; every route deep enough, under high enough decks, every pier on a road or path, level with its bank and walkable to its end; every bridge landmark sign on land by its bridge';
 });
 
 await check('plots', async () => {
@@ -5338,7 +5351,7 @@ await check('startup', async () => {
     for (const [k, B] of Object.entries(base)) { if (k.startsWith('/') || B.max === undefined) continue; const lim = k.endsWith('KB') ? B.max * 1.03 : B.max * speed * 1.25; if (!(got[k] <= lim)) over.push(`${B.rule} ${k} ${got[k]} > ${k.endsWith('KB') ? B.max : `${B.max} x ${speed.toFixed(2)} (machine speed) = ${Math.round(B.max * speed)}`}`); }
     // the slowest building steps on the second start, for the report (G.bootTimes: ms since the game's code began)
     const st = Object.entries(second.steps).filter(([k]) => k !== 'start').sort((x, y) => x[1] - y[1]), slow = st.map(([k, v], i) => [k, v - (i ? st[i - 1][1] : 0)]).sort((x, y) => y[1] - x[1]).slice(0, 4).map(([k, v]) => `${k} ${(v / 1000).toFixed(1)} s`);
-    ok(!over.length && !errs.length, JSON.stringify({ over, got, machineMs: Math.round(machineMs), speed: +speed.toFixed(2), errs }));
+    ok(!over.length && !errs.length, JSON.stringify({ over, got, machineMs: Math.round(machineMs), speed: +speed.toFixed(2), slowest: slow, firstSteps: first.steps, secondSteps: second.steps, errs }));
     return `machine ${Math.round(machineMs)} ms (x${speed.toFixed(2)} of the reference); tablet speed: first start ${first.kb} KB, title ${(first.title / 1000).toFixed(1)} s, valley ready ${(first.ready / 1000).toFixed(1)} s; second start ${second.kb} KB from the network, ready ${(second.ready / 1000).toFixed(1)} s, longest freeze ${(second.freeze / 1000).toFixed(1)} s; slowest steps ${slow.join(', ')}`;
   } finally { S.close(); }
 });
@@ -5701,12 +5714,13 @@ await check('reading', async () => {
   const Q = await open(b, { w: 1024, h: 768, play: false }); const asked2 = []; Q.page.on('request', q => { if (/reading(menu)?\.js/.test(q.url())) asked2.push(q.url().split('/').pop()); });
   await Q.page.route('**/content/custom.json*', async r => { let j = {}; try { j = await (await r.fetch()).json(); } catch (e) { } j.features = { ...(j.features || {}), readingTrial: true }; await r.fulfill({ contentType: 'application/json', body: JSON.stringify(j) }); });
   await Q.page.reload(); await start(Q.page); await clear(Q.page);
-  await Q.page.waitForFunction(async () => Object.keys((await import('/js/games/frame.js')).GAMES).filter(k => /^rd_/.test(k)).length === 12, null, { timeout: 30000 }).catch(() => { });
+  await Q.page.waitForFunction(async () => Object.keys((await import('/js/games/frame.js')).GAMES).filter(k => /^rd_/.test(k)).length === 13, null, { timeout: 30000 }).catch(() => { });
   const on = await Q.page.evaluate(async () => { const F = await import('/js/games/frame.js'), A = await import('/js/content/activities.js'); __sv.openGamesHub(0); await new Promise(r => setTimeout(r, 300)); document.querySelector('.hubtabs [data-tab="learn"]')?.click(); await new Promise(r => setTimeout(r, 200));
     const hub = [...document.querySelectorAll('.hubbody [data-play]')].map(b => b.dataset.play), head = [...document.querySelectorAll('.hubbody .hubarea')].map(h => h.textContent); document.querySelectorAll('.modal').forEach(m => m.remove()); __sv.paused = false;
     return { games: Object.keys(F.GAMES).filter(k => /^rd_/.test(k)), big: A.gamesIn(F.GAMES, 'reading', false).map(g => g.id), little: A.gamesIn(F.GAMES, 'reading', true).map(g => g.id), hub: hub.filter(k => /^rd_/.test(k)), head }; });
-  ok(IDS.every(id => on.games.includes(id) && on.big.includes(id) && on.hub.includes(id)) && on.head.some(h => /Reading corner/.test(h)), 'with the switch on: ' + JSON.stringify(on));
-  ok(BIG_ONLY.every(id => !on.little.includes(id)) && on.little.length === IDS.length - BIG_ONLY.length && IDS.filter(id => !BIG_ONLY.includes(id)).every(id => on.little.includes(id)), 'under-5s see: ' + on.little.join(','));
+  // (owner, 18 Oct AEDT) Story Helpers joins the Reading corner too, for 2 to 8 (played through by its own check, storyhelp)
+  ok([...IDS, 'rd_storyhelp'].every(id => on.games.includes(id) && on.big.includes(id) && on.hub.includes(id)) && on.head.some(h => /Reading corner/.test(h)), 'with the switch on: ' + JSON.stringify(on));
+  ok(BIG_ONLY.every(id => !on.little.includes(id)) && on.little.length === IDS.length - BIG_ONLY.length + 1 && [...IDS.filter(id => !BIG_ONLY.includes(id)), 'rd_storyhelp'].every(id => on.little.includes(id)), 'under-5s see: ' + on.little.join(','));
   ok(!asked2.includes('reading.js'), 'the games\' code loaded before a game opened: ' + asked2.join(','));
   // every game finishes for an under-5 (no losing: three stars) and for a big kid at Easy, Medium and Hard, in both languages;
   // nothing is left behind when a game ends
@@ -6927,6 +6941,120 @@ await check('welcomesteady', async () => {
   ok(!moved.length, 'the Welcome screen moved: ' + moved.slice(0, 8).join('; '));
   return `Welcome screen still within 2 px (Start button, cover, logo, language panel) opening, after both language taps and the Chinese switch, one Start size in both languages: ${notes.join(', ')}`;
 });
+await check('animalvoices', async () => {
+  // (owner, 17 Oct AEDT: "the animal voice games, the voice is not real, need real voice for animals") every animal a
+  // child is asked to tell apart in "Who Says That?" plays its real recording (sounds/animals/, a decoded file, not the
+  // drawn-out tone), in the game and from the animals' sounds elsewhere; each file is in the offline list
+  const sw = fs.readFileSync('../sw.js', 'utf8'), names = ['cow', 'sheep', 'pig', 'dog', 'cat', 'duck', 'hen', 'horse', 'frog', 'owl'];
+  const offline = names.filter(n => !sw.includes(`'sounds/animals/${n}.mp3'`));
+  const pre = `window.__rec = []; window.__osc = 0;
+    const st = AudioBufferSourceNode.prototype.start; AudioBufferSourceNode.prototype.start = function (...a) { if (this.buffer && this.buffer.duration > .5) window.__rec.push(+this.buffer.duration.toFixed(2)); return st.apply(this, a); };
+    const os = OscillatorNode.prototype.start; OscillatorNode.prototype.start = function (...a) { window.__osc++; return os.apply(this, a); };`;
+  const P = await open(b, { w: 390, h: 844, touch: true, pre, settings: { sound: true, music: false } }); await clear(P.page);
+  await P.page.mouse.click(195, 420); await P.page.waitForTimeout(300); // (sound starts after a first tap, as on a phone)
+  const r = await P.page.evaluate(async () => {
+    const A = await import('/js/audio.js'), wait = ms => new Promise(r => setTimeout(r, ms)), out = {};
+    await A.loadAnimalCalls(8000); __sv.paused = true; await wait(600); // (the valley's own ducks and frogs stay quiet while it listens)
+    for (const call of ['moo', 'baa', 'oink', 'woof', 'meow', 'quack', 'cluck', 'neigh', 'ribbit', 'hoot']) {
+      window.__rec.length = 0; window.__osc = 0; A.animalCall(call); await wait(150);
+      out[call] = { rec: window.__rec.slice(), tones: window.__osc, len: A.animalRecording(call) ? +A.animalRecording(call).duration.toFixed(2) : 0 };
+    }
+    return out;
+  });
+  // in the game itself: the first round's sound is a recording
+  const g = await P.page.evaluate(async () => { const wait = ms => new Promise(r => setTimeout(r, ms)); window.__rec.length = 0; window.__osc = 0; __sv.playGame(0, 'animalsounds', 'replay'); for (let i = 0; i < 40 && !window.__rec.length; i++) await wait(250); return { rec: window.__rec.slice(), tones: window.__osc }; });
+  const errs = P.errors; await P.ctx.close();
+  const bad = Object.entries(r).filter(([, v]) => !(v.rec.length === 1 && v.len >= .6 && v.len <= 3 && !v.tones)).map(([k, v]) => k + ' ' + JSON.stringify(v));
+  ok(!offline.length && !bad.length && g.rec.length >= 1 && !errs.length, JSON.stringify({ offline, bad, game: g, errs }));
+  return `10 animals play their real recordings (${Object.entries(r).map(([k, v]) => `${k} ${v.len} s`).join(', ')}), none drawn as tones; "Who Says That?" starts with a recording; all 10 files in the offline list`;
+});
+
+await check('realrides', async () => {
+  // (owner, 17 Oct AEDT: "the bus and tram travel time to different destinations are too quick, rider should be able to
+  // enjoy the real view and distance") a ride to a chosen stop really drives the roads there, with the child on board,
+  // taking about a minute for the farthest stop (Jump still gets off); the child is let off at that stop and the bus
+  // drives back to its own route
+  const P = await open(b, { w: 900, h: 640, settings: { voice: false } }); await clear(P.page);
+  const r = await P.page.evaluate(async () => {
+    const G = __sv, h = G.heroes[0], W = await import('/js/world.js'), wait = ms => new Promise(r => setTimeout(r, ms));
+    const keepOn = (await import('/js/custom.js')); void keepOn;
+    const sl = G.traffic.slots.find(s => s.mover && /^bus/.test(s.id)); if (!sl.v) G.traffic.make(sl);
+    const it = G.interactables.find(i => i.id === 'ride_' + G.traffic.slots.indexOf(sl)); if (!it) return { none: 'no ride' };
+    h.place(sl.v.o.position.x + 3, sl.v.o.position.z + 3); h.profile.age = 'little'; await wait(300);
+    const go = it.act(h); await wait(600);
+    const yes = [...document.querySelectorAll('.dialog button, .dialog .btn')].find(x => /Get on|Lên xe/.test(x.textContent)); if (!yes) return { none: 'no get-on button', html: (document.querySelector('.dialog') || {}).innerText };
+    yes.click(); await wait(800);
+    const stops = [...document.querySelectorAll('.stoppick [data-k]')]; if (!stops.length) return { none: 'no stop picker' };
+    // the farthest stop on the list
+    const list = G.world.busStops.filter(b => Math.hypot(b.x - h.pos.x, b.z - h.pos.z) > 12); let far = 0; list.forEach((b, k) => { if (Math.hypot(b.x - h.pos.x, b.z - h.pos.z) > Math.hypot(list[far].x - h.pos.x, list[far].z - h.pos.z)) far = k; });
+    stops[far].click(); await go; await wait(500);
+    const tr = sl.trip; if (!tr) return { none: 'no trip' };
+    const p0 = [sl.v.o.position.x, sl.v.o.position.z], s0 = tr.s; await wait(3000); const along = tr.s - s0; // (game time: a slow test browser runs the game's clock slower)
+    const p1 = [sl.v.o.position.x, sl.v.o.position.z], moved = Math.hypot(p1[0] - p0[0], p1[1] - p0[1]), rd = W.roadDist(p1[0], p1[1]);
+    const onBoard = !!h.carry && Math.hypot(h.pos.x - p1[0], h.pos.z - p1[1]) < 3, planned = tr.len / tr.speed;
+    // the rest of the way, quickly: the trip arrives and the child gets off at the stop
+    tr.s = tr.len - .5; await wait(1200); const dest = list[far], off = !h.carry && Math.hypot(h.pos.x - dest.x, h.pos.z - dest.z) < 4;
+    tr.s = Math.min(tr.s, 1); await wait(1500);
+    return { len: Math.round(tr.len), planned: +planned.toFixed(1), moved: +moved.toFixed(1), along: +along.toFixed(1), onRoad: rd.road ? +(rd.d - rd.road.w / 2).toFixed(2) : 99, onBoard, off, home: !sl.trip, stop: dest.name() };
+  });
+  const errs = P.errors; await P.ctx.close();
+  ok(!r.none && r.moved > 2 && Math.abs(r.moved - r.along) < 2 && r.onRoad < .5 && r.onBoard && r.planned >= 45 && r.planned <= 70 && r.off && r.home && !errs.length, JSON.stringify({ ...r, errs }));
+  return `a bus to the farthest stop (${r.stop}, ${r.len} m along the roads) drives there with the child on board, planned ${r.planned} s; ${r.moved} m along the road in the first moments, on the road; the child gets off at the stop and the bus goes back to its route`;
+});
+
+await check('storyhelp', async () => {
+  // (owner, 18 Oct AEDT: "read story then ask kid to resolve puzzle or work on something … then move on, read and then
+  // more interactive", for 5 to 8 and 2 to 5) Story Helpers: every story plays through, page by page (read, then help in
+  // the picture: put, find, order), for a 5 to 8 year old in English on a phone and an under-5 in Vietnamese on a tablet;
+  // a wrong place is refused and the right one taken; buttons are 44 px or more (64 px for under-5s); one task is done
+  // by dragging; nothing errs
+  const C = await import('../js/content/storyhelp.js');
+  const solve = async (page, si, pg) => page.evaluate(async ([si, pg]) => {
+    const wait = ms => new Promise(r => setTimeout(r, ms)), C = await import('/js/content/storyhelp.js'), P = C.STORIES[si].pages[pg];
+    const little = !!document.querySelector('.gl.little'), task = !little && P.older ? P.older : P.task, small = [];
+    const min = little ? 64 : 44; document.querySelectorAll('.sh-thing, .sh-ear, .sh-text button').forEach(b => { const r = b.getBoundingClientRect(); if (r.width && Math.min(r.width, r.height) < min) small.push(b.className + ' ' + Math.round(Math.min(r.width, r.height))); });
+    let refused = null;
+    if (task.kind === 'order') { for (let i = 0; i < task.steps.length; i++) { const btn = [...document.querySelectorAll('.sh-thing:not(.gone)')].find(b => task.steps[i].word.includes(b.getAttribute('aria-label'))); btn.click(); await wait(250); } }
+    else if (task.kind === 'find') { const no = [...document.querySelectorAll('.sh-spot')].find(s => s.dataset.id !== task.at); no.click(); await wait(200); refused = !no.querySelector('.sh-hide'); document.querySelector(`.sh-spot[data-id="${task.at}"]`).click(); }
+    else { const list = little ? task.things.slice(0, 1) : [...task.things, ...(task.more || [])];
+      for (let k = 0; k < list.length; k++) { const btn = document.querySelectorAll('.sh-thing')[k]; btn.click(); await wait(150);
+        if (k === 0) { const no = [...document.querySelectorAll('.sh-spot')].find(s => s.dataset.id !== list[k].to); no.click(); await wait(200); refused = !btn.classList.contains('gone'); btn.click(); await wait(150); }
+        document.querySelector(`.sh-spot[data-id="${list[k].to}"]`).click(); await wait(300); } }
+    return { kind: task.kind, small, refused };
+  }, [si, pg]);
+  const runs = [];
+  for (const [age, lang, w, h, stories] of [['big', 'en', 390, 844, [0, 1, 2]], ['little', 'vi', 820, 1180, [3, 4, 5]]]) for (const si of stories) {
+    const P = await open(b, { w, h, touch: true, lang, settings: { voice: false } }); await clear(P.page);
+    await P.page.evaluate(async age => { await import('/js/games/readingmenu.js'); __sv.heroes[0].profile.age = age; __sv.playGame(0, 'rd_storyhelp', 'replay'); }, age);
+    await P.page.waitForSelector('.sh-book', { timeout: 60000 }); await P.page.locator('.sh-book').nth(si).click();
+    const pages = [];
+    for (let pg = 0; pg < C.STORIES[si].pages.length; pg++) {
+      const want = C.STORIES[si].pages[pg].text[lang === 'vi' ? 1 : 0].replace(/\s+/g, '');
+      await P.page.waitForFunction(w => (document.querySelector('.sh-text')?.textContent || '').replace(/\s+/g, '') === w && (document.querySelector('.sh-thing:not(.gone)') || document.querySelector('.sh-slots') || document.querySelector('.sh-spot')), want, { timeout: 90000 })
+        .catch(e => { throw new Error(`${age} ${C.STORIES[si].id} page ${pg + 1}: ${e.message.slice(0, 60)}`); });
+      await P.page.waitForTimeout(400);
+      // the very first task: done by dragging the thing onto its place, as a child would
+      if (si === stories[0] && pg === 0) {
+        const T0 = C.STORIES[si].pages[0].task, to = T0.things[0].to, from = await P.page.locator('.sh-thing').first().boundingBox(), at = await P.page.locator(`.sh-spot[data-id="${to}"]`).boundingBox();
+        await P.page.mouse.move(from.x + from.width / 2, from.y + from.height / 2); await P.page.mouse.down(); await P.page.mouse.move(at.x + at.width / 2, at.y + at.height / 2, { steps: 8 }); await P.page.mouse.up(); await P.page.waitForTimeout(400);
+        const dragged = await P.page.evaluate(() => document.querySelector('.sh-thing').classList.contains('gone'));
+        pages.push({ dragged }); if (age === 'little') { continue; }
+        // (the rest of the page's things for an older child)
+        const rest = await P.page.evaluate(async ([si]) => { const C = await import('/js/content/storyhelp.js'), t = C.STORIES[si].pages[0].task, list = [...t.things, ...(t.more || [])], wait = ms => new Promise(r => setTimeout(r, ms));
+          for (let k = 1; k < list.length; k++) { document.querySelectorAll('.sh-thing')[k].click(); await wait(150); document.querySelector(`.sh-spot[data-id="${list[k].to}"]`).click(); await wait(300); } return list.length; }, [si]);
+        pages.push({ rest }); continue;
+      }
+      pages.push(await solve(P.page, si, pg));
+    }
+    await P.page.waitForTimeout(2500);
+    const won = await P.page.evaluate(() => !!document.querySelector('.gl .win, .gl-win, .winbox, .reward, .gl.won'));
+    runs.push({ age, lang, story: C.STORIES[si].id, pages, won, errs: P.errors.slice(0, 3) }); await P.ctx.close();
+  }
+  const bad = runs.filter(r => !r.won || r.errs.length || r.pages.some(p => (p.small && p.small.length) || p.refused === false || p.dragged === false));
+  ok(!bad.length, JSON.stringify(bad).slice(0, 1500));
+  return `${runs.length} stories played through (3 by a 5 to 8 year old in English on a phone, 3 by an under-5 in Vietnamese on a tablet): every page read, then put, find or order done; wrong places refused; a drag works; buttons 44 px (64 px for under-5s) or more`;
+});
+
 await check('swupdate', async () => {
   // (r80, owner 17 Oct AEDT: "users must have the latest r") on its own small server (the game's files, its service
   // worker made version A, B or C, js/build.js saying which): (1) after an update the page gets the NEW version's files,

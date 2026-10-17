@@ -353,6 +353,20 @@ function bake(list, inv, withColor) {
     const g = m.geometry, P = g.attributes.position, N = g.attributes.normal, C = g.attributes.color, idx = g.index;
     _mm.multiplyMatrices(inv, m.matrixWorld); _nm.getNormalMatrix(_mm);
     const cnt = idx ? idx.count : P.count;
+    // (17 Oct AEDT, PERF-001: about 1.3 s of a tablet's start) plain arrays: the same sums as three.js's
+    // Vector3.applyMatrix4, applyMatrix3 and normalize, in the same order, straight on the numbers (same results)
+    const plain = A => A && !A.isInterleavedBufferAttribute && !A.normalized && A.itemSize === 3;
+    if (plain(P) && plain(N) && (!col || c || plain(C)) && (!idx || !idx.isInterleavedBufferAttribute)) {
+      const pa = P.array, na = N.array, ca = C && C.array, ia = idx && idx.array, e = _mm.elements, q = _nm.elements;
+      for (let k = 0; k < cnt; k++, o++) {
+        const i = (ia ? ia[k] : k) * 3, x = pa[i], y = pa[i + 1], z = pa[i + 2], w = 1 / (e[3] * x + e[7] * y + e[11] * z + e[15]);
+        pos[o * 3] = (e[0] * x + e[4] * y + e[8] * z + e[12]) * w; pos[o * 3 + 1] = (e[1] * x + e[5] * y + e[9] * z + e[13]) * w; pos[o * 3 + 2] = (e[2] * x + e[6] * y + e[10] * z + e[14]) * w;
+        const a = na[i], b = na[i + 1], d = na[i + 2], nx = q[0] * a + q[3] * b + q[6] * d, ny = q[1] * a + q[4] * b + q[7] * d, nz = q[2] * a + q[5] * b + q[8] * d, s = 1 / (Math.sqrt(nx * nx + ny * ny + nz * nz) || 1);
+        nor[o * 3] = nx * s; nor[o * 3 + 1] = ny * s; nor[o * 3 + 2] = nz * s;
+        if (col) { if (c) { col[o * 3] = c.r; col[o * 3 + 1] = c.g; col[o * 3 + 2] = c.b; } else { col[o * 3] = ca[i]; col[o * 3 + 1] = ca[i + 1]; col[o * 3 + 2] = ca[i + 2]; } }
+      }
+      continue;
+    }
     for (let k = 0; k < cnt; k++, o++) {
       const i = idx ? idx.getX(k) : k;
       _v.fromBufferAttribute(P, i).applyMatrix4(_mm); pos[o * 3] = _v.x; pos[o * 3 + 1] = _v.y; pos[o * 3 + 2] = _v.z;
