@@ -1063,7 +1063,9 @@ await check('tales', async () => {
     let pages = 0;
     for (const lang of ['en', 'vi']) { S.settings.lang = lang;
       for (const tale of G.TALES) {
-        const done = openTheatre(tale, {}), m = document.querySelector('.theatre');
+        // (r82) a tale's words load when it opens, so its theatre appears a moment later
+        const done = openTheatre(tale, {}); let m = null; for (let w = 0; w < 60 && !(m = document.querySelector('.theatre')); w++) await new Promise(r => setTimeout(r, 50));
+        if (!m) { bad.push(`${tale.id}: the theatre did not open`); continue; }
         for (let k = 0; k < (lang === 'en' ? tale.pages.length : 1); k++) { // (the pictures are the same in both languages)
           await new Promise(r => setTimeout(r, 120)); pages++;
           const where = m.querySelector('.th-stage'), raw = rawIn(where).concat(rawIn(m.querySelector('.th-bar'))), fall = where.querySelectorAll('.emo').length;
@@ -1716,7 +1718,8 @@ await check('filmtails', async () => {
     const ids = [...Object.keys(C.FILMS), ...Object.keys(L.TALE_FILMS)].filter(id => !only.length || only.includes(id));
     for (const id of ids) {
       const script = C.FILMS[id] || await L.taleFilm(id);
-      const tale = [...TALES, ...MORE_TALES].find(t => t.id === id) || STORY_TALES[id]; if (!tale) { out.missing.push(id + ': no words'); continue; }
+      let tale = [...TALES, ...MORE_TALES].find(t => t.id === id) || STORY_TALES[id]; if (!tale) { out.missing.push(id + ': no words'); continue; }
+      if (tale.load) tale = await tale.load(); // (r82) a tale's words load when it opens, as in the game
       if (tale.pages.length !== script.pages.length) out.missing.push(`${id}: ${script.pages.length} film pages for ${tale.pages.length} pages of words`);
       const f = F.createFilm(stage, script, { name: 'Na', companion: 'firefly', look: {} });
       for (let k = 0; k < script.pages.length; k++) {
