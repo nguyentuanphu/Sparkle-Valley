@@ -16,12 +16,12 @@ function simulate(st, from, dir) {
   for (;;) {
     while (hand > 0) { pos = (pos + dir + 12) % 12; s.seeds[pos]++; hand--; steps.push({ k: 'drop', i: pos }); }
     const next = (pos + dir + 12) % 12;
-    if (isQuan(next)) break;
+    if (isQuan(next) && (s.seeds[next] > 0 || s.big[next])) break;
     if (s.seeds[next] > 0) { hand = s.seeds[next]; s.seeds[next] = 0; pos = next; steps.push({ k: 'pick', i: next }); continue; }
     let cur = next;
     for (;;) {
       const after = (cur + dir + 12) % 12, val = s.seeds[after] + (s.big[after] ? 10 : 0);
-      if (s.seeds[cur] !== 0 || val === 0) break;
+      if (s.seeds[cur] !== 0 || s.big[cur] || val === 0) break;
       s.score[me] += val; s.seeds[after] = 0; s.big[after] = false; steps.push({ k: 'take', i: after, n: val });
       cur = (after + dir + 12) % 12;
     }
@@ -46,8 +46,9 @@ register({
     [1, 2, 3, 4, 5].forEach(i => bot.appendChild(mk(i, 'sq')));
     board.appendChild(mk(6, 'quan qright'));
     const seedHTML = (n, big) => (big ? '<i class="bigstone"></i>' : '') + Array.from({ length: Math.min(n, 14) }, () => '<i class="seed"></i>').join('') + `<b class="n">${n + (big ? 10 : 0)}</b>`;
+    const drawCell = (i, state) => { cells[i].innerHTML = seedHTML(state.seeds[i], state.big[i]); };
     const draw = () => {
-      for (const i in cells) cells[i].innerHTML = seedHTML(st.seeds[i], st.big[i]);
+      for (const i in cells) drawCell(i, st);
       scoreEl.innerHTML = `<span class="p0">🙂 ${names[0]}: <b>${st.score[0]}</b></span><span class="p1">${api.two ? '🙂' : '🧒'} ${names[1]}: <b>${st.score[1]}</b></span>`;
     };
     draw();
@@ -63,7 +64,7 @@ register({
         if (stp.k === 'drop') { view.seeds[stp.i]++; api.sfx.pop(stp.i); }
         if (stp.k === 'take') { view.seeds[stp.i] = 0; view.big[stp.i] = false; api.sfx.coin(); c.classList.add('taken'); setTimeout(() => c.classList.remove('taken'), 600); }
         c.classList.add('hl'); setTimeout(() => c.classList.remove('hl'), 260);
-        for (const i in cells) cells[i].innerHTML = seedHTML(view.seeds[i], view.big[i]);
+        drawCell(stp.i, view);
         await wait(stp.k === 'take' ? 600 : 260);
       }
       const took = s.score[owner(from)] - st.score[owner(from)];
@@ -78,7 +79,22 @@ register({
       if (api.strong) return opts[0];                         // big kids on medium/hard: Tèo plays to win
       return Math.random() < .55 ? pick(opts) : opts[0];
     };
-    let turn = 0;
+    let turn = 0, choosing = false, directionButtons = null, plannedMove = null;
+    // Autoplay uses the same legal choices as a child, and waits through sowing and Tèo's turn.
+    api.plan(() => {
+      if (!choosing) return null;
+      if (!plannedMove) {
+        const opts = [];
+        for (let i = turn ? 7 : 1; i <= (turn ? 11 : 5); i++) if (st.seeds[i]) for (const d of [1, -1]) {
+          const result = simulate(st, i, d); opts.push({ i, d, gain: result.s.score[turn] - st.score[turn] });
+        }
+        plannedMove = opts.sort((a, b) => b.gain - a.gain)[0];
+      }
+      if (!plannedMove) return null;
+      if (!directionButtons) return cells[plannedMove.i];
+      const right = turn === 0 ? plannedMove.d === 1 : plannedMove.d === -1;
+      return directionButtons.querySelector(`[data-d=${right ? 'r' : 'l'}]`);
+    }, { maxActions: 200 });
     const over = () => !st.big[0] && !st.big[6] && st.seeds[0] === 0 && st.seeds[6] === 0;
     while (!over()) {
       const range = turn === 0 ? [1, 2, 3, 4, 5] : [7, 8, 9, 10, 11];
@@ -94,15 +110,16 @@ register({
       } else {
         api.show(`${names[turn]}: pick a square`, `${names[turn]}: chọn một ô`);
         if (api.two) sayIn(settings.lang, T(`${names[turn]}'s turn`, `Đến lượt ${names[turn]}`));
-        let from, dir;
+        let from, dir; choosing = true; plannedMove = null;
         for (;;) {
-          const c = await tapOne(range.map(i => cells[i]).filter(c => st.seeds[c._i] > 0)); if (api.closed) return;
+          const c = await tapOne(range.map(i => cells[i]).filter(c => st.seeds[c._i] > 0), api); if (api.closed) return;
           from = c._i;
-          const arrows = el('div', 'oaq-arrows', `<button data-d="l">⬅️</button><button data-d="r">➡️</button>`); c.appendChild(arrows);
-          const b = await tapOne([...arrows.querySelectorAll('button'), ...range.map(i => cells[i]).filter(x => x !== c)]);
-          arrows.remove(); if (api.closed) return;
+          const arrows = el('div', 'oaq-arrows', `<button data-d="l">⬅️</button><button data-d="r">➡️</button>`); c.appendChild(arrows); directionButtons = arrows;
+          const b = await tapOne([...arrows.querySelectorAll('button'), ...range.map(i => cells[i]).filter(x => x !== c && st.seeds[x._i] > 0)], api);
+          arrows.remove(); directionButtons = null; if (api.closed) return;
           if (b.dataset && b.dataset.d) { const right = b.dataset.d === 'r'; dir = turn === 0 ? (right ? 1 : -1) : (right ? -1 : 1); break; }
         }
+        choosing = false; plannedMove = null;
         await play(from, dir);
       }
       turn = 1 - turn; await wait(300);
