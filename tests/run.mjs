@@ -106,14 +106,17 @@ await check('lighterload', async () => {
     ok(await P.page.evaluate(async () => !!(await import('/js/custom.js')).customQuiz().length || !(await import('/js/games/frame.js')).GAMES.familyquiz), 'Family Quiz appeared with no family questions');
     await P.page.waitForFunction(async () => !!(await import('/js/voice.js')).voicePack(), null, { timeout: 20000 });
     ok(got.some(s => s.endsWith('/voices/manifest-en.json')) && !got.some(s => /\/voices\/manifest(?:-(?:vi|hi|zh))?\.json$/.test(s)), 'English-only device fetched another index');
-    await P.page.evaluate(async () => {
+    const closed = await P.page.evaluate(async () => {
       const F = await import('/js/games/frame.js');
       window.__lazyGame = F.openGame('pattern', { players: [__sv.heroes[0].profile] });
-      document.querySelector('.gl-x').click();
+      const layer = document.querySelector('.gl:not(.out)'), stage = layer.querySelector('.gl-stage');
+      layer.querySelector('.gl-x').click();
       await window.__lazyGame;
+      await F.GAMES.pattern.load();
+      return { open: F.gameOpen(), children: stage.children.length, active: document.querySelectorAll('.gl:not(.out)').length };
     });
-    await P.page.waitForTimeout(1200);
-    ok(!(await P.page.$('.gl')), 'closed game restarted when its delayed implementation arrived');
+    ok(!closed.open && !closed.children && !closed.active, 'closed game ran after its delayed implementation arrived: ' + JSON.stringify(closed));
+    await P.page.waitForSelector('.gl', { state: 'detached' });
     await P.page.evaluate(async () => { const F = await import('/js/games/frame.js'); window.__lazyGame = F.openGame('pattern', { players: [__sv.heroes[0].profile] }); });
     await P.page.waitForFunction(() => document.querySelector('.gl-stage')?.children.length > 0);
     await P.page.click('.gl-x'); await P.page.waitForTimeout(350);
