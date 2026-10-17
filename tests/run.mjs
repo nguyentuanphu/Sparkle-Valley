@@ -5285,7 +5285,7 @@ await check('startup', async () => {
     for (const [k, B] of Object.entries(base)) { if (k.startsWith('/') || B.max === undefined) continue; const lim = k.endsWith('KB') ? B.max * 1.03 : B.max * speed * 1.25; if (!(got[k] <= lim)) over.push(`${B.rule} ${k} ${got[k]} > ${k.endsWith('KB') ? B.max : `${B.max} x ${speed.toFixed(2)} (machine speed) = ${Math.round(B.max * speed)}`}`); }
     // the slowest building steps on the second start, for the report (G.bootTimes: ms since the game's code began)
     const st = Object.entries(second.steps).filter(([k]) => k !== 'start').sort((x, y) => x[1] - y[1]), slow = st.map(([k, v], i) => [k, v - (i ? st[i - 1][1] : 0)]).sort((x, y) => y[1] - x[1]).slice(0, 4).map(([k, v]) => `${k} ${(v / 1000).toFixed(1)} s`);
-    ok(!over.length && !errs.length, JSON.stringify({ over, got, machineMs: Math.round(machineMs), speed: +speed.toFixed(2), errs }));
+    ok(!over.length && !errs.length, JSON.stringify({ over, got, machineMs: Math.round(machineMs), speed: +speed.toFixed(2), slowest: slow, firstSteps: first.steps, secondSteps: second.steps, errs }));
     return `machine ${Math.round(machineMs)} ms (x${speed.toFixed(2)} of the reference); tablet speed: first start ${first.kb} KB, title ${(first.title / 1000).toFixed(1)} s, valley ready ${(first.ready / 1000).toFixed(1)} s; second start ${second.kb} KB from the network, ready ${(second.ready / 1000).toFixed(1)} s, longest freeze ${(second.freeze / 1000).toFixed(1)} s; slowest steps ${slow.join(', ')}`;
   } finally { S.close(); }
 });

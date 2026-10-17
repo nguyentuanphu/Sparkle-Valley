@@ -78,10 +78,13 @@ export function createHeritage(G, { give, sfx, say, toast }) {
   const free = (x, z, r) => [APOSTLES, ...Object.values(FESTGROUNDS)].every(f => dist2(f.x, f.z, x, z) > 17 + r) && LEAFIES.every(l => dist2(l.x, l.z, x, z) > r + 4) && signs.every(q => dist2(q.x, q.z, x, z) > r + 3) && world.colliders.every(c => dist2(c.x, c.z, x, z) > c.r + r) && world.boxes.every(b => x < b.x0 - r || x > b.x1 + r || z < b.z0 - r || z > b.z1 + r);
   function spot(x, z, r, water = false, ok = null, wide = false) {
     for (let k = 0; k < (wide ? 1200 : 400); k++) {
+      // (17 Oct AEDT, PERF-001) the same tests as before, cheapest first, each only when the ones before it passed (none of
+      // them changes anything, so the first spot that passes them all is the same one)
       const a = k * 2.399, d = Math.sqrt(k) * 2.2, px = x + Math.cos(a) * d, pz = z + Math.sin(a) * d, h = oldHeightAt(px, pz);
-      const slope = Math.abs(oldHeightAt(px + r * .6, pz) - oldHeightAt(px - r * .6, pz)) + Math.abs(oldHeightAt(px, pz + r * .6) - oldHeightAt(px, pz - r * .6));
-      const rd = roadDist(px, pz); // never on a road
-      if ((water || h > WATER + 1.2) && h < 26 && slope < (water ? 99 : 3.5) && free(px, pz, r) && (water || rd.d > rd.road.w / 2 + Math.min(r, 7) + .5) && (!ok || ok(px, pz))) return [px, pz];
+      if (!((water || h > WATER + 1.2) && h < 26)) continue;
+      if (!(Math.abs(oldHeightAt(px + r * .6, pz) - oldHeightAt(px - r * .6, pz)) + Math.abs(oldHeightAt(px, pz + r * .6) - oldHeightAt(px, pz - r * .6)) < (water ? 99 : 3.5))) continue;
+      if (!water) { const rd = roadDist(px, pz); if (!(rd.d > rd.road.w / 2 + Math.min(r, 7) + .5)) continue; } // never on a road
+      if (free(px, pz, r) && (!ok || ok(px, pz))) return [px, pz];
     }
     // nothing clear close by (a crowded corner such as India Village): look further out with a little less room before
     // falling back to the spot on the plan (round R: Hampi fell back and its sign stood on another landmark)
