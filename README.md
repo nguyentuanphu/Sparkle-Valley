@@ -1,6 +1,6 @@
 # Sparkle Studio for Windows
 
-`SparkleStudio.exe` r73, built from `1986bdcc` with `bash tools/publish-exe.sh`.
+`SparkleStudio.exe` r81, built from `07d8204b` with `bash tools/publish-exe.sh`.
 
 - An exe that has the updater (from r63 on) finds this one by itself: a banner "Update now", or Settings, "Check for updates".
 - To download it by hand: open `SparkleStudio.exe` above and press "Download raw file". Put it in the game folder and double-click.
