@@ -1187,7 +1187,7 @@ function friendNote(f, st) {
 setInterval(() => G.autoMeet(), 12000);
 // what my friends see about me (only when sharing is switched on): (round R privacy, 9 Oct) everyone with my friend code
 // sees only "playing now"; my name, the place I am in and my room go locked to each saved friend whose key I have (net.js)
-G.shareStatus = () => { const h = G.heroes[0]; if (!h || !settings.online || !settings.friendsOn) return; Net.friendsShare({ name: h.profile.name, at: G.regionOf[0] || '', room: Net.role && !Net.knocking ? Net.code : null, players: Net.role ? Net.count : 0, host: Net.role === 'host' }); };
+G.shareStatus = () => { const h = G.heroes[0]; if (!h || !settings.online || !settings.friendsOn) return; Net.friendsShare({ map: Net.mapVersion, name: h.profile.name, at: G.regionOf[0] || '', room: Net.role && !Net.knocking ? Net.code : null, players: Net.role ? Net.count : 0, host: Net.role === 'host' }); };
 setInterval(() => { if (playing) G.shareStatus(); }, 45000);
 // signal bars: ▂▄▆█ with the strong ones lit
 G.netQuality = id => Net.quality(id);

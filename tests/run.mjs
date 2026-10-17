@@ -3001,11 +3001,13 @@ await check('roadtone', async () => {
     const M = await import('/js/content/map.js'), { THREE } = await import('/js/gfx.js'), mid = id => { const R = M.ROADS.find(r => r.id === id), [a, c] = R.pts; return [(a[0] + c[0]) / 2, (a[1] + c[1]) / 2]; };
     const at = ([x, z], px, py) => { let got = null; __sv.scene.traverse(o => { if (got || !o.userData.road || !o.material || !o.material.map) return; o.geometry.computeBoundingBox(); const bb = o.geometry.boundingBox;
       if (x > bb.min.x && x < bb.max.x && z > bb.min.z && z < bb.max.z) { const im = o.material.map.image, g = im.getContext('2d'); got = [...g.getImageData(px, py, 1, 1).data].slice(0, 3); } }); return got; };
-    return { vnDash: at(mid('vn_north'), 31, 60), auKerb: at(mid('link_au'), 1, 60), auMid: at(mid('link_au'), 20, 60) };
+    return { vnDash: at(mid('vn_north'), 31, 60), auKerb: at(mid('link_au'), 1, 60), auMid: at(mid('link_au'), 20, 60), vnMid: at(mid('vn_north'), 20, 60), vnKerb: at(mid('vn_north'), 0, 60) };
   });
   const errs = P.errors; await P.ctx.close();
   { const [r, g, bl] = mark.vnDash || [0, 0, 0]; ok(r > 200 && g > 150 && bl < 120, `Vietnam's road has no yellow centre dash: rgb ${mark.vnDash}`); }
   { const k = mark.auKerb || [0, 0, 0], m = mark.auMid || [0, 0, 0]; ok(k[0] > 180 && k[0] > m[0] + 40, `Australia's road has no concrete kerb: kerb rgb ${k}, road rgb ${m}`); }
+  ok(mark.auMid && mark.vnMid && mark.auMid[0] + 12 < mark.vnMid[0], `Concept D: Australian asphalt should be darker than Vietnam's: ${JSON.stringify(mark)}`);
+  ok(mark.vnKerb && mark.vnKerb[0] > 180, `Vietnam's road needs a stone kerb: ${mark.vnKerb}`);
   const tones = new Set(M.ROADS.filter(R => R.kind === 'asphalt').map(R => M.ROAD_TONES[R.tone] || 'grey'));
   ok(!bad.length, bad.join('; '));
   ok(mats <= tones.size + 2, `${mats} road materials for ${tones.size} asphalt colours (one each, plus dirt and footpath)`);
@@ -4386,6 +4388,18 @@ await check('friendstab', async () => {
   const P = await open(b, { w: 390, h: 760, touch: true, settings: { online: true } }); await clear(P.page);
   const r = await P.page.evaluate(async () => {
     const G = __sv, wait = ms => new Promise(r => setTimeout(r, ms)), N = (await import('/js/net.js')).Net, S = await import('/js/state.js');
+    let status; const share = N.friendsShare; S.settings.friendsOn = true;
+    N.friendsShare = value => { status = value; }; G.shareStatus(); N.friendsShare = share;
+    const sharedMap = status?.map === N.mapVersion;
+    const oldFriends = S.settings.friends;
+    S.settings.friends = [{ code: 'TEST01', name: 'Map friend' }];
+    N.friends.status.TEST01 = { online: true, room: '123456', map: 'different-map', seen: Date.now() };
+    const body = document.createElement('div'); document.body.appendChild(body);
+    G.drawOnlinePanel(body, () => {});
+    const mismatch = !body.querySelector('[data-joinf]') && !!body.querySelector('[data-mapdiff]');
+    N.friends.status.TEST01.map = N.mapVersion; G.drawOnlinePanel(body, () => {});
+    const same = !!body.querySelector('[data-joinf]') && !body.querySelector('[data-mapdiff]');
+    body.remove(); delete N.friends.status.TEST01; S.settings.friends = oldFriends;
     G.openPad(0, 'friend'); await wait(700);
     const d = document.querySelector('.modal.pad details.friends'); if (!d) return { noBox: true };
     d.querySelector('summary').click(); await wait(200); const foldedSaved = S.settings.friendsFold === true && !d.open;
@@ -4401,10 +4415,10 @@ await check('friendstab', async () => {
     // a game starting
     G.openPad(0, 'friend'); await wait(500); G.closePadNow(); const closedOnStart = !document.querySelector('.modal.pad') && !G.paused;
     S.settings.friendsFold = false;
-    return { foldedSaved, stillFolded, closedOnJoin, closedOnStart, together };
+    return { sharedMap, mismatch, same, foldedSaved, stillFolded, closedOnJoin, closedOnStart, together };
   });
   const errs = P.errors; await P.ctx.close();
-  ok(!r.noBox && r.foldedSaved && r.stillFolded && r.closedOnJoin && r.closedOnStart && r.together.made && r.together.raceN > 20 && r.together.invited && !errs.length, JSON.stringify(Object.assign(r, { errs })));
+  ok(r.sharedMap && r.mismatch && r.same && !r.noBox && r.foldedSaved && r.stillFolded && r.closedOnJoin && r.closedOnStart && r.together.made && r.together.raceN > 20 && r.together.invited && !errs.length, JSON.stringify(Object.assign(r, { errs })));
   return '"My friends" folds and stays folded; a friend coming into the room closes the Friends page; a game starting closes it; Play together lists the games for friends (Tiến Lên miền Bắc too) and every game to race side by side';
 });
 
@@ -6963,6 +6977,64 @@ await check('offscreenpanels', async () => {
   }
   ok(!bad.length, bad.join(' · '));
   return `Grown-ups, Settings, Play and the Pad on 5 screens (phone to computer): every button can be reached`;
+});
+
+
+
+await check('reportburst', async () => {
+  // A single detector scan must not clone the entire interface once for every reported button.
+  const ctx = await b.newContext(), pg = await ctx.newPage();
+  await ctx.route('**/report-burst-fixture', r => r.fulfill({ contentType: 'text/html', body: '<!doctype html><body></body>' }));
+  await pg.goto(new globalThis.URL('report-burst-fixture', URL).href);
+  const result = await pg.evaluate(async () => {
+    document.body.innerHTML = '<div class="modal"><h2>Report burst</h2>' + Array.from({ length: 20 }, (_, i) => `<button>Button ${i}</button>`).join('') + '</div>';
+    localStorage.setItem('sv2_tester', JSON.stringify({ at: Date.now() }));
+    Object.defineProperty(navigator, 'onLine', { get: () => false, configurable: true });
+    let encodes = 0; const original = HTMLCanvasElement.prototype.toDataURL;
+    HTMLCanvasElement.prototype.toDataURL = function (...args) { encodes++; return original.apply(this, args); };
+    const T = await import('/js/tester.js'), G = { heroes: [], regionOf: [], huds: [], paused: true };
+    T.mountTester(G, 'auto');
+    const from = performance.now();
+    const reports = Array.from({ length: 12 }, (_, i) => T.autoReport('offscreen', `burst ${i}`, { area: 'test', window: 'fixture', game: '', x: 0, z: 0 }));
+    // A duplicate arriving before the picture is ready also shares the original report.
+    reports.push(T.autoReport('offscreen', 'burst 0', { area: 'test', window: 'fixture', game: '', x: 0, z: 0 }));
+    const ids = await Promise.all(reports), rows = JSON.parse(localStorage.getItem('sv2_tester_out') || '[]');
+    const firstEncodes = encodes;
+    await T.autoReport('offscreen', 'later', { area: 'test', window: 'fixture', game: '', x: 0, z: 0 });
+    G.tester.unmount(); HTMLCanvasElement.prototype.toDataURL = original;
+    return { firstEncodes, laterEncodes: encodes - firstEncodes, rows: rows.length, duplicate: ids[0] === ids[12], details: new Set(rows.map(r => r.detail)).size,
+      pictures: new Set(rows.map(r => r.shot)).size, jpeg: rows.every(r => r.shot?.startsWith('data:image/jpeg;base64,')), ms: Math.round(performance.now() - from) };
+  });
+  await ctx.close();
+  ok(result.firstEncodes <= 3 && result.laterEncodes > 0 && result.rows === 12 && result.details === 12 && result.duplicate && result.pictures === 1 && result.jpeg, JSON.stringify(result));
+  return `12 distinct reports and one duplicate share one capture (${result.firstEncodes} encodes); a later event gets a fresh capture; ${result.ms} ms`;
+});
+
+await check('oanquanrules', async () => {
+  const ctx = await b.newContext(), pg = await ctx.newPage();
+  await ctx.route('**/oanquan-fixture', r => r.fulfill({ contentType: 'text/html', body: '<!doctype html><body><div id="stage"></div></body>' }));
+  await pg.goto(new globalThis.URL('oanquan-fixture', URL).href);
+  const result = await pg.evaluate(async () => {
+    await import('/js/games/vietnam.js'); const { GAMES } = await import('/js/games/frame.js');
+    const stage = document.querySelector('#stage'), cleanups = [], timer = window.setTimeout;
+    // This is a legal-turn test; accelerate only its presentation waits. Performance uses normal speed separately.
+    window.setTimeout = (f, ms, ...a) => timer(f, Math.min(ms, 2), ...a);
+    let plan, won = false, taps = 0, busy = 0;
+    const api = { stage, players: [{ name: 'Test one' }, { name: 'Test two' }], two: true, little: false, strong: true,
+      closed: false, sfx: { tap() {}, pop() {}, coin() {} }, say() {}, show() {}, plan(f) { plan = f; },
+      onCleanup(f) { cleanups.push(f); }, win() { won = true; } };
+    const game = GAMES.oanquan.run(api);
+    for (let tick = 0; tick < 30000 && !won; tick++) {
+      const target = plan?.();
+      if (target) { if (!target.isConnected) throw Error('plan returned a detached control'); target.click(); taps++; }
+      else busy++;
+      await new Promise(r => timer(r, 1));
+    }
+    api.closed = true; cleanups.forEach(f => f()); await game; window.setTimeout = timer;
+    return { won, taps, busy };
+  });
+  await ctx.close(); ok(result.won && result.taps > 4 && result.busy > 0, JSON.stringify(result));
+  return `a two-player game finishes through ${result.taps} legal square/direction taps; autoplay waits while seeds move`;
 });
 
 await b.close();
