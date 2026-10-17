@@ -8,7 +8,7 @@ function splitManifest(man) {
     const lines = Object.fromEntries(Object.entries(man.lines || {}).filter(([h]) => (man.langOf?.[h] || language.get(h) || 'en') === lang));
     const shard = { version: man.version, engine: man.engine, model: man.model, made: man.made, language: lang,
       cast: { [lang]: man.cast?.[lang] || [] }, voices: { [lang]: man.voices?.[lang] || {} }, lines,
-      other: lang === 'en' ? {} : { [lang]: Object.keys(lines).join(' ') }, tpl: { [lang]: man.tpl?.[lang] || [] }, areas: man.areas };
+      tpl: { [lang]: man.tpl?.[lang] || [] }, areas: man.areas };
     // Recording dates and other languages changing must not invalidate this language's saved-pack marker.
     shard.signature = createHash('sha256').update(JSON.stringify({ lines, tpl: shard.tpl, cast: shard.cast, voices: shard.voices })).digest('hex');
     out[lang] = shard;
