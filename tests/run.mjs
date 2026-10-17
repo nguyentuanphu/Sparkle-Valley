@@ -4103,6 +4103,25 @@ await check('ownertransportpov', async () => {
   return JSON.stringify(rows);
 });
 
+await check('autoplaycover', async () => {
+  // (#337-#349, r82) auto play reports a button with something else on top of it, but not the tester's own report window
+  // or ladybird: a tester filing a report while auto play ran made 13 reports of "a button covered" by that window
+  const P = await open(b, { w: 1024, h: 768, pre: `try { localStorage.setItem('sv2_playerid', 'apcheck00001'); localStorage.setItem('sv2_live', JSON.stringify({ releases: { autoplay: { on: true, devices: ['apcheck00001'] } }, festivals: {} })); } catch (e) { }` });
+  await P.page.waitForFunction(() => window.__sv && __sv.autoplay && __sv.autoplay.tapFor, null, { timeout: 20000 }); await clear(P.page);
+  const r = await P.page.evaluate(async () => {
+    const out = {};
+    for (const [key, cls] of [['plain', 'zzcover'], ['tester', 'modal tpanel'], ['ladybird', 'z-lb']]) {
+      const btn = document.createElement('button'); btn.textContent = 'Try me'; btn.style.cssText = 'position:fixed;left:300px;top:300px;width:120px;height:60px;z-index:10';
+      const lid = document.createElement('div'); lid.className = cls; lid.style.cssText = 'position:fixed;left:250px;top:250px;width:240px;height:160px;z-index:20;background:#eee';
+      document.body.append(btn, lid); const notes = []; await __sv.autoplay.tapFor(btn, n => notes.push(n)); out[key] = notes.filter(n => /covered|bị che/.test(n)).length; btn.remove(); lid.remove();
+    }
+    return out;
+  });
+  const errs = P.errors; await P.ctx.close();
+  ok(r.plain === 1 && r.tester === 0 && r.ladybird === 0 && !errs.length, JSON.stringify({ r, errs }));
+  return 'a button under something else is reported; under the tester\'s own report window or ladybird it is not';
+});
+
 await check('ownerautoplaytransport', async () => {
   const P=await open(b,{w:900,h:640}); await clear(P.page);
   await P.page.evaluate(()=>{const G=__sv,h=G.heroes[0],i=G.interactables.find(i=>/^ride_/.test(i.id)&&G.traffic.slots[+i.id.slice(5)].id==='bus');h.place(i.x+2,i.z);window.__board=i.act(h,G).then(()=>{G.paused=true;});});
