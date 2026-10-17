@@ -192,6 +192,30 @@ export const SFX = {
   tower() { tone(110, 2.2, { to: 330, type: 'sawtooth', vol: .07, filter: 'lowpass', ff: 900 }); [76, 79, 83, 88].forEach((m, i) => tone(midi(m), 1.2, { at: .8 + i * .15, vol: .08, type: 'triangle' })); },
   travel() { [88, 84, 79, 76, 72].forEach((m, i) => tone(midi(m), .3, { at: i * .05, vol: .07 })); noise(.8, { freq: 3000, vol: .06 }); }
 };
+// (owner, 17 Oct AEDT: "need real voice for animals") real recordings of the ten animals children are asked to tell apart
+// (sounds/animals/, credits in js/credits.js): once a recording is loaded the animal's sound plays it, everywhere it is
+// heard (the listening game, the sticker book, the animals in the valley); the drawn-out tone above stays as the fallback
+// (before the file has arrived, or a browser that cannot decode it)
+const ANIMAL_REC = { moo: 'cow', baa: 'sheep', oink: 'pig', woof: 'dog', meow: 'cat', quack: 'duck', cluck: 'hen', neigh: 'horse', ribbit: 'frog', hoot: 'owl' };
+const recBuf = {}, recTry = {};
+function recOf(name) {
+  if (recBuf[name]) return recBuf[name];
+  const a = ac(); if (!a || recTry[name]) return null;
+  recTry[name] = fetch(`sounds/animals/${ANIMAL_REC[name]}.mp3`).then(r => r.ok ? r.arrayBuffer() : Promise.reject(new Error(String(r.status))))
+    .then(b => new Promise((res, rej) => a.decodeAudioData(b, res, rej))).then(buf => { recBuf[name] = buf; }).catch(() => { recTry[name] = null; });
+  return null;
+}
+// every recording loaded (the listening game waits for this, up to a few seconds, before its first round)
+export const loadAnimalCalls = (ms = 4000) => Promise.race([Promise.all(Object.keys(ANIMAL_REC).map(n => (recOf(n), recTry[n] || null))), new Promise(r => setTimeout(r, ms))]);
+export const animalRecording = name => recBuf[name] || null;
+for (const name of Object.keys(ANIMAL_REC)) {
+  const drawn = SFX[name];
+  SFX[name] = () => {
+    if (!settings.sound) return;
+    const a = ac(), buf = recOf(name); if (!buf || !a || !sfxBus) return drawn();
+    const src = a.createBufferSource(), g = a.createGain(); g.gain.value = .9; src.buffer = buf; src.connect(g); g.connect(sfxBus); src.start();
+  };
+}
 
 // ---------- music ----------
 // Each place has its own mood. The field theme is sparse piano like a quiet morning;
@@ -354,8 +378,11 @@ export const Music = {
 const CALL_LEN = { moo: 1.1, quack: .35, woof: .35, meow: .75, baa: .75, oink: .45, cluck: .75, neigh: .8, ribbit: .32, hoot: .65 };
 export function animalCall(name, sec = 2) {
   const f = SFX[name], a = ac(); if (!f) return;
+  // a real recording is one whole call (1 to 3 s): played once, the music dipped for as long as it lasts
+  const rec = animalRecording(name); if (rec) sec = Math.max(sec, rec.duration);
   Music.duck(sec + .3);
   if (a && sfxBus) { const g = sfxBus.gain, now = a.currentTime; g.cancelScheduledValues(now); g.setValueAtTime(1.6, now); g.setValueAtTime(1.6, now + sec + .2); g.linearRampToValueAtTime(.7, now + sec + .5); }
   const gap = (CALL_LEN[name] || .8) + .3;
+  if (rec) { f(); return; }
   for (let t = 0; t < sec - .1; t += gap) setTimeout(() => f(), t * 1000);
 }
