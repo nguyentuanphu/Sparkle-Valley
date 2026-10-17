@@ -41,13 +41,15 @@ try {
   // (the map of r56 on: Lotus Village at [204, -42], Hà Nội [153, -135] with Hồ Gươm 29 m west, Sydney [-132, -4] on its
   // harbour, Hội An [170, 90] with Chùa Cầu over the canal to the north)
   const CINE = [['cine-village', [204, -30], Math.PI, [213, -16, 8], [203, -46, 3]], ['cine-hanoi', [130, -122], Math.PI, [138, -110, 8], [125, -133, 2]],
-    ['cine-hanoi2', [153, -120], Math.PI, [161, -106, 9], [152, -140, 4]],
-    ['cine-sydney', [-128, 10], Math.PI, [-118, 22, 10], [-132, -6, 5]], ['cine-hoian', [170, 92], Math.PI, [178, 102, 7], [170, 72, 2]]].filter(([n]) => want(n));
+    ['cine-sydney', [-90, 32], Math.PI, [-84, 42, 9], [-98, 18, 4]], ['cine-hoian', [170, 92], Math.PI, [178, 102, 7], [170, 72, 2]]].filter(([n]) => want(n));
   if (CINE.length) { const P = await game(); for (const [n, hero, yaw, cam, look] of CINE) { try { await T(scene(P.page, n, hero, yaw, cam, look), 60000); } catch (e) { console.log('skip', n, e.message.slice(0, 100)); } } await P.ctx.close(); }
   // the live family message as it arrives
-  if (want('message')) { const P = await game();
-    let ok = false; for (let i = 0; i < 40 && !ok; i++) { ok = await P.page.evaluate(() => { const ds = [...document.querySelectorAll('.dialog')], m = ds.find(d => /Mum|Mẹ thương/.test(d.textContent)); if (m) return true; ds.forEach(d => d.remove()); __sv.paused = false; return false; }); if (!ok) await P.page.waitForTimeout(1000); }
-    await P.page.waitForTimeout(250); await shot(P.page, 'message'); await P.ctx.close(); }
+  // (opened without clear(): it would close the family message too)
+  if (want('message')) { const P = await open(b, { w: W, h: H, dpr: DPR, lang, touch: true, fast: false, settings: { quality: 'high', alwaysDay: true, captions: false, familyMsgDay: null }, route: async ctx => { await ctx.route('**/api/live**', r => r.fulfill({ contentType: 'application/json', body: JSON.stringify({ ...LIVE, content: { message: LIVE.content.message } }) })); } });
+    await P.page.waitForFunction(() => window.__sv && __sv.heroes && __sv.heroes.length, null, { timeout: 90000 }).catch(() => { });
+    await P.page.evaluate(() => { window.__sv.renderer.setPixelRatio(3); dispatchEvent(new Event('resize')); }); await P.page.addStyleTag({ content: '.htoast { display: none !important; }' });
+    let ok = false; for (let i = 0; i < 40 && !ok; i++) { ok = await P.page.evaluate(() => { const ds = [...document.querySelectorAll('.dialog')], m = ds.find(d => !d.classList.contains('out') && /Mum|Mẹ thương/.test(d.textContent)); if (m) return true; ds.forEach(d => d.remove()); __sv.paused = false; return false; }); if (!ok) await P.page.waitForTimeout(1000); }
+    await P.page.waitForTimeout(900); await shot(P.page, 'message'); await P.ctx.close(); }
   // screens opened in the game
   const S = [
     ['hub', 'window.__sv.openGamesHub(0)'], ['map', "window.__sv.openPad(0, 'map')"], ['friends', "window.__sv.openPad(0, 'friend')"], ['wardrobe', 'window.__sv.openWardrobe(0)'],
@@ -59,13 +61,13 @@ try {
     ['game-oanquan', "window.__sv.playGame(0, 'oanquan', 'replay')"],
     ['game-reading', "(async () => { await import('/js/games/readingmenu.js'); window.__sv.playGame(0, 'rd_trace', 'replay'); })()"],
     ['festivals', "(async () => (await import('/js/ui.js')).openFestivals(window.__sv, 0))()"],
-    ['grownups', "(async () => { (await import('/js/ui.js')).openGrownups(); await new Promise(r => setTimeout(r, 1500)); const e = [...document.querySelectorAll('.modal h3, .modal summary, .modal label, .modal b')].find(x => /bedtime|giờ đi ngủ|rest|nghỉ/i.test(x.textContent)); if (e) e.scrollIntoView({ block: 'start' }); })()"],
+    ['grownups', "(async () => { (await import('/js/ui.js')).openGrownups(); await new Promise(r => setTimeout(r, 1500)); const g = document.querySelector('.modal details[data-sec=\"time\"]'); if (g) { g.open = true; g.scrollIntoView({ block: 'start' }); } })()"],
     ['grownups-missions', "(async () => { (await import('/js/ui.js')).openGrownups(); await new Promise(r => setTimeout(r, 1500)); const g = [...document.querySelectorAll('.modal details')].find(d => d.querySelector('[data-fmready]')); if (g) { g.open = true; (g.querySelector('[data-fmready]') || g).scrollIntoView({ block: 'center' }); } })()"],
     ['dialog', "window.__sv.dialog('Ông Cú', [['Hoo hoo! One lantern flew away. Will you help me find it?', 'Hú hú! Một chiếc đèn lồng bay mất rồi. Cháu giúp ông tìm nhé?']], [['▶ Yes!', '▶ Có!'], ['👋 Later', '👋 Để sau']])"]
   ].filter(([n]) => want(n));
   if (S.length) { const P = await game();
     for (const [name, js] of S) {
-      try { await clean(P.page); await P.page.waitForTimeout(500); await T(P.page.evaluate(`${js}; 1`), 15000); await P.page.waitForSelector('.modal, .hub, .pad, .theatre, .gl, .dialog:not(.out), .wardrobe', { timeout: 45000 }); await P.page.waitForTimeout(3500); await quiet(P.page); await shot(P.page, name); }
+      try { await clean(P.page); await P.page.waitForTimeout(500); await T(P.page.evaluate(`document.querySelectorAll('.dialog').forEach(e => e.remove()); __sv.paused = false; ${js}; 1`), 15000); await P.page.waitForSelector('.modal, .hub, .pad, .theatre, .gl, .dialog:not(.out), .wardrobe', { timeout: 45000 }); await P.page.waitForTimeout(3500); await quiet(P.page); if (name !== 'dialog') await P.page.evaluate(() => document.querySelectorAll('.dialog').forEach(e => e.remove())); await shot(P.page, name); }
       catch (e) { console.log('skip', name, e.message.slice(0, 100)); }
       try { await P.page.evaluate(() => { const x = document.querySelector('.gl .gl-x, .theatre .th-x, .x'); if (x) x.click(); }); await P.page.waitForTimeout(1500); await T(tidy(P.page), 10000); } catch (e) { }
     }
@@ -82,7 +84,7 @@ try {
     try { const ctx = await b.newContext({ viewport: { width: W, height: H }, deviceScaleFactor: DPR, hasTouch: true, isMobile: true }), pg = await ctx.newPage();
       await pg.addInitScript(l => localStorage.setItem('studioLang', l), lang);
       await pg.goto(site + '/studio'); await pg.fill('#pw', password); await pg.click('#si button'); await pg.waitForSelector('#tabs button');
-      for (const [n, h] of [['studio-missions', 'family/missions'], ['studio-message', 'family/message']].filter(([n]) => want(n))) { await pg.evaluate(h2 => { location.hash = h2; }, h); await pg.waitForTimeout(2500); await pg.evaluate(() => window.scrollTo(0, 0)); await shot(pg, n); }
+      for (const [n, h] of [['studio-missions', 'family/missions'], ['studio-message', 'family/message']].filter(([n]) => want(n))) { await pg.evaluate(h2 => { location.hash = h2; }, h); await pg.waitForTimeout(2500); await pg.evaluate(() => { const m = [...document.querySelectorAll('#page *')].find(x => x.children.length < 3 && /Water the plants|Tưới cây/.test(x.textContent)), e = m || document.querySelector('#page #en'); if (e) e.scrollIntoView({ block: 'center' }); }); await pg.waitForTimeout(400); await shot(pg, n); }
       await ctx.close(); } finally { unroute(); server.close(); }
   }
 } finally { await b.close(); }
