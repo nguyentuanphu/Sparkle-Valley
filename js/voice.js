@@ -129,9 +129,9 @@ async function speak(en, vi) {
 async function speakNow(en, vi) {
   en = swapNames(en, 'en'); vi = swapNames(vi, 'vi');
   const my = ++seq;
-  await waitPack(); if (my !== seq) return;
   try { speechSynthesis.cancel(); } catch (e) { }
   stopPlayback();
+  await waitPack(); if (my !== seq) return;
   // a family recording of exactly this line wins over any other voice
   if (settings.familyVoice) {
     const ph = FAMILY_PHRASES.find(p => p.en === en || p.vi === vi);
