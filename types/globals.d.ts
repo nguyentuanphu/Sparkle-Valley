@@ -10,8 +10,8 @@ declare global {
    *  (the whole shared game object gets its own type later in the TypeScript plan) */
   type SvHero = { profile: import('../js/state.js').Profile };
   type SvThing = { id?: string, x: number, z: number, act(hero: SvHero, game: SvGame): Promise<unknown> | void };
-  type SvGame = { heroes: SvHero[], interactables: SvThing[], paused: boolean, renderer: { setPixelRatio(ratio: number): void },
-    playGame(player: number, id: string, how: string): void, openPad(player: number, tab: string): void, _owlAuto?: boolean,
+  type SvGame = { heroes: SvHero[], interactables: SvThing[], paused?: boolean, renderer?: { setPixelRatio(ratio: number): void },
+    playGame?(player: number, id: string, how: string): void, openPad?(player: number, tab: string): void, _owlAuto?: boolean,
     bootTimes?: Record<string, number> };
   interface Window {
     /** the game object, for the checks and the tools (js/main.js) */
@@ -28,6 +28,10 @@ declare global {
     SV_PEER?: { host: string, port: number, path: string, secure: boolean };
     /** the checks: the local MQTT brokers to use instead of the public ones (js/relay.ts BROKERS) */
     SV_MQTT?: string[];
+    /** the game's switches from Studio, for js/launch.js's update notice (js/main.ts) */
+    svFeatureOn?: (id: string, def?: boolean) => boolean;
+    /** the start-up bar before the title (js/launch.js) */
+    svLaunchProgress?: (value: number, total: number, label?: string) => void;
     /** older Safari */
     webkitAudioContext?: typeof AudioContext;
   }

@@ -14,7 +14,7 @@ export const ANIMAL_NAMES = [['dog', 'chó'], ['cat', 'mèo'], ['bunny', 'thỏ'
 export const animalSay = code => [...String(code)].map(d => T(...ANIMAL_NAMES[+d])).join(', ');
 // the code as digits with an animal under each one
 export const codeHTML = code => `<div class="rcode"><div class="rdigits" aria-label="${T('Room code', 'Mã phòng')} ${code}">${[...String(code)].map(d => `<span class="rd"><b>${d}</b>${pic(ANIMALS[+d], 'ranimal')}</span>`).join('')}</div></div>`;
-export function bindCode() { } // (nothing to bind since the QR code went)
+export function bindCode(_body?: Element) { } // (nothing to bind since the QR code went)
 // the join pad: numbers, or animal pictures (the choice is remembered on the device)
 export function padHTML(animals) {
   const keys = [1, 2, 3, 4, 5, 6, 7, 8, 9, 'back', 0, 'ok'];
