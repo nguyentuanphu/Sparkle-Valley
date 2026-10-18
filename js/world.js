@@ -131,10 +131,7 @@ ROADS.forEach(R => { R.w = MAP.ROAD_WIDTH[R.kind]; }); // (rule R1: asphalt 6.4 
     else R.pts = fillet(R.pts, rad, R.gates || []); } // (footpaths bend round an 8 m circle: no step turns more than 8°)
   ROADS.forEach((R, k) => joins[k].forEach((O, end) => { if (!O) return; const i = end ? R.pts.length - 1 : 0, q = near(R.pts[i][0], R.pts[i][1], O.pts); if (q.d < 6) R.pts[i] = q.p; }));
 }
-// distance from (x, z) to the nearest road centre line, and that road
-// (each road's bounding box is kept, so roads farther away than the best so far are skipped: same answers, faster)
-const BOX = new Map();
-const boxOf = R => { let b = BOX.get(R); if (!b || b.n !== R.pts.length) { b = { n: R.pts.length, x0: 1e9, x1: -1e9, z0: 1e9, z1: -1e9 }; for (const [px, pz] of R.pts) { b.x0 = Math.min(b.x0, px); b.x1 = Math.max(b.x1, px); b.z0 = Math.min(b.z0, pz); b.z1 = Math.max(b.z1, pz); } BOX.set(R, b); } return b; };
+// distance from (x, z) to the nearest road centre line, and that road (roadDist, below)
 // (Round U, owner 11 Oct: "weeds still grow inside the asphalt road") how far (x, z) is from the edge of the nearest
 // road or paved place street (the market's walking street, Aussie Corner's road, Two Homes Street, every city's main
 // street: js/content/map.js MARKET_ROWS); negative on it. Everything that grows keeps off both.
@@ -145,13 +142,37 @@ export function edgeDist(x, z) {
   for (const S of PLACE_STREETS) { const t = Math.max(0, Math.min(S.len, (x - S.a[0]) * S.dx + (z - S.a[1]) * S.dz)); e = Math.min(e, Math.hypot(x - S.a[0] - S.dx * t, z - S.a[1] - S.dz * t) - S.w / 2); }
   return e;
 }
+// (17 Oct AEDT, PERF-001: start-up called this about 129,000 times, each time over all 362 road pieces, about 6.5 s
+// of a tablet's start) the road pieces sit in a grid of 16 m cells; a call looks at the cells round (x, z), ring by
+// ring outwards, and stops once no farther ring can hold anything nearer. Same answers as looking at every piece:
+// on a tie the earlier road (and piece) in ROADS still wins. The grid is made again if ROADS ever changes.
+const RD_CELL = 16, RD = { sig: [], cells: new Map(), segs: [], i0: 0, i1: -1, j0: 0, j1: -1, q: 0 };
+function rdGrid() {
+  let same = RD.sig.length === ROADS.length;
+  for (let k = 0; same && k < ROADS.length; k++) { const g = RD.sig[k], R = ROADS[k]; same = g.R === R && g.p === R.pts && g.n === R.pts.length; }
+  if (same) return RD;
+  RD.sig = ROADS.map(R => ({ R, p: R.pts, n: R.pts.length })); RD.cells.clear(); RD.segs = []; RD.i0 = RD.j0 = 1e9; RD.i1 = RD.j1 = -1e9;
+  ROADS.forEach(R => { for (let i = 0; i < R.pts.length - 1; i++) {
+    const [ax, az] = R.pts[i], [bx, bz] = R.pts[i + 1], S = { ax, az, bx, bz, R, o: RD.segs.length, q: -1 }; RD.segs.push(S);
+    const gi0 = Math.floor(Math.min(ax, bx) / RD_CELL), gi1 = Math.floor(Math.max(ax, bx) / RD_CELL), gj0 = Math.floor(Math.min(az, bz) / RD_CELL), gj1 = Math.floor(Math.max(az, bz) / RD_CELL);
+    RD.i0 = Math.min(RD.i0, gi0); RD.i1 = Math.max(RD.i1, gi1); RD.j0 = Math.min(RD.j0, gj0); RD.j1 = Math.max(RD.j1, gj1);
+    for (let gi = gi0; gi <= gi1; gi++) for (let gj = gj0; gj <= gj1; gj++) { const key = gi * 4096 + gj, L = RD.cells.get(key); if (L) L.push(S); else RD.cells.set(key, [S]); }
+  } });
+  return RD;
+}
 export function roadDist(x, z) {
-  let best = 1e9, road = null;
-  for (const R of ROADS) { const b = boxOf(R); if (Math.max(b.x0 - x, x - b.x1, 0) ** 2 + Math.max(b.z0 - z, z - b.z1, 0) ** 2 >= best * best) continue;
-  for (let i = 0; i < R.pts.length - 1; i++) {
-    const [ax, az] = R.pts[i], [bx, bz] = R.pts[i + 1], dx = bx - ax, dz = bz - az, t = clamp(((x - ax) * dx + (z - az) * dz) / (dx * dx + dz * dz || 1), 0, 1);
-    const d = Math.hypot(x - ax - dx * t, z - az - dz * t); if (d < best) { best = d; road = R; }
-  } }
+  const G = rdGrid(); let best = 1e9, bo = 1e9, road = null; if (!G.segs.length) return { d: best, road };
+  const q = ++G.q, ci = Math.floor(x / RD_CELL), cj = Math.floor(z / RD_CELL);
+  const look = S => { if (S.q === q) return; S.q = q;
+    const dx = S.bx - S.ax, dz = S.bz - S.az, t = clamp(((x - S.ax) * dx + (z - S.az) * dz) / (dx * dx + dz * dz || 1), 0, 1);
+    const d = Math.hypot(x - S.ax - dx * t, z - S.az - dz * t); if (d < best || (d === best && S.o < bo)) { best = d; bo = S.o; road = S.R; } };
+  // every cell of ring r is at least (r - 1) * RD_CELL away from (x, z); once that passes the best, nothing nearer is left
+  const far = Math.max(ci - G.i0, G.i1 - ci, cj - G.j0, G.j1 - cj);
+  for (let r = 0; r <= far; r++) {
+    if ((r - 1) * RD_CELL > best) break;
+    for (let gi = ci - r; gi <= ci + r; gi++) { const edge = gi === ci - r || gi === ci + r;
+      for (let gj = cj - r; gj <= cj + r; gj += edge ? 1 : 2 * r) { const L = G.cells.get(gi * 4096 + gj); if (L) for (const S of L) look(S); } }
+  }
   return { d: best, road };
 }
 
@@ -170,7 +191,9 @@ export function riverDist(x, z) {
 // middle; and how far (x, z) is from open water (the river's middle line, or the lake's deep middle: 0 inside it)
 export function waterAt(x, z, pad = 6) { if (riverDist(x, z) < pad) return RV_NEAR.id; if (dist2(x, z, LAKE.x, LAKE.z) < LAKE.r * .62) return 'lake'; if (pondDist(x, z) === 0) return PD_NEAR.id; return null; }
 export function waterDist(x, z) { return Math.min(riverDist(x, z), Math.max(0, dist2(x, z, LAKE.x, LAKE.z) - LAKE.r * .62), pondDist(x, z)); }
-const flat = (h, x, z, c, r, fall, target) => lerp(h, target, 1 - smooth(r, r + fall, dist2(x, z, c.x, c.z)));
+// (17 Oct AEDT, PERF-001) a point clearly beyond r + fall is left as it is without working out the distance: the weight
+// there is 0, so the answer is the same to the last bit
+const flat = (h, x, z, c, r, fall, target) => { const R = r + fall, dx = x - c.x, dz = z - c.z; if (dx >= R || dx <= -R || dz >= R || dz <= -R) return h; return lerp(h, target, 1 - smooth(r, R, dist2(x, z, c.x, c.z))); };
 
 // Height of the ground at (x, z). Used for the mesh and for walking, so they always agree.
 // The level ground round every village, town and city reaches WIDE metres further than the places themselves, so
@@ -183,7 +206,7 @@ export function setRoadBeds(segs) { RB_GRID.clear(); for (const S of segs) { con
 export function heightAt(x, z) {
   let h = 5 + fbm(x * .011, z * .011, 4) * 11 + fbm(x * .05 + 3, z * .05, 2) * 1.2;
   const mtn = smooth(MTN.z0, MTN.z1, z);
-  h += mtn * (22 + fbm(x * .018 + 7, z * .018 - 3, 4) * 34);
+  if (mtn) h += mtn * (22 + fbm(x * .018 + 7, z * .018 - 3, 4) * 34); // (no mountains here: nothing to add, so no noise worked out)
   h += smooth(EDGE[0], EDGE[1], Math.max(Math.abs(x), -z)) * 45; // (round T: east, west and north; the south is the coast)
   if (h < 3) h = 3 - (3 - h) * .3; // (round T) the open ground never dips into the water by itself: only rivers, lakes and the sea are wet
   // a low ridge (the Great Dividing Range), lower at its pass
@@ -192,7 +215,7 @@ export function heightAt(x, z) {
   // The Dawn Plateau, with a gentle ramp down to the south so little legs can walk off it.
   const dp = dist2(x, z, PLATEAU.x, PLATEAU.z);
   const base = h;
-  h = lerp(h, PLATEAU.h + fbm(x * .08, z * .08, 2) * .6, 1 - smooth(PLATEAU.r, PLATEAU.r + 10, dp));
+  if (dp < PLATEAU.r + 10) h = lerp(h, PLATEAU.h + fbm(x * .08, z * .08, 2) * .6, 1 - smooth(PLATEAU.r, PLATEAU.r + 10, dp)); // (farther: weight 0)
   if (dp > PLATEAU.r - 2 && z > PLATEAU.z) {
     const across = Math.abs(x - PLATEAU.x) / Math.max(1, dp);
     const w = smooth(.32, .16, across) * (1 - smooth(PLATEAU.r + RAMP - 12, PLATEAU.r + RAMP + 6, dp));
@@ -204,7 +227,7 @@ export function heightAt(x, z) {
   h = flat(h, x, z, CHINA, CHINA.r + WIDE, 18, CHINA.h);
   h = flat(h, x, z, INDIA, INDIA.r + WIDE, 18, INDIA.h);
   h = flat(h, x, z, PADDIES, PADDIES.r, 12, PADDIES.h + (Math.floor((z - PADDIES.z) / 9) * .35));
-  h = flat(h, x, z, BAMBOO, BAMBOO.r - 10, 20, 5 + fbm(x * .03, z * .03, 2) * 2);
+  if (Math.abs(x - BAMBOO.x) < BAMBOO.r + 10 && Math.abs(z - BAMBOO.z) < BAMBOO.r + 10) h = flat(h, x, z, BAMBOO, BAMBOO.r - 10, 20, 5 + fbm(x * .03, z * .03, 2) * 2); // (farther: weight 0, no noise needed)
   const dl = dist2(x, z, LAKE.x, LAKE.z);
   h = lerp(h, -7, 1 - smooth(LAKE.r * .55, LAKE.r, dl));
   h = lerp(h, Math.min(h, 1.2), 1 - smooth(LAKE.r, LAKE.r + 14, dl));
@@ -225,20 +248,20 @@ export function heightAt(x, z) {
   }
   // the festival grounds are level (their height is the natural height at their centre, worked out once)
   for (const F of Object.values(FESTGROUNDS)) {
-    const d = dist2(x, z, F.x, F.z); if (d > 21 || F.h === null) continue;
+    if (Math.abs(x - F.x) > 21 || Math.abs(z - F.z) > 21) continue; const d = dist2(x, z, F.x, F.z); if (d > 21 || F.h === null) continue;
     if (F.h === undefined) { F.h = null; F.h = heightAt(F.x, F.z); }
     h = lerp(h, F.h, 1 - smooth(15, 21, d));
   }
   // the lake stays a lake: level land round the market and farm used to spill into it (a sandy tongue the ferry drove over)
   if (dl < LAKE.r) h = lerp(h, Math.min(h, -7), 1 - smooth(LAKE.r * .62, LAKE.r * .82, dl));
   // shrines and the rocks with a Leafy under them stand on a small dry pad (one shrine stood in a pond)
-  if (PADS) for (const S of PADS) { const d = dist2(x, z, S.x, S.z); if (d < 7) h = lerp(h, Math.max(h, WATER + 1.4), 1 - smooth(3.6, 7, d)); }
+  if (PADS) for (const S of PADS) { if (Math.abs(x - S.x) >= 7 || Math.abs(z - S.z) >= 7) continue; const d = dist2(x, z, S.x, S.z); if (d < 7) h = lerp(h, Math.max(h, WATER + 1.4), 1 - smooth(3.6, 7, d)); }
   // the southern coast: a sandy beach, then the sea (its edge waves gently)
   { const cz = COAST.z + Math.sin(x * .025) * 4 + Math.sin(x * .07 + 1) * 2; h = lerp(h, Math.min(h, 1), smooth(cz - 26, cz - 8, z)); h = lerp(h, COAST.sea, smooth(cz - 6, cz + 8, z)); }
   const dr = riverDist(x, z);
   h = lerp(h, -2.6 - mtn * 2, 1 - smooth(3.5, 11, dr));
   // (round T2) ponds: a round hollow with a gentle shore (after the places' flat ground, so a pond by a city stays wet)
-  let dpd = 1e9; for (const P of PONDS) { const d = dist2(x, z, P.x, P.z); if (d > P.r + 8) continue; dpd = Math.min(dpd, d - P.r); h = lerp(h, Math.min(h, 1), 1 - smooth(P.r, P.r + 6, d)); h = lerp(h, -2.4, 1 - smooth(P.r * .55, P.r, d)); if (P.islet) h = lerp(h, WATER + .5, 1 - smooth(P.islet, P.islet + 1.6, d)); }
+  let dpd = 1e9; for (const P of PONDS) { if (Math.abs(x - P.x) > P.r + 8 || Math.abs(z - P.z) > P.r + 8) continue; const d = dist2(x, z, P.x, P.z); if (d > P.r + 8) continue; dpd = Math.min(dpd, d - P.r); h = lerp(h, Math.min(h, 1), 1 - smooth(P.r, P.r + 6, d)); h = lerp(h, -2.4, 1 - smooth(P.r * .55, P.r, d)); if (P.islet) h = lerp(h, WATER + .5, 1 - smooth(P.islet, P.islet + 1.6, d)); }
   // Raised banks either side of each bridge.
   if (dr > 7) for (const B of BRIDGES) { const K = B.bank || (B.bank = bridgeBox(B, B.a0 - 10, B.a1 + (B.bankOut || 16), -8, 8)); if (x <= K.x0 || x >= K.x1 || z <= K.z0 || z >= K.z1) continue; // (round T2: a quick box test first, 13 bridges now)
     if (levelAt(x, z) != null) continue;   // (Round U: a bank never reaches inside a village or city: places stay flat to their gates)

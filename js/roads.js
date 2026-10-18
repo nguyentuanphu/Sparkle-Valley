@@ -28,12 +28,17 @@ export function roadTexture(kind, tint = null, style = null) {
     for (let i = 0; i < 500; i++) { g.fillStyle = Math.random() < .5 ? 'rgba(255,245,220,.14)' : 'rgba(110,80,50,.1)'; g.fillRect(Math.random() * 64, Math.random() * 256, 2, 2); }
     for (let y = 8; y < 256; y += 32) { const x = 14 + (y / 32 % 2) * 10; g.fillStyle = '#bfb4a2'; g.beginPath(); g.ellipse(x + 12, y + 10, 13, 9, 0, 0, 7); g.fill(); g.fillStyle = 'rgba(255,255,255,.18)'; g.beginPath(); g.ellipse(x + 10, y + 8, 8, 4, 0, 0, 7); g.fill(); }
   } else if (kind !== 'dirt') { // 'asphalt', or 'plain' asphalt without lines (for junctions)
-    g.fillStyle = tint ? '#' + new THREE.Color('#6f747a').lerp(new THREE.Color(tint), .32).getHexString() : '#6f747a'; g.fillRect(0, 0, 64, 256); // (round T2: a region's tint, the lines stay white)
+    // Concept D: darker Australian asphalt and grey Vietnamese asphalt. Keep the region's
+    // red/orange tint (ROAD-014), gently enough that it does not turn the asphalt pink or tan.
+    const base = style === 'au' ? '#45484c' : style === 'vn' ? '#5f6266' : '#6f747a';
+    g.fillStyle = tint ? '#' + new THREE.Color(base).lerp(new THREE.Color(tint), style === 'au' ? .06 : style === 'vn' ? .10 : .32).getHexString() : base; g.fillRect(0, 0, 64, 256);
     for (let i = 0; i < 500; i++) { g.fillStyle = Math.random() < .5 ? 'rgba(255,255,255,.06)' : 'rgba(0,0,0,.08)'; g.fillRect(Math.random() * 64, Math.random() * 256, 2, 2); }
     if (kind === 'asphalt' && style === 'au') { // concrete kerbs, a white edge line inside them, white centre dashes
       g.fillStyle = '#d4cfc4'; g.fillRect(0, 0, 4, 256); g.fillRect(60, 0, 4, 256); g.fillStyle = 'rgba(0,0,0,.25)'; g.fillRect(4, 0, 1, 256); g.fillRect(59, 0, 1, 256);
       g.fillStyle = '#f2eee2'; g.fillRect(6, 0, 2, 256); g.fillRect(56, 0, 2, 256); g.fillRect(30, 20, 4, 90); g.fillRect(30, 148, 4, 90);
-    } else if (kind === 'asphalt') { g.fillStyle = '#e9e4d4'; g.fillRect(2, 0, 3, 256); g.fillRect(59, 0, 3, 256);
+    } else if (kind === 'asphalt') {
+      if (style === 'vn') { g.fillStyle = '#cfcac0'; g.fillRect(0, 0, 2, 256); g.fillRect(62, 0, 2, 256); }
+      g.fillStyle = '#e9e4d4'; g.fillRect(2, 0, 3, 256); g.fillRect(59, 0, 3, 256);
       g.fillStyle = style === 'vn' ? '#f2c230' : '#f6f1e4'; g.fillRect(30, 20, 4, 90); g.fillRect(30, 148, 4, 90); }
   } else {
     g.fillStyle = '#c0764a'; g.fillRect(0, 0, 64, 256); // (round T4a, Concept D) Bà Rịa's warm red earth

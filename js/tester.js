@@ -37,7 +37,11 @@ const me = () => { try { return localStorage.getItem('sv2_playerid') || ''; } ca
 const L = pair => T(pair[0], pair[1]);
 
 let G = null, level = '', live = false, offs = [], log = [], errors = [], want = null, lastGame = '', status = get(KEY.st, null), panelOpening = false;
-const sent = new Map(), counts = new Map();
+const sent = new Map(), counts = new Map(), reporting = new Map();
+let automaticPicture = null;
+// A detector scan can report several buttons. Share its composed-screen capture so
+// cloning the interface for every report does not itself freeze play.
+const autoShot = () => automaticPicture || (automaticPicture = shot().finally(() => { automaticPicture = null; }));
 
 // ---------- what happened in the last 30 seconds ----------
 const note = (k, s) => { const t = Date.now(); log.push([t, k, String(s || '').replace(/\s+/g, ' ').slice(0, 120)]); while (log.length && (t - log[0][0] > C.LIMITS.replay * 1000 || log.length > 400)) log.shift(); };
@@ -103,10 +107,16 @@ export async function autoReport(kind, detail, where, more = {}) {
   if (!live) return; const w = where || whereNow(), k = C.keyOf(kind, detail, w.game || w.window || w.area);
   counts.set(k, (counts.get(k) || 0) + 1); const last = sent.get(k);
   if (last && Date.now() - last.at < C.LIMITS.sameAgain) return last.id;
+  if (reporting.has(k)) return reporting.get(k);
   const n = counts.get(k); counts.set(k, 0); note('report', kind + ' ' + detail);
-  const b = body('auto', { auto: kind, detail: String(detail || '').slice(0, 200), where: w, shot: await shot(), count: n });
-  if (Array.isArray(more.log)) b.log = more.log.concat(b.log).slice(-300); // (the website keeps the last 300)
-  const id = enqueue(b); if(id)sent.set(k, { at: Date.now(), id });else counts.set(k,n); return id;
+  const pending = (async () => {
+    const b = body('auto', { auto: kind, detail: String(detail || '').slice(0, 200), where: w, shot: await autoShot(), count: n });
+    if (Array.isArray(more.log)) b.log = more.log.concat(b.log).slice(-300);
+    const id = enqueue(b); if (id) sent.set(k, { at: Date.now(), id }); else counts.set(k, n + (counts.get(k) || 0));
+    return id;
+  })();
+  reporting.set(k, pending);
+  try { return await pending; } finally { reporting.delete(k); }
 }
 
 // ---------- watching for problems ----------
