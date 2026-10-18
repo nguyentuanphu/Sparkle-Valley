@@ -352,3 +352,5 @@ Release repair update (15 Oct 2026 AEDT): repair13 narration cancellation / lega
 - **Release r87 performance claim (18 Oct AEDT):** `js/world.ts`; benchmark exact river-distance candidates using the real map before accepting any terrain optimization. Diagnostic `tests/river-distance.mts` compares the current source with pinned live r86 and records nearest river IDs as well as distances.
 
 - **Release r87 rendering claim (18 Oct AEDT):** `js/avatar.ts`; merge only the rigid meshes of Grandpa Owl and Ông Bầu, keeping their round shadow last for the film helpers. No limb animation, face mapping, terrain or camera rules change. Before/after geometry and model screenshots will be checked.
+
+- **Release r87 reliability claim (18 Oct AEDT):** `js/ui.js` (rename to TypeScript first), `js/voice.ts`, `js/popups.ts`; verify and fix Grown-ups voice-change subscriptions retaining closed settings windows. New `stability` check uses actual close controls, detached-window WeakRefs, heap/DOM/GPU-object budgets, 30 windows and 20 games.
