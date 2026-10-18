@@ -33,12 +33,16 @@ marketing/source/filmtest*.mjs
 marketing/source/runvalley.log
 .claude/settings.local.json
 # --- made by tools/build.mts from .ts files (never committed; do not edit by hand) ---
+/js/content/releases.js
 /js/family-backup.js
+/js/games/vietnam.js
 /js/keepcopy.js
 /js/net.js
 /js/netmsg.js
 /js/parents.js
+/js/popups.js
 /js/shop.js
 /js/state.js
 /js/trade.js
+/studio/ui/app.js
 # --- end of tools/build.mts ---
