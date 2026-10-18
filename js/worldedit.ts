@@ -14,17 +14,39 @@ import { raisedHouse } from './town.js';
 import { MODELS } from './cities.js';
 import { registerName } from './i18n.js';
 import { CUSTOM } from './custom.js';
+import { BUILD_TYPE_CATALOG, type HouseModel } from './content/build-types.js';
 
-const house = (mk, kind, room) => ({ mk, kind, room, home: true });
+type BuildOptions = { color?: string | null };
+type HouseModelResult = ReturnType<typeof houseTube> | ReturnType<typeof raisedHouse>;
+const house = (mk: (options?: BuildOptions) => HouseModelResult, kind: string) => ({ mk, kind, room: kind, home: true });
 const landmark = key => ({ mk: () => ({ parts: MODELS[key]() }), kind: 'landmark' });
-// what can be built (Sparkle Studio shows the same list): [id] → how to make it, in both languages
+const houseModel = (model: HouseModel, color: string | null) => {
+  switch (model.family) {
+    case 'tube':
+      return houseTube({ wall: color || model.wall, floors: model.floors, w: model.width, d: model.depth });
+    case 'village':
+      return houseVillage({ wall: color || model.wall, tile: model.tile, w: model.width, d: model.depth, palms: model.palms });
+    case 'villa':
+      return { ...houseVilla(), w: 11, d: 11 };
+    case 'cottage':
+      return houseCottage({ wall: color || model.wall, yard: model.yard });
+    case 'raised':
+      return { ...raisedHouse(model.width, model.depth), w: model.width + 2, d: model.depth + 1 };
+  }
+};
+const catalogHouseTypes = Object.fromEntries(Object.entries(BUILD_TYPE_CATALOG).map(([id, entry]) => [
+  id,
+  {
+    ...house(options => houseModel(entry.model, options?.color || null), entry.model.family),
+    id,
+    name: entry.name,
+    icon: ('icon' in entry && entry.icon) || '🏠',
+    culture: entry.culture
+  }
+]));
+// What can be built (Sparkle Studio reads this same model catalogue): stable id → bilingual label and factory.
 export const BUILD_TYPES = {
-  tube: { ...house(o => houseTube({ wall: o.color || '#9fd8c8', floors: 3 }), 'tube', 'tube'), name: ['Tube house (Vietnam)', 'Nhà ống'], icon: '🏠' },
-  tube2: { ...house(o => houseTube({ wall: o.color || '#ffb3a0', floors: 2 }), 'tube', 'tube'), name: ['Small tube house', 'Nhà ống nhỏ'], icon: '🏠' },
-  village: { ...house(o => houseVillage({ wall: o.color || '#efe0bf' }), 'village', 'village'), name: ['Village house with tiled roof', 'Nhà ngói ở làng'], icon: '🏡' },
-  villa: { ...house(() => houseVilla(), 'villa', 'villa'), name: ['French villa', 'Biệt thự Pháp'], icon: '🏛️' },
-  cottage: { ...house(o => houseCottage({ wall: o.color || '#cfe6ee' }), 'cottage', 'cottage'), name: ['Australian cottage', 'Nhà gỗ kiểu Úc'], icon: '🏘️' },
-  raised: { ...house(() => raisedHouse(), 'raised', 'raised'), name: ['Queenslander on stilts', 'Nhà sàn kiểu Queensland'], icon: '🛖' },
+  ...catalogHouseTypes,
   pagoda: { ...landmark('chuadau'), name: ['Pagoda', 'Chùa'], icon: '🛕' },
   clocktower: { ...landmark('bnclock'), name: ['Clock tower', 'Tháp đồng hồ'], icon: '🕰️' },
   cathedral: { ...landmark('cathedral'), name: ['Red-brick church', 'Nhà thờ gạch đỏ'], icon: '⛪' },
@@ -48,8 +70,10 @@ export function addFamilyBuildings(G) {
     const obj = m.obj || new THREE.Mesh(m.geo || merge(m.parts), toonVC());
     obj.castShadow = obj.receiveShadow = true; obj.position.set(b.x, y - (m.parts ? .05 : 0), b.z); obj.rotation.y = rot; obj.userData.family = true; scene.add(obj);
     if (m.parts) outline(obj, .025, '#4a3a3f');
+    const halfW = (m.w || 6) / 2, halfD = (m.d || 6) / 2, c = Math.abs(Math.cos(rot)), s = Math.abs(Math.sin(rot));
     const half = Math.max(m.w || 6, m.d || 6) / 2 * .8;
-    world.boxes.push({ x0: b.x - half, x1: b.x + half, z0: b.z - half, z1: b.z + half });
+    const extentX = T.home ? c * halfW + s * halfD : half, extentZ = T.home ? s * halfW + c * halfD : half;
+    world.boxes.push({ x0: b.x - extentX, x1: b.x + extentX, z0: b.z - extentZ, z1: b.z + extentZ });
     if (T.home) {
       const name = pair(b.name) || [T.name[0], T.name[1]], about = pair(b.about) || [`A new ${T.name[0].toLowerCase()} the family built.`, `Một ${T.name[1].toLowerCase()} mới cả nhà vừa xây.`];
       const o = b.owner && typeof b.owner === 'object' ? b.owner : null, L = (o && o.look) || {};

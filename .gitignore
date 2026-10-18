@@ -37,6 +37,7 @@ marketing/source/runvalley.log
 /js/avatar.js
 /js/build.js
 /js/claims.js
+/js/content/build-types.js
 /js/content/releases.js
 /js/content/storyhelp.js
 /js/family-backup.js
@@ -63,5 +64,6 @@ marketing/source/runvalley.log
 /js/voice.js
 /js/voicepack.js
 /js/world.js
+/js/worldedit.js
 /studio/ui/app.js
 # --- end of tools/build.mts ---
