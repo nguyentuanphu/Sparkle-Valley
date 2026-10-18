@@ -1,0 +1,562 @@
+{
+  "note": "Main static dependency graph, not a browser transfer measurement. Dynamic boot imports, HTML, fonts and runtime requests are additional. Compression is estimated per file.",
+  "launcherFiles": 1,
+  "initialFiles": 46,
+  "initialJS": {
+    "raw": 2197348,
+    "gzip": 762260,
+    "brotli": 637275
+  },
+  "allJS": {
+    "raw": 3455289,
+    "gzip": 1264653,
+    "brotli": 1077543
+  },
+  "css": {
+    "raw": 259052,
+    "gzip": 54992,
+    "brotli": 45273
+  },
+  "inputs": {
+    "vendor/three.module.js": 660349,
+    "js/art.js": 140394,
+    "js/ui.js": 119484,
+    "js/main.js": 115654,
+    "js/world.js": 58687,
+    "js/cities.js": 47963,
+    "js/howto.js": 36387,
+    "js/net.js": 35705,
+    "js/vehicles.js": 30434,
+    "js/homes.js": 29559,
+    "js/avatar.js": 28884,
+    "js/heritage.js": 28547,
+    "js/roads.js": 27990,
+    "js/farm.js": 26922,
+    "js/festivals.js": 26723,
+    "js/regions.js": 26291,
+    "js/content/stickers.js": 25991,
+    "js/chat.js": 23246,
+    "js/audio.js": 22824,
+    "js/simple.js": 19737,
+    "js/hud.js": 17921,
+    "js/animals.js": 17475,
+    "js/traffic.js": 16901,
+    "js/content/map.js": 16427,
+    "js/learn.js": 16036,
+    "js/town.js": 15681,
+    "js/story.js": 14678,
+    "js/content/festcal.js": 14645,
+    "js/content/releases.js": 14536,
+    "js/voice.js": 14333,
+    "js/folkshow.js": 13885,
+    "js/pets.js": 13356,
+    "js/familydevices.js": 13349,
+    "js/ferry.js": 12889,
+    "js/vnfun.js": 12835,
+    "js/games/frame.js": 12580,
+    "js/player.js": 11871,
+    "js/cartoon.js": 11454,
+    "js/realworld.js": 10609,
+    "js/symbols.js": 10344,
+    "js/lotus.js": 10128,
+    "js/asia.js": 10022,
+    "js/players.js": 9985,
+    "js/content/shop.js": 9951,
+    "js/houses.js": 9755,
+    "js/suburbs.js": 9436,
+    "js/games/catalog.js": 9393,
+    "js/extras.js": 9334,
+    "js/trade.js": 8962,
+    "js/data.js": 8869,
+    "js/tales.js": 8473,
+    "js/secrets.js": 8421,
+    "js/gather.js": 8110,
+    "js/fun.js": 7954,
+    "js/custom.js": 7891,
+    "js/state.js": 7805,
+    "js/regionsites.js": 7803,
+    "js/words.js": 7338,
+    "js/emojiswap.js": 6847,
+    "js/myhouse.js": 6840,
+    "js/talesdata.js": 6630,
+    "js/icons.js": 6447,
+    "js/chatter.js": 6073,
+    "js/vendors.js": 5773,
+    "js/i18n.js": 5549,
+    "js/relay.js": 5471,
+    "js/passport.js": 5344,
+    "js/commands.js": 5217,
+    "js/content/songs.js": 5197,
+    "js/worldedit.js": 5168,
+    "js/launch.js": 5039,
+    "js/credits.js": 4961,
+    "js/signposts.js": 4899,
+    "js/hawkers.js": 4890,
+    "js/places.js": 4807,
+    "js/solids.js": 4506,
+    "js/weather.js": 4479,
+    "js/content/activities.js": 4195,
+    "js/install.js": 4126,
+    "js/ads.js": 4089,
+    "js/netmsg.js": 4058,
+    "js/seethrough.js": 3983,
+    "js/report.js": 3809,
+    "js/input.js": 3714,
+    "js/popups.js": 3636,
+    "js/twinchests.js": 3604,
+    "js/netgames.js": 3298,
+    "js/gfx.js": 3274,
+    "js/showcase.js": 3124,
+    "js/feel.js": 2794,
+    "js/stickerfx.js": 2780,
+    "js/stickers.js": 2740,
+    "js/kite.js": 2661,
+    "js/lunar.js": 2500,
+    "js/reeds.js": 2424,
+    "js/snacks.js": 2402,
+    "js/recorder.js": 2385,
+    "js/coop.js": 2286,
+    "js/songs.js": 2268,
+    "js/games/learning-meta.js": 2209,
+    "js/words2.js": 2054,
+    "js/viwords.js": 2007,
+    "js/nametags.js": 2004,
+    "js/money.js": 1979,
+    "js/familycards.js": 1973,
+    "js/powerlines.js": 1833,
+    "vendor/RoomEnvironment.js": 1816,
+    "js/voice-index.js": 1728,
+    "js/packbar.js": 1564,
+    "js/roomcode.js": 1303,
+    "js/listen.js": 1172,
+    "js/util.js": 1112,
+    "js/core/events.js": 1107,
+    "js/photos.js": 1052,
+    "js/worldcache.js": 1019,
+    "js/plots.js": 915,
+    "js/claims.js": 871,
+    "js/placebook.js": 819,
+    "js/rideview.js": 805,
+    "js/family-backup.js": 754,
+    "js/core/ids.js": 640,
+    "js/core/rng.js": 621,
+    "js/content/devname.js": 587,
+    "js/games/registry.js": 548,
+    "js/packhash.js": 457,
+    "js/games/all.js": 374,
+    "js/tale-loader.js": 329,
+    "js/explain.js": 295,
+    "js/core/geo.js": 241,
+    "js/games/playwatch.js": 238
+  },
+  "deferredEntries": [
+    {
+      "file": "js/scrollhelp.js",
+      "bytes": 2097
+    },
+    {
+      "file": "js/villagertalk.js",
+      "bytes": 7532
+    },
+    {
+      "file": "js/dayplan.js",
+      "bytes": 3184
+    },
+    {
+      "file": "js/pricetags.js",
+      "bytes": 1914
+    },
+    {
+      "file": "js/jobs.js",
+      "bytes": 12054
+    },
+    {
+      "file": "js/animalhomes.js",
+      "bytes": 3009
+    },
+    {
+      "file": "js/chipinfo.js",
+      "bytes": 1793
+    },
+    {
+      "file": "js/shop.js",
+      "bytes": 17442
+    },
+    {
+      "file": "js/boxes.js",
+      "bytes": 11979
+    },
+    {
+      "file": "js/hoilang.js",
+      "bytes": 10803
+    },
+    {
+      "file": "js/surprises.js",
+      "bytes": 14421
+    },
+    {
+      "file": "js/parents.js",
+      "bytes": 27870
+    },
+    {
+      "file": "js/games/reading.js",
+      "bytes": 40053
+    },
+    {
+      "file": "js/games/storyhelp.js",
+      "bytes": 27718
+    },
+    {
+      "file": "js/games/readingmenu.js",
+      "bytes": 5740
+    },
+    {
+      "file": "js/testergate.js",
+      "bytes": 391
+    },
+    {
+      "file": "js/content/chapter2hanoi.js",
+      "bytes": 13266
+    },
+    {
+      "file": "js/content/chapter2films.js",
+      "bytes": 4786
+    },
+    {
+      "file": "js/content/chapter3sydney.js",
+      "bytes": 10246
+    },
+    {
+      "file": "js/content/chapter3films.js",
+      "bytes": 3321
+    },
+    {
+      "file": "js/lanterns.js",
+      "bytes": 13731
+    },
+    {
+      "file": "js/yard.js",
+      "bytes": 21128
+    },
+    {
+      "file": "js/kidplay.js",
+      "bytes": 8213
+    },
+    {
+      "file": "js/talesdata.js",
+      "bytes": 152
+    },
+    {
+      "file": "js/owlguide.js",
+      "bytes": 4119
+    },
+    {
+      "file": "js/soundsheet.js",
+      "bytes": 3695
+    },
+    {
+      "file": "js/content/autoplay.js",
+      "bytes": 334
+    },
+    {
+      "file": "js/screencapture.js",
+      "bytes": 5078
+    },
+    {
+      "file": "js/testerrewards.js",
+      "bytes": 5399
+    },
+    {
+      "file": "js/tester.js",
+      "bytes": 718
+    },
+    {
+      "file": "js/autoplay.js",
+      "bytes": 34013
+    },
+    {
+      "file": "js/games/music.js",
+      "bytes": 4953
+    },
+    {
+      "file": "js/games/cities.js",
+      "bytes": 13070
+    },
+    {
+      "file": "js/games/learning.js",
+      "bytes": 7425
+    },
+    {
+      "file": "js/games/money.js",
+      "bytes": 30527
+    },
+    {
+      "file": "js/games/bigthinkers.js",
+      "bytes": 9913
+    },
+    {
+      "file": "js/games/bigthinkers2.js",
+      "bytes": 7313
+    },
+    {
+      "file": "js/games/talkgames.js",
+      "bytes": 18185
+    },
+    {
+      "file": "js/tales-content.js",
+      "bytes": 42271
+    },
+    {
+      "file": "js/games/vietnam.js",
+      "bytes": 12712
+    },
+    {
+      "file": "js/games/market.js",
+      "bytes": 2621
+    },
+    {
+      "file": "js/games/farmgames.js",
+      "bytes": 14384
+    },
+    {
+      "file": "js/games/folk.js",
+      "bytes": 438
+    },
+    {
+      "file": "js/games/folk2.js",
+      "bytes": 18119
+    },
+    {
+      "file": "js/games/tienlen.js",
+      "bytes": 13916
+    },
+    {
+      "file": "js/games/more.js",
+      "bytes": 12476
+    },
+    {
+      "file": "js/games/asia.js",
+      "bytes": 9803
+    },
+    {
+      "file": "js/wayfind.js",
+      "bytes": 425
+    },
+    {
+      "file": "js/festdecor.js",
+      "bytes": 8949
+    },
+    {
+      "file": "js/festhunt.js",
+      "bytes": 11780
+    },
+    {
+      "file": "js/content/adventures.js",
+      "bytes": 660
+    },
+    {
+      "file": "js/adventure.js",
+      "bytes": 17998
+    },
+    {
+      "file": "js/mictest.js",
+      "bytes": 7556
+    },
+    {
+      "file": "js/games/thinking.js",
+      "bytes": 11261
+    },
+    {
+      "file": "js/games/strategy.js",
+      "bytes": 10431
+    },
+    {
+      "file": "js/content/films/elephantmice.js",
+      "bytes": 3821
+    },
+    {
+      "file": "js/content/films/monkey.js",
+      "bytes": 3451
+    },
+    {
+      "file": "js/content/talefilms.js",
+      "bytes": 1438
+    },
+    {
+      "file": "js/howto-player.js",
+      "bytes": 8953
+    },
+    {
+      "file": "vendor/anthropic-sdk.mjs",
+      "bytes": 211619
+    },
+    {
+      "file": "js/net.js",
+      "bytes": 274
+    },
+    {
+      "file": "js/myhouse.js",
+      "bytes": 872
+    },
+    {
+      "file": "js/stickerfx.js",
+      "bytes": 422
+    },
+    {
+      "file": "js/content/films/weaver.js",
+      "bytes": 4183
+    },
+    {
+      "file": "js/content/films/nian.js",
+      "bytes": 4667
+    },
+    {
+      "file": "js/content/films/kongrong.js",
+      "bytes": 3917
+    },
+    {
+      "file": "js/content/films/change.js",
+      "bytes": 3123
+    },
+    {
+      "file": "js/content/films/crow.js",
+      "bytes": 3598
+    },
+    {
+      "file": "js/content/films/lionrabbit.js",
+      "bytes": 3394
+    },
+    {
+      "file": "js/content/films/ganesha.js",
+      "bytes": 4359
+    },
+    {
+      "file": "js/content/films/bluejackal.js",
+      "bytes": 3583
+    },
+    {
+      "file": "js/content/films/rainbowserpent.js",
+      "bytes": 4023
+    },
+    {
+      "file": "js/content/films/emu.js",
+      "bytes": 4140
+    },
+    {
+      "file": "js/content/films/dotkangaroo.js",
+      "bytes": 4223
+    },
+    {
+      "file": "js/content/films/birdcolours.js",
+      "bytes": 3756
+    },
+    {
+      "file": "js/content/films/magicpudding.js",
+      "bytes": 3967
+    },
+    {
+      "file": "js/content/films/tiddalik.js",
+      "bytes": 3138
+    },
+    {
+      "file": "js/content/films/greatrace.js",
+      "bytes": 4939
+    },
+    {
+      "file": "js/content/films/maliang.js",
+      "bytes": 4893
+    },
+    {
+      "file": "js/content/films/vusua.js",
+      "bytes": 4609
+    },
+    {
+      "file": "js/content/films/baluoiriu.js",
+      "bytes": 4025
+    },
+    {
+      "file": "js/content/films/quabau.js",
+      "bytes": 4974
+    },
+    {
+      "file": "js/content/films/thayboi.js",
+      "bytes": 3609
+    },
+    {
+      "file": "js/content/films/nhacmeo.js",
+      "bytes": 3686
+    },
+    {
+      "file": "js/content/films/ongtao.js",
+      "bytes": 4477
+    },
+    {
+      "file": "js/content/films/cachep.js",
+      "bytes": 3731
+    },
+    {
+      "file": "js/content/films/sontinh.js",
+      "bytes": 3133
+    },
+    {
+      "file": "js/content/films.js",
+      "bytes": 425
+    },
+    {
+      "file": "js/content/films/rongtien.js",
+      "bytes": 5622
+    },
+    {
+      "file": "js/content/films/caytre.js",
+      "bytes": 4807
+    },
+    {
+      "file": "js/content/films/tamcam.js",
+      "bytes": 5868
+    },
+    {
+      "file": "js/content/films/sodua.js",
+      "bytes": 6234
+    },
+    {
+      "file": "js/content/films/thachsanh.js",
+      "bytes": 5243
+    },
+    {
+      "file": "js/content/films/chucuoi.js",
+      "bytes": 5256
+    },
+    {
+      "file": "js/content/films/cockien.js",
+      "bytes": 4314
+    },
+    {
+      "file": "js/state.js",
+      "bytes": 720
+    },
+    {
+      "file": "js/custom.js",
+      "bytes": 602
+    },
+    {
+      "file": "js/world.js",
+      "bytes": 1632
+    },
+    {
+      "file": "js/games/frame.js",
+      "bytes": 565
+    },
+    {
+      "file": "js/voicepack.js",
+      "bytes": 8125
+    },
+    {
+      "file": "js/familydevices.js",
+      "bytes": 273
+    },
+    {
+      "file": "js/film.js",
+      "bytes": 481
+    }
+  ]
+}

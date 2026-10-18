@@ -368,6 +368,22 @@ select option { color: #000; }
 .oaq-c .n { position: absolute; bottom: 2px; right: 6px; font-size: 14px; color: #8a5a20; }
 .oaq-arrows { position: absolute; inset: 0; display: flex; align-items: center; justify-content: space-between; background: rgba(255, 255, 255, .7); z-index: 2; }
 .oaq-arrows button { border: 0; background: none; font-size: 34px; padding: 0 4px; }
+/* Give young children full-size choices without covering the selected seeds. */
+.oaq-directions { min-height: 64px; width: 100%; display: flex; justify-content: center; }
+.oaq-little .oaq-arrows { position: static; width: min(820px, 100%); justify-content: center; gap: 24px; border-radius: 12px; }
+.oaq-little .oaq-arrows button { min-width: 64px; min-height: 64px; }
+.oaq-little .oaq-c.chosen { outline: 4px solid var(--green); outline-offset: -7px; }
+@media (max-width: 600px) {
+  /* Rotate the board clockwise: each player's five pits remain one continuous side. */
+  .oaq-little .oaq { flex-direction: column; width: 180px; }
+  .oaq-little .oaq-mid { flex-direction: row; }
+  .oaq-little .oaq-row { flex: 1; grid-template-columns: 1fr; }
+  .oaq-little .oaq-c { min-width: 64px; min-height: 64px; }
+  .oaq-little .oaq-c.quan { width: 100%; }
+  .oaq-little .oaq-c.quan.qleft { border-radius: 50% 50% 0 0; }
+  .oaq-little .oaq-c.quan.qright { border-radius: 0 0 50% 50%; }
+  .oaq-little .oaq-arrows button { transform: rotate(90deg); }
+}
 /* caro */
 .caro { display: grid; grid-template-columns: repeat(var(--n), 1fr); gap: 6px; width: min(90vw, 56vh, 480px); }
 .caro-c { aspect-ratio: 1; border: 0; border-radius: 12px; background: rgba(255, 255, 255, .85); font-size: clamp(22px, 6vw, 56px); box-shadow: 0 4px 0 rgba(0, 0, 0, .15); }

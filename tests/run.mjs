@@ -675,6 +675,8 @@ await check('voicepack', async () => {
   await P.page.screenshot({ path: 'out/voicepack-phone.png' });
   const errs = P.errors; await P.ctx.close();
   ok(third.some(x => /✓/.test(x)) && s3.files >= 24, 'missing files were not fetched again: ' + JSON.stringify({ third: third.slice(0, 3), s3 }));
+  const resumed = third.find(x => /đã lưu/.test(x)), counts = (resumed || '').match(/\d+/g)?.map(Number) || [];
+  ok(counts.length >= 2 && counts[0] > 0 && counts[0] < counts[1], 'resumed progress must include voices already cached: ' + JSON.stringify({ resumed, counts }));
   ok(!errs.length, errs.join(' | '));
   return `first open downloads with a small bar (${first.map(x => '"' + x + '"').slice(0, 2).join(' → ')} … "${first[first.length - 1]}"), the next open shows and downloads nothing, and files the phone lost are fetched again`;
 });
@@ -5232,7 +5234,7 @@ await check('types', async () => {
   // (js/state.js, js/netmsg.js; tests/tsconfig.json lists them), then the .mts and .cts files (tests/tsconfig.server.json). Needs: cd tests && npm install
   const { execFileSync } = await import('child_process'), tsc = 'node_modules/.bin/tsc';
   if (!fs.existsSync(tsc)) return 'skipped (run npm install in tests)';
-  try { execFileSync(tsc, ['-p', '.'], { encoding: 'utf8' }); execFileSync(tsc, ['-p','tsconfig-contracts.json'], {encoding:'utf8'}); } catch (e) { ok(false, ((e.stdout || '') + '').split('\n').slice(0, 8).join(' | ')); }
+  try { execFileSync(tsc, ['-p', '.'], { encoding: 'utf8' }); execFileSync(tsc, ['-p','tsconfig-contracts.json'], {encoding:'utf8'}); execFileSync(tsc, ['-p', 'sw-tsconfig.json'], {encoding:'utf8'}); } catch (e) { ok(false, ((e.stdout || '') + '').split('\n').slice(0, 8).join(' | ')); }
   // (owner, 16-17 Oct AEDT: TypeScript batches 1 and 2) the website's server pieces, the Studio engine and the tools, as Node runs them
   let server = ''; try { server = execFileSync(tsc, ['-p', 'tsconfig.server.json', '--listFilesOnly'], { encoding: 'utf8' }); execFileSync(tsc, ['-p', 'tsconfig.server.json'], { encoding: 'utf8' }); } catch (e) { ok(false, 'tsconfig.server.json: ' + ((e.stdout || '') + '').split('\n').slice(0, 8).join(' | ')); }
   const n = JSON.parse(fs.readFileSync('tsconfig.json', 'utf8')).files.length, ts = server.split('\n').filter(f => /\.(mts|cts)$/.test(f) && !f.includes('node_modules')).length;
@@ -7239,6 +7241,8 @@ await check('oanquanrules', async () => {
   await ctx.close(); ok(result.won && result.taps > 4 && result.busy > 0, JSON.stringify(result));
   return `a two-player game finishes through ${result.taps} legal square/direction taps; autoplay waits while seeds move`;
 });
+
+await check('r87ui', async () => (await import('./r87-ui.mts')).r87UiCheck(b));
 
 await b.close();
 const failed = results.filter(r => !r[1]);

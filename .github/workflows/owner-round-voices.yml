@@ -22,6 +22,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+      - name: Build TypeScript sources
+        run: node tools/build.mts
       - name: Record missing fixed lines and verify coverage
         run: |
           test -n "$AZURE_SPEECH_KEY" || { echo '::error::Azure voice credential unavailable'; exit 1; }

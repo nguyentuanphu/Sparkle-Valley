@@ -13,10 +13,12 @@ import { pic, hasArt } from './art.js';
 import { stageOf } from './tales.js';
 import { featureOn } from './custom.js';
 
+import './howto-data.js';
+import type { HowToCard, HowToOptions } from './howto-registry.js';
 import { HOWTO, originLabel } from './howto.js';
-const S = (pic, en, vi) => ({ pic, en, vi });
+const S = (pic: string, en: string, vi: string): HowToCard => ({ pic, en, vi });
 const seg = typeof Intl !== 'undefined' && Intl.Segmenter ? new Intl.Segmenter(undefined, { granularity: 'grapheme' }) : null;
-const graphemes = s => seg ? [...seg.segment(s)].map(x => x.segment).filter(x => x.trim()) : Array.from(s).filter(x => x.trim());
+const graphemes = (s: string) => seg ? [...seg.segment(s)].map(x => x.segment).filter(x => x.trim()) : Array.from(s).filter(x => x.trim());
 const videoOK = {};
 async function hasVideo(id) {
   if (id in videoOK) return videoOK[id];
@@ -36,16 +38,16 @@ async function hasVideo(id) {
 const STOP = new Error('stop');
 function demoKit(box, cap, alive, paused) {
   const stage = box.querySelector('.gl-stage'), help = box.querySelector('.gl-help'), hand = box.querySelector('.ht-hand');
-  let closed = false, mine = false, ghostT = 0; const cleanups = [];
+  let closed = false, mine = false, ghostT: ReturnType<typeof setInterval> | 0 = 0; const cleanups = [];
   const check = () => { if (!alive()) throw STOP; };
   const sleep = async ms => { const end = performance.now() + ms; while (performance.now() < end || paused()) { check(); await wait(Math.min(120, Math.max(10, end - performance.now()))); } check(); };
-  const local = (x, y) => { const r = box.getBoundingClientRect(); return [x - r.left, y - r.top]; };
+  const local = (x, y): [number, number] => { const r = box.getBoundingClientRect(); return [x - r.left, y - r.top]; };
   const place = (x, y, glide = true) => { const [lx, ly] = local(x, y); hand.hidden = false; hand.classList.toggle('glide', glide); hand.style.left = lx + 'px'; hand.style.top = ly + 'px'; };
-  const centre = e => { const r = e.getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; };
-  const onCanvas = (c, [x, y]) => { const r = c.getBoundingClientRect(), k = r.width / c._w; return [r.left + x * k, r.top + y * k]; };
+  const centre = (e): [number, number] => { const r = e.getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; };
+  const onCanvas = (c, [x, y]): [number, number] => { const r = c.getBoundingClientRect(), k = r.width / c._w; return [r.left + x * k, r.top + y * k]; };
   const press = () => { hand.classList.remove('press'); void hand.offsetWidth; hand.classList.add('press'); };
-  const ptr = (c, type, [x, y]) => { mine = true; try { c.dispatchEvent(new PointerEvent(type, { clientX: x, clientY: y, pointerId: 7, pointerType: 'touch', isPrimary: true, bubbles: true, cancelable: true })); } finally { mine = false; } };
-  let at = [0, 0];
+  const ptr = (c, type, [x, y]: [number, number]) => { mine = true; try { c.dispatchEvent(new PointerEvent(type, { clientX: x, clientY: y, pointerId: 7, pointerType: 'touch', isPrimary: true, bubbles: true, cancelable: true })); } finally { mine = false; } };
+  let at: [number, number] = [0, 0];
   const D = {
     hand, taps: 0, moves: 0, turn: false, stage,
     // the game's api, as js/games/frame.js gives it, but quiet: its words show without being spoken
@@ -56,7 +58,7 @@ function demoKit(box, cap, alive, paused) {
     async find(sel, ms = 4000) { for (let t = 0; t < ms; t += 100) { const e = stage.querySelector(sel); if (e) return e; await sleep(100); } throw new Error('demo: no ' + sel); },
     all: sel => [...stage.querySelectorAll(sel)],
     wait: sleep,
-    async say(en, vi, also) { const a = Promise.resolve(also); a.catch(() => { }); check(); cap.textContent = T(en, vi); await Promise.all([sayAsync(en, vi), a]); check(); await sleep(250); },
+    async say(en, vi, also = undefined) { const a = Promise.resolve(also); a.catch(() => { }); check(); cap.textContent = T(en, vi); await Promise.all([sayAsync(en, vi), a]); check(); await sleep(250); },
     async tap(e) { place(...centre(e)); await sleep(900); press(); await sleep(200); mine = true; try { e.click(); } finally { mine = false; } D.moves++; await sleep(450); },
     // a drag on a canvas game (the real pointer events, so the game moves exactly as it would for a finger)
     async down(c, p) { if (!c._cap) { c._cap = true; c.setPointerCapture = () => { }; } at = onCanvas(c, p); place(...at); await sleep(900); press(); ptr(c, 'pointerdown', at); await sleep(250); },
@@ -75,7 +77,7 @@ function demoKit(box, cap, alive, paused) {
 }
 
 // Opens the film. onPlay (optional) is called if the child taps "Play now" at the end.
-export function openHowTo(id, { onPlay, onClose } = {}) {
+export function openHowTo(id, { onPlay, onClose }: HowToOptions = {}) {
   const g = GAMES[id], h = HOWTO[id] || { steps: [S(g ? g.icon : '🎮', 'Tap and try! There is no wrong way to play.', 'Cứ chạm và thử! Không có cách chơi nào sai cả.')] };
   const cards = [S(g ? g.icon : '🎮', g ? g.name() : '', g ? g.name() : '')]; cards[0].title = true;
   if (h.origin) cards.push(h.origin);
