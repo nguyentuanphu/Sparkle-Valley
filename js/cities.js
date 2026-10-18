@@ -5,7 +5,7 @@
 // Two Homes Street: Bạch Dinh (the White Villa) and Nhà Tròn (the Round House water tower).
 import { THREE, toonVC, P, merge, outline, sprite } from './gfx.js';
 import { T, nm, onLang, registerName } from './i18n.js';
-import { heightAt, CITIES, TOWN } from './world.js';
+import { heightAt, CITIES, TOWN, BRIDGES } from './world.js';
 import { landmarkAt, ROAD_WIDTH, rowSlot } from './content/map.js';
 import { roadTexture } from './roads.js';
 import { buildAvatar, nameAvatar } from './avatar.js';
@@ -84,7 +84,7 @@ const CITY_DATA = {
       ['dendo', '⛩️', 0, -10.5, 'dendo', ['Đô Temple', 'Đền Đô'], ['Đền Đô in Bắc Ninh remembers the eight kings of the Lý family, who moved the capital to Thăng Long, today’s Hà Nội, more than a thousand years ago.', 'Đền Đô ở Bắc Ninh thờ tám vị vua nhà Lý, những người đã dời đô về Thăng Long, Hà Nội ngày nay, hơn một nghìn năm trước.']],
       ['quanho', '🎶', -10, 6.5, 'quanho', ['Quan họ singing', 'Dân ca Quan họ'], ['Quan họ is Bắc Ninh’s folk singing: boys and girls take turns singing sweet songs to each other. UNESCO calls it a treasure of the world.', 'Quan họ là dân ca Bắc Ninh: liền anh liền chị hát đối đáp với nhau những câu hát ngọt ngào. UNESCO công nhận là di sản của nhân loại.']]] },
   danang: { host: ['dragonfire', 'Anh Long', look('shirt', '#f2c230', '#1d1412', 'spiky', 'cap'), ['Chào! I am Long, which means dragon! On weekend nights our Dragon Bridge breathes real fire and water. Let us count the puffs!', 'Chào em! Anh tên Long, nghĩa là rồng đó! Tối cuối tuần Cầu Rồng phun lửa phun nước thiệt. Mình đếm thử nghen!'], 'a cheerful young man from Đà Nẵng in central Vietnam who loves the Dragon Bridge and speaks with a central accent (mô, tê, răng, rứa)'],
-    sites: [['goldenbridge', '🤲', -5, -5, 'goldenbridge', ['Golden Bridge', 'Cầu Vàng'], ['High on Bà Nà Hills near Đà Nẵng, the Golden Bridge is held up by two giant stone hands, as if the mountain is giving you a path in the clouds.', 'Trên núi Bà Nà gần Đà Nẵng, Cầu Vàng được nâng bởi hai bàn tay đá khổng lồ, như ngọn núi đang trao cho mình một lối đi giữa mây.']]], extra: [['dragonbridge', '🐉', 55, -57.5, ['Dragon Bridge', 'Cầu Rồng'], ['Đà Nẵng’s Dragon Bridge crosses the Hàn River. It is shaped like a golden dragon, and on weekend nights it breathes fire and water!', 'Cầu Rồng ở Đà Nẵng bắc qua sông Hàn. Cầu có hình con rồng vàng, và tối cuối tuần rồng phun lửa và phun nước!']]] },
+    sites: [['goldenbridge', '🤲', -5, -5, 'goldenbridge', ['Golden Bridge', 'Cầu Vàng'], ['High on Bà Nà Hills near Đà Nẵng, the Golden Bridge is held up by two giant stone hands, as if the mountain is giving you a path in the clouds.', 'Trên núi Bà Nà gần Đà Nẵng, Cầu Vàng được nâng bởi hai bàn tay đá khổng lồ, như ngọn núi đang trao cho mình một lối đi giữa mây.']]], extra: [['dragonbridge', '🐉', 0, 0, ['Dragon Bridge', 'Cầu Rồng'], ['Đà Nẵng’s Dragon Bridge crosses the Hàn River. It is shaped like a golden dragon, and on weekend nights it breathes fire and water!', 'Cầu Rồng ở Đà Nẵng bắc qua sông Hàn. Cầu có hình con rồng vàng, và tối cuối tuần rồng phun lửa và phun nước!']]] },
   saigon: { host: ['traffic', 'Cô Lan', look('shirt', '#3a78c8', '#1d1412', 'ponytail', 'cap'), ['Hello! Sài Gòn has millions of scooters. I teach children to be safe on the road. Green means go, red means stop!', 'Chào con! Sài Gòn có cả triệu chiếc xe máy. Cô dạy các bạn nhỏ đi đường an toàn nè. Đèn xanh thì đi, đèn đỏ thì dừng nha!'], 'a friendly road-safety helper from Hồ Chí Minh City who speaks with a southern accent (nè, nha, dzậy)'],
     sites: [['cathedral', '⛪', -6, -5, 'cathedral', ['Notre-Dame Cathedral, Sài Gòn', 'Nhà thờ Đức Bà Sài Gòn'], ['Sài Gòn’s Notre-Dame Cathedral was built with red bricks brought all the way from France, more than 140 years ago. The bricks are still bright red!', 'Nhà thờ Đức Bà Sài Gòn được xây bằng gạch đỏ chở từ Pháp sang, hơn 140 năm trước. Đến giờ gạch vẫn còn đỏ tươi!']],
       ['postoffice', '📮', 6, -5, 'postoffice', ['Sài Gòn Central Post Office', 'Bưu điện Thành phố'], ['The Central Post Office is a yellow building with a big clock and a round roof. People still send postcards from there to the whole world!', 'Bưu điện Thành phố là tòa nhà màu vàng có đồng hồ lớn và mái vòm. Người ta vẫn gửi bưu thiếp từ đó đi khắp thế giới!']]] },
@@ -219,7 +219,12 @@ export function createCities(G) {
       const [sx, sz] = D.custom ? [x + fx * (model === 'bnclock' ? 5.2 : 5.4), z + fz * (model === 'bnclock' ? 5.2 : 5.4)] : L(Math.sign(u) * 3.6, v);
       addLandmark(id, icon, c.cc, sx, sz, x, z, name, fact);
     });
-    for (const [id, icon, x, z, name, fact] of D.extra || []) addLandmark(id, icon, c.cc, x, z, (G.dragonBridge || {}).position ? G.dragonBridge.position.x : x, z, name, fact);
+    // a bridge landmark (Cầu Rồng): its ℹ️ sign on land by the bridge's far end, beside the road; the map points at the
+    // middle of the bridge (owner, 18 Oct AEDT: the sign stood in Sông Hồng and the map sent children there, from an old layout)
+    for (const [id, icon, x, z, name, fact] of D.extra || []) { const B = BRIDGES.find(B => B.landmark === id);
+      if (!B) { addLandmark(id, icon, c.cc, x, z, x, z, name, fact); continue; }
+      const u = B.a1 + 3, v = B.w / 2 + 2.6, m = (B.a0 + B.a1) / 2, [sx, sz] = B.axis === 'z' ? [B.c + v, u] : [u, B.c + v];
+      addLandmark(id, icon, c.cc, sx, sz, B.axis === 'z' ? B.c : m, B.axis === 'z' ? m : B.c, name, fact); }
     // the host, who plays the city's game with you
     {
       const [game, name, lk, greet, role] = D.host, hu = (D.hostAt || [-4.2])[0], [x, z] = L(hu, (D.hostAt || [0, 1.5])[1]), hf = faceStreet(hu);

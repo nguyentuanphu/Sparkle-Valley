@@ -163,9 +163,31 @@ function recordStart(G, tries = 0) {
   const row = [bt.start, bt.start + (bt.ready || 0), bt.start + bt.shaders, warmStart ? 1 : 0, /^[a-z]{1,16}$/.test(slow) ? slow : ''].map(v => typeof v === 'number' ? Math.round(v) : v);
   bump(d => { d.st = (d.st || []).concat([row]).slice(-6); });
 }
+// (#355, owner 17 Oct AEDT: "the game restarts itself or just goes straight to a white screen") a small note kept on the
+// device while a child plays with the game on the screen: the area, what is open, the memory used. It is cleared when
+// the game is put away or closed. A start that finds it still there followed a game the browser ended on the screen (a
+// phone out of memory, a crash); a reload the game makes itself (the 3D picture lost) leaves its own note. Either is
+// noted as a problem for Studio's report (and a tester device's own report), with where it happened; never a name.
+const ALIVE = 'sv2_alive', RELOAD = 'sv2_reload';
+const whereNow = G => { const open = document.querySelector('.theatre') ? 'story' : (document.querySelector('.modal:not(.out)')?.className.split(' ').find(c => c !== 'modal') || '');
+  return `${String((G && G.regionOf && G.regionOf[0]) || '?').slice(0, 24)}${open ? ' ' + open.slice(0, 24) : ''}`; };
+const heapMb = () => { const m = performance.memory; return m ? Math.round(m.usedJSHeapSize / 1048576) : '?'; };
+export const noteReload = (why, G) => { try { localStorage.setItem(RELOAD, JSON.stringify({ why, w: whereNow(G), mb: heapMb(), b: BUILD })); } catch (e) { } };
+function watchEnds(G) {
+  const read = k => { try { const v = JSON.parse(localStorage.getItem(k) || 'null'); localStorage.removeItem(k); return v; } catch (e) { return null; } };
+  const said = (what, n) => noteProblem('error', `${what} in ${n.w || '?'}, ${n.mb ?? '?'} MB, ${n.b || '?'}`.replace(/[^\w .:/()'#,@-]/g, ' ').slice(0, 140));
+  const re = read(RELOAD), alive = read(ALIVE);
+  if (re) said('reloaded: ' + String(re.why || '').slice(0, 30), re); else if (alive) said('ended by the browser while playing', alive);
+  const clear = () => { try { localStorage.removeItem(ALIVE); } catch (e) { } };
+  const mark = () => { if (document.visibilityState !== 'visible' || !(G && G.heroes && G.heroes.length)) return clear();
+    try { localStorage.setItem(ALIVE, JSON.stringify({ w: whereNow(G), mb: heapMb(), b: BUILD })); } catch (e) { } };
+  setInterval(mark, 5000); mark();
+  addEventListener('pagehide', clear); document.addEventListener('visibilitychange', mark);
+}
 export function startCounting(G) {
   listen();
   recordStart(G);
+  watchEnds(G);
   if (window.__svHelloTest === 'manual') return; // (tests send by hand)
   setTimeout(() => sendLive(true, G), 8000);
   setInterval(() => { if (document.visibilityState === 'visible') sendLive(true, G); }, 120e3);

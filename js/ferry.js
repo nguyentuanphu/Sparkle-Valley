@@ -55,11 +55,17 @@ function bambooRaft() {
 export function createFerries(G) {
   const { scene, world } = G;
   const pier = (sx, sz, ex, ez) => { // wooden pier from (sx,sz) on land to (ex,ez) over water; walkable
-    const dx = ex - sx, dz = ez - sz, L = Math.hypot(dx, dz), a = Math.atan2(dx, dz), y = WATER + .6, parts = [];
-    for (let k = 0; k <= L; k += .55) parts.push(P(B(2.6, .14, .5), k % 1.1 < .55 ? '#b88a5a' : '#a87a4a', [0, 0, k]));
-    for (let k = 0; k <= L; k += 2.2) [-1.2, 1.2].forEach(x => parts.push(P(C(.13, .13, 3.2, 6), '#7a5236', [x, -1.3, k])));
+    // (owner, 18 Oct AEDT: "the boat docks are too far drop off the ground") it starts at the ground's height on the bank
+    // and comes down in steps to the water, never below the ground under it, so no pier hangs under a high bank
+    const dx = ex - sx, dz = ez - sz, L = Math.hypot(dx, dz), a = Math.atan2(dx, dz), y0 = WATER + .6, parts = [], ux = dx / L, uz = dz / L;
+    const ks = []; for (let k = 0; k < L - .45; k += .55) ks.push(k); ks.push(L);
+    const ys = []; ks.forEach((k, i) => ys.push(Math.max(y0, i ? ys[i - 1] - .88 : heightAt(sx, sz) - .04, heightAt(sx + ux * k, sz + uz * k) - .04)));   // (steps of at most 0.88 m from the bank's edge: a child steps up 1.2 m; on land its top is 3 cm over the ground, flush with the road it starts on, ROAD-017)
+    const y = ys[ys.length - 1];
+    ks.forEach((k, i) => { const t = Math.max(.14, ys[i] - (ys[i + 1] ?? ys[i]) + .14); parts.push(P(B(2.6, t, .5), i % 2 ? '#a87a4a' : '#b88a5a', [0, ys[i] - y - t / 2 + .07, k])); });   // (a step is solid down to the next one)
+    ks.forEach((k, i) => { if (i % 4 && i < ks.length - 1) return; const h = ys[i] - WATER + 1.7; [-1.2, 1.2].forEach(x => parts.push(P(C(.13, .13, h, 6), '#7a5236', [x, ys[i] - y - h / 2 + .1, k]))); });
     const m = new THREE.Mesh(merge(parts), toonVC()); m.position.set(sx, y, sz); m.rotation.y = a; m.receiveShadow = true; scene.add(m);
-    for (let k = 0; k <= L; k += 1.2) { const px = sx + dx / L * k, pz = sz + dz / L * k; world.platforms.push({ x0: px - 1.1, x1: px + 1.1, z0: pz - 1.1, z1: pz + 1.1, y: y + .07 }); }
+    ks.forEach((k, i) => { const px = sx + ux * k, pz = sz + uz * k, q = ys[i] > y + .01 ? .3 : 1.1; // (small squares on the steps, so each holds its own step's height)
+      for (const o of q < 1 ? [-.8, 0, .8] : [0]) world.platforms.push({ x0: px + uz * o - q, x1: px + uz * o + q, z0: pz - ux * o - q, z1: pz - ux * o + q, y: ys[i] + .07 }); });
     return { tip: { x: ex, z: ez, y: y + .07 }, land: { x: sx, z: sz }, a }; // (round T2: the land end, for the `boats` check)
   };
 
@@ -209,7 +215,7 @@ export function createFerries(G) {
     const tip = s.dock.pier.tip, a = s.dock.pier.a;
     h.cancelCarry(); h.cancelCarry = null;
     // step onto the end of the pier, facing the shore
-    h.place(tip.x - Math.sin(a) * 1.4, tip.z - Math.cos(a) * 1.4, tip.y); h.yaw = a + Math.PI; SFX.jump();
+    h.place(tip.x - Math.sin(a) * 1.4, tip.z - Math.cos(a) * 1.4, world.groundAt(tip.x - Math.sin(a) * 1.4, tip.z - Math.cos(a) * 1.4, tip.y + .5)); h.yaw = a + Math.PI; SFX.jump();   // (on its step, where the pier climbs the bank)
   }
 
   // board from each pier: tap to ride (or wait for the boat)

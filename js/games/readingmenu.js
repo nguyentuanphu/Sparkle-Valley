@@ -22,13 +22,15 @@ game({ id: 'rd_syllable', icon: '🥁', name: () => T('Syllable Drum', 'Trống 
 game({ id: 'rd_match', icon: '🖼️', name: () => T('Word and Picture', 'Chữ và Hình') });
 game({ id: 'rd_sentence', icon: '🚂', name: () => T('Sentence Train', 'Tàu Câu') });
 game({ id: 'rd_readalong', icon: '📖', name: () => T('Read With Me', 'Cùng Đọc') });
+// (owner, 18 Oct AEDT) read a page, help in the picture, read on (js/games/storyhelp.ts; for 2 to 8)
+register({ id: 'rd_storyhelp', icon: '🏡', name: () => T('Story Helpers', 'Cùng Giúp Trong Truyện'), async run(api) { const m = await import('./storyhelp.js'); return m.play(api); } });
 
 // their place in the one activity list (UI-005): [area, youngest age, how hard]; Word Balloons, Word and Picture and
 // Sentence Train are for 5 to 8 only (A11Y-006)
 Object.assign(GAME_INFO, {
   rd_listentouch: ['reading', 2, 1], rd_storychoice: ['reading', 3, 1],
   rd_trace: ['reading', 2, 1], rd_sounds: ['reading', 3, 1], rd_build: ['reading', 4, 2], rd_rhyme: ['reading', 4, 2], rd_sight: ['reading', 5, 2],
-  rd_tones: ['reading', 4, 2], rd_syllable: ['reading', 3, 1], rd_match: ['reading', 5, 2], rd_sentence: ['reading', 5, 3], rd_readalong: ['reading', 3, 1]
+  rd_tones: ['reading', 4, 2], rd_syllable: ['reading', 3, 1], rd_match: ['reading', 5, 2], rd_sentence: ['reading', 5, 3], rd_readalong: ['reading', 3, 1], rd_storyhelp: ['reading', 2, 1]
 });
 
 // the how-to cards (ACT-002), read aloud in the child's language
@@ -44,5 +46,6 @@ Object.assign(HOWTO, {
   rd_syllable: { steps: [S('👀 🍌', 'Look at the picture and listen to its word.', 'Nhìn tranh và nghe tiếng của nó.'), S('👆 🥁', 'Beat the drum once for each part of the word.', 'Gõ trống một lần cho mỗi tiếng.'), S('✋ 🎉', 'Stop, and we count the beats together!', 'Dừng lại, rồi mình cùng đếm số lần gõ!')] },
   rd_match: { steps: [S('👀 ✏️', 'Read the word.', 'Đọc chữ.'), S('👆 🖼️', 'Tap its picture.', 'Chạm vào tranh của chữ đó.'), S('🖼️ ✏️', 'On Hard, find the word for the picture.', 'Ở mức Khó, tìm chữ cho bức tranh.')] },
   rd_sentence: { steps: [S('👀 🚂', 'Look at the word carriages.', 'Nhìn các toa chữ.'), S('👆 🚂', 'Tap them in order to make a sentence.', 'Chạm theo thứ tự để thành một câu.'), S('👂 🎉', 'Then the train reads your sentence!', 'Rồi đoàn tàu đọc câu của con!')] },
+  rd_storyhelp: { steps: [S('📖 👂', 'Listen to the story. Each word lights up.', 'Nghe kể chuyện. Mỗi chữ sáng lên.'), S('👆 🧹', 'Help in the picture: drag things where they belong, or tap a thing and then its place.', 'Giúp trong tranh: kéo đồ vật về đúng chỗ, hoặc chạm vào đồ vật rồi chạm vào chỗ của nó.'), S('📖 🎉', 'Then the story goes on!', 'Rồi câu chuyện lại tiếp tục!')] },
   rd_readalong: { steps: [S('📖 👂', 'Listen as the story is read. Each word lights up.', 'Nghe đọc truyện. Mỗi chữ sáng lên.'), S('👆 ✏️', 'Tap any word to hear it again.', 'Chạm vào chữ nào để nghe lại chữ đó.'), S('❓ 🖼️', 'At the end, answer with a picture.', 'Cuối truyện, trả lời bằng một bức tranh.')] }
 });

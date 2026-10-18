@@ -46,6 +46,8 @@ export function mountAutoplay(game) {
   btnTimer = setInterval(buttons, 1000); buttons();
   G.autoplay = { unmount, running: () => !!run, trail: () => trail.slice(),
     walkTo: (x, z, speed) => walkTo(x, z, speed),
+    // (tests: a button with something on top; outside a run it borrows a short one)
+    tapFor: async (b, note) => { const had = run; if (!run) run = { speed: 'fast', list: [], i: 0, done: [], paused: false, skip: false, stop: false }; try { return await tap(b, note); } finally { if (!had) run = null; } },
     open: () => { if (G.tester?.openPanel) return G.tester.openPanel(0, 'autoplay'); ui.open = true; put(UI, ui); draw(); },
     attach: (host, close) => { hostClose = close; host.appendChild(root); ui.open = true; put(UI, ui); draw(); },
     detach: () => { hostClose = null; document.body.appendChild(root); ui.open = false; put(UI, ui); draw(); },
@@ -132,7 +134,10 @@ async function tap(b, note) {
   const top = document.elementFromPoint(x, y);
   // (something of the same game or window moving over it for a moment, a card turning, is not a problem)
   const box = b.closest('.gl, .card, .dialog, .theatre, .songs, .pad, .storybook'); // (a game's own win screen coming up over its last button is not a problem either)
-  if (top && top !== b && !b.contains(top) && !top.contains(b) && !(root && root.contains(top)) && !(box && box.contains(top)) && note) note(T('a button covered by something: ', 'một nút bị che: ') + label(b) + ' (' + label(top) + ')');
+  // (#337-#349, r82: a tester filing a report while auto play ran) the tester's own report window and ladybird are not a
+  // problem of the game's
+  const tester = top && top.closest && top.closest('.tpanel, .z-lb');
+  if (top && top !== b && !b.contains(top) && !top.contains(b) && !(root && root.contains(top)) && !(box && box.contains(top)) && !tester && note) note(T('a button covered by something: ', 'một nút bị che: ') + label(b) + ' (' + label(top) + ')');
   if (x < 0 || y < 0 || x > innerWidth || y > innerHeight) { if (note) note(T('a button off the screen: ', 'một nút ngoài màn hình: ') + label(b)); }
   step_('tap', label(b)); fire(b, x, y); click(b);
   return true;

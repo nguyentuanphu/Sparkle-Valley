@@ -66,7 +66,7 @@ async function packedSite() {
   const path = await import('path'), { execFileSync } = await import('child_process'), dir = path.resolve('out/packed'), repo = path.resolve('..');
   fs.rmSync(dir, { recursive: true, force: true }); fs.mkdirSync(dir, { recursive: true });
   for (const f of ['index.html', 'sw.js']) fs.copyFileSync(path.join(repo, f), path.join(dir, f));
-  for (const f of ['manifest.webmanifest', 'css', 'fonts', 'icons', 'js', 'vendor', 'content', 'videos', 'voices', 'photos']) if (fs.existsSync(path.join(repo, f))) fs.symlinkSync(path.join(repo, f), path.join(dir, f));
+  for (const f of ['manifest.webmanifest', 'css', 'fonts', 'icons', 'js', 'vendor', 'content', 'videos', 'voices', 'photos', 'sounds']) if (fs.existsSync(path.join(repo, f))) fs.symlinkSync(path.join(repo, f), path.join(dir, f));
   execFileSync(process.execPath, [path.join(repo, 'tools/bundle.mts'), dir], { encoding: 'utf8' });
   ok(fs.existsSync(path.join(dir, 'bundle')), 'the packed copy was not built (tools/bundle.mts: esbuild missing?)');
   return (packedDir = dir);
@@ -2933,6 +2933,13 @@ await check('boats', async () => {
       if (shallow) bad.push(`${name}: ${shallow} m too shallow (first at ${first})`);
       if (low) bad.push(`${name}: ${low} m under a deck too low for it`);
       for (const s of f.stops) { const p = s.dock && s.dock.pier && s.dock.pier.land; if (!p) continue; const rd = W.roadDist(p.x, p.z); if (!rd.road || rd.d > rd.road.w / 2 + 3) bad.push(`${name}: the pier at ${p.x.toFixed(0)},${p.z.toFixed(0)} (${s.name()}) joins no road (${rd.d.toFixed(1)} m)`); }
+      // (owner, 18 Oct AEDT: "the boat docks are too far drop off the ground") walk each pier from the bank to its end: it
+      // starts level with the ground, and no step up or down is more than a child can climb (1.2 m)
+      for (const s of f.stops) { const pr = s.dock && s.dock.pier; if (!pr || !pr.land) continue; const L = Math.hypot(pr.tip.x - pr.land.x, pr.tip.z - pr.land.z);
+        let y = W.heightAt(pr.land.x - Math.sin(pr.a), pr.land.z - Math.cos(pr.a)), worst = 0;
+        for (let k = -1; k <= L; k += .2) { const g = G.world.groundAt(pr.land.x + Math.sin(pr.a) * k, pr.land.z + Math.cos(pr.a) * k, y + .01); worst = Math.max(worst, Math.abs(g - y)); y = g; }
+        if (worst > 1.2) bad.push(`${name}: the pier at ${pr.land.x.toFixed(0)},${pr.land.z.toFixed(0)} (${s.name()}) has a ${worst.toFixed(1)} m drop`);
+        if (Math.abs(y - pr.tip.y) > .3) bad.push(`${name}: walking the pier at ${pr.land.x.toFixed(0)},${pr.land.z.toFixed(0)} ends ${(y - pr.tip.y).toFixed(1)} m off its end`); }
       info.push(`${name} ${f.stops.length} stops`);
     }
     const raft = F.find(f => f.line), want = (M.BOATS.find(b => b.id === 'raft').bridgeStops || []).map(s => s.bridge), have = raft ? raft.stops.map(s => s.bridge).filter(Boolean) : [];
@@ -2940,12 +2947,18 @@ await check('boats', async () => {
     if (!F.some(f => f.harbour)) bad.push('no Sydney Harbour ferry');
     // (round T3) every boat the map gives two piers runs: the Sydney Harbour ferry and the Sài Gòn boat to Vũng Tàu
     for (const B of M.BOATS.filter(B => B.piers)) if (!F.some(f => f.boat === B.id)) bad.push(`no boat ${B.id}`);
+    // (owner, 18 Oct AEDT: Cầu Rồng's sign stood in Sông Hồng and the map sent children there) every bridge landmark's ℹ️
+    // sign (where the map's Travel takes a child) is on dry land within 12 m of its bridge's end
+    for (const Bd of W.BRIDGES.filter(Bd => Bd.landmark)) for (const lm of G.LANDMARKS.filter(l => l.id === Bd.landmark)) {
+      const ends = Bd.axis === 'z' ? [[Bd.c, Bd.a0], [Bd.c, Bd.a1]] : [[Bd.a0, Bd.c], [Bd.a1, Bd.c]], d = Math.min(...ends.map(([x, z]) => Math.hypot(lm.x - x, lm.z - z)));
+      if (W.heightAt(lm.x, lm.z) < W.WATER + .4 || d > 12) bad.push(`${lm.id}: its sign at ${lm.x.toFixed(0)},${lm.z.toFixed(0)} is ${d.toFixed(0)} m from its bridge${W.heightAt(lm.x, lm.z) < W.WATER + .4 ? ', in the water' : ''}`);
+    }
     return { bad, info };
   });
   const errs = P.errors; await P.ctx.close();
   ok(!r.bad.length, r.bad.slice(0, 10).join('; '));
   ok(!errs.length, errs.join(' | '));
-  return r.info.join(', ') + '; every route deep enough, under high enough decks, every pier on a road or path';
+  return r.info.join(', ') + '; every route deep enough, under high enough decks, every pier on a road or path, level with its bank and walkable to its end; every bridge landmark sign on land by its bridge';
 });
 
 await check('plots', async () => {
@@ -3001,11 +3014,13 @@ await check('roadtone', async () => {
     const M = await import('/js/content/map.js'), { THREE } = await import('/js/gfx.js'), mid = id => { const R = M.ROADS.find(r => r.id === id), [a, c] = R.pts; return [(a[0] + c[0]) / 2, (a[1] + c[1]) / 2]; };
     const at = ([x, z], px, py) => { let got = null; __sv.scene.traverse(o => { if (got || !o.userData.road || !o.material || !o.material.map) return; o.geometry.computeBoundingBox(); const bb = o.geometry.boundingBox;
       if (x > bb.min.x && x < bb.max.x && z > bb.min.z && z < bb.max.z) { const im = o.material.map.image, g = im.getContext('2d'); got = [...g.getImageData(px, py, 1, 1).data].slice(0, 3); } }); return got; };
-    return { vnDash: at(mid('vn_north'), 31, 60), auKerb: at(mid('link_au'), 1, 60), auMid: at(mid('link_au'), 20, 60) };
+    return { vnDash: at(mid('vn_north'), 31, 60), auKerb: at(mid('link_au'), 1, 60), auMid: at(mid('link_au'), 20, 60), vnMid: at(mid('vn_north'), 20, 60), vnKerb: at(mid('vn_north'), 0, 60) };
   });
   const errs = P.errors; await P.ctx.close();
   { const [r, g, bl] = mark.vnDash || [0, 0, 0]; ok(r > 200 && g > 150 && bl < 120, `Vietnam's road has no yellow centre dash: rgb ${mark.vnDash}`); }
   { const k = mark.auKerb || [0, 0, 0], m = mark.auMid || [0, 0, 0]; ok(k[0] > 180 && k[0] > m[0] + 40, `Australia's road has no concrete kerb: kerb rgb ${k}, road rgb ${m}`); }
+  ok(mark.auMid && mark.vnMid && mark.auMid[0] + 12 < mark.vnMid[0], `Concept D: Australian asphalt should be darker than Vietnam's: ${JSON.stringify(mark)}`);
+  ok(mark.vnKerb && mark.vnKerb[0] > 180, `Vietnam's road needs a stone kerb: ${mark.vnKerb}`);
   const tones = new Set(M.ROADS.filter(R => R.kind === 'asphalt').map(R => M.ROAD_TONES[R.tone] || 'grey'));
   ok(!bad.length, bad.join('; '));
   ok(mats <= tones.size + 2, `${mats} road materials for ${tones.size} asphalt colours (one each, plus dirt and footpath)`);
@@ -4103,6 +4118,25 @@ await check('ownertransportpov', async () => {
   return JSON.stringify(rows);
 });
 
+await check('autoplaycover', async () => {
+  // (#337-#349, r82) auto play reports a button with something else on top of it, but not the tester's own report window
+  // or ladybird: a tester filing a report while auto play ran made 13 reports of "a button covered" by that window
+  const P = await open(b, { w: 1024, h: 768, pre: `try { localStorage.setItem('sv2_playerid', 'apcheck00001'); localStorage.setItem('sv2_live', JSON.stringify({ releases: { autoplay: { on: true, devices: ['apcheck00001'] } }, festivals: {} })); } catch (e) { }` });
+  await P.page.waitForFunction(() => window.__sv && __sv.autoplay && __sv.autoplay.tapFor, null, { timeout: 20000 }); await clear(P.page);
+  const r = await P.page.evaluate(async () => {
+    const out = {};
+    for (const [key, cls] of [['plain', 'zzcover'], ['tester', 'modal tpanel'], ['ladybird', 'z-lb']]) {
+      const btn = document.createElement('button'); btn.textContent = 'Try me'; btn.style.cssText = 'position:fixed;left:300px;top:300px;width:120px;height:60px;z-index:10';
+      const lid = document.createElement('div'); lid.className = cls; lid.style.cssText = 'position:fixed;left:250px;top:250px;width:240px;height:160px;z-index:20;background:#eee';
+      document.body.append(btn, lid); const notes = []; await __sv.autoplay.tapFor(btn, n => notes.push(n)); out[key] = notes.filter(n => /covered|bị che/.test(n)).length; btn.remove(); lid.remove();
+    }
+    return out;
+  });
+  const errs = P.errors; await P.ctx.close();
+  ok(r.plain === 1 && r.tester === 0 && r.ladybird === 0 && !errs.length, JSON.stringify({ r, errs }));
+  return 'a button under something else is reported; under the tester\'s own report window or ladybird it is not';
+});
+
 await check('ownerautoplaytransport', async () => {
   const P=await open(b,{w:900,h:640}); await clear(P.page);
   await P.page.evaluate(()=>{const G=__sv,h=G.heroes[0],i=G.interactables.find(i=>/^ride_/.test(i.id)&&G.traffic.slots[+i.id.slice(5)].id==='bus');h.place(i.x+2,i.z);window.__board=i.act(h,G).then(()=>{G.paused=true;});});
@@ -4137,9 +4171,24 @@ await check('ride', async () => {
     const car = I.find(i => /^drive_/.test(i.id) && /car/i.test(i.label())); if (car) { h.place(car.x + 1, car.z); car.act(h, G); out.driving = !!h.riding && !!h.riding.vehicle;
       // (Round V, owner 13 Oct) the camera rides at the child's eyes, looking ahead
       for (let k = 0; k < 60; k++) h.finish(1 / 60, k / 60, G, 0); const eyeUp = h.cam.position.y - h.pos.y, eyeNear = Math.hypot(h.cam.position.x - h.pos.x, h.cam.position.z - h.pos.z); out.pov = eyeUp > .8 && eyeUp < 2.6 && eyeNear < 1.2;
-      // drive it away, get off, walk away: it goes back to its parking spot
+      // drive it away and get off: (owner, 17 Oct AEDT, #354: "stay where left"; was: back once the child walked 20 m
+      // away) it waits where it was left while the child is 40 m away, and goes back to its parking spot once every child
+      // is far away (70 m)
       const sl = G.traffic.slots.find(x => x.v && x.v.o === h.riding.mesh), home = sl ? [sl.x, sl.z] : null; h.pos.x += 30; h.riding.mesh.position.x += 30; h.dismount(); out.off = !h.riding;
-      h.place(h.pos.x + 40, h.pos.z); await new Promise(r => setTimeout(r, 1200)); out.carBack = !!home && Math.hypot(sl.v.o.position.x - home[0], sl.v.o.position.z - home[1]) < 1; }
+      const atHome = () => !!home && Math.hypot(sl.v.o.position.x - home[0], sl.v.o.position.z - home[1]) < 1, left = [sl.v.o.position.x, sl.v.o.position.z];
+      // (r84: the scan runs every 0.4 s of game time, and a slow machine gives the game few frames in a second) it is
+      // watched for 3 s at 40 m (still where it was left) and for up to 8 s at 70 m (back at its spot)
+      h.place(left[0] + 40, left[1]); await new Promise(r => setTimeout(r, 3000)); out.carStays = !atHome() && Math.hypot(sl.v.o.position.x - left[0], sl.v.o.position.z - left[1]) < .5;
+      h.place(left[0] + 70, left[1]); for (let k = 0; k < 32 && !atHome(); k++) await new Promise(r => setTimeout(r, 250)); out.carBack = atHome(); }
+    // (#354, owner 17 Oct AEDT: "all animals and vehicles can travel anywhere") a bicycle rides over every bridge, end to
+    // end, on its deck (the Dragon Bridge in a lane beside the dragon); before, every ride stopped at the first plank
+    { const w = await import('/js/world.js'), bike = I.find(i => /^bike_/.test(i.id)), pad = { cdx: 0, cdy: 0, mx: 0, mz: 1, jump: () => false, act: () => false, run: false };
+      out.bridges = []; for (const B of w.BRIDGES) {
+        h.place(bike.x + 1, bike.z); bike.act(h, G); const lane = B.style === 'dragon' ? 2.2 : 0, u0 = B.a0 - 6, u1 = B.a1 + 6, cy = B.axis === 'x' ? -Math.PI / 2 : Math.PI;
+        const [x, z] = B.axis === 'x' ? [u0, B.c + lane] : [B.c + lane, u0]; h.pos.set(x, G.world.groundAt(x, z), z); h.riding.mesh.position.copy(h.pos);
+        let deck = false; for (let k = 0; k < 600; k++) { h.camYaw = h.steerYaw = cy; h.update(1 / 30, pad, k / 30, G); const u = B.axis === 'x' ? h.pos.x : h.pos.z; if (u > B.a0 + 2 && u < B.a1 - 2 && h.pos.y > w.WATER + 1) deck = true; if (u > u1) break; }
+        if (!((B.axis === 'x' ? h.pos.x : h.pos.z) > u1 - 1 && deck)) out.bridges.push(B.id); h.dismount(); }
+      out.bridgeCount = w.BRIDGES.length; }
     // a buffalo: ride it away, get off: it runs back home
     const bf = (G.world.buffalo || [])[0]; if (bf) { h.place(bf.mesh.position.x + 1, bf.mesh.position.z); G.mount(h, bf); h.pos.x += 12; bf.mesh.position.x += 12; h.dismount(); out.buffHome = bf.tx === bf.home[0] && bf.tz === bf.home[1] && bf.back === true; }
     return out;
@@ -4156,14 +4205,36 @@ await check('ride', async () => {
     const picks = document.querySelectorAll('.stoppick .wp-pick').length, first = document.querySelector('.stoppick .wp-pick'); const name = first ? first.getAttribute('aria-label') : '';
     const dest = (G.world.busStops || []).find(b => b.name() === name); first && first.click();
     await p; const on = !!h.carry, paid = c0 - farm.coins;
-    let arrived = false; for (let k = 0; k < 60 && !arrived; k++) { await new Promise(r => setTimeout(r, 250)); arrived = !h.carry && !!dest && Math.hypot(h.pos.x - dest.x, h.pos.z - dest.z) < 4; }
+    // (owner, 18 Oct AEDT: a trip takes about a minute, at most about 65 s: js/traffic.js tripTo) up to 80 s to arrive
+    let arrived = false; for (let k = 0; k < 320 && !arrived; k++) { await new Promise(r => setTimeout(r, 250)); arrived = !h.carry && !!dest && Math.hypot(h.pos.x - dest.x, h.pos.z - dest.z) < 4; }
     h.carry = null; G.traffic.slots.forEach(s => { if (s.passenger === h) s.passenger = null; });
     return { on, paid, picks, arrived };
   }, age);
   r.big = await bus('big'); r.little = await bus('little');
   const errs = P.errors; await P.ctx.close();
-  ok(r.drive >= 20 && r.bike >= 4 && r.rides >= 4 && r.stops >= 4 && !r.lift && r.driving && r.off && r.big.on && r.big.paid > 0 && r.little.on && r.little.paid === 0 && r.big.picks >= 3 && r.big.arrived && r.pov && r.carBack && r.buffHome && !errs.length, JSON.stringify(Object.assign(r, { errs })));
-  return `${r.drive} parked cars and motorbikes to drive, ${r.bike} bicycles, ${r.rides} buses, trams and taxis to ride (big kid paid ${r.big.paid}, under-5 free), ${r.stops} bus stops, each stop a choice of ${r.big.picks} places and the child arrives there; the camera rides at the child's eyes; a car left elsewhere goes back to its spot and a buffalo runs home; no lifts from strangers`;
+  ok(r.drive >= 20 && r.bike >= 4 && r.rides >= 4 && r.stops >= 4 && !r.lift && r.driving && r.off && r.big.on && r.big.paid > 0 && r.little.on && r.little.paid === 0 && r.big.picks >= 3 && r.big.arrived && r.pov && r.carStays && r.carBack && r.buffHome && r.bridgeCount >= 10 && !r.bridges.length && !errs.length, JSON.stringify(Object.assign(r, { errs })));
+  return `${r.drive} parked cars and motorbikes to drive, ${r.bike} bicycles, ${r.rides} buses, trams and taxis to ride (big kid paid ${r.big.paid}, under-5 free), ${r.stops} bus stops, each stop a choice of ${r.big.picks} places and the child arrives there; the camera rides at the child's eyes; a car left behind waits where it was left and goes back to its spot once every child is far away; a buffalo runs home; a bicycle rides over all ${r.bridgeCount} bridges; no lifts from strangers`;
+});
+
+await check('gameends', async () => {
+  // (#355, owner 17 Oct AEDT: "the game restarts itself or just goes straight to a white screen") while a child plays
+  // with the game on the screen, the device keeps a small note (area, what is open, memory, build; never a name); a
+  // normal close clears it; a start that finds it left behind (the browser ended the game) or a note from the game's own
+  // reload (the 3D picture lost) is noted as a problem for Studio's report, with where it happened
+  const P = await open(b, { w: 900, h: 640 }); await clear(P.page);
+  const live = await P.page.evaluate(async () => { const { BUILD } = await import('/js/build.js'); await new Promise(r => setTimeout(r, 5600));
+    const a = JSON.parse(localStorage.getItem('sv2_alive') || 'null'), names = (__sv.heroes || []).map(h => h.profile && h.profile.name).filter(Boolean);
+    dispatchEvent(new Event('pagehide')); return { a, build: BUILD, named: !!a && names.some(n => JSON.stringify(a).includes(n)), cleared: localStorage.getItem('sv2_alive') === null }; });
+  const errs = [...P.errors]; await P.ctx.close();
+  const after = async note => { const Q = await open(b, { w: 900, h: 640, pre: `try { localStorage.setItem(${JSON.stringify(note[0])}, ${JSON.stringify(JSON.stringify(note[1]))}); } catch (e) { }` }); await clear(Q.page);
+    const e = await Q.page.evaluate(() => { const o = JSON.parse(localStorage.getItem('sv2_hello_out') || '{"days":{}}'); return Object.values(o.days).flatMap(d => Object.keys(d.e || {})); });
+    errs.push(...Q.errors); await Q.ctx.close(); return e; };
+  const killed = await after(['sv2_alive', { w: 'village', mb: 310, b: 'r83' }]), reloaded = await after(['sv2_reload', { why: '3D picture lost', w: 'hanoi bag', mb: 290, b: 'r83' }]);
+  ok(live.a && live.a.b === live.build && typeof live.a.w === 'string' && live.a.w.length && !live.named && live.cleared, 'the note while playing: ' + JSON.stringify(live));
+  ok(killed.some(k => /^ended by the browser while playing in village, 310 MB, r83/.test(k)), 'a game the browser ended was not noted: ' + JSON.stringify(killed));
+  ok(reloaded.some(k => /^reloaded: 3D picture lost in hanoi bag, 290 MB, r83/.test(k)) && !reloaded.some(k => /^ended by the browser/.test(k)), 'a reload after the 3D picture was lost: ' + JSON.stringify(reloaded));
+  ok(!errs.length, errs.join(' | '));
+  return `a note while playing (${live.a.w}, ${live.a.mb} MB, ${live.a.b}; no name), cleared on a normal close; a game the browser ended and a reload after the 3D picture was lost are each noted for Studio's report with where they happened`;
 });
 
 await check('familymissions', async () => {
@@ -4386,6 +4457,18 @@ await check('friendstab', async () => {
   const P = await open(b, { w: 390, h: 760, touch: true, settings: { online: true } }); await clear(P.page);
   const r = await P.page.evaluate(async () => {
     const G = __sv, wait = ms => new Promise(r => setTimeout(r, ms)), N = (await import('/js/net.js')).Net, S = await import('/js/state.js');
+    let status; const share = N.friendsShare; S.settings.friendsOn = true;
+    N.friendsShare = value => { status = value; }; G.shareStatus(); N.friendsShare = share;
+    const sharedMap = status?.map === N.mapVersion;
+    const oldFriends = S.settings.friends;
+    S.settings.friends = [{ code: 'TEST01', name: 'Map friend' }];
+    N.friends.status.TEST01 = { online: true, room: '123456', map: 'different-map', seen: Date.now() };
+    const body = document.createElement('div'); document.body.appendChild(body);
+    G.drawOnlinePanel(body, () => {});
+    const mismatch = !body.querySelector('[data-joinf]') && !!body.querySelector('[data-mapdiff]');
+    N.friends.status.TEST01.map = N.mapVersion; G.drawOnlinePanel(body, () => {});
+    const same = !!body.querySelector('[data-joinf]') && !body.querySelector('[data-mapdiff]');
+    body.remove(); delete N.friends.status.TEST01; S.settings.friends = oldFriends;
     G.openPad(0, 'friend'); await wait(700);
     const d = document.querySelector('.modal.pad details.friends'); if (!d) return { noBox: true };
     d.querySelector('summary').click(); await wait(200); const foldedSaved = S.settings.friendsFold === true && !d.open;
@@ -4401,10 +4484,10 @@ await check('friendstab', async () => {
     // a game starting
     G.openPad(0, 'friend'); await wait(500); G.closePadNow(); const closedOnStart = !document.querySelector('.modal.pad') && !G.paused;
     S.settings.friendsFold = false;
-    return { foldedSaved, stillFolded, closedOnJoin, closedOnStart, together };
+    return { sharedMap, mismatch, same, foldedSaved, stillFolded, closedOnJoin, closedOnStart, together };
   });
   const errs = P.errors; await P.ctx.close();
-  ok(!r.noBox && r.foldedSaved && r.stillFolded && r.closedOnJoin && r.closedOnStart && r.together.made && r.together.raceN > 20 && r.together.invited && !errs.length, JSON.stringify(Object.assign(r, { errs })));
+  ok(r.sharedMap && r.mismatch && r.same && !r.noBox && r.foldedSaved && r.stillFolded && r.closedOnJoin && r.closedOnStart && r.together.made && r.together.raceN > 20 && r.together.invited && !errs.length, JSON.stringify(Object.assign(r, { errs })));
   return '"My friends" folds and stays folded; a friend coming into the room closes the Friends page; a game starting closes it; Play together lists the games for friends (Tiến Lên miền Bắc too) and every game to race side by side';
 });
 
@@ -5285,7 +5368,7 @@ await check('startup', async () => {
     for (const [k, B] of Object.entries(base)) { if (k.startsWith('/') || B.max === undefined) continue; const lim = k.endsWith('KB') ? B.max * 1.03 : B.max * speed * 1.25; if (!(got[k] <= lim)) over.push(`${B.rule} ${k} ${got[k]} > ${k.endsWith('KB') ? B.max : `${B.max} x ${speed.toFixed(2)} (machine speed) = ${Math.round(B.max * speed)}`}`); }
     // the slowest building steps on the second start, for the report (G.bootTimes: ms since the game's code began)
     const st = Object.entries(second.steps).filter(([k]) => k !== 'start').sort((x, y) => x[1] - y[1]), slow = st.map(([k, v], i) => [k, v - (i ? st[i - 1][1] : 0)]).sort((x, y) => y[1] - x[1]).slice(0, 4).map(([k, v]) => `${k} ${(v / 1000).toFixed(1)} s`);
-    ok(!over.length && !errs.length, JSON.stringify({ over, got, machineMs: Math.round(machineMs), speed: +speed.toFixed(2), errs }));
+    ok(!over.length && !errs.length, JSON.stringify({ over, got, machineMs: Math.round(machineMs), speed: +speed.toFixed(2), slowest: slow, firstSteps: first.steps, secondSteps: second.steps, errs }));
     return `machine ${Math.round(machineMs)} ms (x${speed.toFixed(2)} of the reference); tablet speed: first start ${first.kb} KB, title ${(first.title / 1000).toFixed(1)} s, valley ready ${(first.ready / 1000).toFixed(1)} s; second start ${second.kb} KB from the network, ready ${(second.ready / 1000).toFixed(1)} s, longest freeze ${(second.freeze / 1000).toFixed(1)} s; slowest steps ${slow.join(', ')}`;
   } finally { S.close(); }
 });
@@ -5648,12 +5731,13 @@ await check('reading', async () => {
   const Q = await open(b, { w: 1024, h: 768, play: false }); const asked2 = []; Q.page.on('request', q => { if (/reading(menu)?\.js/.test(q.url())) asked2.push(q.url().split('/').pop()); });
   await Q.page.route('**/content/custom.json*', async r => { let j = {}; try { j = await (await r.fetch()).json(); } catch (e) { } j.features = { ...(j.features || {}), readingTrial: true }; await r.fulfill({ contentType: 'application/json', body: JSON.stringify(j) }); });
   await Q.page.reload(); await start(Q.page); await clear(Q.page);
-  await Q.page.waitForFunction(async () => Object.keys((await import('/js/games/frame.js')).GAMES).filter(k => /^rd_/.test(k)).length === 12, null, { timeout: 30000 }).catch(() => { });
+  await Q.page.waitForFunction(async () => Object.keys((await import('/js/games/frame.js')).GAMES).filter(k => /^rd_/.test(k)).length === 13, null, { timeout: 30000 }).catch(() => { });
   const on = await Q.page.evaluate(async () => { const F = await import('/js/games/frame.js'), A = await import('/js/content/activities.js'); __sv.openGamesHub(0); await new Promise(r => setTimeout(r, 300)); document.querySelector('.hubtabs [data-tab="learn"]')?.click(); await new Promise(r => setTimeout(r, 200));
     const hub = [...document.querySelectorAll('.hubbody [data-play]')].map(b => b.dataset.play), head = [...document.querySelectorAll('.hubbody .hubarea')].map(h => h.textContent); document.querySelectorAll('.modal').forEach(m => m.remove()); __sv.paused = false;
     return { games: Object.keys(F.GAMES).filter(k => /^rd_/.test(k)), big: A.gamesIn(F.GAMES, 'reading', false).map(g => g.id), little: A.gamesIn(F.GAMES, 'reading', true).map(g => g.id), hub: hub.filter(k => /^rd_/.test(k)), head }; });
-  ok(IDS.every(id => on.games.includes(id) && on.big.includes(id) && on.hub.includes(id)) && on.head.some(h => /Reading corner/.test(h)), 'with the switch on: ' + JSON.stringify(on));
-  ok(BIG_ONLY.every(id => !on.little.includes(id)) && on.little.length === IDS.length - BIG_ONLY.length && IDS.filter(id => !BIG_ONLY.includes(id)).every(id => on.little.includes(id)), 'under-5s see: ' + on.little.join(','));
+  // (owner, 18 Oct AEDT) Story Helpers joins the Reading corner too, for 2 to 8 (played through by its own check, storyhelp)
+  ok([...IDS, 'rd_storyhelp'].every(id => on.games.includes(id) && on.big.includes(id) && on.hub.includes(id)) && on.head.some(h => /Reading corner/.test(h)), 'with the switch on: ' + JSON.stringify(on));
+  ok(BIG_ONLY.every(id => !on.little.includes(id)) && on.little.length === IDS.length - BIG_ONLY.length + 1 && [...IDS.filter(id => !BIG_ONLY.includes(id)), 'rd_storyhelp'].every(id => on.little.includes(id)), 'under-5s see: ' + on.little.join(','));
   ok(!asked2.includes('reading.js'), 'the games\' code loaded before a game opened: ' + asked2.join(','));
   // every game finishes for an under-5 (no losing: three stars) and for a big kid at Easy, Medium and Hard, in both languages;
   // nothing is left behind when a game ends
@@ -6221,6 +6305,7 @@ await check('feel', async () => {
       m.close(); await wait(260); out.window = { sounds: log.slice(), still: Math.abs(y0 - y1) < 1 && Math.abs(y1 - y2) < 1, gone: !document.querySelector('.modal.feeltest') };
       // coins fly into the counter and land with a climbing note
       log.length = 0; S.farm.coins += 30; await wait(200); out.flying = document.querySelectorAll('.sv-fly').length; await wait(1200);
+      for (let t = 0; t < 18 && document.querySelector('.sv-fly'); t++) await wait(100);   // (r85: a busy machine starts the 650 ms flights late; up to 3 s in all, what is required is unchanged)
       out.landed = log.filter(k => k === 'pop').length; out.flyGone = !document.querySelector('.sv-fly');
       // Grown-ups → Tap sounds off: no press sound, other sounds stay
       S.settings.tapSounds = false; await wait(500); o0 = osc; down(btns[0]); up(); A.SFX.tap(); out.tapOff = osc - o0; o0 = osc; A.SFX.ok(); out.otherStill = osc - o0; S.settings.tapSounds = true;
@@ -6874,6 +6959,120 @@ await check('welcomesteady', async () => {
   ok(!moved.length, 'the Welcome screen moved: ' + moved.slice(0, 8).join('; '));
   return `Welcome screen still within 2 px (Start button, cover, logo, language panel) opening, after both language taps and the Chinese switch, one Start size in both languages: ${notes.join(', ')}`;
 });
+await check('animalvoices', async () => {
+  // (owner, 17 Oct AEDT: "the animal voice games, the voice is not real, need real voice for animals") every animal a
+  // child is asked to tell apart in "Who Says That?" plays its real recording (sounds/animals/, a decoded file, not the
+  // drawn-out tone), in the game and from the animals' sounds elsewhere; each file is in the offline list
+  const sw = fs.readFileSync('../sw.js', 'utf8'), names = ['cow', 'sheep', 'pig', 'dog', 'cat', 'duck', 'hen', 'horse', 'frog', 'owl'];
+  const offline = names.filter(n => !sw.includes(`'sounds/animals/${n}.mp3'`));
+  const pre = `window.__rec = []; window.__osc = 0;
+    const st = AudioBufferSourceNode.prototype.start; AudioBufferSourceNode.prototype.start = function (...a) { if (this.buffer && this.buffer.duration > .5) window.__rec.push(+this.buffer.duration.toFixed(2)); return st.apply(this, a); };
+    const os = OscillatorNode.prototype.start; OscillatorNode.prototype.start = function (...a) { window.__osc++; return os.apply(this, a); };`;
+  const P = await open(b, { w: 390, h: 844, touch: true, pre, settings: { sound: true, music: false } }); await clear(P.page);
+  await P.page.mouse.click(195, 420); await P.page.waitForTimeout(300); // (sound starts after a first tap, as on a phone)
+  const r = await P.page.evaluate(async () => {
+    const A = await import('/js/audio.js'), wait = ms => new Promise(r => setTimeout(r, ms)), out = {};
+    await A.loadAnimalCalls(8000); __sv.paused = true; await wait(600); // (the valley's own ducks and frogs stay quiet while it listens)
+    for (const call of ['moo', 'baa', 'oink', 'woof', 'meow', 'quack', 'cluck', 'neigh', 'ribbit', 'hoot']) {
+      window.__rec.length = 0; window.__osc = 0; A.animalCall(call); await wait(150);
+      out[call] = { rec: window.__rec.slice(), tones: window.__osc, len: A.animalRecording(call) ? +A.animalRecording(call).duration.toFixed(2) : 0 };
+    }
+    return out;
+  });
+  // in the game itself: the first round's sound is a recording
+  const g = await P.page.evaluate(async () => { const wait = ms => new Promise(r => setTimeout(r, ms)); window.__rec.length = 0; window.__osc = 0; __sv.playGame(0, 'animalsounds', 'replay'); for (let i = 0; i < 40 && !window.__rec.length; i++) await wait(250); return { rec: window.__rec.slice(), tones: window.__osc }; });
+  const errs = P.errors; await P.ctx.close();
+  const bad = Object.entries(r).filter(([, v]) => !(v.rec.length === 1 && v.len >= .6 && v.len <= 3 && !v.tones)).map(([k, v]) => k + ' ' + JSON.stringify(v));
+  ok(!offline.length && !bad.length && g.rec.length >= 1 && !errs.length, JSON.stringify({ offline, bad, game: g, errs }));
+  return `10 animals play their real recordings (${Object.entries(r).map(([k, v]) => `${k} ${v.len} s`).join(', ')}), none drawn as tones; "Who Says That?" starts with a recording; all 10 files in the offline list`;
+});
+
+await check('realrides', async () => {
+  // (owner, 17 Oct AEDT: "the bus and tram travel time to different destinations are too quick, rider should be able to
+  // enjoy the real view and distance") a ride to a chosen stop really drives the roads there, with the child on board,
+  // taking about a minute for the farthest stop (Jump still gets off); the child is let off at that stop and the bus
+  // drives back to its own route
+  const P = await open(b, { w: 900, h: 640, settings: { voice: false } }); await clear(P.page);
+  const r = await P.page.evaluate(async () => {
+    const G = __sv, h = G.heroes[0], W = await import('/js/world.js'), wait = ms => new Promise(r => setTimeout(r, ms));
+    const keepOn = (await import('/js/custom.js')); void keepOn;
+    const sl = G.traffic.slots.find(s => s.mover && /^bus/.test(s.id)); if (!sl.v) G.traffic.make(sl);
+    const it = G.interactables.find(i => i.id === 'ride_' + G.traffic.slots.indexOf(sl)); if (!it) return { none: 'no ride' };
+    h.place(sl.v.o.position.x + 3, sl.v.o.position.z + 3); h.profile.age = 'little'; await wait(300);
+    const go = it.act(h); await wait(600);
+    const yes = [...document.querySelectorAll('.dialog button, .dialog .btn')].find(x => /Get on|Lên xe/.test(x.textContent)); if (!yes) return { none: 'no get-on button', html: (document.querySelector('.dialog') || {}).innerText };
+    yes.click(); await wait(800);
+    const stops = [...document.querySelectorAll('.stoppick [data-k]')]; if (!stops.length) return { none: 'no stop picker' };
+    // the farthest stop on the list
+    const list = G.world.busStops.filter(b => Math.hypot(b.x - h.pos.x, b.z - h.pos.z) > 12); let far = 0; list.forEach((b, k) => { if (Math.hypot(b.x - h.pos.x, b.z - h.pos.z) > Math.hypot(list[far].x - h.pos.x, list[far].z - h.pos.z)) far = k; });
+    stops[far].click(); await go; await wait(500);
+    const tr = sl.trip; if (!tr) return { none: 'no trip' };
+    const p0 = [sl.v.o.position.x, sl.v.o.position.z], s0 = tr.s; await wait(3000); const along = tr.s - s0; // (game time: a slow test browser runs the game's clock slower)
+    const p1 = [sl.v.o.position.x, sl.v.o.position.z], moved = Math.hypot(p1[0] - p0[0], p1[1] - p0[1]), rd = W.roadDist(p1[0], p1[1]);
+    const onBoard = !!h.carry && Math.hypot(h.pos.x - p1[0], h.pos.z - p1[1]) < 3, planned = tr.len / tr.speed;
+    // the rest of the way, quickly: the trip arrives and the child gets off at the stop
+    tr.s = tr.len - .5; await wait(1200); const dest = list[far], off = !h.carry && Math.hypot(h.pos.x - dest.x, h.pos.z - dest.z) < 4;
+    tr.s = Math.min(tr.s, 1); await wait(1500);
+    return { len: Math.round(tr.len), planned: +planned.toFixed(1), moved: +moved.toFixed(1), along: +along.toFixed(1), onRoad: rd.road ? +(rd.d - rd.road.w / 2).toFixed(2) : 99, onBoard, off, home: !sl.trip, stop: dest.name() };
+  });
+  const errs = P.errors; await P.ctx.close();
+  ok(!r.none && r.moved > 2 && Math.abs(r.moved - r.along) < 2 && r.onRoad < .5 && r.onBoard && r.planned >= 45 && r.planned <= 70 && r.off && r.home && !errs.length, JSON.stringify({ ...r, errs }));
+  return `a bus to the farthest stop (${r.stop}, ${r.len} m along the roads) drives there with the child on board, planned ${r.planned} s; ${r.moved} m along the road in the first moments, on the road; the child gets off at the stop and the bus goes back to its route`;
+});
+
+await check('storyhelp', async () => {
+  // (owner, 18 Oct AEDT: "read story then ask kid to resolve puzzle or work on something … then move on, read and then
+  // more interactive", for 5 to 8 and 2 to 5) Story Helpers: every story plays through, page by page (read, then help in
+  // the picture: put, find, order), for a 5 to 8 year old in English on a phone and an under-5 in Vietnamese on a tablet;
+  // a wrong place is refused and the right one taken; buttons are 44 px or more (64 px for under-5s); one task is done
+  // by dragging; nothing errs
+  const C = await import('../js/content/storyhelp.js');
+  const solve = async (page, si, pg) => page.evaluate(async ([si, pg]) => {
+    const wait = ms => new Promise(r => setTimeout(r, ms)), C = await import('/js/content/storyhelp.js'), P = C.STORIES[si].pages[pg];
+    const little = !!document.querySelector('.gl.little'), task = !little && P.older ? P.older : P.task, small = [];
+    const min = little ? 64 : 44; document.querySelectorAll('.sh-thing, .sh-ear, .sh-text button').forEach(b => { const r = b.getBoundingClientRect(); if (r.width && Math.min(r.width, r.height) < min) small.push(b.className + ' ' + Math.round(Math.min(r.width, r.height))); });
+    let refused = null;
+    if (task.kind === 'order') { for (let i = 0; i < task.steps.length; i++) { const btn = [...document.querySelectorAll('.sh-thing:not(.gone)')].find(b => task.steps[i].word.includes(b.getAttribute('aria-label'))); btn.click(); await wait(250); } }
+    else if (task.kind === 'find') { const no = [...document.querySelectorAll('.sh-spot')].find(s => s.dataset.id !== task.at); no.click(); await wait(200); refused = !no.querySelector('.sh-hide'); document.querySelector(`.sh-spot[data-id="${task.at}"]`).click(); }
+    else { const list = little ? task.things.slice(0, 1) : [...task.things, ...(task.more || [])];
+      for (let k = 0; k < list.length; k++) { const btn = document.querySelectorAll('.sh-thing')[k]; btn.click(); await wait(150);
+        if (k === 0) { const no = [...document.querySelectorAll('.sh-spot')].find(s => s.dataset.id !== list[k].to); no.click(); await wait(200); refused = !btn.classList.contains('gone'); btn.click(); await wait(150); }
+        document.querySelector(`.sh-spot[data-id="${list[k].to}"]`).click(); await wait(300); } }
+    return { kind: task.kind, small, refused };
+  }, [si, pg]);
+  const runs = [];
+  for (const [age, lang, w, h, stories] of [['big', 'en', 390, 844, [0, 1, 2]], ['little', 'vi', 820, 1180, [3, 4, 5]]]) for (const si of stories) {
+    const P = await open(b, { w, h, touch: true, lang, settings: { voice: false } }); await clear(P.page);
+    await P.page.evaluate(async age => { await import('/js/games/readingmenu.js'); __sv.heroes[0].profile.age = age; __sv.playGame(0, 'rd_storyhelp', 'replay'); }, age);
+    await P.page.waitForSelector('.sh-book', { timeout: 60000 }); await P.page.locator('.sh-book').nth(si).click();
+    const pages = [];
+    for (let pg = 0; pg < C.STORIES[si].pages.length; pg++) {
+      const want = C.STORIES[si].pages[pg].text[lang === 'vi' ? 1 : 0].replace(/\s+/g, '');
+      await P.page.waitForFunction(w => (document.querySelector('.sh-text')?.textContent || '').replace(/\s+/g, '') === w && (document.querySelector('.sh-thing:not(.gone)') || document.querySelector('.sh-slots') || document.querySelector('.sh-spot')), want, { timeout: 90000 })
+        .catch(e => { throw new Error(`${age} ${C.STORIES[si].id} page ${pg + 1}: ${e.message.slice(0, 60)}`); });
+      await P.page.waitForTimeout(400);
+      // the very first task: done by dragging the thing onto its place, as a child would
+      if (si === stories[0] && pg === 0) {
+        const T0 = C.STORIES[si].pages[0].task, to = T0.things[0].to, from = await P.page.locator('.sh-thing').first().boundingBox(), at = await P.page.locator(`.sh-spot[data-id="${to}"]`).boundingBox();
+        await P.page.mouse.move(from.x + from.width / 2, from.y + from.height / 2); await P.page.mouse.down(); await P.page.mouse.move(at.x + at.width / 2, at.y + at.height / 2, { steps: 8 }); await P.page.mouse.up(); await P.page.waitForTimeout(400);
+        const dragged = await P.page.evaluate(() => document.querySelector('.sh-thing').classList.contains('gone'));
+        pages.push({ dragged }); if (age === 'little') { continue; }
+        // (the rest of the page's things for an older child)
+        const rest = await P.page.evaluate(async ([si]) => { const C = await import('/js/content/storyhelp.js'), t = C.STORIES[si].pages[0].task, list = [...t.things, ...(t.more || [])], wait = ms => new Promise(r => setTimeout(r, ms));
+          for (let k = 1; k < list.length; k++) { document.querySelectorAll('.sh-thing')[k].click(); await wait(150); document.querySelector(`.sh-spot[data-id="${list[k].to}"]`).click(); await wait(300); } return list.length; }, [si]);
+        pages.push({ rest }); continue;
+      }
+      pages.push(await solve(P.page, si, pg));
+    }
+    await P.page.waitForTimeout(2500);
+    const won = await P.page.evaluate(() => !!document.querySelector('.gl .win, .gl-win, .winbox, .reward, .gl.won'));
+    runs.push({ age, lang, story: C.STORIES[si].id, pages, won, errs: P.errors.slice(0, 3) }); await P.ctx.close();
+  }
+  const bad = runs.filter(r => !r.won || r.errs.length || r.pages.some(p => (p.small && p.small.length) || p.refused === false || p.dragged === false));
+  ok(!bad.length, JSON.stringify(bad).slice(0, 1500));
+  return `${runs.length} stories played through (3 by a 5 to 8 year old in English on a phone, 3 by an under-5 in Vietnamese on a tablet): every page read, then put, find or order done; wrong places refused; a drag works; buttons 44 px (64 px for under-5s) or more`;
+});
+
 await check('swupdate', async () => {
   // (r80, owner 17 Oct AEDT: "users must have the latest r") on its own small server (the game's files, its service
   // worker made version A, B or C, js/build.js saying which): (1) after an update the page gets the NEW version's files,
@@ -6963,6 +7162,64 @@ await check('offscreenpanels', async () => {
   }
   ok(!bad.length, bad.join(' · '));
   return `Grown-ups, Settings, Play and the Pad on 5 screens (phone to computer): every button can be reached`;
+});
+
+
+
+await check('reportburst', async () => {
+  // A single detector scan must not clone the entire interface once for every reported button.
+  const ctx = await b.newContext(), pg = await ctx.newPage();
+  await ctx.route('**/report-burst-fixture', r => r.fulfill({ contentType: 'text/html', body: '<!doctype html><body></body>' }));
+  await pg.goto(new globalThis.URL('report-burst-fixture', URL).href);
+  const result = await pg.evaluate(async () => {
+    document.body.innerHTML = '<div class="modal"><h2>Report burst</h2>' + Array.from({ length: 20 }, (_, i) => `<button>Button ${i}</button>`).join('') + '</div>';
+    localStorage.setItem('sv2_tester', JSON.stringify({ at: Date.now() }));
+    Object.defineProperty(navigator, 'onLine', { get: () => false, configurable: true });
+    let encodes = 0; const original = HTMLCanvasElement.prototype.toDataURL;
+    HTMLCanvasElement.prototype.toDataURL = function (...args) { encodes++; return original.apply(this, args); };
+    const T = await import('/js/tester.js'), G = { heroes: [], regionOf: [], huds: [], paused: true };
+    T.mountTester(G, 'auto');
+    const from = performance.now();
+    const reports = Array.from({ length: 12 }, (_, i) => T.autoReport('offscreen', `burst ${i}`, { area: 'test', window: 'fixture', game: '', x: 0, z: 0 }));
+    // A duplicate arriving before the picture is ready also shares the original report.
+    reports.push(T.autoReport('offscreen', 'burst 0', { area: 'test', window: 'fixture', game: '', x: 0, z: 0 }));
+    const ids = await Promise.all(reports), rows = JSON.parse(localStorage.getItem('sv2_tester_out') || '[]');
+    const firstEncodes = encodes;
+    await T.autoReport('offscreen', 'later', { area: 'test', window: 'fixture', game: '', x: 0, z: 0 });
+    G.tester.unmount(); HTMLCanvasElement.prototype.toDataURL = original;
+    return { firstEncodes, laterEncodes: encodes - firstEncodes, rows: rows.length, duplicate: ids[0] === ids[12], details: new Set(rows.map(r => r.detail)).size,
+      pictures: new Set(rows.map(r => r.shot)).size, jpeg: rows.every(r => r.shot?.startsWith('data:image/jpeg;base64,')), ms: Math.round(performance.now() - from) };
+  });
+  await ctx.close();
+  ok(result.firstEncodes <= 3 && result.laterEncodes > 0 && result.rows === 12 && result.details === 12 && result.duplicate && result.pictures === 1 && result.jpeg, JSON.stringify(result));
+  return `12 distinct reports and one duplicate share one capture (${result.firstEncodes} encodes); a later event gets a fresh capture; ${result.ms} ms`;
+});
+
+await check('oanquanrules', async () => {
+  const ctx = await b.newContext(), pg = await ctx.newPage();
+  await ctx.route('**/oanquan-fixture', r => r.fulfill({ contentType: 'text/html', body: '<!doctype html><body><div id="stage"></div></body>' }));
+  await pg.goto(new globalThis.URL('oanquan-fixture', URL).href);
+  const result = await pg.evaluate(async () => {
+    await import('/js/games/vietnam.js'); const { GAMES } = await import('/js/games/frame.js');
+    const stage = document.querySelector('#stage'), cleanups = [], timer = window.setTimeout;
+    // This is a legal-turn test; accelerate only its presentation waits. Performance uses normal speed separately.
+    window.setTimeout = (f, ms, ...a) => timer(f, Math.min(ms, 2), ...a);
+    let plan, won = false, taps = 0, busy = 0;
+    const api = { stage, players: [{ name: 'Test one' }, { name: 'Test two' }], two: true, little: false, strong: true,
+      closed: false, sfx: { tap() {}, pop() {}, coin() {} }, say() {}, show() {}, plan(f) { plan = f; },
+      onCleanup(f) { cleanups.push(f); }, win() { won = true; } };
+    const game = GAMES.oanquan.run(api);
+    for (let tick = 0; tick < 30000 && !won; tick++) {
+      const target = plan?.();
+      if (target) { if (!target.isConnected) throw Error('plan returned a detached control'); target.click(); taps++; }
+      else busy++;
+      await new Promise(r => timer(r, 1));
+    }
+    api.closed = true; cleanups.forEach(f => f()); await game; window.setTimeout = timer;
+    return { won, taps, busy };
+  });
+  await ctx.close(); ok(result.won && result.taps > 4 && result.busy > 0, JSON.stringify(result));
+  return `a two-player game finishes through ${result.taps} legal square/direction taps; autoplay waits while seeds move`;
 });
 
 await b.close();
