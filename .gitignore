@@ -34,6 +34,7 @@ marketing/source/runvalley.log
 .claude/settings.local.json
 # --- made by tools/build.mts from .ts files (never committed; do not edit by hand) ---
 /js/audio.js
+/js/avatar.js
 /js/claims.js
 /js/content/storyhelp.js
 /js/family-backup.js
