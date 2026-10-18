@@ -306,7 +306,7 @@ details.relg:not([open]) > .relgrid, details.fold:not([open]) > :not(summary) { 
 
 /* (r85, owner 18 Oct AEDT) Sparkle Lab: one card per device. Line 1 the name and the children, line 2 small and grey
    (device, system, browser, town, last seen), then the Tester and Auto play chips that open each one's settings */
-.devcards { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr)); gap: 10px; }
+.devcards { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr)); gap: 10px; align-items: start; }
 .devcards > .devfind, .devcards > .badtxt, .devcards > .note { grid-column: 1 / -1; }
 .devcard { border: 1px solid var(--line); border-radius: 14px; padding: 10px 12px; background: var(--card); display: flex; flex-direction: column; gap: 6px; min-width: 0; }
 .devcard[hidden] { display: none !important; }
