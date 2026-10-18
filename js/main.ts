@@ -1946,7 +1946,7 @@ startCounting(G); // how many children play, and what they play, for Studio's re
 // moves to layer 1, which the cameras do not show (`visible` is left alone). Checked twice a second; the list is
 // gathered again every 30 s, and what is added to the scene joins it straight away.
 {
-  const FAR = 240, DETAIL = 65, OUTLINE = 40, SMALL = 14, BUSY = 4000, units = [], box = new THREE.Box3(), s = new THREE.Sphere(), v = new THREE.Vector3();
+  const FAR = 240, DETAIL = 65, OUTLINE = 40, SMALL = 14, BUSY = 4000, LABEL = 80, BUBBLE = 100, units = [], box = new THREE.Box3(), s = new THREE.Sphere(), v = new THREE.Vector3();
   let at = -1e9, next = 0, count = -1, seen = new WeakSet();
   const skip = o => o === world.terrain || o.userData.road || o.userData.noFar || o.isInstancedMesh || o.isLight || o.isCamera;
   const visit = (o, top, heroes) => {
@@ -1954,9 +1954,11 @@ startCounting(G); // how many children play, and what they play, for Studio's re
     box.setFromObject(o); if (box.isEmpty()) return; box.getBoundingSphere(s);
     if (s.radius > SMALL) { o.children.forEach(c => visit(c, top, heroes)); return; }
     const meshes = []; let tris = 0;
-    o.traverse(m => { if (!m.isMesh || skip(m)) return; meshes.push(m); const g = m.geometry; tris += (g.index ? g.index.count : g.attributes.position.count) / 3; });
+    o.traverse(m => { if (!(m.isMesh || m.isSprite) || skip(m)) return; meshes.push(m); const g = m.geometry; if (m.isMesh) tris += (g.index ? g.index.count : g.attributes.position.count) / 3; });
     if (!meshes.length) return;
-    const d = Math.min(FAR, 90 + 20 * s.radius, tris > BUSY * Math.max(1, s.radius) ? DETAIL : FAR);
+    // (r86, S3) a picture or name on a sprite is unreadable from LABEL m (about 25 px wide on a phone); an activity's
+    // bubble, which shows children where the fun is, stays to BUBBLE m. Each sprite is a draw of its own.
+    const flat = meshes.every(m => m.isSprite), d = flat ? Math.min(FAR, o.userData.it ? BUBBLE : LABEL) : Math.min(FAR, 90 + 20 * s.radius, tris > BUSY * Math.max(1, s.radius) ? DETAIL : FAR);
     o.updateMatrixWorld(); units.push({ o, top, c: o.worldToLocal(s.center.clone()), far2: d * d, meshes });
   };
   // (all of it every 30 s; in between only what was added to the scene, which takes no time)
