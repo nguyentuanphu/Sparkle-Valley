@@ -35,6 +35,7 @@ marketing/source/runvalley.log
 # --- made by tools/build.mts from .ts files (never committed; do not edit by hand) ---
 /js/audio.js
 /js/avatar.js
+/js/build.js
 /js/claims.js
 /js/content/releases.js
 /js/content/storyhelp.js
