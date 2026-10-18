@@ -6,7 +6,7 @@ const $ = <E extends Element = HTMLInputElement>(s: string) => document.querySel
 let LANG = localStorage.getItem('studioLang') || 'vi';
 const T = (en, vi) => LANG === 'vi' ? vi : en;
 // what a box, a list or a file chooser holds, from its event (TypeScript: an event's target is any element)
-const val = (e: Event) => e.target instanceof HTMLInputElement || e.target instanceof HTMLSelectElement || e.target instanceof HTMLTextAreaElement ? val(e) : '';
+const val = (e: Event) => e.target instanceof HTMLInputElement || e.target instanceof HTMLSelectElement || e.target instanceof HTMLTextAreaElement ? e.target.value : '';
 const fileOf = (e: Event) => e.target instanceof HTMLInputElement && e.target.files ? fileOf(e) : undefined;
 // a [English, Vietnamese] pair in the chosen language
 const T2 = (p: string[]) => T(p[0], p[1]);
