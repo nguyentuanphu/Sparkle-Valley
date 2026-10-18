@@ -1304,8 +1304,8 @@ const gUHow = on => `<div class="gunote"><p class="note">${on
   <button class="grown gu-hold"><span class="ring"></span>${T('Grown-ups', 'Phụ huynh')}<small>${T('press and hold', 'nhấn giữ')}</small></button></div>`;
 const bindGUHow = (body, redraw) => {
   const b = body.querySelector('.gu-hold'); if (!b) return;
-  holdButton(b, () => {
-    openGrownups(() => { if (document.body.contains(body)) redraw(); });
+  holdButton(b, async () => {
+    await openGrownups(() => { if (document.body.contains(body)) redraw(); });
     const d = document.querySelector<HTMLDetailsElement>('.modal.grownups details[data-sec="online"]'); if (d) { d.open = true; d.scrollIntoView({ block: 'start' }); }
   });
 };

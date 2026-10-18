@@ -25,3 +25,11 @@ Owner report: “Animals sounds like pig noise or audio games.” Release is che
 Focused `soundgames` passed, including delayed/missing pig recovery, all ten actual buffers, cancellation, replay serialisation and Story Helpers praise waiting for the animal call. Existing `animalvoices` (10 real clips), `voicecover` (9,527 lines), and the full six-story `storyhelp` check passed. Reading passed all 90 EN/VI age/level cases on the earlier r87 checkpoint. The latest lazy recording-bus and camera-frame refinements are receiving a final focused run; final results belong in the release report.
 
 A labelled source-clip page is available at [audio-review.html](audio-review.html). It plays the individual existing files without game mixing; file-by-file source credits remain in sounds/animals/SOURCES.md. Owner/device listening is still necessary for claims about whether a pig or instrument sounds convincing.
+
+## Cross-feature interruption found by the full suite
+
+The road-safety voice failure reproduced locally. Instrumented logs show the recorded road instruction was requested correctly, then an automatic Daily Adventure step (“Find 3 shuttlecocks”) cancelled it before a source started and used the device voice for the unrelated clue. The asset is present. Adventure step/remembrance announcements now wait behind conversations, games and other busy windows; queued steps are discarded if the day/adventure/step has changed. The original no-native-voice and actual-recorded-playback assertions remain. The road-voice check passed EN/VI locally (95 s), and the full Daily Adventure check passed (225 s). Final GitHub verification still required.
+
+## Music Corner replay
+
+Source review found concurrent tune playback on repeated Play taps. The game now keeps one replay at a time, preserves that guard across instrument-tab redraws, cancels future scheduled notes on close/new recording, and waits for the final note’s decay before enabling replay. Its existing four synthesised timbres and note mappings are unchanged. A focused check exercises all 32 pads, recorded-note replay, repeated taps, tab changes and closing; passed in 67 s. The test preserves recorded first-note delay and turns off the separately tested tap-feedback switch so button sounds cannot masquerade as instrument notes.

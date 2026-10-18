@@ -7248,6 +7248,7 @@ await check('oanquanrules', async () => {
 });
 
 await check('ridingcamera', async () => (await import('./riding-camera.mts')).ridingCameraCheck(b));
+await check('musicaudio', async () => (await import('./music-audio.mts')).musicAudioCheck(b));
 await check('soundgames', async () => (await import('./sound-games.mts')).soundGamesCheck(b));
 await check('rememberedhomes', async () => (await import('./remembered-homes.mts')).rememberedHomesCheck(b));
 await check('settingsgc', async () => (await import('./settings-gc.mts')).settingsGcCheck(b));

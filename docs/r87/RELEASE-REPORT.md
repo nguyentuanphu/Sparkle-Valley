@@ -2,7 +2,7 @@
 
 Camera/audio focused checks now pass. GitHub failures are being repaired; speed checks and the final zip remain pending.
 
-Candidate: `release/r87`, runtime checkpoint `8da5a0b1`, draft [PR #366](https://github.com/nguyentuanphu/Sparkle-Valley/pull/366). Live remains r86. No owner deployment approval received.
+Candidate: `release/r87`, pushed runtime checkpoint `ac749263` (additional audio/settings fixes under verification), draft [PR #366](https://github.com/nguyentuanphu/Sparkle-Valley/pull/366). Live remains r86. No owner deployment approval received.
 
 ## What changes
 
@@ -23,15 +23,18 @@ Candidate: `release/r87`, runtime checkpoint `8da5a0b1`, draft [PR #366](https:/
 | EN/VI phone/tablet/computer and Studio online/desktop/local UI | Pass, screenshots inspected |
 | Voice-download cache loss/resumption | Pass |
 | Terrain equivalence and rigid-guide geometry | Pass |
-| Runtime contract; explicit types; import cycles | Pass; 66 explicit game/check files, zero cycles at the prior architecture checkpoint |
+| Runtime contract; explicit types; import cycles | Pass; 69 explicit game/check files, zero cycles at the prior architecture checkpoint |
 | All-style remembered homes, visible approach, foundations, occupied spare plot, owner/interior and stable NPC/building placement | Pass, 50 s |
 | Default plots | Pass: 66 plots |
 | Stability | Pass: 30 window cycles + 20 games; zero retained settings windows, DOM/canvas growth zero; collected heap +1.52 MB, geometry/texture objects +2 each; no navigation/context loss |
 | Reading | Pass first try: all 90 EN/VI game/age/level cases, 1,700 s on checkpoint 8da5a0b1; camera/animal-audio changes are checked separately |
 | Riding cameras | Pass on latest camera source: 22 driver/animal model-age cases, 10 actual public-boarding cases; phone/tablet/computer photos inspected |
-| Animal playback | Earlier passes: all ten clips, delayed/missing pig, replay/close and Story Helpers ordering; latest lazy-bus source check passes (102 s) |
+| Animal playback | Pass: all ten clips, delayed/missing pig, replay/close and Story Helpers ordering (102 s) |
+| Road voice / Daily Adventure | Pass locally: EN/VI recorded road instruction (95 s), full Daily Adventure behaviour (225 s); automatic clues now wait behind busy windows |
+| Deferred settings and chat | Parents, walkaway, grownupsui, nostudio, feel and five-screen offscreenpanels pass; Friends help opens the correct section after loading (onlineoff, 38 s) |
+| Music Corner | Pass (67 s): all 32 pads, exact recorded-note counts, repeated taps, tab changes and close cancellation; tap feedback is tested separately |
 | perf / battery / startup | Pending, run sequentially |
-| GitHub full suite | Run 39150822922 on 8da5a0b1: 211/219; deferred-panel/chat timing and road-voice fallback under repair; final-source rerun required |
+| GitHub full suite | Run 39156447315 on ac749263: 219/221. Remaining onlineoff/ownerroadvoice runtime fixes pass locally; final-source rerun required |
 | Netlify zip | OUTDATED: built from 8da5a0b1; rebuild required after camera/audio changes |
 | AI review | **Did not finish.** Run 39149385863 produced no verdict; green workflow is not an AI pass |
 
@@ -42,7 +45,9 @@ Candidate: `release/r87`, runtime checkpoint `8da5a0b1`, draft [PR #366](https:/
 - The first home screenshot moved only the camera, so ordinary distance culling hid the house. The check now brings the child near, requires an actual home draw and validates foundations; the screenshot was inspected.
 - Earlier stress investigations retained Playwright element handles and DevTools console objects, invalidating their retention counts. Corrected probes collect closed windows; earlier results are preserved with caveats. The app's independently identified install/voice/window-handler retention paths were repaired. Do not attribute the contaminated counts to the app.
 - New camera coverage first selected an intentionally unrideable cargo bike, then required a public taxi unavailable in this map. The check now discovers actual mount/boarding actions; all forward-view, eye-bound and restoration assertions remain. Final camera coverage passes.
-- Deferred-panel/chat checks initially assumed synchronous opening. They now await actual completion and retain their content/accessibility/close assertions; final reruns pending.
+- Music Corner’s new check initially assumed the first recorded note played immediately, then counted an instrument-tab button’s feedback as an extra note. The check retains the recording’s original delay and isolates instrument output using the existing tap-sound switch; exact final replay and cancellation assertions stay in place. Final focused run passes (67 s).
+- Road-voice diagnostics found an automatic Daily Adventure step cancelling the recorded instruction. Automatic prompts now wait and discard stale queued steps; the existing no-device-voice assertion passes.
+- Deferred-panel/chat checks initially assumed synchronous opening. They now await actual completion and retain their content/accessibility/close assertions. A separate runtime Friends-help race was also fixed by awaiting panel opening before expanding Internet settings.
 - The service-worker type guard initially excluded the unit fetch stand-in; corrected the guard, with all 175 unit tests passing afterwards.
 
 ## Still pending / unavailable

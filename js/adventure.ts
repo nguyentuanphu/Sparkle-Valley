@@ -52,6 +52,7 @@ export function createAdventure(G) {
   const heroOf = playerId => G.heroes.find(h => pid(h) === playerId) || null;
   const firstDay = new Map();   // (owner: "when the child first plays") the day each child first played this time
   const live = new Map();       // hero -> { things: [...], giveIt, key }
+  const pendingSteps = new WeakMap<object, { day: number; id: string; step: number; lines: string[][] }>();
   let lastTap = new Map();      // hero -> { it, t }
 
   // ---------- today ----------
@@ -131,7 +132,7 @@ export function createAdventure(G) {
       want.forEach((th, k) => {
         const isAlso = k >= n; if ((!isAlso && k < got) || (isAlso && k - n < got2)) return;
         const [x, z] = spots[k], g = thingMesh(th.icon); g.position.set(x, heightAt(x, z), z); scene.add(g);
-        const t = { x, z, g, th, also: isAlso, got: false };
+        const t: { x: number; z: number; g: THREE.Group; th: typeof th; also: boolean; got: boolean; it?: { id: string; x: number; z: number; r: number; icon: string; bubble: string; visible: (hero: typeof h) => boolean; label: () => string; act: (hero: typeof h) => void } } = { x, z, g, th, also: isAlso, got: false };
         t.it = { id: 'adv_find', x, z, r: 2.4, icon: th.icon, bubble: th.icon, visible: hh => hh === h && on() && !t.got, label: () => T('Pick up', 'Nhặt') + ' ' + T(th.en, th.vi), act: hh => pickUp(hh, t) };
         G.interactables.push(t.it); N.things.push(t);
       });
@@ -182,8 +183,9 @@ export function createAdventure(G) {
     const r = today(h), a = adv(h); if (!a || r.done) return;
     const all = advance(r); saveProfiles(); clearLive(h); stopTrail(h);
     if (all) { finish(h); return; }
-    const s = a.steps[r.step]; G.toast(h, '✨ ' + tt(stepText(s, h.profile.age))); sayL(stepText(s, h.profile.age));
-    if (tricky(h) && s.kind === 'find') { r.timer = Date.now() + TRICKY_SECONDS * 1000; sayL(ADV_LINES.hurry); }
+    const s = a.steps[r.step], lines = [stepText(s, h.profile.age)];
+    if (tricky(h) && s.kind === 'find') { r.timer = Date.now() + TRICKY_SECONDS * 1000; lines.push(ADV_LINES.hurry); }
+    pendingSteps.set(h, { day: r.day, id: r.id, step: r.step, lines });
     sync(h); checkHere(h);
   }
   // a "go" step done already (the child is there), a talk to the one they are next to
@@ -213,8 +215,8 @@ export function createAdventure(G) {
   { const prev = G.onCooked; G.onCooked = (h, rc) => { if (prev) prev(h, rc); const s = h && on() && step(h); if (s && s.kind === 'cook') next(h); }; }
 
   // the chest waits until the child is free: no game, film, story, speech box or other window open
-  const busy = () => G.paused || gameOpen() || !!document.querySelector('.dialog, .modal, .reward, .theatre, .storybook, .songs, .resttime, .dancebreak, .bedtime');
-  const waitFree = () => new Promise(res => { const t = () => busy() ? setTimeout(t, 400) : res(); t(); });
+  const busy = () => G.paused || gameOpen() || !!document.querySelector('.dialog, .chatbox, .modal, .reward, .howto, .theatre, .storybook, .songs, .resttime, .dancebreak, .bedtime');
+  const waitFree = () => new Promise<void>(res => { const t = () => busy() ? setTimeout(t, 400) : res(); t(); });
   // ---------- the end: the chest (D6), the stamp and the week chest (D10) ----------
   async function finish(h) {
     const r = today(h), a = adv(h), p = h.profile, full = stamp(r, r.day); saveProfiles();
@@ -236,7 +238,7 @@ export function createAdventure(G) {
     return got;
   }
   function chest(h, a) {
-    return new Promise(res => {
+    return new Promise<void>(res => {
       const st = STICKERS[a.reward.sticker], little = !big(h);
       const m = modal('advwin advchest', `<h2>${esc(tt(titleOf(a, FEST_NAMES())))}</h2><div class="adv-bigchest shut">${pic('🧰')}</div>
         <div class="adv-prize" hidden><span class="adv-stk">${pic(st ? st.icon : '⭐')}</span><b>${esc(st ? T(st.en, st.vi) : '')}</b></div>
@@ -266,11 +268,11 @@ export function createAdventure(G) {
     const p = h.profile, r = rec(p), pet = p.lanterns && p.lanterns.pet;
     const prize = openWeekChest(r, { hats: (pet && pet.hats) || [], pets: (p.pets || []).map(x => x.kind).concat((farm.petYard || []).map(x => x.kind)) });
     if (!prize) return Promise.resolve();
-    if (prize.hat) { const L = p.lanterns = p.lanterns || {}, s = L.pet = L.pet || {}; s.hats = s.hats || []; if (!s.hats.includes(prize.hat)) s.hats.push(prize.hat); s.hat = prize.hat; G.kidplay && G.kidplay.refresh && G.kidplay.refresh(); }
-    else if (prize.pet) { p.pets = Array.isArray(p.pets) ? p.pets : []; if (p.pets.length < 2) p.pets.push({ kind: prize.pet, name: '' }); else { farm.petYard = farm.petYard || []; farm.petYard.push({ kind: prize.pet, name: '' }); saveFarm(); } G.pets && G.pets.sync && G.pets.sync(); }
-    else if (prize.coins) G.addCoins && G.addCoins(prize.coins);
+    if ('hat' in prize && prize.hat) { const L = p.lanterns = p.lanterns || {}, s = L.pet = L.pet || {}; s.hats = s.hats || []; if (!s.hats.includes(prize.hat)) s.hats.push(prize.hat); s.hat = prize.hat; G.kidplay && G.kidplay.refresh && G.kidplay.refresh(); }
+    else if ('pet' in prize && prize.pet) { p.pets = Array.isArray(p.pets) ? p.pets : []; if (p.pets.length < 2) p.pets.push({ kind: prize.pet, name: '' }); else { farm.petYard = farm.petYard || []; farm.petYard.push({ kind: prize.pet, name: '' }); saveFarm(); } G.pets && G.pets.sync && G.pets.sync(); }
+    else if ('coins' in prize && prize.coins) G.addCoins && G.addCoins(prize.coins);
     saveProfiles();
-    return new Promise(res => {
+    return new Promise<void>(res => {
       const m = modal('advwin advchest week', `<h2>${esc(tt(ADV_LINES.weekChest))}</h2><div class="adv-bigchest open">${pic('🧰')}</div><div class="adv-prize"><span class="adv-stk">${pic(prize.icon)}</span><b>${esc(T(prize.en, prize.vi))}</b></div><button class="adv-go">${esc(T('Hooray!', 'Hoan hô!'))}</button>`);
       const was = G.paused; G.paused = true; feel.celebrate({ little: !big(h) }); sayL(ADV_LINES.weekChest);
       m.querySelector('.adv-go').onclick = () => { G.paused = was; m.close(); res(); };
@@ -280,7 +282,7 @@ export function createAdventure(G) {
   // ---------- the way (ADV-6): sparkles along the roads to where the step is ----------
   const trails = new Map(); let graph = null;
   const pool = [...Array(24)].map(() => { const s = sprite('✨', 1.1); s.visible = false; scene.add(s); return s; });
-  function stopTrail(h) { if (h) trails.delete(h); else trails.clear(); if (!trails.size) pool.forEach(s => { s.visible = false; }); }
+  function stopTrail(h = undefined) { if (h) trails.delete(h); else trails.clear(); if (!trails.size) pool.forEach(s => { s.visible = false; }); }
   function showWay(h) {
     const t = stepPos(h); if (!t) return false;
     graph = graph || roadGraph(G.PLACES || []);
@@ -381,8 +383,17 @@ export function createAdventure(G) {
     const now = performance.now(); if (now - look < 1000) return; look = now;
     for (const h of G.heroes) {
       const r = today(h); sync(h); checkHere(h);
+      // Automatic adventure clues must not interrupt a child's current conversation or game.
+      if (busy()) continue;
+      const pending = pendingSteps.get(h);
+      if (pending) {
+        pendingSteps.delete(h);
+        if (pending.day === r.day && pending.id === r.id && pending.step === r.step && !r.done) {
+          G.toast(h, '✨ ' + tt(pending.lines[0])); pending.lines.forEach(sayL); continue;
+        }
+      }
       const line = rememberLine(r, r.day);
-      if (line && !G.paused) { r.told = r.day; saveProfiles(); G.toast(h, tt(line)); sayL(line); }
+      if (line) { r.told = r.day; saveProfiles(); G.toast(h, tt(line)); sayL(line); }
     }
   });
 

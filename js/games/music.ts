@@ -8,7 +8,7 @@ import { el, wait } from '../util.js';
 
 const midi = m => 440 * Math.pow(2, (m - 69) / 12);
 const PENTA = [60, 62, 64, 67, 69, 72, 74, 76];
-export const INSTRUMENTS = {
+export const INSTRUMENTS: Record<string, { flag: string; icon: string; name: () => string; about: [string, string]; play: (n: number) => void }> = {
   danbau: { flag: '🇻🇳', icon: '🎸', name: () => T('Đàn bầu', 'Đàn bầu'), about: ['The đàn bầu has just one string. The player bends a flexible stick to make the note slide up and down, like singing!', 'Đàn bầu chỉ có một dây. Người chơi uốn cần đàn để nốt nhạc trượt lên xuống, như đang hát vậy!'],
     play: n => tone(midi(PENTA[n] + 12), 1.4, { type: 'sine', vol: .2, bend: [.18, n % 2 ? 1.06 : .95, .5], vib: 5, vibRate: 5.5, attack: .01 }) },
   didgeridoo: { flag: '🇦🇺', icon: '🪵', name: () => T('Didgeridoo', 'Kèn didgeridoo'), about: ['The didgeridoo is a long wooden tube played by Aboriginal people in northern Australia for thousands of years. It makes a deep, buzzing drone.', 'Didgeridoo là ống gỗ dài, người Thổ dân miền bắc nước Úc đã thổi từ hàng nghìn năm nay. Nó tạo ra tiếng ù trầm và rung.'],
@@ -26,7 +26,11 @@ const PAD_COLORS = ['#ff5f7e', '#ff9f43', '#ffd23f', '#5fd36a', '#3cc7e8', '#5f8
 register({
   id: 'music', icon: '🎶', origin: 'both', name: () => T('Music Corner', 'Góc Âm Nhạc'),
   async run(api) {
-    let inst = 'danbau', rec = null, tune = [];
+    type Note = [number, number, string];
+    let inst = 'danbau', rec: (Note[] & { t0: number }) | null = null, tune: Note[] = [];
+    let playback = 0, playingTune = false;
+    api.onCleanup(() => { playback++; playingTune = false; });
+    const refreshPlayback = () => { const b = api.stage.querySelector('.mc-row button:nth-child(2)'); if (b) b.disabled = !tune.length || playingTune; };
     api.dots(0, 0);
     const draw = () => {
       const I = INSTRUMENTS[inst];
@@ -42,20 +46,33 @@ register({
       api.stage.appendChild(pads);
       const row = el('div', 'mc-row');
       const recB = el('button', 'btn big' + (rec ? ' danger' : ''), rec ? '⏹️ ' + T('Stop', 'Dừng') : '⏺️ ' + T('Record', 'Thu âm'));
-      const playB = el('button', 'btn big primary', '▶️ ' + T('Play my tune', 'Nghe giai điệu của con')); playB.disabled = !tune.length;
+      const playB = el('button', 'btn big primary', '▶️ ' + T('Play my tune', 'Nghe giai điệu của con')); playB.disabled = !tune.length || playingTune;
       const doneB = el('button', 'btn big', '🌟 ' + T('Finish', 'Xong'));
       const recInfo = el('span', 'mc-info', rec ? '⏺️ ' + rec.length : tune.length ? `🎵 ${tune.length}` : '');
       recB.onclick = () => {
+        playback++; playingTune = false;
         if (rec) { tune = rec.slice(0, 40); rec.t0 = 0; rec = null; api.say(tune.length ? 'Recorded! Tap play to hear your tune.' : 'Nothing recorded. Try again!', tune.length ? 'Đã thu xong! Bấm nghe để nghe giai điệu của con.' : 'Chưa thu được gì. Thử lại nhé!'); }
-        else { rec = []; rec.t0 = performance.now(); api.say('Recording! Play your tune now.', 'Đang thu âm! Con chơi giai điệu đi.'); }
+        else { const notes: Note[] = []; rec = Object.assign(notes, { t0: performance.now() }); api.say('Recording! Play your tune now.', 'Đang thu âm! Con chơi giai điệu đi.'); }
         draw();
       };
-      playB.onclick = async () => { const start = performance.now(); for (const [t, n, k] of tune) { const w = t - (performance.now() - start); if (w > 0) await wait(w); if (api.closed) return; INSTRUMENTS[k].play(n); const b = api.stage.querySelectorAll('.mc-pad')[n]; if (b && k === inst) { b.classList.remove('hit'); void b.offsetWidth; b.classList.add('hit'); } } };
+      playB.onclick = async () => {
+        if (playingTune || api.closed) return;
+        const token = ++playback, notes = tune.slice(), start = performance.now(); playingTune = true; refreshPlayback();
+        try {
+          for (const [t, n, k] of notes) {
+            const w = t - (performance.now() - start); if (w > 0) await wait(w);
+            if (api.closed || token !== playback) return;
+            INSTRUMENTS[k].play(n); const b = api.stage.querySelectorAll('.mc-pad')[n];
+            if (b && k === inst) { b.classList.remove('hit'); void b.offsetWidth; b.classList.add('hit'); }
+          }
+          await wait(1650); // let the longest plucked note finish before replaying the tune
+        } finally { if (token === playback) { playingTune = false; refreshPlayback(); } }
+      };
       doneB.onclick = () => api.win({ title: T('What beautiful music!', 'Âm nhạc hay quá!') });
       row.append(recB, playB, recInfo, doneB); api.stage.appendChild(row);
     };
     draw();
     api.say('Welcome to the Music Corner! Choose an instrument and tap the coloured pads.', 'Chào mừng đến Góc Âm Nhạc! Chọn một nhạc cụ rồi chạm vào các phím màu nhé.');
-    await new Promise(res => api.onCleanup(res));
+    await new Promise<void>(res => api.onCleanup(res));
   }
 });
