@@ -360,3 +360,4 @@ Release repair update (15 Oct 2026 AEDT): repair13 narration cancellation / lega
 - **Release r87 additional reliability claim (18 Oct AEDT):** `js/install.js` (rename-only conversion first). Its install-change callbacks retain every closed Grown-ups window through the install button; replace per-button strong callbacks with one bounded weak registry. Voice cleanup alone did not clear the retained windows (3/3 still retained).
 
 - Release r87 claims `js/worldedit.js` and `js/plots.js` for remembered homes and stable Studio placement (18 Oct 2026 AEDT).
+- Release r87 claims `js/player.js`, `js/rideview.js`, and sound-game audit (audio.ts, learning.js, music.js, folk2.js, reading.js/content) following the owner's direct camera/sound request, 19 Oct AEDT. Work alone; convert each touched game JavaScript file first.
