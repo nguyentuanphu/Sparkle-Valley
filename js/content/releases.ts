@@ -3,7 +3,9 @@
 // for), en, vi, group, def (what it is when Studio never set it: the owner chose "everything on"). Every festival is
 // one too (fest_<id>, from js/content/festcal.js). Part 2 of round R adds the rest of the list as each one is built.
 import { FESTCAL } from './festcal.js';
-export const RELEASES = [
+// game: the money game it switches; icon: a festival's picture
+export type Release = { id: string, en: string, vi: string, group: string, def: boolean, icon?: string, game?: string };
+export const RELEASES: Release[] = [
   { id: 'autoplay', en: 'Auto play check (for grown-ups testing: a small window that plays everything; every device, or only the ticked ones)', vi: 'Tự chơi để kiểm tra (cho người lớn thử game: một cửa sổ nhỏ tự chơi mọi thứ; mọi máy, hoặc chỉ các máy được chọn)', group: 'tools', def: false },
   { id: 'tester', en: 'Testers (devices that report problems by themselves, with the ladybird; every device, or only the ticked ones)', vi: 'Người thử (máy tự báo lỗi, có con bọ rùa; mọi máy, hoặc chỉ các máy được chọn)', group: 'tools', def: false },
   { id: 'traffic', en: 'Traffic on the roads', vi: 'Xe cộ trên đường', group: 'world', def: true },
@@ -41,7 +43,7 @@ export const RELEASES = [
   { id: 'birthday', en: 'A birthday surprise (birthday kept on the device only)', vi: 'Quà bất ngờ ngày sinh nhật (ngày sinh chỉ lưu trên máy)', group: 'kids', def: true },
   ...FESTCAL.map(F => ({ id: 'fest_' + F.id, en: F.en, vi: F.vi, group: 'festivals', def: true, icon: F.icon }))
 ];
-export const RELEASE_GROUPS = { story: ['The lantern story', 'Truyện đèn lồng'], kids: ['For little ones', 'Cho các bé'], rewards: ['Shop and rewards', 'Cửa hàng và phần thưởng'], world: ['In the valley', 'Trong thung lũng'], festivals: ['Festivals', 'Lễ hội'], tools: ['For testing', 'Để thử'] };
+export const RELEASE_GROUPS: Record<string, [string, string]> = { story: ['The lantern story', 'Truyện đèn lồng'], kids: ['For little ones', 'Cho các bé'], rewards: ['Shop and rewards', 'Cửa hàng và phần thưởng'], world: ['In the valley', 'Trong thung lũng'], festivals: ['Festivals', 'Lễ hội'], tools: ['For testing', 'Để thử'] };
 // (Play reading trial, owner 11 Oct 2026 AEDT) the ten reading games: off until an admin switches them on
 // (owner, 12 Oct AEDT: "all other features should be on for now until I say or switch it off"; only power poles and
 // the auto play check stay off) the reading games and story chapters 2 and 3 are on unless Studio switches them off

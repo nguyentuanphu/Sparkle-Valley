@@ -240,7 +240,7 @@ register({
       const pull = d => { x += d * .045; api.sfx.pop(Math.abs(Math.round(x * 10))); };
       b0.onclick = () => pull(-1); if (b1) b1.onclick = () => pull(1);
       const aiRate = api.little ? 1.4 : ([1.9, 2.3, 2.8, 3.2, 3.6][Math.min(4, api.level - 1)] + (api.strong ? .4 : 0) + attempt * -.25);
-      await new Promise(res => {
+      await new Promise<void>(res => {
         const tick = now => {
           if (api.closed) return res();
           const dt = Math.min(.1, (now - last) / 1000); last = now;
