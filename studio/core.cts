@@ -20,7 +20,7 @@ function folderStore(root) {
   const at = rel => { const p = root && safeJoin(root, rel); if (!p) throw new Error('bad path'); return p; };
   return {
     kind: 'folder', where: root || '', backup: true,
-    ok: () => !!root && fs.existsSync(path.join(root, 'index.html')) && fs.existsSync(path.join(root, 'js', 'main.js')),
+    ok: () => !!root && fs.existsSync(path.join(root, 'index.html')) && ['main.js', 'main.ts'].some(f => fs.existsSync(path.join(root, 'js', f))), // (r86: main is TypeScript; the exe makes main.js from it when asked)
     read: async rel => { try { const p = at(rel); return fs.statSync(p).isFile() ? fs.readFileSync(p) : null; } catch (e) { return null; } },
     write: async (rel, buf) => { const p = at(rel); fs.mkdirSync(path.dirname(p), { recursive: true }); fs.writeFileSync(p, buf); },
     remove: async rel => { const p = at(rel); if (fs.existsSync(p)) fs.unlinkSync(p); },
@@ -549,7 +549,7 @@ function createStudio({ store, conf, online = false, local = {}, family = null }
       return ok(job('github', J => publishDraft(J, msg))); // the exe: the draft goes live
     }
     if (api === 'github/draft' && post) { if (S.publish) return bad('Online, every save already goes to the draft.'); return ok(job('github', J => draftFromFolder(J, String(b.message || '').slice(0, 200)))); }
-    if (api === 'srcfiles') { const list = []; for (const d of ['js', 'js/games']) for (const f of (await S.list(d)).sort()) if (f.endsWith('.js')) list.push(d + '/' + f); return ok(list); }
+    if (api === 'srcfiles') { const list = []; for (const d of ['js', 'js/games']) for (const f of (await S.list(d)).sort()) if (/\.(js|ts)$/.test(f)) list.push(d + '/' + f.replace(/\.ts$/, '.js')); return ok([...new Set(list)]); } // (r86: a TypeScript file is read as the .js made from it)
     if (api === 'voices/have') return ok(await voicesHave());
     // (Voice & Audio, 12 Oct) the daily voice recording (.github/workflows/voices-daily.yml): its last run's summary,
     // from the voices/daily branch while its recordings wait for Release to merge them, else from main
