@@ -39,6 +39,7 @@ round); the full suite green before a report; times in AEST; no keys or personal
 All of them once per release (`node suite.mjs`), plus `node suite.mjs --changed` after every merge (it always includes `types unit arch rules`).
 
 ## Owner's decisions
+- 18 Oct AEDT, about 12:30 pm (owner, pop-up "Everything touched becomes TS"): **every file a chat changes is converted to TypeScript first** (rename-only commit, type notes to 0 errors, then the feature; new files in TypeScript; files claimed on the board before converting). And (owner): r85 ships from another chat, so the main chat's batch 4, S4, S3, S2 and both helpers' work go into **r86**.
 - 18 Oct AEDT, about 12 pm (owner, pop-up): **three chats for r85**: the main chat (Release) does TypeScript batch 4, then S4, S3, S2 in that order and collects r85; Helper 1: Studio controls, the group dropdown, the devices cards, #350, #339; Helper 2: the 10 drawing games and the ride camera angles. Replaces the three-helper split above.
 - 18 Oct AEDT, about 11:40 am (owner, pop-ups): r85 helpers: **Studio** (Studio controls every game function, story films first; the game's group dropdown moves into its detail panel; the devices list becomes a card with Tester and Auto play chips), **Play** (all 10 drawing games), **World** (ride camera angles beside the rider's eye; #350, #339). Briefs: `docs/cores/tasks/r85-helpers-20261018.md`.
 - 18 Oct AEDT, about 6:20 am (owner, pop-up): **"yes, deploy" for r83** (PR #333, merged as `2ac5ca2d`; live 6:31 am AEDT; SparkleStudio.exe r83 published). Covers this round only.
