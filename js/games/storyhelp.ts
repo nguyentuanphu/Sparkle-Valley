@@ -11,7 +11,7 @@
 import { T } from '../i18n.js';
 import { settings } from '../state.js';
 import { sayAsync, hush, spoken } from '../voice.js';
-import { animalCall } from '../audio.js';
+import { animalCall, animalRecording, loadAnimalCalls } from '../audio.js';
 import { pic } from '../art.js';
 import { shuffle, el, wait, esc } from '../util.js';
 import { choiceButtons } from './frame.js';
@@ -109,6 +109,8 @@ async function put(api: Api, task: Extract<Task, { kind: 'put' }>, wrap: HTMLEle
   const things: Thing[] = little ? task.things.slice(0, 1) : [...task.things, ...(task.more || [])];
   const tray = el('div', 'sh-tray'); wrap.appendChild(tray);
   let sel: HTMLElement | null = null, left = things.length, hintT: any = 0;
+  let stopAnimal = () => {}, endT: ReturnType<typeof setTimeout> | 0 = 0;
+  api.onCleanup(() => { stopAnimal(); clearTimeout(endT); });
   const glow = (id: string | null) => spots.forEach((s, k) => s.classList.toggle('glow', k === id));
   const armHint = (th: Thing) => { clearTimeout(hintT); if (little) hintT = setTimeout(() => glow(th.to), HINT_MS); };
   api.onCleanup(() => clearTimeout(hintT));
@@ -119,8 +121,9 @@ async function put(api: Api, task: Extract<Task, { kind: 'put' }>, wrap: HTMLEle
       if (spot.dataset.id !== th.to) { api.wrong(spot, ...HELP_LINES.notThere); if (little) glow(th.to); return; }
       b.classList.add('gone'); b.classList.remove('sel'); sel = null; glow(null);
       spot.querySelector('.sh-got')!.insertAdjacentHTML('beforeend', pic(th.pic)); api.right(spot);
-      if (CALL[th.to]) animalCall(CALL[th.to], 1.2); else if (!little) sayAsync(word(th.word), word(th.word));
-      if (--left <= 0) { clearTimeout(hintT); setTimeout(() => res(true), 700); return; }
+      const recording = CALL[th.to] && settings.sound ? animalRecording(CALL[th.to]) : null;
+      stopAnimal(); if (recording) stopAnimal = animalCall(CALL[th.to], 1.2); else if (!little) sayAsync(word(th.word), word(th.word));
+      if (--left <= 0) { clearTimeout(hintT); endT = setTimeout(() => { stopAnimal(); res(true); }, Math.max(700, (recording?.duration || 0) * 1000 + 100)); return; }
       const next = things.find((x, k) => !tray.children[k].classList.contains('gone')); if (next) armHint(next);
     };
     const spotAt = (x: number, y: number) => { for (const s of spots.values()) { const r = s.getBoundingClientRect(), pad = 18; if (x > r.left - pad && x < r.right + pad && y > r.top - pad && y < r.bottom + pad) return s; } return null; };
@@ -176,7 +179,7 @@ async function order(api: Api, task: Extract<Task, { kind: 'order' }>, wrap: HTM
 }
 
 export async function play(api: Api): Promise<unknown> {
-  style(); api.onCleanup(hush);
+  style(); api.onCleanup(hush);if(settings.sound)void loadAnimalCalls();
   const little = !!api.little, tier = little ? 0 : (typeof api.tier === 'function' ? api.tier() : Math.max(1, api.level | 0));
   // choose a story (its cover: a picture and its name)
   api.stage.innerHTML = '';

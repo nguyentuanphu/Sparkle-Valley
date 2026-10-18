@@ -144,7 +144,7 @@ await check('lighterload', async () => {
       const full = await t.load(); return { before, after: full.pages.length, en: full.pages[0][1], same: full === t };
     });
     ok(tale.same && tale.before === tale.after && tale.en, 'lazy tale lost its pages/identity: ' + JSON.stringify(tale));
-    await P.page.evaluate(async () => { (await import('/js/ui.js')).openGrownups(() => {}); });
+    await P.page.evaluate(async () => { await (await import('/js/ui.js')).openGrownups(() => {}); });
     await P.page.locator('#gBil').check();
     await P.page.waitForFunction(() => !!window.__voiceIndexCheck.voicePack()?.signatures?.vi);
     await clear(P.page);
@@ -2652,7 +2652,7 @@ await check('parents', async () => {
     S.settings.readyMissions = Object.fromEntries((await import('/js/content/familymissions.js')).FAMILY_MISSIONS.map(m => [m.id, false])); p.familyGuideSeen = true;
     S.settings.missions = []; S.settings.bedtime = ''; p.stats.days = { [new Date().toISOString().slice(0, 10)]: { min: 30, games: 4 } };
     // Grown-ups: write a mission; the weekly note and the cards are there
-    const { openGrownups } = await import('/js/ui.js'); openGrownups(); await w(500);
+    const { openGrownups } = await import('/js/ui.js'); await openGrownups(); await w(500);
     const g = document.querySelector('.modal.grownups'); g.querySelector('details[data-sec=family]').open = true;
     g.querySelector('#fmEn').value = 'Help set the table'; g.querySelector('#fmVi').value = 'Giúp dọn bàn ăn'; g.querySelector('#fmAdd').click(); await w(400);
     const g2 = document.querySelector('.modal.grownups'); out.listed = /Help set the table/.test(g2.textContent); out.note = !!g2.querySelector('.wknote p'); out.certBtn = !!g2.querySelector('[data-cert]');
@@ -2853,7 +2853,7 @@ await check('noemoji', async () => {
   await scan(P, 'valley');
   await P.page.evaluate(() => __sv.openGamesHub(0)); await P.page.waitForTimeout(500); await scan(P, 'Vui chơi'); await clear(P.page);
   for (const t of ['map', 'bag', 'log', 'album', 'passport', 'games', 'cam', 'friend']) { await P.page.evaluate(t => __sv.openPad(0, t), t); await P.page.waitForTimeout(400); await scan(P, 'Pad ' + t); await clear(P.page); }
-  await P.page.evaluate(async () => { (await import('/js/ui.js')).openGrownups(() => { }); }); await P.page.waitForTimeout(500);
+  await P.page.evaluate(async () => { await (await import('/js/ui.js')).openGrownups(() => { }); }); await P.page.waitForTimeout(500);
   await P.page.evaluate(() => document.querySelectorAll('details').forEach(d => { d.open = true; })); await P.page.waitForTimeout(300); await scan(P, 'Grown-ups'); await clear(P.page);
   await P.page.evaluate(() => { __sv.dialog('Bà Năm', [['🌸 Hello! 🇻🇳 🇦🇺', '🌸 Chào con! 🇻🇳 🇦🇺']]); }); await P.page.waitForTimeout(400); await scan(P, 'speech box'); await clear(P.page);
   const ids = await P.page.evaluate(async () => Object.keys((await import('/js/games/frame.js')).GAMES));
@@ -3214,7 +3214,7 @@ await check('walkaway', async () => {
   const P = await open(b, { w: 900, h: 640 }); await clear(P.page);
   const r = await P.page.evaluate(async () => {
     const G = __sv, h = G.heroes[0], C = await import('/js/chat.js'), x0 = h.pos.x, z0 = h.pos.z, wait = ms => new Promise(r => setTimeout(r, ms));
-    G.dialog('Bà Năm', [['Hello there, little one!', 'Chào con!']]); C.openChat(G, 0, Object.keys(C.PERSONAS)[0]);
+    G.dialog('Bà Năm', [['Hello there, little one!', 'Chào con!']]); await C.openChat(G, 0, Object.keys(C.PERSONAS)[0]);
     await wait(400); h.place(x0 + 3, z0); await wait(1200);
     const near = { dialog: !!document.querySelector('.dialog:not(.out)'), chat: !!document.querySelector('.chatbox') };
     h.place(x0 + 9, z0); await wait(1500);
@@ -3390,7 +3390,7 @@ await check('gamelevel', async () => {
   // Festivals: in the main settings
   // Festival calendar: only a calendar; no decorations choice in the game or in Grown-ups
   r.fest = await P.page.evaluate(async () => { const U = await import('/js/ui.js'), w = t => new Promise(r => setTimeout(r, t));
-    U.openGrownups(); await w(300); const inGrown = !!document.querySelector('.seg.fest, select.fest-pick'); document.querySelectorAll('.modal').forEach(m => m.remove());
+    await U.openGrownups(); await w(300); const inGrown = !!document.querySelector('.seg.fest, select.fest-pick'); document.querySelectorAll('.modal').forEach(m => m.remove());
     // (bug #32, owner 11 Oct) the calendar is only a calendar: nothing to visit, no decorations choice in the game
     U.openFestivals(__sv, 0); await w(300); before = !!document.querySelector('.modal select.fest-pick, .fest-hold, .fest-grown'), visit = document.querySelectorAll('.modal [data-fest]').length, rows = document.querySelectorAll('.modal .fcal-row').length;
     return { inGrown, before, visit, rows }; });
@@ -3572,7 +3572,7 @@ await check('grownupsui', async () => {
     const a = h.q('.act').getBoundingClientRect(), mv = h.q('.hud-br').getBoundingClientRect();
     const { say } = await import('/js/voice.js'); say('A test line.', 'Một câu thử.'); await wait(400);
     const cap = document.querySelector('.caption'), c = cap ? cap.getBoundingClientRect() : null;
-    const { openGrownups } = await import('/js/ui.js'); openGrownups(); await wait(400);
+    const { openGrownups } = await import('/js/ui.js'); await openGrownups(); await wait(400);
     const secs = [...document.querySelectorAll('.grownups details.gsec')].map(d => d.dataset.sec), open = [...document.querySelectorAll('.grownups details.gsec[open]')].map(d => d.dataset.sec);
     // (round R privacy, 9 Oct) no voice engine or voice key any more; the privacy notice is its own small block at the top
     const eng = document.querySelector('.grownups details.xeng, .grownups #xKey, .grownups #xTts, .grownups #xClone'), credits = !!document.querySelector('.grownups #crName');
@@ -4105,15 +4105,17 @@ await check('joins', async () => {
 await check('ownertransportpov', async () => {
   const P = await open(b, { w: 900, h: 640 }); await clear(P.page);
   const rows = [];
-  for (const age of ['little', 'big']) for (const kind of ['bus', 'busAU', 'tramModern']) {
+  const kinds=await P.page.evaluate(()=>{const G=__sv,ids=G.interactables.filter(i=>/^ride_/.test(i.id)).map(i=>G.traffic.slots[+i.id.slice(5)].id);if(G.interactables.some(i=>/^xichlo_/.test(i.id)))ids.push('xichlo');return [...new Set(ids)].sort();});
+  // Cover every actual boarding action; this layout has no moving taxi boarding slot.
+  ok(['bus','busAU','tramModern','touristCart','xichlo'].every(id=>kinds.includes(id)), 'Missing public ride coverage: '+kinds);
+  for (const age of ['little', 'big']) for (const kind of kinds) {
     await P.page.evaluate(({age,kind}) => {
-      const G=__sv,h=G.heroes[0]; h.profile.age=age;
-      const i=G.interactables.find(i=>/^ride_/.test(i.id)&&G.traffic.slots[+i.id.slice(5)].id===kind);
+      const G=__sv,h=G.heroes[0]; h.profile.age=age;h.av.root.scale.setScalar(age==='little'?.72:.9);
+      const i=G.interactables.find(i=>kind==='xichlo'?/^xichlo_/.test(i.id):/^ride_/.test(i.id)&&G.traffic.slots[+i.id.slice(5)].id===kind);
       if(!i) throw Error('No actual public transport '+kind);
       h.place(i.x+2,i.z); window.__povBoard=i.act(h,G);
     }, {age,kind});
-    await P.page.locator('.dialog .dchoices button').first().click();
-    await P.page.locator('.stoppick [data-next]').click();
+    if(kind!=='xichlo'){await P.page.locator('.dialog .dchoices button').first().click();await P.page.locator('.stoppick [data-next]').click();}
     await P.page.evaluate(async()=>{await window.__povBoard; const G=__sv,h=G.heroes[0]; const sl=G.traffic.slots.find(s=>s.passenger===h); if(!sl)throw Error('Boarding failed'); sl.mover.wait=100; for(let k=0;k<90;k++)h.update(1/60,{cdx:0,cdy:0,mx:0,mz:0,jump:()=>false},k/60,G);});
     // Synthetic targets prove the actual rendered sightline, not just camera coordinates.
     const r=await P.page.evaluate(async({age,kind})=>{
@@ -4129,12 +4131,13 @@ await check('ownertransportpov', async () => {
         const {withRideView}=await import('/js/rideview.js');let raised=false;
         try{withRideView(h,()=>{throw Error('render failure fixture');});}catch(e){raised=e.message==='render failure fixture';}
         const restored=raised&&h.av.root.visible===own&&before.every(([child,visible])=>child.visible===visible);
-        return {age,kind,seen,pov:h._pov,restored};
+        const local=sl.v.o.worldToLocal(h.cam.position.clone()),cab=sl.v.cabin,insideWindow=!cab||(local.y>=cab.bottom&&local.y<=cab.top);
+        return {age,kind,seen,pov:h._pov,restored,insideWindow};
       }finally{h.scene.remove(target);target.geometry.dispose();target.material.dispose();}
     },{age,kind}); rows.push(r);
     await P.page.evaluate(()=>{const G=__sv,h=G.heroes[0];h.update(1/60,{cdx:0,cdy:0,mx:0,mz:0,jump:()=>true},0,G);});
   }
-  await P.ctx.close(); ok(rows.every(r=>r.pov&&r.seen>200&&r.restored),JSON.stringify(rows));
+  await P.ctx.close(); ok(rows.every(r=>r.pov&&r.seen>200&&r.restored&&r.insideWindow),JSON.stringify(rows));
   return JSON.stringify(rows);
 });
 
@@ -5629,7 +5632,7 @@ await check('nostudio', async () => {
     const look = (where, root) => { const t = [root.textContent, ...[...root.querySelectorAll('[title],[aria-label],[placeholder],[alt]')].flatMap(e => [e.title, e.getAttribute('aria-label'), e.placeholder, e.alt])].join(' '); const m = t.match(/.{0,40}studio.{0,40}/i); if (m) out.push(where + ': ' + m[0]); };
     for (const lang of ['en', 'vi']) {
       const S = await import('/js/state.js'); S.settings.lang = lang;
-      const { openGrownups } = await import('/js/ui.js'); openGrownups(() => { }); await w(500);
+      const { openGrownups } = await import('/js/ui.js'); await openGrownups(() => { }); await w(500);
       const g = document.querySelector('.modal.grownups'); g.querySelectorAll('details').forEach(d => { d.open = true; }); look(lang + ' Grown-ups', g);
       document.querySelectorAll('.modal').forEach(e => e.remove());
       const G = window.__sv; if (G.parents && G.parents.grownupsHTML) { const d = document.createElement('div'); d.innerHTML = G.parents.grownupsHTML(true); look(lang + ' parents', d); }
@@ -5715,7 +5718,9 @@ await check('onlineoff', async () => {
     guide.en = /Internet and playing online → tick Use the internet/.test(text) && !/Studio/.test(text);
     guide.hold = !!hold && hold.getBoundingClientRect().height >= 44 && !!hold.querySelector('.ring');
     hold.click(); await wait(200); guide.tapNoOpen = !document.querySelector('.modal.grownups'); // a plain tap opens nothing
-    hold.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' })); await wait(300);
+    hold.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
+    for (let n = 0; n < 100 && !document.querySelector('.modal.grownups'); n++) await wait(100);
+    await wait(300);
     const sec = document.querySelector('.modal.grownups details[data-sec="online"]'); guide.opens = !!sec && sec.open;
     S.settings.lang = 'vi'; const vbox = document.createElement('div'); __sv.drawOnlinePanel(vbox, () => { }); S.settings.lang = 'en';
     guide.vi = /Internet và chơi trực tuyến → chọn Dùng internet/.test(vbox.textContent) && !/Studio/.test(vbox.textContent);
@@ -6335,7 +6340,7 @@ await check('feel', async () => {
       log.length = 0; S.farm.coins += 30; await wait(200); out.calmFly = document.querySelectorAll('.sv-fly').length; await wait(600); out.calmLanded = log.includes('pop');
       out.little = !!document.querySelector('.hud.little');
       // the Grown-ups "Tap sounds" switch
-      const UI = await import('/js/ui.js'); UI.openGrownups(() => { }); await wait(700);
+      const UI = await import('/js/ui.js'); await UI.openGrownups(() => { }); await wait(700);
       const sw = document.querySelector('#gTapSnd'); out.tapSwitch = !!sw && sw.checked && /Tap sounds/.test(sw.closest('label').textContent);
       document.querySelectorAll('.modal').forEach(x => x.close ? x.close() : x.remove()); await wait(250);
       return out;
@@ -7171,7 +7176,7 @@ await check('offscreenpanels', async () => {
       const U = await import('/js/ui.js'), D = await import('/js/tester-detection.js'), G = window.__sv, out = {};
       const windows = { grownups: () => U.openGrownups(() => { }), settings: () => U.openQuick(G, 0), play: () => U.openGamesHub(G, 0, () => { }), pad: () => U.openPad(G, 0) };
       for (const [k, openIt] of Object.entries(windows)) {
-        document.querySelectorAll('.modal').forEach(m => m.remove()); openIt(); await new Promise(res => setTimeout(res, 900));
+        document.querySelectorAll('.modal').forEach(m => m.remove()); await openIt(); await new Promise(res => setTimeout(res, 900));
         const top = D.activeReportPanel(document), bs = [...document.querySelectorAll('.modal button, .hud button, .gl button, .dialog button')];
         out[k] = { top: top ? top.className : '', buttons: bs.length, off: bs.filter(x => D.unreachableControl(x, top)).map(x => (x.textContent || '').trim().slice(0, 30)) };
       }
@@ -7242,6 +7247,8 @@ await check('oanquanrules', async () => {
   return `a two-player game finishes through ${result.taps} legal square/direction taps; autoplay waits while seeds move`;
 });
 
+await check('ridingcamera', async () => (await import('./riding-camera.mts')).ridingCameraCheck(b));
+await check('soundgames', async () => (await import('./sound-games.mts')).soundGamesCheck(b));
 await check('rememberedhomes', async () => (await import('./remembered-homes.mts')).rememberedHomesCheck(b));
 await check('settingsgc', async () => (await import('./settings-gc.mts')).settingsGcCheck(b));
 await check('stability', async () => (await import('./stability.mts')).stabilityCheck(b));

@@ -490,7 +490,7 @@ export function createWorld(scene, quality) {
     time: .36
   };
   // (TypeScript, r86) what the valley's object gets after it is made: here, and by js/solids.js, js/roads.js, js/main.ts…
-  type SvWorldMore = { terrain?: THREE.Mesh, groundCover?: THREE.InstancedMesh[], critters?: unknown, fireflies?: unknown, buffalo?: { id: string, mesh: THREE.Mesh, shadow: THREE.Object3D, home: number[], tx: number, tz: number, rider: unknown, yaw: number, back?: boolean }[],
+  type SvWorldMore = { terrain?: THREE.Mesh, groundCover?: THREE.InstancedMesh[], critters?: unknown, fireflies?: unknown, buffalo?: { id: string, mesh: THREE.Mesh, shadow: THREE.Object3D, firstPersonHide?: THREE.Object3D[], home: number[], tx: number, tz: number, rider: unknown, yaw: number, back?: boolean }[],
     pots?: { x: number, z: number, [k: string]: unknown }[], statue?: { x: number, z: number, [k: string]: unknown },
     groundAt?: (x: number, z: number, y?: number) => number, platformAt?: (x: number, z: number, y?: number) => unknown, collide?: (pos: { x: number, y?: number, z: number }, r?: number) => unknown,
     update?: (dt: number, t: number) => void, updateSky?: (dt: number, camPos: THREE.Vector3, focus?: THREE.Vector3) => void, isNight?: () => boolean,
@@ -976,15 +976,17 @@ export function createWorld(scene, quality) {
   // ---------- simple animals ----------
   const buffaloGeo = merge([
     P(new THREE.BoxGeometry(1.6, 1.3, 2.8), '#55555e', [0, 1.4, 0]), P(new THREE.BoxGeometry(1, 1, 1.1), '#4a4a52', [0, 1.7, 1.8]),
-    P(new THREE.TorusGeometry(.7, .12, 5, 12, Math.PI), '#d8d0c0', [0, 2.2, 1.9]),
     ...[[.55, .9], [-.55, .9], [.55, -.9], [-.55, -.9]].map(([x, z]) => P(new THREE.CylinderGeometry(.18, .16, 1, 6), '#44444c', [x, .5, z])),
     P(new THREE.SphereGeometry(.12, 6, 5), '#ffffff', [.3, 1.9, 2.36]), P(new THREE.SphereGeometry(.12, 6, 5), '#ffffff', [-.3, 1.9, 2.36])
   ]);
+  // A separate draw preserves the exterior but lets a rider see past the large storybook horns.
+  const buffaloHorns = merge([P(new THREE.TorusGeometry(.7, .12, 5, 12, Math.PI), '#d8d0c0', [0, 2.2, 1.9])]);
   W.buffalo = [];
   [[PADDIES.x - 6, PADDIES.z + 4], [V.x - 26, V.z + 18]].forEach(([x, z], i) => {
     const m = new THREE.Mesh(buffaloGeo, toonVC()); m.position.set(x, heightAt(x, z), z); m.userData.moving = true; scene.add(m); // it wanders and rests: never part of the solid map (js/solids.js)
+    const horns = new THREE.Mesh(buffaloHorns, m.material); m.add(horns);
     const sh = blobShadow(); sh.scale.setScalar(2.2); scene.add(sh);
-    const b = { id: 'buffalo' + i, mesh: m, shadow: sh, home: [x, z], tx: x, tz: z, rider: null, yaw: 0 };
+    const b = { id: 'buffalo' + i, mesh: m, shadow: sh, firstPersonHide: [horns], home: [x, z], tx: x, tz: z, rider: null, yaw: 0 };
     W.buffalo.push(b);
     W.interactables.push({ id: b.id, get x() { return m.position.x; }, get z() { return m.position.z; }, r: 3, icon: '🐃', label: () => T('Ride buffalo', 'Cưỡi trâu'), visible: () => !b.rider, act: (pl, game) => game.mount(pl, b) });
   });

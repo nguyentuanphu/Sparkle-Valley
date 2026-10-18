@@ -4,7 +4,8 @@ import { register, untilRight, choiceButtons } from './frame.js';
 import { T, numWord } from '../i18n.js';
 import { settings } from '../state.js';
 import { shuffle, pick, el, wait } from '../util.js';
-import { animalCall, loadAnimalCalls } from '../audio.js';
+import { animalCall, loadAnimalCalls, animalRecording } from '../audio.js';
+import { sayAsync, hush, spoken } from '../voice.js';
 
 const FRUIT = ['🍎', '🍌', '🍓', '🍊', '🥭', '🍐', '🍇', '🥝'];
 const vi = () => settings.lang === 'vi';
@@ -94,17 +95,31 @@ register({
   id: 'animalsounds', learn: true, icon: '👂', name: () => T('Who Says That?', 'Con Gì Kêu Thế?'),
   async run(api) {
     const rounds = 5, list = shuffle(VOICES).slice(0, rounds);
-    await loadAnimalCalls(); if (api.closed) return; // (owner, 17 Oct AEDT) the real animals' voices, not drawn-out tones
+    api.onCleanup(hush);
+    const speak = (en: string, vi: string) => {
+      api.show(en, vi);const text=T(en,vi);spoken.forEach(f=>{try{f(text);}catch{}});return sayAsync(en,vi);
+    };
+    const loading = el('div', 'animal-loading'), status = el('p', '', T('Getting animal sounds ready…', 'Đang chuẩn bị tiếng các con vật…'));
+    status.setAttribute('role', 'status'); loading.append(status); api.stage.append(loading);
+    while (!api.closed) {
+      const ready = await loadAnimalCalls(); if (api.closed) return; if (ready) break;
+      status.textContent = T('Animal sounds are not saved yet. Connect to the internet and try again.', 'Chưa lưu được tiếng các con vật. Kết nối mạng rồi thử lại nhé.');
+      const retry = el('button', 'choice animal-retry', '↻ ' + T('Try again', 'Thử lại')); retry.style.minWidth = retry.style.minHeight = '64px'; loading.append(retry);
+      await new Promise<void>(resolve => { retry.onclick = () => resolve(); api.onCleanup(resolve); }); retry.remove();
+      status.textContent = T('Getting animal sounds ready…', 'Đang chuẩn bị tiếng các con vật…');
+    }
+    if (api.closed) return; loading.remove(); // a real recording is required, including after an offline/slow start
     for (let r = 0; r < rounds; r++) {
       api.dots(rounds, r); api.stage.innerHTML = '';
       const [snd, ic, en, vn] = list[r];
       const play = el('button', 'choice bigplay', '🔊'); api.stage.appendChild(play);
-      const hear = () => animalCall(snd); play.onclick = hear;
-      api.say('Listen! Which animal makes this sound?', 'Nghe nè! Con vật nào kêu như vậy?'); await wait(2600); if (api.closed) return; hear();
+      let stopCall = () => {}; api.onCleanup(() => stopCall());
+      const hear = () => { stopCall(); stopCall = animalCall(snd); }; play.onclick = hear;
+      play.disabled=true;await speak('Listen! Which animal makes this sound?', 'Nghe nè! Con vật nào kêu như vậy?'); if (api.closed) return;play.disabled=false;hear();
       const opts = shuffle([list[r], ...shuffle(VOICES.filter(v => v !== list[r])).slice(0, api.level <= 1 ? 1 : 2)]);
       const btns = choiceButtons(api, opts, ([, i, e, v]) => `<span class="big">${i}</span><small>${T(e, v)}</small>`);
       const ok = await untilRight(api, btns, e => e._v[0] === snd); if (!ok) return;
-      api.say(`Yes! The ${en}!`, `Đúng rồi! Là ${vn}!`); await wait(1500); hear(); await wait(2200);
+      stopCall();play.disabled=true;await speak(`Yes! The ${en}!`, `Đúng rồi! Là ${vn}!`); if (api.closed) return;play.disabled=false;hear(); await wait(Math.max(2, animalRecording(snd)?.duration || 0) * 1000 + 200); stopCall();
     }
     api.dots(rounds, rounds); return api.win();
   }

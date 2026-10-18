@@ -1,0 +1,95 @@
+{
+  "note": "Technical analysis only; no listening or perceptual recognition claim. Source identity/licences are in sounds/animals/SOURCES.md. Pig original contains about 0.50 s of signal then 1.50 s of silence; the existing 0.70 s crop already retains that signal.",
+  "files": [
+    {
+      "animal": "cat",
+      "seconds": 2.063673,
+      "sampleRate": 22050,
+      "channels": 1,
+      "sha256": "ce24fd7b9779b9b6e7499d75def2c37c449af82c50ec28cda8019e9f2bf461ea",
+      "inputLUFS": "-17.25",
+      "inputTruePeakDB": "-1.94"
+    },
+    {
+      "animal": "cow",
+      "seconds": 2.272653,
+      "sampleRate": 22050,
+      "channels": 1,
+      "sha256": "3cad59f13e1d1916c3fab2cdb9d983d60dd6dd316be295f2e5c916bdcf55a490",
+      "inputLUFS": "-16.43",
+      "inputTruePeakDB": "-7.00"
+    },
+    {
+      "animal": "dog",
+      "seconds": 1.462857,
+      "sampleRate": 22050,
+      "channels": 1,
+      "sha256": "be23eb98cf6ccb12b6966164db33793975d9750d70823a859fc4faf26832fe3c",
+      "inputLUFS": "-18.69",
+      "inputTruePeakDB": "-0.29"
+    },
+    {
+      "animal": "duck",
+      "seconds": 1.854694,
+      "sampleRate": 22050,
+      "channels": 1,
+      "sha256": "5e90adc66b1fc759df8f120a5550aa3c31a59e3b7564e0b725ce04af62ccb4a3",
+      "inputLUFS": "-18.04",
+      "inputTruePeakDB": "-3.27"
+    },
+    {
+      "animal": "frog",
+      "seconds": 2.063673,
+      "sampleRate": 22050,
+      "channels": 1,
+      "sha256": "10d7170cf2c626bbfdb1e00afa1260c2b2ab0356b40fc03e53c6f36ffd3e1e1b",
+      "inputLUFS": "-20.11",
+      "inputTruePeakDB": "-1.81"
+    },
+    {
+      "animal": "hen",
+      "seconds": 2.063673,
+      "sampleRate": 22050,
+      "channels": 1,
+      "sha256": "33f04049c579b5e26db8dc8950d8ccf0dd8cef6ca582b5e87697062f495e4a66",
+      "inputLUFS": "-23.63",
+      "inputTruePeakDB": "-2.04"
+    },
+    {
+      "animal": "horse",
+      "seconds": 1.724082,
+      "sampleRate": 22050,
+      "channels": 1,
+      "sha256": "6ca634a3e310e80a125c69ce574815871437908d7169abb52455b34da3a641e0",
+      "inputLUFS": "-16.43",
+      "inputTruePeakDB": "-2.16"
+    },
+    {
+      "animal": "owl",
+      "seconds": 2.66449,
+      "sampleRate": 22050,
+      "channels": 1,
+      "sha256": "c54acff3c4f317d67e020cf441ca391ca38d5965146496bb96517cf470899291",
+      "inputLUFS": "-16.45",
+      "inputTruePeakDB": "-5.42"
+    },
+    {
+      "animal": "pig",
+      "seconds": 0.783673,
+      "sampleRate": 22050,
+      "channels": 1,
+      "sha256": "1395302de82ff0c4714a1a907a110ed21f381abf6eba6c9f9112450ca1d5eb7d",
+      "inputLUFS": "-15.79",
+      "inputTruePeakDB": "-4.76"
+    },
+    {
+      "animal": "sheep",
+      "seconds": 0.966531,
+      "sampleRate": 22050,
+      "channels": 1,
+      "sha256": "1fafb678b7deeaedffbb6dd495d25eaa195e09eee3f69d5fb7ed688c64794ef0",
+      "inputLUFS": "-16.35",
+      "inputTruePeakDB": "-2.81"
+    }
+  ]
+}

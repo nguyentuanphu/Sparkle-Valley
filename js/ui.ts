@@ -246,7 +246,7 @@ export function openQuick(game, i) {
         ${row('music', '🎵', T('Music', 'Nhạc'), s.music)}${row('sound', '🔔', T('Sounds', 'Tiếng động'), s.sound)}${row('voice', '🗣️', T('Talking', 'Giọng nói'), s.voice)}
         <div class="qs-sub">${T('Voice style', 'Kiểu giọng')}</div><div class="seg vstyle">${VOICE_STYLES.map(v => `<button data-v="${v.id}" class="${(s.voiceStyle || 'natural') === v.id ? 'on' : ''}">${v.icon} ${v.name()}</button>`).join('')}</div></div>
       <div class="qs-sec"><h4>🎥 ${T('Camera', 'Máy quay')}</h4>
-        <div class="qs-views">${(game.VIEWS || []).map(([id, icon, en, vi]) => `<button data-view="${id}" class="${view === id ? 'on' : ''}"><span>${icon}</span>${T(en, vi)}</button>`).join('')}</div>
+        <div class="qs-views">${(game.getViews?.(i) || game.VIEWS || []).map(([id, icon, en, vi]) => `<button data-view="${id}" class="${view === id ? 'on' : ''}"><span>${icon}</span>${T(en, vi)}</button>`).join('')}</div>
         ${row('cam', s.camMode === 'free' ? '🧭' : '🧸', T('Easy camera', 'Camera dễ'), s.camMode !== 'free', s.camMode === 'free' ? T('off: drag to look around', 'tắt: kéo để nhìn quanh') : T('turns by itself', 'tự xoay theo con'))}</div>
       <div class="qs-sec"><h4>🎮 ${T('Play', 'Chơi')}</h4>
         ${row('voiceControl', '🎤', T('Voice control', 'Điều khiển bằng giọng nói'), s.voiceControl !== false)}${row('alwaysDay', '☀️', T('Always daytime', 'Luôn ban ngày'), s.alwaysDay)}

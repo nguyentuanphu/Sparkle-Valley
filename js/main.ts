@@ -204,7 +204,7 @@ export interface SvMain {
   readTaleNow?: (h: SvHeroT, tale: { id: string }, sync?: unknown) => Promise<unknown>;
   GAME_SPOT?: Record<string, string>; lookUpT?: number; tapTargets?: THREE.Object3D[]; travelling?: boolean;
   // values main.ts shares
-  LANDMARKS?: typeof LANDMARKS; STICKERS?: typeof STICKERS; VIEWS?: typeof VIEWS; PLACES?: { id?: string, x: number, z: number, [k: string]: unknown }[];
+  LANDMARKS?: typeof LANDMARKS; STICKERS?: typeof STICKERS; VIEWS?: typeof VIEWS; getViews?: (i: number) => typeof VIEWS; PLACES?: { id?: string, x: number, z: number, [k: string]: unknown }[];
   bootTimes?: Record<string, number>; mapPic?: typeof mapPic; waterPic?: typeof waterPic; parked?: unknown;
   bubbleIcons?: THREE.Sprite[]; wanderers?: (SvPerson & { tx: number, tz: number, wave: number })[]; partners?: Record<string, SvFriend>;
   caroSize?: number; _padRemotes?: number; _familyMsgLive?: boolean; _owlAuto?: boolean; _previewed?: boolean; _reading?: boolean;
@@ -1529,7 +1529,8 @@ renderer.domElement.addEventListener('wheel', e => { const r = rects(), k = Math
 // camera views: behind (normal) → high up → street level (to see house fronts) → my face (close-up when standing still)
 const VIEWS = [['follow', '🎥', 'Behind me', 'Sau lưng'], ['high', '🦅', 'High up', 'Trên cao'], ['street', '🏘️', 'Street view', 'Ngang phố'], ['face', '😊', 'My face', 'Mặt của con']];
 G.VIEWS = VIEWS;
-G.setView = (i, id) => { const h = G.heroes[i]; if (!h) return; h.view = id; h.manualCamT = 0; const v = VIEWS.find(v => v[0] === id) || VIEWS[0]; G.huds[i] && G.huds[i].toast(v[1] + ' ' + T(v[2], v[3])); const b = G.huds[i] && G.huds[i].q('.z-view'); if (b) b.firstChild.textContent = v[1]; };
+G.getViews = i => { const h = G.heroes[i], riding = h && (h.riding || (h.carry && h.state === 'sit')) && settings.ridePov !== false; return riding ? VIEWS.map(v => v[0] === 'follow' ? ['follow', v[1], 'Rider’s eyes', 'Qua mắt người cưỡi'] : v) : VIEWS; };
+G.setView = (i, id) => { const h = G.heroes[i]; if (!h) return; h.view = id; h.manualCamT = 0; const views = G.getViews(i), v = views.find(v => v[0] === id) || views[0]; G.huds[i] && G.huds[i].toast(v[1] + ' ' + T(v[2], v[3])); const b = G.huds[i] && G.huds[i].q('.z-view'); if (b) b.firstChild.textContent = v[1]; };
 G.cycleView = i => { const h = G.heroes[i]; if (!h) return; SFX.tap(); const k = VIEWS.findIndex(v => v[0] === (h.view || 'follow')); G.setView(i, VIEWS[(k + 1) % VIEWS.length][0]); };
 G.zoomBy = (i, f, quiet) => {
   const h = G.heroes[i]; if (!h) return;

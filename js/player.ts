@@ -1,6 +1,7 @@
 // The explorer: walking, running, jumping, gliding, climbing slopes, swimming and riding,
 // with a stamina wheel. Nothing here can really hurt a child; long falls only cost a heart.
 import { seatRider } from './vehicles.js';
+import { vehicleEye } from './rideview.js';
 import { THREE } from './gfx.js';
 import { buildAvatar } from './avatar.js';
 import { WATER, heightAt, surfaceAt } from './world.js';
@@ -14,10 +15,10 @@ const easeYaw = (cur, want, dt, rate, maxSpeed) => { const d = Math.atan2(Math.s
 const GRAV = 22, WALK = 5.5, RUN = 9.5, SWIM = 3.4, CLIMB = 2.6, GLIDE = 8, RIDE = 11.5;
 
 import type { Profile } from '../types/save.js';
-export type RideVehicle = { o: THREE.Object3D, wheels: THREE.Object3D[], wr: number, seat: number[], grips?: number[][], feet?: number[][],
+export type RideVehicle = { o: THREE.Object3D, wheels: THREE.Object3D[], wr: number, seat: number[], grips?: number[][], feet?: number[][], wheelAt?: number[],
   cabin?: { width: number, length: number, bottom: number, top: number, color: string } };
 type RideMount = { mesh: THREE.Object3D, shadow: THREE.Object3D, yaw: number, rider?: Hero | null, speed?: number, quiet?: boolean,
-  tx?: number, tz?: number, back?: boolean, home?: number[], slot?: { taken: unknown }, vehicle?: RideVehicle };
+  tx?: number, tz?: number, back?: boolean, home?: number[], slot?: { taken: unknown }, vehicle?: RideVehicle, firstPersonHide?: THREE.Object3D[] };
 type CarryResult = { x: number, y: number, z: number, yaw?: number, swim?: boolean, state?: string, rest?: boolean, speed?: number, rideY?: number, vehicle?: RideVehicle };
 type HeroPad = { mx: number, mz: number, cdx: number, cdy: number, run?: boolean, jump(): boolean, act?(): boolean };
 export interface Hero {
@@ -288,14 +289,19 @@ export class Hero {
     if (want.y < gy) want.y = gy;
     // (Round V, owner 13 Oct: "the camera angle should be point of view") riding an animal or a vehicle, or sitting in a bus,
     // tram, taxi or xích lô: the camera rides at the child's eyes, looking ahead (the grown-ups' switch ridePov turns it off)
-    const pov = !close && (this.riding || (this.carry && this.state === 'sit')) && game.settings.ridePov !== false;
+    const pov = !close && (!this.view || this.view === 'follow') && (this.riding || (this.carry && this.state === 'sit')) && game.settings.ridePov !== false;
+    // In first person zoom changes the lens, not an eye position that must stay in the seat.
+    const z = clamp((this.zoom || 1) * (game.zoom || 1), .35, 2.2);
+    const field = pov ? (z <= 1 ? 35 + (z - .35) / .65 * 20 : 55 + (z - 1) / 1.2 * 30) : 55;
+    const fov = this.cam.fov + (field - this.cam.fov) * (1 - Math.exp(-dt * 6));
+    if (Math.abs(fov - this.cam.fov) > .001) { this.cam.fov = fov; this.cam.updateProjectionMatrix(); }
     if (pov) {
       const fx = Math.sin(this.yaw), fz = Math.cos(this.yaw), sc = this.av.root.scale.x || 1, ey = p.y + (rideY || 0) + 1.45 * sc;
       const vehicle = this.riding && this.riding.vehicle;
       let eye = new THREE.Vector3(p.x + fx * .4, ey, p.z + fz * .4);
-      if (vehicle && vehicle.seat) { vehicle.o.updateMatrixWorld(true); eye = vehicle.o.localToWorld(new THREE.Vector3(vehicle.seat[0], vehicle.seat[1] + .9 * sc, vehicle.seat[2] + .25)); }
+      if (vehicle && vehicle.seat) eye = vehicleEye(vehicle, sc);
       const passenger = this.carry && this.carryVehicle;
-      if (passenger && passenger.cabin && passenger.seat) { passenger.o.updateMatrixWorld(true); eye = passenger.o.localToWorld(new THREE.Vector3(-.45, passenger.seat[1] + .9 * sc, passenger.cabin.length / 2 - 1.5)); }
+      if (passenger && passenger.cabin && passenger.seat) eye = vehicleEye(passenger, sc, true);
       const look = new THREE.Vector3(eye.x + fx * 12, eye.y - .9, eye.z + fz * 12);
       this.camPos.lerp(eye, 1 - Math.exp(-dt * 8)); if (!this.camLook) this.camLook = look.clone(); this.camLook.lerp(look, 1 - Math.exp(-dt * 6));
       this.camYaw = this.yaw + Math.PI; this._pov = true;
