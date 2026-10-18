@@ -22,7 +22,7 @@ function load() {
   listeners.forEach(f => f());
 }
 const listeners = new Set<() => void>();
-export const onVoices = f => listeners.add(f);
+export const onVoices = (f: () => void): (() => void) => { listeners.add(f); return () => { listeners.delete(f); }; };
 if (window.speechSynthesis) { load(); try { speechSynthesis.addEventListener('voiceschanged', load); } catch (e) { } }
 
 export function voicesFor(lang) {

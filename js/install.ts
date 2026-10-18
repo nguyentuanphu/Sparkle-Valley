@@ -3,8 +3,10 @@
 import { T } from './i18n.js';
 import { el } from './util.js';
 
-let deferred = null;
-const listeners = [];
+interface InstallPromptEvent extends Event { prompt(): Promise<unknown>; userChoice: Promise<{outcome: string}> }
+declare global { interface WindowEventMap { beforeinstallprompt: InstallPromptEvent } }
+let deferred: InstallPromptEvent | null = null;
+const listeners: (() => void)[] = [];
 window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); deferred = e; listeners.forEach(f => f()); });
 window.addEventListener('appinstalled', () => { deferred = null; try { localStorage.setItem('sv-installed', '1'); } catch (e) { } listeners.forEach(f => f()); });
 
@@ -56,11 +58,24 @@ export async function installApp() {
   guide();
 }
 
+// One listener for every install button. Closed windows and replaced title cards must not stay reachable.
+const installButtons = new Set<WeakRef<HTMLButtonElement>>();
+function updateInstallButtons() {
+  const installed = isInstalled();
+  for (const ref of installButtons) {
+    const button = ref.deref();
+    if (!button || !button.isConnected) { installButtons.delete(ref); continue; }
+    if (installed) { button.remove(); installButtons.delete(ref); }
+  }
+}
+onInstallChange(updateInstallButtons);
+
 // A small chip for the title screen and the grown-ups page.
-export function installButton(cls = 'installchip') {
+export function installButton(cls = 'installchip'): HTMLButtonElement | null {
   if (!canOfferInstall()) return null;
-  const b = el('button', cls, `<span aria-hidden="true">📲</span> ${T('Add to Home Screen', 'Thêm vào màn hình chính')}`);
+  const b: HTMLButtonElement = el('button', cls, `<span aria-hidden="true">📲</span> ${T('Add to Home Screen', 'Thêm vào màn hình chính')}`);
   b.onclick = e => { e.stopPropagation(); installApp(); };
-  onInstallChange(() => { if (isInstalled()) b.remove(); });
+  updateInstallButtons();
+  installButtons.add(new WeakRef(b));
   return b;
 }

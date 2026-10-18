@@ -20,6 +20,12 @@ export const STUDIO_ON_MAP = MAP.onThisMap(CUSTOM.world && typeof CUSTOM.world =
 export const PARKED = STUDIO_ON_MAP ? null : { map: (CUSTOM.world && CUSTOM.world.map) || 'C', world: CUSTOM.world || null, npcs: CUSTOM.npcs || null };
 export const SIZE = MAP.WORLD.size, HALF = SIZE / 2, WATER = MAP.WORLD.water;
 const MTN = MAP.WORLD.mountains, EDGE = MAP.WORLD.edge, SADDLES = MAP.SADDLES, RELIEF = MAP.RELIEF, COAST = MAP.WORLD.coast, RAMP = MAP.WORLD.ramp;
+
+// Only nearby ridge segments can change the terrain. The 1.5-width boxes include the full 1.4-width falloff.
+const RELIEF_SEGMENTS = RELIEF.map(R => ({ R, segments: R.pts.slice(0, -1).map(([ax, az], i) => {
+  const [bx, bz] = R.pts[i + 1], dx = bx - ax, dz = bz - az, pad = R.w * 1.5;
+  return { ax, az, dx, dz, len2: dx * dx + dz * dz, x0: Math.min(ax, bx) - pad, x1: Math.max(ax, bx) + pad, z0: Math.min(az, bz) - pad, z1: Math.max(az, bz) + pad };
+}) }));
 const PL = id => MAP.PLACES.find(p => p.id === id);
 // a circle place { x, z, r, h }, a box place { x, z, x0, x1, z0, z1, h, roadZ }
 /** a round place of the map: its middle, and its size and ground height where the map gives them */
@@ -220,7 +226,7 @@ export function heightAt(x, z) {
   h += smooth(EDGE[0], EDGE[1], Math.max(Math.abs(x), -z)) * 45; // (round T: east, west and north; the south is the coast)
   if (h < 3) h = 3 - (3 - h) * .3; // (round T) the open ground never dips into the water by itself: only rivers, lakes and the sea are wet
   // a low ridge (the Great Dividing Range), lower at its pass
-  for (const R of RELIEF) { let d = 1e9; for (let i = 0; i < R.pts.length - 1; i++) { const [ax, az] = R.pts[i], [bx, bz] = R.pts[i + 1], dx = bx - ax, dz = bz - az, t = clamp(((x - ax) * dx + (z - az) * dz) / (dx * dx + dz * dz), 0, 1); d = Math.min(d, Math.hypot(x - ax - dx * t, z - az - dz * t)); }
+  for (const { R, segments } of RELIEF_SEGMENTS) { let d = 1e9; for (const S of segments) { if (x < S.x0 || x > S.x1 || z < S.z0 || z > S.z1) continue; const t = clamp(((x - S.ax) * S.dx + (z - S.az) * S.dz) / S.len2, 0, 1); d = Math.min(d, Math.hypot(x - S.ax - S.dx * t, z - S.az - S.dz * t)); }
     if (d > R.w * 1.5) continue; const top = R.pass ? lerp(R.pass.h, R.h, smooth(R.pass.w * .5, R.pass.w * 1.6, dist2(x, z, R.pass.at[0], R.pass.at[1]))) : R.h; h += top * (1 - smooth(R.w * .35, R.w * 1.4, d)); }
   // The Dawn Plateau, with a gentle ramp down to the south so little legs can walk off it.
   const dp = dist2(x, z, PLATEAU.x, PLATEAU.z);

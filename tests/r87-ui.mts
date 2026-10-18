@@ -10,7 +10,7 @@ export async function r87UiCheck(browser: Browser): Promise<string> {
   const P = await open(browser, { w: 390, h: 844, touch: true });
   try {
     await clear(P.page); await noWelcome(P.page);
-    const early = await P.page.evaluate(() => performance.getEntriesByType('resource').map(e => new URL(e.name).pathname).filter(p => /\/(?:chat-player|howto-data|howto-player)\.js$/.test(p)));
+    const early = await P.page.evaluate(() => performance.getEntriesByType('resource').map(e => new URL(e.name).pathname).filter(p => /\/(?:chat-player|howto-data|howto-player|ui-settings)\.js$/.test(p)));
     if (early.length) bad.push('Optional chat/film content fetched during startup: ' + early.join(', '));
     await P.ctx.route('**/photos/index.json*', r => r.fulfill({ contentType: 'application/json', body: JSON.stringify({ 'r87-fixture': [{ url: 'https://thumb.wikimedia.org/r87-fixture.png', credit: 'Fixture author / CC0', caption: 'A test photo' }] }) }));
     await P.ctx.route('https://thumb.wikimedia.org/r87-fixture.png', r => r.fulfill({ contentType: 'image/png', body: Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+a1xkAAAAASUVORK5CYII=', 'base64') }));
@@ -47,18 +47,20 @@ export async function r87UiCheck(browser: Browser): Promise<string> {
   const gh = fakeGitHub(repo, { 'content/custom.json': '{}', 'js/build.js': fs.readFileSync('../js/build.js') }), unroute = routeGitHub(gh);
   const server = await fakeNetlify({ port: 8798, players: memoryBlobs(), env: { STUDIO_PASSWORD: password, GITHUB_TOKEN: 'fixture-token', GITHUB_REPO: repo, URL: site } });
   try {
-    for (const lang of ['en', 'vi']) {
+    for (const lang of ['en', 'vi']) for (const mode of ['online', 'exe-live', 'local']) {
+      const live = mode !== 'local';
       const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
       try {
         const page = await ctx.newPage(); await page.addInitScript(lang => localStorage.setItem('studioLang', lang), lang);
+        if (mode !== 'online') await ctx.route('**/studio/api/info', async route => { const response = await route.fetch(), info = await response.json(); await route.fulfill({json:{...info,online:false,conf:{...info.conf,players:live?'https://family.example.test':null}}}); });
         await page.goto(site + '/studio'); await page.fill('#pw', password); await page.click('#si button'); await page.waitForSelector('#tabs button');
         for (const section of ['stories', 'home', 'publish']) {
           await page.evaluate(section => { location.hash = section; }, section); await page.waitForSelector('#page .studio-help'); await page.waitForTimeout(200);
           const text = await page.locator('#page').textContent();
           const misleading = lang === 'en' ? /Changes you save here wait in a draft|Everything you save here online waits in a draft|nothing reaches the children until you press Publish/ : /Thay đổi bạn lưu ở đây chờ trong bản nháp|Mọi thứ bạn lưu ở đây trên mạng nằm chờ trong bản nháp|các con chưa thấy gì cho đến khi bạn bấm Phát hành/;
-          if (misleading.test(text || '')) bad.push(`Studio ${section}/${lang}: live save described as waiting for Publish`);
-          if (section === 'stories' && !(await page.locator('.livebadge[data-live="1"]').count())) bad.push(`Studio stories/${lang}: missing live badge`);
-          await page.screenshot({ animations: 'disabled', path: path.join(out, `studio-${section}-${lang}.png`) });
+          if (live && (misleading.test(text || '') || /Nothing goes online until you publish|children see changes after you Publish|Chưa có gì lên mạng cho tới khi bạn phát hành|các con thấy thay đổi sau khi bạn Phát hành/.test(text || ''))) bad.push(`Studio ${mode}/${section}/${lang}: live save described as waiting for Publish`);
+          if (section === 'stories' && !(await page.locator(`.livebadge[data-live="${live ? 1 : 0}"]`).count())) bad.push(`Studio stories/${lang}: missing live badge`);
+          await page.screenshot({ animations: 'disabled', path: path.join(out, `studio-${mode}-${section}-${lang}.png`) });
         }
       } finally { await ctx.close(); }
     }

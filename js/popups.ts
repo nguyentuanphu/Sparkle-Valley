@@ -42,7 +42,7 @@ export function modal(cls, html) {
   const m = el('div', 'modal ' + (cls || ''), `<div class="card">${html}</div>`);
   dispatchEvent(new Event('sv-hide-caption')); document.body.appendChild(m); requestAnimationFrame(() => floatEnds(m.querySelector('.card')));
   feel.open(); // a sound only: windows never move (UX-001)
-  m.close = () => { if (!m.classList.contains('out')) feel.close(); m.classList.add('out'); setTimeout(() => m.remove(), 200); };
+  m.close = () => { if (!m.classList.contains('out')) { feel.close(); m.dispatchEvent(new Event('sv-modal-close')); } m.classList.add('out'); setTimeout(() => m.remove(), 200); };
   return m;
 }
 

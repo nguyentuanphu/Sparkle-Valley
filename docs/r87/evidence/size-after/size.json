@@ -1,16 +1,16 @@
 {
   "note": "Main static dependency graph, not a browser transfer measurement. Dynamic boot imports, HTML, fonts and runtime requests are additional. Compression is estimated per file.",
   "launcherFiles": 1,
-  "initialFiles": 49,
+  "initialFiles": 48,
   "initialJS": {
-    "raw": 2147986,
-    "gzip": 743171,
-    "brotli": 621108
+    "raw": 2074705,
+    "gzip": 717380,
+    "brotli": 600568
   },
   "allJS": {
-    "raw": 3457691,
-    "gzip": 1267372,
-    "brotli": 1080481
+    "raw": 3460395,
+    "gzip": 1269837,
+    "brotli": 1084364
   },
   "css": {
     "raw": 259052,
@@ -20,14 +20,14 @@
   "inputs": {
     "vendor/three.module.js": 660349,
     "js/art.js": 140394,
-    "js/ui.js": 119484,
     "js/main.js": 115654,
-    "js/world.js": 58687,
+    "js/ui.js": 71895,
+    "js/world.js": 58929,
     "js/cities.js": 47963,
     "js/net.js": 35705,
     "js/vehicles.js": 30434,
     "js/homes.js": 29559,
-    "js/avatar.js": 28884,
+    "js/avatar.js": 29260,
     "js/heritage.js": 28547,
     "js/roads.js": 27990,
     "js/farm.js": 26922,
@@ -45,10 +45,9 @@
     "js/story.js": 14660,
     "js/content/festcal.js": 14645,
     "js/content/releases.js": 14536,
-    "js/voice.js": 14333,
+    "js/voice.js": 14354,
     "js/folkshow.js": 13885,
     "js/pets.js": 13356,
-    "js/familydevices.js": 13349,
     "js/ferry.js": 12889,
     "js/vnfun.js": 12835,
     "js/games/frame.js": 12580,
@@ -64,12 +63,11 @@
     "js/chat.js": 9437,
     "js/suburbs.js": 9436,
     "js/games/catalog.js": 9393,
-    "js/extras.js": 9334,
     "js/trade.js": 8962,
     "js/data.js": 8869,
     "js/tales.js": 8473,
     "js/secrets.js": 8421,
-    "js/gather.js": 8110,
+    "js/gather.js": 8115,
     "js/fun.js": 7954,
     "js/custom.js": 7891,
     "js/state.js": 7805,
@@ -88,20 +86,20 @@
     "js/content/songs.js": 5197,
     "js/worldedit.js": 5168,
     "js/launch.js": 5039,
-    "js/credits.js": 4961,
+    "js/credits.js": 4963,
     "js/signposts.js": 4899,
     "js/hawkers.js": 4890,
     "js/places.js": 4807,
     "js/solids.js": 4506,
     "js/weather.js": 4479,
+    "js/install.js": 4282,
     "js/content/activities.js": 4195,
-    "js/install.js": 4126,
     "js/ads.js": 4089,
     "js/netmsg.js": 4058,
     "js/seethrough.js": 3983,
-    "js/report.js": 3809,
+    "js/report.js": 3782,
     "js/input.js": 3714,
-    "js/popups.js": 3636,
+    "js/popups.js": 3683,
     "js/twinchests.js": 3604,
     "js/netgames.js": 3298,
     "js/gfx.js": 3274,
@@ -113,15 +111,14 @@
     "js/lunar.js": 2500,
     "js/reeds.js": 2424,
     "js/snacks.js": 2402,
-    "js/recorder.js": 2385,
     "js/coop.js": 2286,
     "js/songs.js": 2268,
     "js/games/learning-meta.js": 2209,
     "js/words2.js": 2054,
     "js/viwords.js": 2007,
     "js/nametags.js": 2004,
+    "js/familycards.js": 1979,
     "js/money.js": 1979,
-    "js/familycards.js": 1973,
     "js/powerlines.js": 1820,
     "vendor/RoomEnvironment.js": 1816,
     "js/voice-index.js": 1728,
@@ -136,10 +133,8 @@
     "js/claims.js": 871,
     "js/placebook.js": 819,
     "js/rideview.js": 805,
-    "js/family-backup.js": 754,
     "js/core/ids.js": 640,
     "js/core/rng.js": 621,
-    "js/content/devname.js": 587,
     "js/games/registry.js": 548,
     "js/packhash.js": 457,
     "js/howto.js": 393,
@@ -151,6 +146,14 @@
     "js/howto-registry.js": 9
   },
   "deferredEntries": [
+    {
+      "file": "js/chipinfo.js",
+      "bytes": 1793
+    },
+    {
+      "file": "js/games/storyhelp.js",
+      "bytes": 27742
+    },
     {
       "file": "js/games/readingmenu.js",
       "bytes": 5769
@@ -180,8 +183,8 @@
       "bytes": 3009
     },
     {
-      "file": "js/chipinfo.js",
-      "bytes": 1793
+      "file": "js/yard.js",
+      "bytes": 21128
     },
     {
       "file": "js/kidplay.js",
@@ -197,23 +200,23 @@
     },
     {
       "file": "js/hoilang.js",
-      "bytes": 10875
+      "bytes": 10827
     },
     {
       "file": "js/surprises.js",
-      "bytes": 14493
+      "bytes": 14445
     },
     {
       "file": "js/parents.js",
-      "bytes": 27942
+      "bytes": 27894
     },
     {
       "file": "js/games/reading.js",
       "bytes": 40077
     },
     {
-      "file": "js/games/storyhelp.js",
-      "bytes": 27742
+      "file": "js/tester.js",
+      "bytes": 718
     },
     {
       "file": "js/autoplay.js",
@@ -244,8 +247,8 @@
       "bytes": 13731
     },
     {
-      "file": "js/yard.js",
-      "bytes": 21128
+      "file": "js/games/talkgames.js",
+      "bytes": 18209
     },
     {
       "file": "js/tales-content.js",
@@ -276,8 +279,8 @@
       "bytes": 5399
     },
     {
-      "file": "js/tester.js",
-      "bytes": 718
+      "file": "js/games/more.js",
+      "bytes": 12500
     },
     {
       "file": "js/games/asia.js",
@@ -308,8 +311,8 @@
       "bytes": 7337
     },
     {
-      "file": "js/games/talkgames.js",
-      "bytes": 18209
+      "file": "js/games/thinking.js",
+      "bytes": 11285
     },
     {
       "file": "js/games/strategy.js",
@@ -340,8 +343,8 @@
       "bytes": 13940
     },
     {
-      "file": "js/games/more.js",
-      "bytes": 12500
+      "file": "js/myhouse.js",
+      "bytes": 896
     },
     {
       "file": "js/stickerfx.js",
@@ -369,15 +372,7 @@
     },
     {
       "file": "js/mictest.js",
-      "bytes": 7628
-    },
-    {
-      "file": "js/games/thinking.js",
-      "bytes": 11285
-    },
-    {
-      "file": "js/content/films/elephantmice.js",
-      "bytes": 3821
+      "bytes": 7580
     },
     {
       "file": "js/content/films/monkey.js",
@@ -400,16 +395,16 @@
       "bytes": 14642
     },
     {
+      "file": "js/familydevices.js",
+      "bytes": 273
+    },
+    {
       "file": "js/net.js",
       "bytes": 274
     },
     {
-      "file": "js/myhouse.js",
-      "bytes": 944
-    },
-    {
-      "file": "js/content/films/weaver.js",
-      "bytes": 4183
+      "file": "js/ui-settings.js",
+      "bytes": 61396
     },
     {
       "file": "js/content/films/nian.js",
@@ -440,8 +435,8 @@
       "bytes": 3583
     },
     {
-      "file": "js/content/films/rainbowserpent.js",
-      "bytes": 4023
+      "file": "js/content/films/elephantmice.js",
+      "bytes": 3821
     },
     {
       "file": "js/content/films/emu.js",
@@ -472,8 +467,8 @@
       "bytes": 4893
     },
     {
-      "file": "js/content/films/vusua.js",
-      "bytes": 4609
+      "file": "js/content/films/weaver.js",
+      "bytes": 4183
     },
     {
       "file": "js/content/films/baluoiriu.js",
@@ -504,8 +499,8 @@
       "bytes": 3133
     },
     {
-      "file": "js/content/films.js",
-      "bytes": 425
+      "file": "js/content/films/rainbowserpent.js",
+      "bytes": 4023
     },
     {
       "file": "js/content/films/rongtien.js",
@@ -536,6 +531,10 @@
       "bytes": 4314
     },
     {
+      "file": "js/content/films/vusua.js",
+      "bytes": 4609
+    },
+    {
       "file": "js/state.js",
       "bytes": 720
     },
@@ -556,12 +555,12 @@
       "bytes": 8191
     },
     {
-      "file": "js/familydevices.js",
-      "bytes": 273
-    },
-    {
       "file": "js/film.js",
       "bytes": 481
+    },
+    {
+      "file": "js/content/films.js",
+      "bytes": 425
     }
   ]
 }
