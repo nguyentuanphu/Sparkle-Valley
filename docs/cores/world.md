@@ -50,3 +50,11 @@ z; `bridgeAt`, `bridgeBox`, `waterAt`, `waterDist` in `js/world.js` work for any
 - (owner, 10 Oct AEST) The Concept D map in `docs/concept-d/index.html` is the approved valley; Round T places every town, river, bridge and road where it shows them.
 - (18 Oct AEDT, Front Desk relay) Studio house entries expose a stable `id` matching both the `BUILD_TYPES` key and saved `world.build[].type`, bilingual `name`, `home: true`, and `culture: 'vietnam' | 'australia'`; game placement and Studio preview use the same `mk()` output. Existing IDs stay unchanged. Distinct forms and lightweight variants are both allowed; no further owner choice is needed.
 - (18 Oct AEDT, Front Desk relay) S2 may build the nearby area first only with an explicit nearby-ready vs all-built contract, and the nearby area must be playable before distant areas finish. This records the decision; S2 implementation is out of scope for this catalogue task.
+
+## Progress
+
+- 18 Oct AEDT — Implemented 15 Vietnamese and 15 Australian house types in `js/content/build-types.ts`; `BUILD_TYPES` in `js/worldedit.ts` exposes the agreed stable-ID contract and the same model factories used by placement and preview. Commit `5fb5cfec` on `agents/implement-house-types-catalogue`.
+- Checks passed: `node tools/build.mts`; `node tools/build.mts --check`; `node tests/node_modules/typescript/bin/tsc -p tests/tsconfig.json`; `node --test tests/unit/build-types.test.mjs` (2/2); browser runtime probe (30 factories and rotated house footprints).
+- Suite status: `--changed` selected the full suite because `.gitignore` changed. The Windows suite runner has existing path-resolution failures (`D:\\D:\\...`); the full suite was not run locally per the suite rules.
+- Device review: phone, tablet and computer screenshots were attempted. The browser remained in startup/voice preparation (2%) after tapping to start, so gameplay layout could not be reviewed.
+- No new spoken lines. Not done here: Studio UI, S2 staging, and Release's `sw.js`/preload update for generated `js/content/build-types.js`. Windows build-marker issue is routed to Front Desk on the board.
