@@ -28,6 +28,9 @@ const api = async (p: string, body?: unknown) => { const r = await fetch(BASE + 
 // (owner, 10 Oct: "missing feedback after a save") the message is bigger, sits above the bar at the bottom of a phone,
 // stays 5 seconds (7 for a problem) and is green when something worked
 const toast: ((m: string, kind?: string) => void) & { t?: ReturnType<typeof setTimeout> } = (m, kind = '') => { const t = $('#toast'); t.textContent = m; t.className = 'on ' + kind; clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove('on'), kind === 'bad' ? 7000 : 5000); };
+// (r85) a toast with an Undo button, for a change made at once (Simple screen: moving a game to another group)
+const toastUndo = (m, undo) => { const t = $('#toast'); t.textContent = m + ' '; const b = document.createElement('button'); b.type = 'button'; b.className = 'btn small undo'; b.textContent = T('Undo', 'Hoàn tác');
+  b.onclick = () => { clearTimeout(toast.t); t.classList.remove('on', 'act'); undo(); }; t.appendChild(b); t.className = 'on act good'; clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove('on', 'act'), 8000); };
 const fail = e => toast('⚠️ ' + say(e.message || e), 'bad');
 let INFO: StudioInfo | null = null, CONTENT: StudioContent = {};
 // ---------- devices you can recognise (owner, 13 Oct AEDT: "which device belongs to whom, and to which child") ----------
@@ -52,12 +55,14 @@ const devTitle = d => d.label || easyName(d.id);
 // so each is its own device here: the row says which one it is
 const devAbout = d => { const kids = devKids(d), what = [devKindName(d.kind), d.os, d.app ? T('Home Screen app', 'Ứng dụng Màn hình chính') : d.br ? T(`in ${d.br}`, `trong ${d.br}`) : ''].filter(x => x && x !== '?').join(' · ');
   return [kids.length ? '🧒 ' + kids.join(', ') : '', what, devTown(d) ? '📍 ' + devTown(d) : '', devLast(d) ? '🕒 ' + devLast(d) : ''].filter(Boolean).join(' · '); };
+// (r85) the grey second line of a device card: device, system, browser (or the Home Screen app), town, last seen
+const devMeta = d => [devKindName(d.kind), d.os, d.app ? T('Home Screen app', 'Ứng dụng Màn hình chính') : d.br, devTown(d) ? '📍 ' + devTown(d) : '', devLast(d) ? '🕒 ' + devLast(d) : ''].filter(x => x && x !== '?').join(' · ');
 const devHTML = d => `<b class="dname">${esc(devTitle(d))}</b>${isRobot(d) ? ` <span class="pill robot">🤖 ${T('probably a robot', 'có lẽ là máy tự động')}</span>` : ''} <span class="dabout">${esc(devAbout(d))}</span> <small class="mini">${esc(d.id)}</small>`;
 // a search box and "show robots" over a list of device rows (.devrow): a ticked device always stays in view
 const devFilter = list => { if (!list || list.querySelector('.devfind')) return; const bar = document.createElement('div'); bar.className = 'devfind row';
   bar.innerHTML = `<input type="search" placeholder="${T('Find: a child, a name, a town, a phone…', 'Tìm: tên bé, tên máy, thành phố, điện thoại…')}" aria-label="${T('Find a device', 'Tìm máy')}"><label class="chk small"><input type="checkbox" data-robots> ${T('Show robots', 'Hiện máy tự động')}</label>`;
   list.prepend(bar); const q = bar.querySelector<HTMLInputElement>('input[type=search]'), rb = bar.querySelector<HTMLInputElement>('[data-robots]');
-  const apply = () => { const t = q.value.trim().toLowerCase(); list.querySelectorAll('.devrow').forEach(r => { const on = !!r.querySelector('input[type=checkbox]:checked'); r.hidden = !on && ((r.classList.contains('robot') && !rb.checked) || (t && !r.textContent.toLowerCase().includes(t))); }); };
+  const apply = () => { const t = q.value.trim().toLowerCase(); list.querySelectorAll('.devrow').forEach(r => { const on = !!r.querySelector(r.classList.contains('devcard') ? '[data-tdev]:checked, [data-dev]:checked' : 'input[type=checkbox]:checked'); r.hidden = !on && ((r.classList.contains('robot') && !rb.checked) || (t && !r.textContent.toLowerCase().includes(t))); }); };
   q.oninput = apply; rb.onchange = apply; apply(); };
 const devMatch = (d, q) => !q || [devTitle(d), easyName(d.id), d.id, devAbout(d)].join(' ').toLowerCase().includes(q.toLowerCase());
 // (r81, owner 17 Oct AEDT) the content pages go live at once, without Publish: online they are saved to the website's live
@@ -596,26 +601,46 @@ PAGES.path = async P => {
   CONTENT.activities = CONTENT.activities || {};
   // what this page shows comes from the choices made here (not yet published), over the usual ones
   const info = id => { const c = CONTENT.activities[id] || {}, base = A.GAME_INFO[id] || ['thinking', 5, 2]; return { area: c.area || base[0], little: c.little === undefined ? base[1] < 5 : c.little, hide: !!c.hide, base, changed: c.little !== undefined }; };
+  // (r85, owner 18 Oct AEDT) the group is no longer a dropdown on each row: tapping a game opens its own panel (Group,
+  // Under 5, Hide). Moving a game takes its row to the other group without drawing the page again, so the page does not
+  // jump, and says "Moved to <group>" with Undo.
+  const ORDER = Object.keys(GAMES), areaOf = k => A.AREAS.find(b => b.key === k) || A.AREAS[0];
+  const tags = id => { const g = info(id); return `${g.little ? `<span class="pill">🧒 ${T('Under 5', 'Dưới 5 tuổi')}</span>` : ''}${g.hide ? `<span class="pill">🙈 ${T('Hidden', 'Đã ẩn')}</span>` : ''}${g.changed ? ` <span class="sub">(${T('changed', 'đã đổi')}; ${T('usual', 'mặc định')}: ${g.base[1] < 5 ? '✓' : '✗'})</span>` : ''}`; };
+  const row = id => { const g = info(id);
+    return `<tr data-id="${id}"><td><button type="button" class="gopen" aria-expanded="false"><span class="gn">${GAMES[id].icon} ${esc(nm(GAMES[id].name))}</span><span class="gtags">${tags(id)}</span><span class="gv">▾</span></button>
+      <div class="gpanel" hidden><label>${T('Group', 'Nhóm')}<select data-f="area" data-nodirty>${A.AREAS.map(b => `<option value="${b.key}" ${g.area === b.key ? 'selected' : ''}>${b.icon} ${esc(nm(b.name))}</option>`).join('')}</select></label>
+        <label class="chk"><input type="checkbox" data-f="little" ${g.little ? 'checked' : ''}> ${T('Under 5', 'Dưới 5 tuổi')}</label>
+        <label class="chk"><input type="checkbox" data-f="hide" ${g.hide ? 'checked' : ''}> ${T('Hide', 'Ẩn')}</label></div></td></tr>`; };
+  const count = () => P.querySelectorAll('.card[data-area]').forEach(c => { c.querySelector('.gcount').textContent = `(${c.querySelectorAll('tr[data-id]').length})`; });
+  // take a game's row to another group, keeping what is on the screen where it is
+  const move = (id, to) => {
+    const r = P.querySelector(`tr[data-id="${id}"]`), body = P.querySelector(`.card[data-area="${to}"] tbody`); if (!r || !body || r.parentNode === body) return;
+    const anchor = r.nextElementSibling || r.closest('.card'), y0 = anchor.getBoundingClientRect().top;
+    const at = ORDER.indexOf(id), next = [...body.children].find(x => x instanceof HTMLElement && ORDER.indexOf(x.dataset.id) > at); body.insertBefore(r, next || null);
+    r.querySelector<HTMLSelectElement>('[data-f="area"]').value = to; count();
+    const dy = anchor.getBoundingClientRect().top - y0; if (dy) window.scrollBy(0, dy);
+  };
+  const setArea = (id, to) => { const base = info(id).base, c = CONTENT.activities[id] = { ...(CONTENT.activities[id] || {}) };
+    if (to === base[0]) delete c.area; else c.area = to; if (!Object.keys(c).length) delete CONTENT.activities[id]; move(id, to); };
+  const bind = r => { const id = r.dataset.id, base = A.GAME_INFO[id] || ['thinking', 5, 2], open = r.querySelector('.gopen'), panel = r.querySelector('.gpanel');
+    open.onclick = () => { panel.hidden = !panel.hidden; open.setAttribute('aria-expanded', String(!panel.hidden)); r.classList.toggle('open', !panel.hidden); };
+    r.querySelectorAll('[data-f]').forEach(f => f.onchange = () => {
+      if (f.dataset.f === 'area') { const from = info(id).area, to = f.value, was = DIRTY; if (to === from) return; setArea(id, to); DIRTY = true; paintState();   // (its own: Undo puts “not saved” back as it was)
+        toastUndo('✅ ' + T(`Moved to ${nm(areaOf(to).name)}`, `Đã chuyển sang ${nm(areaOf(to).name)}`), () => { setArea(id, from); DIRTY = was; paintState(); toast('↩️ ' + T(`Back in ${nm(areaOf(from).name)}`, `Đã về lại ${nm(areaOf(from).name)}`)); }); return; }
+      const c = CONTENT.activities[id] = { ...(CONTENT.activities[id] || {}) };
+      if (f.dataset.f === 'little') { if (f.checked === base[1] < 5) delete c.little; else c.little = f.checked; }
+      if (f.dataset.f === 'hide') { if (f.checked) c.hide = true; else delete c.hide; }
+      if (!Object.keys(c).length) delete CONTENT.activities[id];
+      r.querySelector('.gtags').innerHTML = tags(id);
+    }); };
   const draw = () => {
     const rows = A.AREAS.map(a => {
-      const ids = Object.keys(GAMES).filter(id => info(id).area === a.key);
-      return `<div class="card"><h3>${a.icon} ${esc(nm(a.name))} <span class="sub">(${ids.length})${a.key === 'reading' ? ' · ' + T('only while the reading trial is on', 'chỉ khi bật thử nghiệm đọc') : ''}</span></h3><table><tbody>${ids.map(id => { const g = info(id), base = g.base;
-        return `<tr data-id="${id}"><td>${GAMES[id].icon} ${esc(nm(GAMES[id].name))}</td>
-          <td><select data-f="area">${A.AREAS.map(b => `<option value="${b.key}" ${g.area === b.key ? 'selected' : ''}>${b.icon} ${esc(nm(b.name))}</option>`).join('')}</select></td>
-          <td><label><input type="checkbox" data-f="little" ${g.little ? 'checked' : ''}> ${T('Under 5', 'Dưới 5 tuổi')}</label>${!g.changed ? '' : ` <span class="sub">(${T('changed', 'đã đổi')}; ${T('usual', 'mặc định')}: ${base[1] < 5 ? '✓' : '✗'})</span>`}</td>
-          <td><label><input type="checkbox" data-f="hide" ${g.hide ? 'checked' : ''}> ${T('Hide', 'Ẩn')}</label></td></tr>`; }).join('')}</tbody></table></div>`;
+      const ids = ORDER.filter(id => info(id).area === a.key);
+      return `<div class="card garea" data-area="${a.key}"><h3>${a.icon} ${esc(nm(a.name))} <span class="sub"><span class="gcount">(${ids.length})</span>${a.key === 'reading' ? ' · ' + T('only while the reading trial is on', 'chỉ khi bật thử nghiệm đọc') : ''}</span></h3><table class="gtable"><tbody>${ids.map(row).join('')}</tbody></table></div>`;
     }).join('');
-    P.innerHTML = `<h2>🧸 ${T('Simple screen', 'Màn hình đơn giản')}</h2><p class="sub">${T('The Simple screen shows the games one area at a time (Animals, Music, Numbers…); children under 5 see at most six at once, and only the games ticked “Under 5”. Move a game to another area, or hide it from the Simple screen (it stays in the valley).', 'Màn hình đơn giản cho xem trò chơi theo từng khu (Con vật, Âm nhạc, Con số…); bé dưới 5 tuổi chỉ thấy tối đa sáu trò mỗi lần, và chỉ những trò được đánh dấu “Dưới 5 tuổi”. Có thể chuyển trò sang khu khác, hoặc ẩn khỏi màn hình đơn giản (vẫn còn trong thung lũng).')}</p>
+    P.innerHTML = `<h2>🧸 ${T('Simple screen', 'Màn hình đơn giản')}</h2><p class="sub">${T('The Simple screen shows the games one area at a time (Animals, Music, Numbers…); children under 5 see at most six at once, and only the games ticked “Under 5”. Move a game to another area, or hide it from the Simple screen (it stays in the valley).', 'Màn hình đơn giản cho xem trò chơi theo từng khu (Con vật, Âm nhạc, Con số…); bé dưới 5 tuổi chỉ thấy tối đa sáu trò mỗi lần, và chỉ những trò được đánh dấu “Dưới 5 tuổi”. Có thể chuyển trò sang khu khác, hoặc ẩn khỏi màn hình đơn giản (vẫn còn trong thung lũng).')} ${T('Tap a game to open it: its group, Under 5 and Hide are there.', 'Chạm vào một trò để mở: nhóm, Dưới 5 tuổi và Ẩn ở trong đó.')}</p>
       ${rows}<div class="bar"><button class="btn ghost" id="reset">↩️ ${T('Back to the usual', 'Về mặc định')}</button><button class="btn" id="save">💾 ${T('Save', 'Lưu')}</button></div>`;
-    P.querySelectorAll<HTMLInputElement>('tr[data-id]').forEach(r => { const id = r.dataset.id, base = A.GAME_INFO[id] || ['thinking', 5, 2];
-      r.querySelectorAll<HTMLInputElement>('[data-f]').forEach(f => f.onchange = () => {
-        const c = CONTENT.activities[id] = { ...(CONTENT.activities[id] || {}) };
-        if (f.dataset.f === 'area') { if (f.value === base[0]) delete c.area; else c.area = f.value; }
-        if (f.dataset.f === 'little') { if (f.checked === base[1] < 5) delete c.little; else c.little = f.checked; }
-        if (f.dataset.f === 'hide') { if (f.checked) c.hide = true; else delete c.hide; }
-        if (!Object.keys(c).length) delete CONTENT.activities[id];
-        if (f.dataset.f === 'area') draw();
-      }); });
+    P.querySelectorAll('tr[data-id]').forEach(bind);
     $('#reset').onclick = () => { CONTENT.activities = {}; draw(); };
     $('#save').onclick = () => saveContent().catch(fail);
   };
@@ -764,12 +789,9 @@ async function drawReleases(P, lab) {
   let deviceError = false;
   const devsP = lab ? api('players').then(r => (r && r.devices) || []).catch(() => { deviceError = true; return []; }) : Promise.resolve([]);
   const deviceNotice = () => deviceError ? `<p class="badtxt">${T('Could not load the device report. Saved settings are kept; reopen Sparkle Lab to retry.', 'Không tải được báo cáo máy. Các thiết lập đã lưu được giữ; mở lại Phòng thử Sparkle để thử lại.')}</p>` : '';
-  { const c = P.querySelector('.relc[data-id="autoplay"]'), mine = new Set((R.autoplay && R.autoplay.devices) || []);
+  { const c = P.querySelector('.relc[data-id="autoplay"]');
     if (c && !P.querySelector('#apdev')) { const box = document.createElement('div'); box.className = 'relpanel'; box.id = 'apdev'; c.classList.add('wide'); c.appendChild(box);
-      box.innerHTML = `<h4>📱 ${T('Which devices show the auto play window', 'Máy nào hiện cửa sổ tự chơi')}</h4><p class="note">${T('None ticked: every device (while the switch is on).', 'Không chọn máy nào: mọi máy (khi công tắc bật).')}</p><div id="apdl">${T('Loading the devices…', 'Đang tải danh sách máy…')}</div>`;
-      const devs = (await devsP).slice(); if (stale()) return; for (const id of mine) if (!devs.some(d => d.id === id)) devs.push({ id, label: '', kind: '?' });
-      $('#apdl').innerHTML = deviceNotice() + (devs.length ? devs.map(d => `<label class="chk devrow${isRobot(d) ? ' robot' : ''}" data-devrow="${esc(d.id)}"><input type="checkbox" data-dev="${esc(d.id)}" ${mine.has(d.id) ? 'checked' : ''}> ${devHTML(d)}</label>`).join('') : deviceError ? '' : `<p class="note">${T('No devices in the players report yet (a device appears after it plays with internet on).', 'Chưa có máy nào trong báo cáo (máy hiện ra sau khi chơi có mạng).')}</p>`);
-      devFilter($('#apdl')); } }
+      box.innerHTML = `<h4>📱 ${T('Which devices show the auto play window', 'Máy nào hiện cửa sổ tự chơi')}</h4><p class="note">${T('None ticked: every device (while the switch is on). Tick them under Devices with the Auto play chip.', 'Không chọn máy nào: mọi máy (khi công tắc bật). Chọn ở mục Các máy bằng nút Tự chơi.')}</p><p><button type="button" class="btn small ghost" data-todevs>📱 ${T('Choose devices', 'Chọn máy')}</button></p>`; } }
   // (owner, 12 Oct) testers: which devices, each one's level, and the sneak peeks (releases testers see early)
   { const c = P.querySelector('.relc[data-id="tester"]'), TR = R.tester || {}, mine = new Set(TR.devices || []), lv = TR.levels || {}, pk = new Set(TR.peeks || []);
     if (c && !P.querySelector('#tdev')) { const box = document.createElement('div'); box.className = 'relpanel'; box.id = 'tdev'; c.classList.add('wide'); c.appendChild(box);
@@ -778,7 +800,7 @@ async function drawReleases(P, lab) {
         const off = items.filter(x => !isOn(x)), on = items.filter(x => isOn(x)), lab = x => `<label class="chk peek${isOn(x) ? ' already' : ''}"><input type="checkbox" data-peek="${esc(x.id)}" ${pk.has(x.id) ? 'checked' : ''}> ${x.icon ? x.icon + ' ' : ''}${esc(T(x.en, x.vi))}</label>`;
         return `<details class="pkg" data-g="${G.g}"><summary><span class="gi">${REL_ICON[G.g] || '📦'}</span><b>${T(G.en, G.vi)}</b> <span class="pkn"></span><span class="relg-all"><button type="button" class="btn small ghost" data-pall="1">${T('All', 'Hết')}</button><button type="button" class="btn small ghost" data-pall="0">${T('None', 'Bỏ hết')}</button></span></summary>
           ${off.map(lab).join('')}${on.length ? `<p class="note">${T('Already on for everyone:', 'Đã bật cho mọi người:')}</p>${on.map(lab).join('')}` : ''}</details>`; };
-      box.innerHTML = `<h4>🐞 ${T('Which devices are testers, and how', 'Máy nào là người thử, và thế nào')}</h4><p class="note">${T('None ticked: every device (while the switch is on). A tester accepts what is collected the first time, on the device.', 'Không chọn máy nào: mọi máy (khi công tắc bật). Người thử đồng ý với những gì được thu thập lần đầu, trên máy.')}</p><div id="tdl">${T('Loading the devices…', 'Đang tải danh sách máy…')}</div>
+      box.innerHTML = `<h4>🐞 ${T('Which devices are testers, and how', 'Máy nào là người thử, và thế nào')}</h4><p class="note">${T('None ticked: every device (while the switch is on). A tester accepts what is collected the first time, on the device.', 'Không chọn máy nào: mọi máy (khi công tắc bật). Người thử đồng ý với những gì được thu thập lần đầu, trên máy.')}</p><p class="note">${T('Tick them under Devices with the Tester chip, each with its own settings.', 'Chọn ở mục Các máy bằng nút Người thử, mỗi máy có cài đặt riêng.')}</p><p><button type="button" class="btn small ghost" data-todevs>📱 ${T('Choose devices', 'Chọn máy')}</button></p>
         <h4>↩️ ${T('When someone stops being a tester', 'Khi ai đó thôi làm người thử')}</h4><p class="note">${T('These are defaults. Each device’s choice takes priority.', 'Đây là thiết lập mặc định. Lựa chọn của từng máy được ưu tiên.')}</p><div class="revert">${[['keep', 'Keep all progress after testing', 'Giữ mọi tiến trình sau khi thử'], ['progress', 'Everything since they became a tester goes back (badges, stickers and clothes stay)', 'Mọi tiến bộ từ khi làm người thử được trả lại (huy hiệu, nhãn dán và quần áo vẫn giữ)'], ['autoplay', 'Only what auto play did goes back, after each run (what they played themselves stays)', 'Chỉ trả lại phần tự chơi đã làm, sau mỗi lần chạy (phần con tự chơi vẫn giữ)']].map(([k, en, vi]) => `<label class="chk"><input type="radio" name="trevert" data-trevert="${k}" ${(['keep', 'autoplay', 'progress'].includes(TR.revert) ? TR.revert : 'progress') === k ? 'checked' : ''}> ${T(en, vi)}</label>`).join('')}</div>
         <h4>👀 ${T('Sneak peeks: testers see these early', 'Xem trước: người thử thấy sớm')} <span class="pill" id="pkcount"></span></h4><input type="search" id="pkq" placeholder="${T('Find a feature…', 'Tìm một tính năng…')}"><div id="tpk">${allGroups.map(peekGroup).join('')}</div>`;
       const pcount = () => { box.querySelector<HTMLInputElement>('#pkcount').textContent = T(`${box.querySelectorAll<HTMLInputElement>('[data-peek]:checked').length} picked`, `đã chọn ${box.querySelectorAll<HTMLInputElement>('[data-peek]:checked').length}`);
@@ -786,11 +808,33 @@ async function drawReleases(P, lab) {
       box.querySelectorAll<HTMLInputElement>('[data-peek]').forEach(i => i.onchange = pcount);
       box.querySelectorAll<HTMLInputElement>('details.pkg').forEach(d => d.querySelectorAll<HTMLInputElement>('[data-pall]').forEach(b => b.onclick = e => { e.preventDefault(); e.stopPropagation(); d.querySelectorAll<HTMLInputElement>('[data-peek]').forEach(i => { i.checked = b.dataset.pall === '1'; }); pcount(); }));
       box.querySelector<HTMLInputElement>('#pkq').oninput = e => { const q = val(e).trim().toLowerCase(); box.querySelectorAll<HTMLInputElement>('label.peek').forEach(l => { l.hidden = q && !l.textContent.toLowerCase().includes(q); }); if (q) box.querySelectorAll<HTMLDetailsElement>('details.pkg').forEach(d => { d.open = true; }); };
-      pcount();
-      const devs = (await devsP).slice(); if (stale()) return; for (const id of new Set([...mine, ...Object.keys(lv), ...Object.keys(TR.policies || {})])) if (!devs.some(d => d.id === id)) devs.push({ id, label: '', kind: '?' });
-      $('#tdl').innerHTML = deviceNotice() + (devs.length ? devs.map(d => `<div class="tdrow devrow${isRobot(d) ? ' robot' : ''}" data-devrow="${esc(d.id)}"><label class="chk"><input type="checkbox" data-tdev="${esc(d.id)}" ${mine.has(d.id) ? 'checked' : ''}> ${devHTML(d)}</label>
-        <label>${T('Progress after testing', 'Tiến trình sau khi thử')}<select data-policy="${esc(d.id)}">${[['keep','Keep all progress','Giữ mọi tiến trình'],['autoplay','Restore after each auto check','Trả lại sau mỗi lần tự kiểm tra'],['progress','Restore when testing ends','Trả lại khi kết thúc thử nghiệm']].map(([k,en,vi]) => `<option value="${k}" ${(TR.policies?.[d.id]?.revert || TR.revert || 'progress') === k ? 'selected' : ''}>${T(en,vi)}</option>`).join('')}</select></label><label>${T('Checking speed','Tốc độ kiểm tra')}<select data-speed="${esc(d.id)}">${['watch','fast'].includes(TR.policies?.[d.id]?.speed) ? `<option value="${TR.policies[d.id].speed}" selected>${TR.policies[d.id].speed === 'watch' ? T('Watch', 'Xem') : T('Quick', 'Nhanh')}</option>` : ''}${[1,2,3,5].map(n => `<option value="x${n}" ${(TR.policies?.[d.id]?.speed || 'x1') === 'x'+n ? 'selected' : ''}>${n}×</option>`).join('')}</select></label><label class="chk"><input type="checkbox" data-deviceauto="${esc(d.id)}" ${TR.policies?.[d.id]?.autoplay === false ? '' : 'checked'}>${T('Allow automatic check', 'Cho phép tự kiểm tra')}</label><select data-tlv="${esc(d.id)}" aria-label="${T('Level', 'Mức')}"><option value="ladybird" ${lv[d.id] !== 'auto' ? 'selected' : ''}>${T('Auto reports and the ladybird', 'Tự báo lỗi và con bọ rùa')}</option><option value="auto" ${lv[d.id] === 'auto' ? 'selected' : ''}>${T('Auto reports only', 'Chỉ tự báo lỗi')}</option></select></div>`).join('') : deviceError ? '' : `<p class="note">${T('No devices in the players report yet (a device appears after it plays with internet on).', 'Chưa có máy nào trong báo cáo (máy hiện ra sau khi chơi có mạng).')}</p>`);
-      devFilter($('#tdl')); } }
+      pcount(); } }
+  // (r85, owner 18 Oct AEDT) one card per device for testers and auto play: line 1 the device's name and the children,
+  // line 2 (small, grey) the device, system, browser, town and last seen; the Tester and Auto play chips each open that
+  // feature's settings for this device only. The settings saved are the same as before (Save below reads them).
+  if (lab && P.querySelector('.relc[data-id="tester"]') && !P.querySelector('#devs')) {
+    const TR = R.tester || {}, tmine = new Set(TR.devices || []), lv = TR.levels || {}, amine = new Set((R.autoplay && R.autoplay.devices) || []);
+    const sec = document.createElement('section'); sec.className = 'card devsec'; sec.id = 'devs';
+    sec.innerHTML = `<h3>📱 ${T('Devices: testers and auto play', 'Các máy: người thử và tự chơi')}</h3><p class="note">${T('Tap Tester or Auto play on a device to choose it and its settings. None ticked: every device (while that switch is on).', 'Chạm Người thử hoặc Tự chơi trên một máy để chọn máy đó và cài đặt của nó. Không chọn máy nào: mọi máy (khi công tắc đó bật).')}</p><div id="tdl" class="devcards">${T('Loading the devices…', 'Đang tải danh sách máy…')}</div>`;
+    P.querySelector('.relsave').before(sec);
+    P.querySelectorAll('[data-todevs]').forEach(b => b.onclick = e => { e.preventDefault(); sec.scrollIntoView({ block: 'start', behavior: 'smooth' }); });
+    const devs = (await devsP).slice(); if (stale()) return;
+    for (const id of new Set([...tmine, ...amine, ...Object.keys(lv), ...Object.keys(TR.policies || {})])) if (!devs.some(d => d.id === id)) devs.push({ id, label: '', kind: '?' });
+    const chip = (k, on) => `<button type="button" class="chip devchip${on ? ' on' : ''}" data-open="${k}" aria-expanded="false">${k === 'tester' ? '🐞 ' + T('Tester', 'Người thử') : '🤖 ' + T('Auto play', 'Tự chơi')} · <span>${on ? T('On', 'Bật') : T('Off', 'Tắt')}</span></button>`;
+    $('#tdl').innerHTML = deviceNotice() + (devs.length ? devs.map(d => { const kids = devKids(d);
+      return `<div class="devcard devrow${isRobot(d) ? ' robot' : ''}" data-devrow="${esc(d.id)}">
+        <div class="dc1"><b class="dname">${esc(devTitle(d))}</b>${isRobot(d) ? ` <span class="pill robot">🤖 ${T('probably a robot', 'có lẽ là máy tự động')}</span>` : ''}${kids.length ? ` <span class="dkids">🧒 ${esc(kids.join(', '))}</span>` : ''}</div>
+        <div class="dc2">${esc(devMeta(d))}<small class="mini">${esc(d.id)}</small></div>
+        <div class="chips dchips">${chip('tester', tmine.has(d.id))}${chip('autoplay', amine.has(d.id))}</div>
+        <div class="dpanel" data-panel="tester" hidden><label class="chk"><input type="checkbox" data-tdev="${esc(d.id)}" ${tmine.has(d.id) ? 'checked' : ''}> ${T('This device is a tester', 'Máy này là người thử')}</label>
+        <label>${T('Progress after testing', 'Tiến trình sau khi thử')}<select data-policy="${esc(d.id)}">${[['keep','Keep all progress','Giữ mọi tiến trình'],['autoplay','Restore after each auto check','Trả lại sau mỗi lần tự kiểm tra'],['progress','Restore when testing ends','Trả lại khi kết thúc thử nghiệm']].map(([k,en,vi]) => `<option value="${k}" ${(TR.policies?.[d.id]?.revert || TR.revert || 'progress') === k ? 'selected' : ''}>${T(en,vi)}</option>`).join('')}</select></label><label>${T('Checking speed','Tốc độ kiểm tra')}<select data-speed="${esc(d.id)}">${['watch','fast'].includes(TR.policies?.[d.id]?.speed) ? `<option value="${TR.policies[d.id].speed}" selected>${TR.policies[d.id].speed === 'watch' ? T('Watch', 'Xem') : T('Quick', 'Nhanh')}</option>` : ''}${[1,2,3,5].map(n => `<option value="x${n}" ${(TR.policies?.[d.id]?.speed || 'x1') === 'x'+n ? 'selected' : ''}>${n}×</option>`).join('')}</select></label><label class="chk"><input type="checkbox" data-deviceauto="${esc(d.id)}" ${TR.policies?.[d.id]?.autoplay === false ? '' : 'checked'}>${T('Allow automatic check', 'Cho phép tự kiểm tra')}</label><select data-tlv="${esc(d.id)}" aria-label="${T('Level', 'Mức')}"><option value="ladybird" ${lv[d.id] !== 'auto' ? 'selected' : ''}>${T('Auto reports and the ladybird', 'Tự báo lỗi và con bọ rùa')}</option><option value="auto" ${lv[d.id] === 'auto' ? 'selected' : ''}>${T('Auto reports only', 'Chỉ tự báo lỗi')}</option></select></div>
+        <div class="dpanel" data-panel="autoplay" hidden><label class="chk"><input type="checkbox" data-dev="${esc(d.id)}" ${amine.has(d.id) ? 'checked' : ''}> ${T('Show the auto play window on this device', 'Hiện cửa sổ tự chơi trên máy này')}</label></div></div>`; }).join('') : deviceError ? '' : `<p class="note">${T('No devices in the players report yet (a device appears after it plays with internet on).', 'Chưa có máy nào trong báo cáo (máy hiện ra sau khi chơi có mạng).')}</p>`);
+    $('#tdl').querySelectorAll('.devcard').forEach(card => {
+      const paint = () => card.querySelectorAll<HTMLElement>('[data-open]').forEach(b => { const on = card.querySelector<HTMLInputElement>(b.dataset.open === 'tester' ? '[data-tdev]' : '[data-dev]').checked; b.classList.toggle('on', on); b.querySelector('span').textContent = on ? T('On', 'Bật') : T('Off', 'Tắt'); });
+      card.querySelectorAll<HTMLElement>('[data-open]').forEach(b => b.onclick = () => { const k = b.dataset.open, open = b.getAttribute('aria-expanded') !== 'true';
+        card.querySelectorAll('[data-open]').forEach(x => x.setAttribute('aria-expanded', String(open && x === b))); card.querySelectorAll<HTMLElement>('.dpanel').forEach(x => { x.hidden = !(open && x.dataset.panel === k); }); });
+      card.querySelectorAll('[data-tdev], [data-dev]').forEach(i => i.addEventListener('change', paint)); });
+    devFilter($('#tdl')); }
   $('#save').onclick = async () => {
     try {
       const latest = await loadLive(), out = { ...(latest.releases || {}) };

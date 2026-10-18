@@ -303,3 +303,27 @@ details.relg:not([open]) > .relgrid, details.fold:not([open]) > :not(summary) { 
 
 /* (point 35) a photo's credit is shown, not only on hover */
 .thumb .credit { max-width: 120px; font-size: 11px; line-height: 1.25; color: var(--soft, #6b5c7b); overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; margin-top: 2px; }
+
+/* (r85, owner 18 Oct AEDT) Sparkle Lab: one card per device. Line 1 the name and the children, line 2 small and grey
+   (device, system, browser, town, last seen), then the Tester and Auto play chips that open each one's settings */
+.devcards { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr)); gap: 10px; }
+.devcards > .devfind, .devcards > .badtxt, .devcards > .note { grid-column: 1 / -1; }
+.devcard { border: 1px solid var(--line); border-radius: 14px; padding: 10px 12px; background: var(--card); display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.devcard[hidden] { display: none !important; }
+.devcard .dc1 { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; }
+.devcard .dc1 .dname { font-size: 17px; overflow-wrap: anywhere; } .devcard .dkids { font-weight: 600; }
+.devcard .dc2 { color: var(--soft); font-size: 13px; overflow-wrap: anywhere; } .devcard .dc2 small.mini { display: inline; margin-left: 6px; }
+.devcard .dchips .chip { flex: 1 1 auto; } .devcard .dchips .chip[aria-expanded="true"] { box-shadow: 0 0 0 3px rgba(138, 92, 246, .35); }
+.devcard .dpanel { border-top: 1px dashed var(--line); padding-top: 8px; display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-end; }
+.devcard .dpanel[hidden] { display: none; }
+.devcard .dpanel > label:not(.chk) { display: grid; gap: 4px; font-size: 14px; } .devcard .dpanel select { min-height: 44px; }
+.devcard .dpanel label.chk { min-height: 44px; display: flex; align-items: center; gap: 8px; }
+/* (r85) Simple screen: a game opens its own panel (Group, Under 5, Hide) */
+table.gtable { width: 100%; } table.gtable td { padding: 2px 0; }
+.gopen { width: 100%; min-height: 44px; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; text-align: left; background: none; border: 0; border-radius: 10px; padding: 6px 8px; font: inherit; color: inherit; cursor: pointer; }
+.gopen:hover, tr.open .gopen { background: rgba(138, 92, 246, .08); } .gopen .gn { font-weight: 600; flex: 1 1 auto; } .gopen .gv { color: var(--soft); transition: transform .2s; } tr.open .gopen .gv { transform: rotate(180deg); }
+.gopen .gtags { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; } .gopen .gtags .sub { margin: 0; font-size: 13px; }
+.gpanel { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: flex-end; padding: 8px 8px 12px; } .gpanel[hidden] { display: none; }
+.gpanel > label:not(.chk) { display: grid; gap: 4px; font-size: 14px; } .gpanel select { min-height: 44px; min-width: 200px; }
+.gpanel label.chk { min-height: 44px; display: flex; align-items: center; gap: 8px; }
+#toast.act { pointer-events: auto; } #toast .undo { margin-left: 10px; min-height: 44px; background: #fff; color: #1f7a45; border: 0; }

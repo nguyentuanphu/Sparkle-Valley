@@ -52,6 +52,10 @@ type DialogHooks = { little?: () => boolean, canChat?: (name: string) => boolean
 export const dialogHooks: DialogHooks = {};
 // a line: [en, vi] or [shown en, shown vi, spoken en, spoken vi]; a choice: [en, vi]. Resolves to the choice's index (-1: closed)
 export function dialog(name: string, lines: string[][], choices?: string[][] | null): Promise<number> {
+  // (#339, r86) the same speech box asked for again while it is still open (the quest's Go button walking up, the Act
+  // key) is not opened twice: a second box stayed under the game that the first one's "Play!" opened, its button covered
+  const key = JSON.stringify([nm(name), lines[0], choices ? choices.length : 0]);
+  if ([...document.querySelectorAll<HTMLElement>('.dialog:not(.out)')].some(x => x.dataset.key === key)) return Promise.resolve(-1);
   return new Promise<number>(res => {
     const little = dialogHooks.little && dialogHooks.little();
     const d = el('div', 'dialog' + (little ? ' little' : ''), `<div class="dname">${esc(nm(name))}</div><div class="dtext"></div><div class="dchoices"></div><div class="dnext">▼</div>`);
@@ -59,7 +63,7 @@ export function dialog(name: string, lines: string[][], choices?: string[][] | n
       const ask = el('button', 'dask', '💬 ' + T('Chat', 'Trò chuyện')); d.appendChild(ask);
       ask.onclick = e => { e.stopPropagation(); SFX.tap(); close(-1); dialogHooks.chat(name); };
     }
-    document.body.appendChild(d);
+    d.dataset.key = key; document.body.appendChild(d);
     let i = 0;
     const text = d.querySelector('.dtext'), ch = d.querySelector('.dchoices'), next = d.querySelector('.dnext');
     const show = () => {

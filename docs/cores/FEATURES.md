@@ -138,6 +138,29 @@ Columns below: **Suggested start** = my suggestion only (Live, or Off then drip 
 | Birthday party | Live |
 | Small core voice pack | Live (no switch) |
 
+## H. Every game switch has a Studio control (r85, owner 18 Oct 2026 AEDT)
+Owner: "ensure all function in game should be able to control by studio"; "stories film switch is not available on
+studio". Audit on 18 Oct AEDT (`main` r83) of every switch the game reads (`featureOn`, `releaseOn`, `keptOn`, `G.keep`
+and each file's own `keep` / `feat`): all but one were already on Studio's Releases page or Sparkle Lab; the story films
+(`storyFilms`, js/tales.js and js/howto-player.js) were only on the Defaults page, which waits for Publish. They are now
+a card in Releases → The lantern story (live at once, can be scheduled); the Defaults choice stays and says
+"Releases wins".
+
+Where each switch is (Releases page groups, `js/content/releases.js`):
+- The lantern story (6): the prologue, chapters 1 to 3, Bà Huệ's yard, the story films.
+- For little ones (16), Shop and rewards (4), In the valley (8), The living valley (8), Money games (10, one per game),
+  Explanations and tips (9), Trials (2: reading games, family devices), Festivals (26: each festival, the hunt, big
+  decorations); Sparkle Lab (2: auto play, testers).
+- Not a switch but controlled in Studio too: each game's group, Under 5 and Hide (Game → Simple screen), each
+  festival's decorations and build-up (Game → Festivals), the device defaults (rest reminder, language, bilingual voice,
+  money, captions, calm mode, text size, music: Game → Defaults), and the family's content pages.
+
+The check `studioswitches` (`tests/unit/studioswitches.test.mjs`, part of `unit`, no browser) reads every switch the game
+asks for, works out the ones built from a list (`explain_<kind>_note/voice`, `money_<game>`, `story_<chapter>`,
+`fest_<festival>`), and fails when one has no card in `RELEASES`, when a switch is read in a way it cannot see, or when the
+Defaults page or `content/custom.json` switches something Releases does not have. A new feature therefore needs its
+Releases card (id, English, Vietnamese, group, def) before the checks pass.
+
 ## Batch calendar (owner, 13 Oct AEDT; replaces the old "Suggested drip calendar")
 Owner's decisions (13 Oct AEDT): one batch every Saturday (AEDT), each with a 7-day New badge; features children can
 already see are held back and come back as "New!" on their batch day; the owner sets the dates in Studio from a checklist
