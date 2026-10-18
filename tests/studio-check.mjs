@@ -553,6 +553,8 @@ export async function studioCheck(browser, open) {
         pg.on('request', countPlayers);
         await pg.evaluate(() => { location.hash = 'game/releases'; }); await pg.waitForSelector('[data-id="traffic"]', { timeout: 15000 });
         if (await pg.locator('[data-id="tester"], [data-id="autoplay"]').count()) bad.push('testing controls still appear in Releases');
+        // (r85, owner 18 Oct AEDT: "stories film switch is not available on studio") the films have their own card
+        if (!await pg.locator('details.relg[data-g="story"] .relc[data-id="storyFilms"] [data-r="on"]').count()) bad.push('the story films switch is not on the Releases page');
         if (releasePlayerRequests) bad.push('Releases waits on Analytics device data');
         pg.off('request', countPlayers);
         await pg.evaluate(() => { document.querySelector('[data-id="traffic"] [data-r="on"]').checked = false; const t = document.querySelector('[data-id="fest_halloween"]'); t.querySelector('[data-in="3"]').click(); t.querySelector('[data-r="newDays"]').value = '5'; document.querySelector('#save').click(); });
@@ -561,8 +563,19 @@ export async function studioCheck(browser, open) {
         if (!(lv.releases && lv.releases.traffic && lv.releases.traffic.on === false && lv.releases.fest_halloween && lv.releases.fest_halloween.newDays === 5 && /^\d{4}-/.test(lv.releases.fest_halloween.start))) bad.push('releases did not reach /api/live: ' + JSON.stringify(lv));
         // (owner, 12 Oct) testers: tick a device at "auto reports only" with a sneak peek; it reports; the Tester reports page
         // shows the problem, marks it fixed in r67, and the device hears it
-        await pg.evaluate(() => { location.hash = 'game/lab'; }); await pg.waitForSelector('#tdev [data-tdev]', { timeout: 15000 }).catch(() => { });
-        const tid = await pg.evaluate(() => { const c = document.querySelector('#tdev [data-tdev]'); if (!c) return ''; c.checked = true; document.querySelector(`[data-tlv="${c.dataset.tdev}"]`).value = 'auto'; document.querySelector('#tdev [data-peek]').checked = true; document.querySelector('[data-id="tester"] [data-r="on"]').checked = true; document.querySelector('#tdev [data-trevert="autoplay"]').checked = true; document.querySelector('#save').click(); return c.dataset.tdev; });
+        await pg.evaluate(() => { location.hash = 'game/lab'; }); await pg.waitForSelector('#devs [data-tdev]', { timeout: 15000 }).catch(() => { });
+        // (r85, owner 18 Oct AEDT) one card per device: name (bold) and children, a grey line, then Tester and Auto play chips
+        // that open that feature's settings for this device only
+        const dc = await pg.evaluate(async () => { const c = document.querySelector('#devs .devcard'); if (!c) return null; const chips = [...c.querySelectorAll('.dchips [data-open]')].map(b => b.dataset.open);
+          const closed = [...c.querySelectorAll('.dpanel')].every(x => x.hidden); c.querySelector('[data-open="tester"]').click(); await new Promise(r => setTimeout(r, 50));
+          const tp = c.querySelector('[data-panel="tester"]'), ap = c.querySelector('[data-panel="autoplay"]'), tOpen = !tp.hidden && ap.hidden && !!tp.querySelector('[data-tdev]') && !!tp.querySelector('[data-policy]') && !!tp.querySelector('[data-speed]') && !!tp.querySelector('[data-tlv]');
+          c.querySelector('[data-open="autoplay"]').click(); await new Promise(r => setTimeout(r, 50)); const aOpen = tp.hidden && !ap.hidden && !!ap.querySelector('[data-dev]');
+          const box = ap.querySelector('[data-dev]'), was = box.checked; box.checked = !was; box.dispatchEvent(new Event('change', { bubbles: true })); const chip = c.querySelector('[data-open="autoplay"]').classList.contains('on') === !was; box.checked = was; box.dispatchEvent(new Event('change', { bubbles: true }));
+          const grey = getComputedStyle(c.querySelector('.dc2')), name = getComputedStyle(c.querySelector('.dc1 .dname'));
+          return { chips, closed, tOpen, aOpen, chip, line2: c.querySelector('.dc2').textContent, small: parseFloat(grey.fontSize) < parseFloat(name.fontSize), bold: +name.fontWeight >= 600, oldLists: !!document.querySelector('#apdl, .tdrow'), robots: !!document.querySelector('#devs [data-robots]') }; });
+        if (!(dc && dc.chips.join() === 'tester,autoplay' && dc.closed && dc.tOpen && dc.aOpen && dc.chip && dc.small && dc.bold && dc.line2.trim() && !dc.oldLists && dc.robots)) bad.push('Sparkle Lab device cards: ' + JSON.stringify(dc));
+        else notes.push('Sparkle Lab: one card per device, Tester and Auto play chips open their own settings');
+        const tid = await pg.evaluate(() => { const c = document.querySelector('#devs [data-tdev]'); if (!c) return ''; c.checked = true; document.querySelector(`[data-tlv="${c.dataset.tdev}"]`).value = 'auto'; document.querySelector('#tdev [data-peek]').checked = true; document.querySelector('[data-id="tester"] [data-r="on"]').checked = true; document.querySelector('#tdev [data-trevert="autoplay"]').checked = true; document.querySelector('#save').click(); return c.dataset.tdev; });
         await pg.waitForTimeout(1200);
         const lt = await pg.evaluate(() => fetch('/api/live', { cache: 'no-store' }).then(r => r.json()));
         const tr = lt.releases && lt.releases.tester;
@@ -707,6 +720,25 @@ export async function studioCheck(browser, open) {
         await names('vi'); const rdVi = await pe.evaluate(() => (document.querySelector('tr[data-id="rd_trace"]') || {}).textContent || '');
         if (!(rd.length >= 10 && rd.every(r => r.area === 'reading') && /Lantern Letters/.test((rd.find(r => r.id === 'rd_trace') || {}).txt || '') && /reading trial/.test(rd[0].head) && /Đèn Lồng Chữ Cái/.test(rdVi))) bad.push('the Simple screen page does not list the reading games: ' + JSON.stringify({ rd: rd.slice(0, 3), n: rd.length, rdVi }));
         else notes.push(`Simple screen: ${rd.length} reading games listed`);
+        // (r85, owner 18 Oct AEDT) no group dropdown on the rows: a game opens its own panel; moving it says "Moved to …" with
+        // Undo, and what is on the screen stays where it is (the page does not jump)
+        await names('en'); await pe.waitForTimeout(300);
+        const mv = await pe.evaluate(async () => { const pause = ms => new Promise(r => setTimeout(r, ms)), cards = [...document.querySelectorAll('.card[data-area]')];
+          const shownSelects = [...document.querySelectorAll('tr[data-id] select')].filter(x => x.offsetParent).length;
+          const src = cards.slice(1).find(c => c.querySelectorAll('tr[data-id]').length >= 2), dst = cards[0], r = src && src.querySelector('tr[data-id]'); if (!r) return { none: true };
+          r.scrollIntoView({ block: 'center' }); await pause(50);
+          r.querySelector('.gopen').click(); await pause(50); const panel = r.querySelector('.gpanel'), opened = !panel.hidden && !!panel.querySelector('[data-f="area"]') && !!panel.querySelector('[data-f="little"]') && !!panel.querySelector('[data-f="hide"]');
+          const next = r.nextElementSibling, y0 = next.getBoundingClientRect().top, n0 = dst.querySelectorAll('tr[data-id]').length;
+          const sel = panel.querySelector('[data-f="area"]'); sel.value = dst.dataset.area; sel.dispatchEvent(new Event('change', { bubbles: true })); await pause(50);
+          const moved = r.closest('.card') === dst && dst.querySelectorAll('tr[data-id]').length === n0 + 1 && /\(\d+\)/.test(dst.querySelector('.gcount').textContent), jump = Math.abs(next.getBoundingClientRect().top - y0);
+          const t = document.querySelector('#toast'), said = t.textContent, undo = t.querySelector('.undo');
+          if (undo) undo.click(); await pause(50);
+          return { shownSelects, opened, moved, jump, said, back: r.closest('.card') === src, undo: !!undo };
+        });
+        if (!(mv.shownSelects === 0 && mv.opened && mv.moved && mv.jump < 2 && /Moved to /.test(mv.said) && mv.undo && mv.back)) bad.push('the Simple screen game panel (Group, Moved to, Undo, no jump): ' + JSON.stringify(mv));
+        else notes.push('Simple screen: Group in each game\'s panel; Moved to … with Undo, no jump');
+        await names('vi'); const mvVi = await pe.evaluate(async () => { const r = document.querySelector('.card[data-area] tr[data-id]'); r.querySelector('.gopen').click(); return r.querySelector('.gpanel').innerText; });
+        if (!/Nhóm/.test(mvVi) || !/Dưới 5 tuổi/.test(mvVi) || !/Ẩn/.test(mvVi)) bad.push('the game panel in Vietnamese: ' + mvVi.slice(0, 120));
       }
       await pe.screenshot({ path: `out/studio-exe-${w}.png` });
       bad.push(...errs.map(e => `${w}px: ${e}`)); await ctx.close();

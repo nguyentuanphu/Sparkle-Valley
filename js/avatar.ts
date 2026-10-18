@@ -4,7 +4,7 @@ import { GLIDERS, settings } from './state.js';
 import { customFace, familyOwnFace, onFamilyPhotos } from './custom.js';
 import { wearing, BOY_OF } from './content/shop.js';
 
-const G = {
+const gParts = {
   head: new THREE.SphereGeometry(.5, 32, 24),
   hairCap: new THREE.SphereGeometry(.54, 32, 18, 0, Math.PI * 2, 0, Math.PI * .55),
   hairBack: new THREE.SphereGeometry(.53, 24, 18, Math.PI, Math.PI, 0, Math.PI * .8),
@@ -19,6 +19,8 @@ const G = {
   nonla: new THREE.ConeGeometry(.82, .5, 24, 1, false), cap: new THREE.SphereGeometry(.56, 20, 12, 0, Math.PI * 2, 0, Math.PI * .45), brim: new THREE.CylinderGeometry(.3, .3, .04, 16, 1, false, 0, Math.PI),
   crown: new THREE.CylinderGeometry(.26, .3, .22, 8, 1, true), ear: new THREE.CapsuleGeometry(.08, .38, 4, 8), petal: new THREE.SphereGeometry(.09, 8, 6)
 };
+// (TypeScript, r86) the head's shapes, and the face and glider made just below
+const G: typeof gParts & { face?: THREE.BufferGeometry, glider?: THREE.BufferGeometry } = gParts;
 G.face = (() => {
   const g = new THREE.SphereGeometry(.508, 40, 28, 0, Math.PI, 0, Math.PI);
   const p = g.attributes.position, uv = g.attributes.uv, k = .47;
@@ -55,7 +57,7 @@ export function drawFeatures(x, S, look, mood = 'smile') {
 // Painted faces (no photo) are shared by every villager with the same hair and skin, at 256 px: phones
 // (iPhones above all) have a small budget for pictures, and when it runs out new ones come out black.
 const paintedFaces = {};
-export function faceTexture(look, photo) {
+export function faceTexture(look, photo?) {
   if (!photo) {
     const k = look.hair + look.skin;
     if (!paintedFaces[k]) { const S = 256, c = document.createElement('canvas'); c.width = c.height = S; drawFeatures(c.getContext('2d'), S, look); paintedFaces[k] = new THREE.CanvasTexture(c); paintedFaces[k].colorSpace = THREE.SRGBColorSpace; }
@@ -86,7 +88,7 @@ export function avatarURL(p) {
 // Natural child proportions (about three heads tall). The head is built at a larger scale and
 // shrunk, so the photo-face mapping and the hats stay simple.
 const HEAD_SCALE = .54;
-const B = {
+const bParts = {
   torso: new THREE.LatheGeometry([V2(.0, .6), V2(.13, .6), V2(.15, .66), V2(.152, .8), V2(.16, .92), V2(.168, .98), V2(.12, 1.03), V2(.05, 1.05), V2(0, 1.05)], 20),
   skirt: new THREE.CylinderGeometry(.15, .33, .36, 22, 1, true),
   aodai: new THREE.CylinderGeometry(.155, .24, .5, 20, 1, true),
@@ -98,6 +100,8 @@ const B = {
   shoe: new THREE.CapsuleGeometry(.068, .1, 4, 12), sole: new THREE.CapsuleGeometry(.07, .11, 4, 12), neck: new THREE.CylinderGeometry(.05, .055, .08, 10),
   wing: new THREE.CircleGeometry(.3, 24), cape: new THREE.PlaneGeometry(.42, .62, 4, 6), hood: new THREE.SphereGeometry(.2, 16, 12, 0, Math.PI * 2, Math.PI * .3, Math.PI * .5)
 };
+// (TypeScript, r86) the body's shapes, and the shop clothes' and dragon wing's added below
+const B: typeof bParts & { strap?: THREE.BufferGeometry, boot?: THREE.BufferGeometry, stripe?: THREE.BufferGeometry, dwing?: THREE.BufferGeometry, dwingL?: THREE.BufferGeometry } = bParts;
 function V2(x, y) { return new THREE.Vector2(x, y); }
 B.cape.translate(0, -.31, 0);
 // (round S) shapes for the shop's clothes (shoe strap, boot, stripes, dragon wing)
@@ -154,7 +158,12 @@ const STYLE_LEGS = { dress: 'skin', shirt: 'shorts', aodai: 'pants:#ffffff', tun
 // (round S, owner plan 8 Oct) clothes from the shop (js/content/shop.js): a top takes the place of the outfit's own top
 const TOP_STYLE = { tee: 'shirt', hoodie: 'hoodie', aodai: 'aodai', tunic: 'tunic', overalls: 'overalls', dress: 'dress' };
 
-export function buildAvatar(look, photo) {
+/** a person: the parts the animation turns, the face, and the far "still" copy (made when first needed) */
+export type SvAvatar = { root: THREE.Group, rig: THREE.Group, skinMat: THREE.Material & { color: THREE.Color }, look: Record<string, string | number | boolean | undefined>,
+  torso?: THREE.Group, head?: THREE.Group, legL?: THREE.Group, legR?: THREE.Group, armL?: THREE.Group, armR?: THREE.Group, glider?: THREE.Object3D,
+  wings?: THREE.Group[], cape?: THREE.Mesh, faceMat?: THREE.MeshStandardMaterial, faceLegacy?: string, outlines?: unknown, skinParts?: { g: THREE.BufferGeometry, ranges: number[][] }[],
+  still?: THREE.Group, stillLine?: THREE.Mesh, _still?: boolean, _ol?: boolean, anim?: (state: string, t: number, speed?: number) => void };
+export function buildAvatar(look, photo?) {
   const root = new THREE.Group(), rig = new THREE.Group(); root.add(rig); root.userData.avatar = true;
   const shadow = blobShadow(); root.add(shadow); shadow.position.y = .03; shadow.scale.setScalar(.65);
   const W = wearing(look), bot = W.bottom, ft = W.feet; // (round S) shop clothes: each piece one merged shape
@@ -162,7 +171,7 @@ export function buildAvatar(look, photo) {
   const skin = toon(look.skin, { roughness: .6 }), hairM = toon(look.hair, { roughness: .45, metalness: .05 }), cloth = toon(col, { roughness: .92 });
   const white = toon('#ffffff', { roughness: .9 }), shoeM = toon(ft ? ft.color : look.shoe || '#7a4a35', { roughness: .45 }), soleM = toon('#fff8ee');
   const trim = toon(style === 'aodai' ? '#ffd84a' : '#f2d16b', { roughness: .7 });
-  const A = { root, rig, skinMat: skin, look };
+  const A: SvAvatar = { root, rig, skinMat: skin, look };
   // legs (pivot at the hip)
   const legSpec = bot ? (bot.shape === 'shorts' ? 'shorts' : bot.shape === 'skirt' ? 'skin' : 'pants:' + bot.color) : STYLE_LEGS[style] || 'skin';
   const shortsCol = bot && bot.shape === 'shorts' ? bot.color : null;
@@ -253,7 +262,7 @@ export function buildAvatar(look, photo) {
   const gm = new THREE.Mesh(G.glider, toon(GLIDERS[look.glider || 0], { side: THREE.DoubleSide, roughness: .8 })); gm.rotation.x = -Math.PI / 2 + .25; glider.add(gm);
   [-.45, .45].forEach(x => { const r = new THREE.Mesh(new THREE.CylinderGeometry(.012, .012, .9, 4), toon('#7a5236')); r.position.set(x, -.42, 0); r.rotation.z = x * .7; glider.add(r); });
   rig.add(glider); A.glider = glider;
-  root.traverse(o => { if (o.isMesh && o !== shadow) { o.castShadow = true; } });
+  root.traverse(o => { if (o instanceof THREE.Mesh && o !== shadow) { o.castShadow = true; } });
   compact(A); // (battery round) each moving part one shape, before the outlines are made (one outline each, too)
   A.outlines = outline(rig, .011, '#6a4a3a'); OUTLINED.push(A);
   A.anim = (state, t, speed) => animate(A, state, t, speed);
@@ -324,7 +333,7 @@ export const spriteGlow = c => glow(c);
 
 // A grown-up can give any villager a real face (Grown-ups → Character names → 📷). The photo goes on the face and
 // the head, ears, hands and legs take the skin colour sampled from the photo, so the edge of the photo blends in.
-const NAMED = {}; // villager name -> their avatars
+const NAMED: Record<string, SvAvatar[]> = {}; // villager name -> their avatars
 const baseOf = n => String(n).replace(/\s+[^\p{L}\p{N}]+$/u, '').trim();
 export function nameAvatar(A, name, remember = true, stableId) { // remember: false for people in a room that is torn down later
   if (!A || !name) return A; const legacy = baseOf(name), id = stableId || legacy; A.faceLegacy = legacy; if (remember) (NAMED[id] = NAMED[id] || []).push(A);
@@ -345,38 +354,41 @@ function setFace(A, f) {
 let stillMat = null;
 const _inv = new THREE.Matrix4(), _mm = new THREE.Matrix4(), _nm = new THREE.Matrix3(), _v = new THREE.Vector3();
 const shown = (o, top) => { for (; o && o !== top; o = o.parent) if (!o.visible) return false; return true; };
+// (r86, S3: less memory, #355) each part's corners are written once and its triangles kept as an index, as the part
+// had them: the same triangles with the same colours and normals, in about a fifth of the memory (people were most of
+// the valley's 530 MB of shapes, every triangle's corners written out separately)
 function bake(list, inv, withColor) {
-  let n = 0; for (const { m } of list) n += (m.geometry.index ? m.geometry.index.count : m.geometry.attributes.position.count);
-  const pos = new Float32Array(n * 3), nor = new Float32Array(n * 3), col = withColor ? new Float32Array(n * 3) : null;
-  let o = 0;
+  let nv = 0, ni = 0; for (const { m } of list) { const g = m.geometry; nv += g.attributes.position.count; ni += g.index ? g.index.count : g.attributes.position.count; }
+  const pos = new Float32Array(nv * 3), nor = new Float32Array(nv * 3), col = withColor ? new Float32Array(nv * 3) : null, tri = nv > 65535 ? new Uint32Array(ni) : new Uint16Array(ni);
+  let o = 0, q = 0;
   for (const { m, c } of list) {
-    const g = m.geometry, P = g.attributes.position, N = g.attributes.normal, C = g.attributes.color, idx = g.index;
+    const g = m.geometry, P = g.attributes.position, N = g.attributes.normal, C = g.attributes.color, idx = g.index, o0 = o;
     _mm.multiplyMatrices(inv, m.matrixWorld); _nm.getNormalMatrix(_mm);
-    const cnt = idx ? idx.count : P.count;
+    if (idx) for (let k = 0; k < idx.count; k++) tri[q++] = o0 + idx.getX(k); else for (let k = 0; k < P.count; k++) tri[q++] = o0 + k;
     // (17 Oct AEDT, PERF-001: about 1.3 s of a tablet's start) plain arrays: the same sums as three.js's
     // Vector3.applyMatrix4, applyMatrix3 and normalize, in the same order, straight on the numbers (same results)
     const plain = A => A && !A.isInterleavedBufferAttribute && !A.normalized && A.itemSize === 3;
-    if (plain(P) && plain(N) && (!col || c || plain(C)) && (!idx || !idx.isInterleavedBufferAttribute)) {
-      const pa = P.array, na = N.array, ca = C && C.array, ia = idx && idx.array, e = _mm.elements, q = _nm.elements;
-      for (let k = 0; k < cnt; k++, o++) {
-        const i = (ia ? ia[k] : k) * 3, x = pa[i], y = pa[i + 1], z = pa[i + 2], w = 1 / (e[3] * x + e[7] * y + e[11] * z + e[15]);
+    if (plain(P) && plain(N) && (!col || c || plain(C))) {
+      const pa = P.array, na = N.array, ca = C && C.array, e = _mm.elements, q3 = _nm.elements;
+      for (let k = 0; k < P.count; k++, o++) {
+        const i = k * 3, x = pa[i], y = pa[i + 1], z = pa[i + 2], w = 1 / (e[3] * x + e[7] * y + e[11] * z + e[15]);
         pos[o * 3] = (e[0] * x + e[4] * y + e[8] * z + e[12]) * w; pos[o * 3 + 1] = (e[1] * x + e[5] * y + e[9] * z + e[13]) * w; pos[o * 3 + 2] = (e[2] * x + e[6] * y + e[10] * z + e[14]) * w;
-        const a = na[i], b = na[i + 1], d = na[i + 2], nx = q[0] * a + q[3] * b + q[6] * d, ny = q[1] * a + q[4] * b + q[7] * d, nz = q[2] * a + q[5] * b + q[8] * d, s = 1 / (Math.sqrt(nx * nx + ny * ny + nz * nz) || 1);
+        const a = na[i], b = na[i + 1], d = na[i + 2], nx = q3[0] * a + q3[3] * b + q3[6] * d, ny = q3[1] * a + q3[4] * b + q3[7] * d, nz = q3[2] * a + q3[5] * b + q3[8] * d, s = 1 / (Math.sqrt(nx * nx + ny * ny + nz * nz) || 1);
         nor[o * 3] = nx * s; nor[o * 3 + 1] = ny * s; nor[o * 3 + 2] = nz * s;
         if (col) { if (c) { col[o * 3] = c.r; col[o * 3 + 1] = c.g; col[o * 3 + 2] = c.b; } else { col[o * 3] = ca[i]; col[o * 3 + 1] = ca[i + 1]; col[o * 3 + 2] = ca[i + 2]; } }
       }
       continue;
     }
-    for (let k = 0; k < cnt; k++, o++) {
-      const i = idx ? idx.getX(k) : k;
-      _v.fromBufferAttribute(P, i).applyMatrix4(_mm); pos[o * 3] = _v.x; pos[o * 3 + 1] = _v.y; pos[o * 3 + 2] = _v.z;
-      _v.fromBufferAttribute(N, i).applyMatrix3(_nm).normalize(); nor[o * 3] = _v.x; nor[o * 3 + 1] = _v.y; nor[o * 3 + 2] = _v.z;
-      if (col) { if (c) { col[o * 3] = c.r; col[o * 3 + 1] = c.g; col[o * 3 + 2] = c.b; } else { col[o * 3] = C.getX(i); col[o * 3 + 1] = C.getY(i); col[o * 3 + 2] = C.getZ(i); } }
+    for (let k = 0; k < P.count; k++, o++) {
+      _v.fromBufferAttribute(P, k).applyMatrix4(_mm); pos[o * 3] = _v.x; pos[o * 3 + 1] = _v.y; pos[o * 3 + 2] = _v.z;
+      _v.fromBufferAttribute(N, k).applyMatrix3(_nm).normalize(); nor[o * 3] = _v.x; nor[o * 3 + 1] = _v.y; nor[o * 3 + 2] = _v.z;
+      if (col) { if (c) { col[o * 3] = c.r; col[o * 3 + 1] = c.g; col[o * 3 + 2] = c.b; } else { col[o * 3] = C.getX(k); col[o * 3 + 1] = C.getY(k); col[o * 3 + 2] = C.getZ(k); } }
     }
   }
   const g = new THREE.BufferGeometry();
   g.setAttribute('position', new THREE.BufferAttribute(pos, 3)); g.setAttribute('normal', new THREE.BufferAttribute(nor, 3));
   if (col) g.setAttribute('color', new THREE.BufferAttribute(col, 3));
+  g.setIndex(new THREE.BufferAttribute(tri, 1));
   g.computeBoundingSphere(); return g;
 }
 export function stillOf(A) {
@@ -412,7 +424,7 @@ function compact(A) {
   A.rig.traverse(o => { if (o.isGroup && !nodes.includes(o)) nodes.push(o); });
   A.skinParts = [];
   for (const N of nodes) {
-    const bySide = {};
+    const bySide: Record<string, THREE.Mesh<THREE.BufferGeometry, THREE.MeshToonMaterial>[]> = {};
     for (const m of N.children) {
       if (!m.isMesh || m.children.length || m === A.cape || !m.visible) continue;
       const mt = m.material;
@@ -424,7 +436,8 @@ function compact(A) {
       if (list.length < 2) continue;
       N.updateMatrixWorld(true); const inv = new THREE.Matrix4().copy(N.matrixWorld).invert();
       const ranges = []; let at = 0;
-      const parts = list.map(m => { const n = m.geometry.index ? m.geometry.index.count : m.geometry.attributes.position.count; if (m.material === A.skinMat) ranges.push([at, n]); at += n; return { m, c: m.material.vertexColors && m.geometry.attributes.color ? null : m.material.color }; });
+      // (r86: the baked shape keeps each part's corners once, so a skin range counts the part's corners)
+      const parts = list.map(m => { const n = m.geometry.attributes.position.count; if (m.material === A.skinMat) ranges.push([at, n]); at += n; return { m, c: m.material.vertexColors && m.geometry.attributes.color ? null : m.material.color }; });
       const one = new THREE.Mesh(bake(parts, inv, true), compactMat(+side)); one.castShadow = true;
       // (r67) an arm keeps an empty marker where each of its parts was (the hand at y -0.42), so a rider's grip can still be found
       if (N === A.armL || N === A.armR) list.forEach(m => { const k = new THREE.Object3D(); k.position.copy(m.position); k.quaternion.copy(m.quaternion); k.userData.part = true; N.add(k); });

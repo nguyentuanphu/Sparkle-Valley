@@ -796,7 +796,7 @@ export const Net = {
     return Object.assign(found, { server, cloud, cloudMs });
   },
 
-  close(keepMic) {
+  close(keepMic?: boolean) {
     if (this.role && this.cloud && !this.knocking) try { this._cloudSend({ t: 'bye' }); } catch (e) { }
     if (this.role === 'guest' && this.knocking && this.door) try { this._doorSend({ t: 'bye', to: this.hostId }); } catch (e) { }
     const cl = this.cloud, dr = this.door; this.cloud = null; this.door = null; this.cloudOn = false; if (cl) setTimeout(() => cl.close(), 400); if (dr) setTimeout(() => dr.close(), 400);

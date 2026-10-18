@@ -4,7 +4,7 @@
 
 import { micMode } from './audio.js';
 
-export class MicError extends Error { constructor(code, msg) { super(msg || code); this.code = code; } }
+export class MicError extends Error { declare code: string; constructor(code: string, msg?: string) { super(msg || code); this.code = code; } }
 
 // Explain why the microphone cannot be used, before even asking.
 export function micProblem() {
@@ -15,7 +15,7 @@ export function micProblem() {
 
 let stream = null;
 // Must be called from a tap (iPhone only allows sound to start inside a tap).
-export async function startRecording({ onLevel, maxMs = 6000, onAuto } = {}) {
+export async function startRecording({ onLevel, maxMs = 6000, onAuto }: { onLevel?: (level: number) => void, maxMs?: number, onAuto?: () => void } = {}) {
   const prob = micProblem(); if (prob) throw new MicError(prob);
   const AC = window.AudioContext || window.webkitAudioContext;
   const ctx = new AC(); // created inside the tap

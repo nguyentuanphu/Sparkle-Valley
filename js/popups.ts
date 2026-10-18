@@ -13,7 +13,7 @@ import * as feel from './feel.js';
 // ---------- confetti ----------
 const COLORS = ['#ff4f9a', '#ffd23f', '#3cc7e8', '#5fd36a', '#ff9f43', '#a66bff'];
 // gentle (owner, 16 Oct AEDT: "Yes, gentle" for under-5s): fewer pieces falling more slowly
-export function confetti(rect, n = 60, gentle = false) {
+export function confetti(rect?: { x: number, y: number, w: number, h: number } | null, n = 60, gentle = false) {
   if (reduceMotion()) n = 16;
   const r = rect || { x: 0, y: 0, w: innerWidth, h: innerHeight };
   const box = el('div', 'confetti'); Object.assign(box.style, { left: r.x + 'px', top: r.y + 'px', width: r.w + 'px', height: r.h + 'px' });
@@ -36,28 +36,34 @@ function floatEnds(card) {
   const isEnd = e => (e.matches('button, .btn, .actions, .bar, .row') && ENDWORDS.test(e.textContent || ''));
   if (isEnd(last) && !last.classList.contains('floatbar')) { if (last.matches('button, .btn')) last.classList.add('floatbtn'); else last.classList.add('actions', 'floatbar'); }
 }
-const floatWatch = new MutationObserver(list => { const seen = new Set(); for (const r of list) { const c = r.target.closest && r.target.closest('.modal .card'); if (c && !seen.has(c)) { seen.add(c); floatEnds(c); } } });
+const floatWatch = new MutationObserver(list => { const seen = new Set(); for (const r of list) { const c = r.target instanceof Element && r.target.closest('.modal .card'); if (c && !seen.has(c)) { seen.add(c); floatEnds(c); } } });
 floatWatch.observe(document.documentElement, { childList: true, subtree: true });
 export function modal(cls, html) {
   const m = el('div', 'modal ' + (cls || ''), `<div class="card">${html}</div>`);
   dispatchEvent(new Event('sv-hide-caption')); document.body.appendChild(m); requestAnimationFrame(() => floatEnds(m.querySelector('.card')));
-  feel.open(m); // a sound only: windows never move (UX-001)
-  m.close = () => { if (!m.classList.contains('out')) feel.close(m); m.classList.add('out'); setTimeout(() => m.remove(), 200); };
+  feel.open(); // a sound only: windows never move (UX-001)
+  m.close = () => { if (!m.classList.contains('out')) feel.close(); m.classList.add('out'); setTimeout(() => m.remove(), 200); };
   return m;
 }
 
 // ---------- NPC dialogue (BotW-style box with a name tag) ----------
 // main.js fills these in so villagers' speech boxes get a "💬 Chat" button
-export const dialogHooks = {};
-export function dialog(name, lines, choices) {
-  return new Promise(res => {
+type DialogHooks = { little?: () => boolean, canChat?: (name: string) => boolean, chat?: (name: string) => void, where?: () => unknown };
+export const dialogHooks: DialogHooks = {};
+// a line: [en, vi] or [shown en, shown vi, spoken en, spoken vi]; a choice: [en, vi]. Resolves to the choice's index (-1: closed)
+export function dialog(name: string, lines: string[][], choices?: string[][] | null): Promise<number> {
+  // (#339, r86) the same speech box asked for again while it is still open (the quest's Go button walking up, the Act
+  // key) is not opened twice: a second box stayed under the game that the first one's "Play!" opened, its button covered
+  const key = JSON.stringify([nm(name), lines[0], choices ? choices.length : 0]);
+  if ([...document.querySelectorAll<HTMLElement>('.dialog:not(.out)')].some(x => x.dataset.key === key)) return Promise.resolve(-1);
+  return new Promise<number>(res => {
     const little = dialogHooks.little && dialogHooks.little();
     const d = el('div', 'dialog' + (little ? ' little' : ''), `<div class="dname">${esc(nm(name))}</div><div class="dtext"></div><div class="dchoices"></div><div class="dnext">▼</div>`);
     if (dialogHooks.canChat && dialogHooks.canChat(name)) {
       const ask = el('button', 'dask', '💬 ' + T('Chat', 'Trò chuyện')); d.appendChild(ask);
       ask.onclick = e => { e.stopPropagation(); SFX.tap(); close(-1); dialogHooks.chat(name); };
     }
-    document.body.appendChild(d);
+    d.dataset.key = key; document.body.appendChild(d);
     let i = 0;
     const text = d.querySelector('.dtext'), ch = d.querySelector('.dchoices'), next = d.querySelector('.dnext');
     const show = () => {
@@ -79,11 +85,11 @@ export function dialog(name, lines, choices) {
 }
 
 // ---------- reward pop-up ----------
-export function reward(big, line, sub) {
+export function reward(big: string, line: string, sub?: string): Promise<void> {
   confetti();
   const r = el('div', 'reward', `<div class="rbig">${big}</div><p>${esc(line)}</p>${sub ? `<small>${esc(sub)}</small>` : ''}`);
   document.body.appendChild(r); SFX.secret();
-  return new Promise(res => { const go = () => { r.classList.add('out'); setTimeout(() => { r.remove(); res(); }, 250); }; r.onclick = go; setTimeout(go, 2600); });
+  return new Promise<void>(res => { const go = () => { r.classList.add('out'); setTimeout(() => { r.remove(); res(); }, 250); }; r.onclick = go; setTimeout(go, 2600); });
 }
 
 // ---------- press and hold: the grown-up gate ----------

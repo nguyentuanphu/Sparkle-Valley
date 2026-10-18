@@ -1,8 +1,15 @@
 // Sparkle Studio dashboard (runs in the browser, talks to studio.cts on this computer).
 import { viMessage, PERM_VI } from './vi.js';
-const $ = s => document.querySelector(s);
+import type { StudioContent, StudioInfo, StudioDevice, Rule, BuildType } from '../../types/studio.d.ts';
+// a page's own element by its selector (a box, a button or a list: the input type covers what the pages use)
+const $ = <E extends Element = HTMLInputElement>(s: string) => document.querySelector<E>(s);
 let LANG = localStorage.getItem('studioLang') || 'vi';
 const T = (en, vi) => LANG === 'vi' ? vi : en;
+// what a box, a list or a file chooser holds, from its event (TypeScript: an event's target is any element)
+const val = (e: Event) => e.target instanceof HTMLInputElement || e.target instanceof HTMLSelectElement || e.target instanceof HTMLTextAreaElement ? e.target.value : '';
+const fileOf = (e: Event) => e.target instanceof HTMLInputElement && e.target.files ? fileOf(e) : undefined;
+// a [English, Vietnamese] pair in the chosen language
+const T2 = (p: string[]) => T(p[0], p[1]);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 // The same page runs in SparkleStudio.exe (http://localhost:7777/studio/) and online on the game's website (/studio/),
 // at the same addresses: the API, the game and its files are under BASE in both. Online, a change needs the "X-Studio" header (other websites can't send it).
@@ -17,12 +24,15 @@ import(GAME + 'js/emojiswap.js').catch(() => { });
 // (owner, 10 Oct) the servers answer in English: in Vietnamese, every answer is shown in Vietnamese (studio/ui/vi.js)
 const say = m => LANG === 'vi' ? viMessage(m) : String(m ?? '');
 // e.raw keeps the server's own words (the Voices page looks at them to stop early)
-const api = async (p, body) => { const r = await fetch(BASE + '/api/' + p, body === undefined ? {} : { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Studio': '1' }, body: JSON.stringify(body) }); const j = await r.json().catch(() => ({})); if (r.status === 401 && j.signin) { signIn(); throw Object.assign(new Error(T('Please sign in.', 'Vui lòng đăng nhập.')), { signin: true }); } if (!r.ok) { const raw = String(j.error || r.status); throw Object.assign(new Error(say(raw)), { raw }); } return j; };
+const api = async (p: string, body?: unknown) => { const r = await fetch(BASE + '/api/' + p, body === undefined ? {} : { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Studio': '1' }, body: JSON.stringify(body) }); const j = await r.json().catch(() => ({})); if (r.status === 401 && j.signin) { signIn(); throw Object.assign(new Error(T('Please sign in.', 'Vui lòng đăng nhập.')), { signin: true }); } if (!r.ok) { const raw = String(j.error || r.status); throw Object.assign(new Error(say(raw)), { raw }); } return j; };
 // (owner, 10 Oct: "missing feedback after a save") the message is bigger, sits above the bar at the bottom of a phone,
 // stays 5 seconds (7 for a problem) and is green when something worked
-const toast = (m, kind = '') => { const t = $('#toast'); t.textContent = m; t.className = 'on ' + kind; clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove('on'), kind === 'bad' ? 7000 : 5000); };
+const toast: ((m: string, kind?: string) => void) & { t?: ReturnType<typeof setTimeout> } = (m, kind = '') => { const t = $('#toast'); t.textContent = m; t.className = 'on ' + kind; clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove('on'), kind === 'bad' ? 7000 : 5000); };
+// (r85) a toast with an Undo button, for a change made at once (Simple screen: moving a game to another group)
+const toastUndo = (m, undo) => { const t = $('#toast'); t.textContent = m + ' '; const b = document.createElement('button'); b.type = 'button'; b.className = 'btn small undo'; b.textContent = T('Undo', 'Hoàn tác');
+  b.onclick = () => { clearTimeout(toast.t); t.classList.remove('on', 'act'); undo(); }; t.appendChild(b); t.className = 'on act good'; clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove('on', 'act'), 8000); };
 const fail = e => toast('⚠️ ' + say(e.message || e), 'bad');
-let INFO = null, CONTENT = {};
+let INFO: StudioInfo | null = null, CONTENT: StudioContent = {};
 // ---------- devices you can recognise (owner, 13 Oct AEDT: "which device belongs to whom, and to which child") ----------
 // Every list of devices says the same things in the same order: the name the family gave it (or an easy name made from
 // its id, the same every time), the children who play on it (first names, from the Analytics), what it is, the town,
@@ -32,7 +42,7 @@ let DEVNAME = null; const easyName = id => DEVNAME ? DEVNAME.easyName(id, LANG) 
 const devKindName = k => ({ phone: T('Phone', 'Điện thoại'), tablet: T('Tablet', 'Máy tính bảng'), computer: T('Computer', 'Máy tính') }[k] || '');
 const devKids = d => [...new Set(((d && d.kids) || []).map(K => K.name).filter(Boolean))];
 const devTown = d => d && d.loc ? [d.loc.city, d.loc.country].filter(Boolean).join(', ') : '';
-const devAgo = iso => { if (!iso) return ''; const m = Math.max(1, Math.round((Date.now() - new Date(iso)) / 60000)); return m < 60 ? T(`${m} min ago`, `${m} phút trước`) : m < 48 * 60 ? T(`${Math.round(m / 60)} h ago`, `${Math.round(m / 60)} giờ trước`) : T(`${Math.round(m / 1440)} days ago`, `${Math.round(m / 1440)} ngày trước`); };
+const devAgo = iso => { if (!iso) return ''; const m = Math.max(1, Math.round((Date.now() - new Date(iso).getTime()) / 60000)); return m < 60 ? T(`${m} min ago`, `${m} phút trước`) : m < 48 * 60 ? T(`${Math.round(m / 60)} h ago`, `${Math.round(m / 60)} giờ trước`) : T(`${Math.round(m / 1440)} days ago`, `${Math.round(m / 1440)} ngày trước`); };
 const devLast = d => d.online ? T('playing now', 'đang chơi') : d.seenAt ? devAgo(d.seenAt) : d.last ? devAgo(d.last + 'T12:00:00') : '';
 // a test browser in a data centre: no graphics card (0 to 3 frames a second) or a robot's browser name, or a town that is a big data centre
 const DATA_TOWNS = /^(Council Bluffs|Boardman|Ashburn|The Dalles|Mountain View|San Jose|Santa Clara|Columbus|Des Moines|Quincy|Prineville|Moncks Corner|Dublin|Frankfurt am Main|North Charleston)$/i;
@@ -45,12 +55,14 @@ const devTitle = d => d.label || easyName(d.id);
 // so each is its own device here: the row says which one it is
 const devAbout = d => { const kids = devKids(d), what = [devKindName(d.kind), d.os, d.app ? T('Home Screen app', 'Ứng dụng Màn hình chính') : d.br ? T(`in ${d.br}`, `trong ${d.br}`) : ''].filter(x => x && x !== '?').join(' · ');
   return [kids.length ? '🧒 ' + kids.join(', ') : '', what, devTown(d) ? '📍 ' + devTown(d) : '', devLast(d) ? '🕒 ' + devLast(d) : ''].filter(Boolean).join(' · '); };
+// (r85) the grey second line of a device card: device, system, browser (or the Home Screen app), town, last seen
+const devMeta = d => [devKindName(d.kind), d.os, d.app ? T('Home Screen app', 'Ứng dụng Màn hình chính') : d.br, devTown(d) ? '📍 ' + devTown(d) : '', devLast(d) ? '🕒 ' + devLast(d) : ''].filter(x => x && x !== '?').join(' · ');
 const devHTML = d => `<b class="dname">${esc(devTitle(d))}</b>${isRobot(d) ? ` <span class="pill robot">🤖 ${T('probably a robot', 'có lẽ là máy tự động')}</span>` : ''} <span class="dabout">${esc(devAbout(d))}</span> <small class="mini">${esc(d.id)}</small>`;
 // a search box and "show robots" over a list of device rows (.devrow): a ticked device always stays in view
 const devFilter = list => { if (!list || list.querySelector('.devfind')) return; const bar = document.createElement('div'); bar.className = 'devfind row';
   bar.innerHTML = `<input type="search" placeholder="${T('Find: a child, a name, a town, a phone…', 'Tìm: tên bé, tên máy, thành phố, điện thoại…')}" aria-label="${T('Find a device', 'Tìm máy')}"><label class="chk small"><input type="checkbox" data-robots> ${T('Show robots', 'Hiện máy tự động')}</label>`;
-  list.prepend(bar); const q = bar.querySelector('input[type=search]'), rb = bar.querySelector('[data-robots]');
-  const apply = () => { const t = q.value.trim().toLowerCase(); list.querySelectorAll('.devrow').forEach(r => { const on = !!r.querySelector('input[type=checkbox]:checked'); r.hidden = !on && ((r.classList.contains('robot') && !rb.checked) || (t && !r.textContent.toLowerCase().includes(t))); }); };
+  list.prepend(bar); const q = bar.querySelector<HTMLInputElement>('input[type=search]'), rb = bar.querySelector<HTMLInputElement>('[data-robots]');
+  const apply = () => { const t = q.value.trim().toLowerCase(); list.querySelectorAll('.devrow').forEach(r => { const on = !!r.querySelector(r.classList.contains('devcard') ? '[data-tdev]:checked, [data-dev]:checked' : 'input[type=checkbox]:checked'); r.hidden = !on && ((r.classList.contains('robot') && !rb.checked) || (t && !r.textContent.toLowerCase().includes(t))); }); };
   q.oninput = apply; rb.onchange = apply; apply(); };
 const devMatch = (d, q) => !q || [devTitle(d), easyName(d.id), d.id, devAbout(d)].join(' ').toLowerCase().includes(q.toLowerCase());
 // (r81, owner 17 Oct AEDT) the content pages go live at once, without Publish: online they are saved to the website's live
@@ -88,7 +100,7 @@ function leaveOk() {
 function paintState() {
   const P = $('#page'); if (!P || !GUARD.has(cur)) return; const u = unsaved();
   const txt = u ? T('Not saved yet', 'Chưa lưu') : SAVED_HERE === cur ? T('Saved', 'Đã lưu') : T('No changes', 'Chưa đổi');
-  P.querySelectorAll('.bar').forEach(b => { if (!b.querySelector('.btn:not(.ghost)')) return; let s = b.querySelector('.savestate'); if (!s) { s = document.createElement('span'); b.prepend(s); }
+  P.querySelectorAll<HTMLInputElement>('.bar').forEach(b => { if (!b.querySelector<HTMLInputElement>('.btn:not(.ghost)')) return; let s = b.querySelector<HTMLElement>('.savestate'); if (!s) { s = document.createElement('span'); b.prepend(s); }
     const cls = 'savestate ' + (u ? 'warn' : SAVED_HERE === cur ? 'ok' : 'note'); if (s.className !== cls) s.className = cls; if (s.textContent !== txt) s.textContent = txt; });
 }
 // typing or choosing on a page marks it changed (not the search boxes or a file chooser)
@@ -163,9 +175,9 @@ function head() {
 function nav() {
   const sec = sectionOf(cur);
   $('#tabs').innerHTML = SEC().map(x => `<button data-k="${x.k}" class="${x === sec ? 'on' : ''}"><span>${x.i}</span><small>${T(x.en, x.vi)}</small></button>`).join('');
-  $('#tabs').querySelectorAll('button').forEach(b => b.onclick = () => go(b.dataset.k));
-  document.querySelectorAll('[data-t]').forEach(e => { const [en, vi] = e.dataset.t.split('|'); e.textContent = T(en, vi); });
-  document.querySelectorAll('.lang button[data-l]').forEach(b => { b.classList.toggle('on', b.dataset.l === LANG); b.onclick = () => { if (b.dataset.l === LANG || !leaveOk()) return; LANG = b.dataset.l; localStorage.setItem('studioLang', LANG); render(); }; });
+  $('#tabs').querySelectorAll<HTMLInputElement>('button').forEach(b => b.onclick = () => go(b.dataset.k));
+  document.querySelectorAll<HTMLInputElement>('[data-t]').forEach(e => { const [en, vi] = e.dataset.t.split('|'); e.textContent = T(en, vi); });
+  document.querySelectorAll<HTMLInputElement>('.lang button[data-l]').forEach(b => { b.classList.toggle('on', b.dataset.l === LANG); b.onclick = () => { if (b.dataset.l === LANG || !leaveOk()) return; LANG = b.dataset.l; localStorage.setItem('studioLang', LANG); render(); }; });
   if ($('#pub')) $('#pub').onclick = () => go('publish');
   if ($('#reload')) $('#reload').onclick = () => { if (leaveOk()) render(true); };
   head();
@@ -189,7 +201,7 @@ const drawSection = (P, sec) => {
   P.querySelectorAll('.pcard').forEach(b => b.onclick = () => go(b.dataset.p));
 };
 let renderSequence = 0;
-async function render(force) {
+async function render(force?: boolean) {
   const sequence = ++renderSequence;
   nav(); const P = $('#page'), crumb = $('#crumb'); P.dataset.render = String(sequence); DIRTY = false; KEPT = ''; if (SAVED_HERE !== cur) SAVED_HERE = '';
   if (!LOADED || force) P.innerHTML = `<div class="loading">✨ ${T('Loading…', 'Đang tải…')}</div>`;
@@ -203,7 +215,7 @@ async function render(force) {
     // (owner, 12 Oct) the Analytics tab still opens Analytics itself (its section also holds the Tester reports page)
     if (sec.k === cur && sec.pages.length > 1 && !ABOUT[sec.k]) { crumb.innerHTML = ''; drawSection(P, sec); KEPT = contentNow(); HASH = location.hash; window.scrollTo(0, 0); return; }
     crumb.innerHTML = sec.pages.length > 1 && cur !== sec.k ? `<button class="back">← ${sec.i} ${T(sec.en, sec.vi)}</button>` : '';
-    if (crumb.firstChild) crumb.firstChild.onclick = () => go(sec.k);
+    if (crumb.firstElementChild instanceof HTMLElement) crumb.firstElementChild.onclick = () => go(sec.k);
     const page = cur; await PAGES[page](P); if (sequence !== renderSequence || cur !== page) return; explainPage(P, cur); foldPage(P, cur); refold(P, page); KEPT = contentNow(); HASH = location.hash; paintState(); window.scrollTo(0, 0);
   } catch (e) { if (sequence === renderSequence && !e.signin) P.innerHTML = `<div class="card badtxt">${esc(e.message)}</div>`; }
 }
@@ -283,9 +295,9 @@ function explainPage(P, page) {
   const S_LIVE = ['Save puts it live at once, with no Publish: every device of this family gets it the next time it opens the game online (about 30 seconds).' + (page === 'ads' ? ' A new picture still needs Publish.' : ''), 'Lưu là có hiệu lực ngay, không cần Phát hành: mọi máy của gia đình nhận được khi mở game có mạng lần tới (khoảng 30 giây).' + (page === 'ads' ? ' Hình mới vẫn cần Phát hành.' : '')];
   if (LIVE_PAGES[page] && liveOn()) text.forEach((t, i) => { text[i] = t.replace(S_PUB[i], S_LIVE[i]); });
   liveBadge(P, page);
-  const box = document.createElement('details'); box.className = 'studio-help'; box.innerHTML = `<summary>${T('How this section works', 'Cách dùng mục này')}</summary><p>${T(...text)}</p>`; P.prepend(box);
+  const box = document.createElement('details'); box.className = 'studio-help'; box.innerHTML = `<summary>${T('How this section works', 'Cách dùng mục này')}</summary><p>${T2(text)}</p>`; P.prepend(box);
 }
-const PAGES = {};
+const PAGES: Record<string, (P: HTMLElement) => unknown> = {};
 // ---------- home ----------
 PAGES.home = async P => {
   const c = CONTENT;
@@ -331,7 +343,7 @@ const adBoard = (x, lang) => `<svg class="adboard" viewBox="0 0 360 230" role="i
 const adCard = (x, lang) => { const w = lang === 'vi' ? (x.vi || x.en) : (x.en || x.vi);
   return `<div class="adwin"><b class="adwin-t">${lang === 'vi' ? 'Con làm được rồi!' : 'You did it!'}</b><div class="adcard"><small>${lang === 'vi' ? 'Quảng cáo' : 'Ad'}${x.by ? ' · ' + esc(x.by) : ''}</small>${x.image ? `<img src="${FILE(esc(x.image))}" alt="">` : '<i class="adnoimg"></i>'}<span>${esc(w || T('(the words)', '(lời)'))}</span></div></div>`; };
 const adPreview = x => `<div class="adprev ${AD_VIEW.size}"><figure><figcaption>${T('Signboard by the road', 'Biển bên đường')}</figcaption>${adBoard(x, AD_VIEW.lang)}</figure><figure><figcaption>${T('Card after a mini-game', 'Thẻ sau trò chơi')}</figcaption>${adCard(x, AD_VIEW.lang)}</figure></div>`;
-const adCheck = (x, l) => { const need = adNeeds(x, l).filter(([ok, w]) => !ok && w);
+const adCheck = (x, l?) => { const need = adNeeds(x, l).filter(([ok, w]) => !ok && w);
   return need.length ? `<p class="adready no">⚠️ <b>${T('Not ready yet', 'Chưa sẵn sàng')}</b>: ${T('it still needs', 'còn cần')} ${need.map(n => n[1]).join(', ')}.</p>` : `<p class="adready yes">✅ <b>${T('Ready to go live', 'Sẵn sàng đưa lên')}</b>${x.active === false ? ' · ' + T('(switched off: “Active” is not ticked)', '(đang tắt: chưa đánh dấu “Đang dùng”)') : ''}</p>`; };
 const AD_SHOTS = [['board-computer', 'A signboard beside the road, on a computer', 'Biển bên đường, trên máy tính'], ['card-computer', 'The small card under “You did it!”, on a computer', 'Thẻ nhỏ dưới “Con làm được rồi!”, trên máy tính'], ['board-phone', 'The signboard on a phone', 'Biển trên điện thoại'], ['card-phone', 'The card on a phone', 'Thẻ trên điện thoại']];
 const AD_VIDEOS = 'https://github.com/nguyentuanphu/Sparkle-Valley/tree/main/marketing/ads-r82';
@@ -370,20 +382,20 @@ PAGES.ads = async P => {
     <li>${T('To pause all ads at once, untick “Show ads” and ' + PUB('Save and Publish.', 'Save (live at once).') + ' Removing a picture here removes it from the next publish.', 'Để tạm ngưng mọi quảng cáo, bỏ dấu “Hiện quảng cáo” rồi ' + PUB('Lưu và Phát hành.', 'Lưu (có hiệu lực ngay).') + ' Xóa hình ở đây thì lần phát hành sau sẽ không còn hình đó.')}</li>
   </ol></details>`;
   const collect = () => { A.enabled = $('#adOn').checked; A.perDay = Math.max(0, Math.min(10, +$('#adPer').value || 0));
-    P.querySelectorAll('.adrow').forEach(r => { const x = A.items[+r.dataset.i]; x.by = r.querySelector('.ad-by').value.trim(); x.en = r.querySelector('.ad-en').value.trim(); x.vi = r.querySelector('.ad-vi').value.trim();
-      const l = r.querySelector('.ad-link').value.trim(); x.link = adNeeds({}, l)[5][0] ? l : ''; x.active = r.querySelector('.ad-on').checked;
-      x.where = [r.querySelector('.ad-boards').checked && 'boards', r.querySelector('.ad-end').checked && 'gameend'].filter(Boolean); }); };
+    P.querySelectorAll<HTMLInputElement>('.adrow').forEach(r => { const x = A.items[+r.dataset.i]; x.by = r.querySelector<HTMLInputElement>('.ad-by').value.trim(); x.en = r.querySelector<HTMLInputElement>('.ad-en').value.trim(); x.vi = r.querySelector<HTMLInputElement>('.ad-vi').value.trim();
+      const l = r.querySelector<HTMLInputElement>('.ad-link').value.trim(); x.link = adNeeds({}, l)[5][0] ? l : ''; x.active = r.querySelector<HTMLInputElement>('.ad-on').checked;
+      x.where = [r.querySelector<HTMLInputElement>('.ad-boards').checked && 'boards', r.querySelector<HTMLInputElement>('.ad-end').checked && 'gameend'].filter(Boolean); }); };
   // as you type: this ad's preview and checklist again (the link as typed, so a wrong one is named)
   const live = r => { collect(); const x = A.items[+r.dataset.i], l = r.querySelector('.ad-link').value.trim(); r.querySelector('.adcheck').innerHTML = adCheck(x, l); r.querySelector('.adlive').innerHTML = adPreview(x); };
-  P.querySelectorAll('.adrow').forEach(r => { r.addEventListener('input', () => live(r)); r.addEventListener('change', () => live(r)); });
-  P.querySelectorAll('[data-size]').forEach(b => b.onclick = () => { collect(); AD_VIEW.size = b.dataset.size; PAGES.ads(P); });
-  P.querySelectorAll('[data-alang]').forEach(b => b.onclick = () => { collect(); AD_VIEW.lang = b.dataset.alang; PAGES.ads(P); });
+  P.querySelectorAll<HTMLInputElement>('.adrow').forEach(r => { r.addEventListener('input', () => live(r)); r.addEventListener('change', () => live(r)); });
+  P.querySelectorAll<HTMLInputElement>('[data-size]').forEach(b => b.onclick = () => { collect(); AD_VIEW.size = b.dataset.size; PAGES.ads(P); });
+  P.querySelectorAll<HTMLInputElement>('[data-alang]').forEach(b => b.onclick = () => { collect(); AD_VIEW.lang = b.dataset.alang; PAGES.ads(P); });
   $('#adAdd').onclick = () => { collect(); A.items.push({ by: '', en: '', vi: '', link: '', where: ['boards', 'gameend'], active: true }); PAGES.ads(P); };
-  P.querySelectorAll('.ad-del').forEach(b => b.onclick = () => { collect(); A.items.splice(+b.closest('.adrow').dataset.i, 1); PAGES.ads(P); });
-  P.querySelectorAll('.adpic').forEach(b => b.onclick = () => { const inp = document.createElement('input'); inp.type = 'file'; inp.accept = 'image/jpeg,image/png';
-    inp.onchange = () => { const f = inp.files[0]; if (!f) return; const rd = new FileReader(); rd.onload = async () => { try { collect(); const i = +b.closest('.adrow').dataset.i, r = await api('adimage', { id: A.items[i].by || 'ad', dataUrl: rd.result }); A.items[i].image = r.image; PAGES.ads(P); } catch (e) { fail(e); } }; rd.readAsDataURL(f); }; inp.click(); });
+  P.querySelectorAll<HTMLInputElement>('.ad-del').forEach(b => b.onclick = () => { collect(); A.items.splice(+b.closest<HTMLInputElement>('.adrow').dataset.i, 1); PAGES.ads(P); });
+  P.querySelectorAll<HTMLInputElement>('.adpic').forEach(b => b.onclick = () => { const inp = document.createElement('input'); inp.type = 'file'; inp.accept = 'image/jpeg,image/png';
+    inp.onchange = () => { const f = inp.files[0]; if (!f) return; const rd = new FileReader(); rd.onload = async () => { try { collect(); const i = +b.closest<HTMLInputElement>('.adrow').dataset.i, r = await api('adimage', { id: A.items[i].by || 'ad', dataUrl: rd.result }); A.items[i].image = r.image; PAGES.ads(P); } catch (e) { fail(e); } }; rd.readAsDataURL(f); }; inp.click(); });
   // (r65) an ad can go live only when nothing is missing: "Show ads" on with an active ad not ready is not saved
-  $('#adSave').onclick = () => { collect(); const rows = [...P.querySelectorAll('.adrow')], notReady = A.items.map((x, i) => [x, i]).filter(([x, i]) => x.active !== false && adNeeds(x, rows[i].querySelector('.ad-link').value.trim()).some(([ok, w]) => !ok && w));
+  $('#adSave').onclick = () => { collect(); const rows = [...P.querySelectorAll<HTMLInputElement>('.adrow')], notReady = A.items.map((x, i) => [x, i]).filter(([x, i]) => x.active !== false && adNeeds(x, rows[i].querySelector<HTMLInputElement>('.ad-link').value.trim()).some(([ok, w]) => !ok && w));
     if (A.enabled && notReady.length) { const [x, i] = notReady[0]; rows[i].scrollIntoView({ block: 'center' }); return toast(T(`Ad ${i + 1}${x.by ? ' (' + x.by + ')' : ''} is not ready yet: see its checklist. Untick “Active” or “Show ads” to save it as it is.`, `Quảng cáo ${i + 1}${x.by ? ' (' + x.by + ')' : ''} chưa sẵn sàng: xem danh sách cần có. Bỏ dấu “Đang dùng” hoặc “Hiện quảng cáo” để lưu như hiện tại.`), 'bad'); }
     saveContent().catch(fail); };
 };
@@ -409,11 +421,11 @@ PAGES.album = async P => {
   <div class="bar"><button class="btn ghost" id="alAdd">+ ${T('Add a photo', 'Thêm ảnh')}</button><button class="btn" id="alSave">💾 ${T('Save', 'Lưu')}</button></div>
   <p class="note">${T('Photos are made smaller (1000 px) and kept private: only the family’s devices with the family code see them (Family → Family code). They never become public files of the website.', 'Ảnh được thu nhỏ (1000 px) và giữ riêng: chỉ máy của gia đình có mã gia đình mới xem được (Gia đình → Mã gia đình). Ảnh không bao giờ thành tệp công khai trên trang web.')}</p>${oldPicsNote()}`;
   bindOldPics(P);
-  const collect = () => P.querySelectorAll('.alrow').forEach(r => { const x = A[+r.dataset.i]; x.en = r.querySelector('.al-en').value.trim(); x.vi = r.querySelector('.al-vi').value.trim(); x.place = r.querySelector('.al-place').value; });
+  const collect = () => P.querySelectorAll<HTMLInputElement>('.alrow').forEach(r => { const x = A[+r.dataset.i]; x.en = r.querySelector<HTMLInputElement>('.al-en').value.trim(); x.vi = r.querySelector<HTMLInputElement>('.al-vi').value.trim(); x.place = r.querySelector<HTMLInputElement>('.al-place').value; });
   $('#alAdd').onclick = () => { collect(); A.push({ id: 'f' + Date.now().toString(36), en: '', vi: '', place: 'home' }); PAGES.album(P); };
-  P.querySelectorAll('.al-del').forEach(b => b.onclick = () => { collect(); A.splice(+b.closest('.alrow').dataset.i, 1); PAGES.album(P); });
-  P.querySelectorAll('.alpic').forEach(b => b.onclick = () => { const inp = document.createElement('input'); inp.type = 'file'; inp.accept = 'image/*';
-    inp.onchange = async () => { const f = inp.files[0]; if (!f) return; try { collect(); const i = +b.closest('.alrow').dataset.i, r = await api('albumphoto', { id: A[i].id, dataUrl: await shrinkPhoto(f) }); A[i].photo = r.photo; PAGES.album(P); } catch (e) { fail(e); } }; inp.click(); });
+  P.querySelectorAll<HTMLInputElement>('.al-del').forEach(b => b.onclick = () => { collect(); A.splice(+b.closest<HTMLInputElement>('.alrow').dataset.i, 1); PAGES.album(P); });
+  P.querySelectorAll<HTMLInputElement>('.alpic').forEach(b => b.onclick = () => { const inp = document.createElement('input'); inp.type = 'file'; inp.accept = 'image/*';
+    inp.onchange = async () => { const f = inp.files[0]; if (!f) return; try { collect(); const i = +b.closest<HTMLInputElement>('.alrow').dataset.i, r = await api('albumphoto', { id: A[i].id, dataUrl: await shrinkPhoto(f) }); A[i].photo = r.photo; PAGES.album(P); } catch (e) { fail(e); } }; inp.click(); });
   $('#alSave').onclick = () => { collect(); if (A.some(x => !x.photo)) return toast(T('Each postcard needs a photo.', 'Mỗi bưu thiếp cần một ảnh.')); saveContent().catch(fail); };
 };
 // ---------- family code: family photos are family-only (owner, 9 Oct, round R privacy) ----------
@@ -427,7 +439,7 @@ function bindOldPics(P) { P.querySelectorAll('[data-migrate]').forEach(b => b.on
     toast(T(`Moved ${r.moved} photo(s); ${r.removed} public file(s) removed. Now Publish.`, `Đã chuyển ${r.moved} ảnh; đã xóa ${r.removed} tệp công khai. Giờ hãy Phát hành.`)); render(); } catch (e) { b.disabled = false; fail(e); } }); }
 PAGES.familycode = async P => {
   const where = INFO.conf.family, owner = ROLE() === 'owner';
-  let c = {}; try { c = await api('family/code'); } catch (e) { c = { error: e.message }; }
+  let c: { local?: boolean, error?: string, code?: string, fromEnv?: boolean } = {}; try { c = await api('family/code'); } catch (e) { c = { error: e.message }; }
   P.innerHTML = `<h2>🔒 ${T('Family code', 'Mã gia đình')}</h2><p class="sub">${T('Family photos (photo faces and the Family album) are private: they are never public files of the website. A child’s device shows them only after a grown-up types this code once, in the game: Grown-ups → Children → Family photos.', 'Ảnh gia đình (ảnh khuôn mặt và Album gia đình) được giữ riêng: không bao giờ là tệp công khai của trang web. Máy của con chỉ hiện ảnh sau khi người lớn gõ mã này một lần, trong game: Phụ huynh → Các con → Ảnh gia đình.')}</p>
   ${c.local ? `<div class="card"><p class="warn">💻 ${T('The family photos are kept on this computer only, so only the game you try here shows them. To send them to the children’s devices, put the website and a Studio key in Settings (make the key online: Setup → Security).', 'Ảnh gia đình chỉ được giữ trên máy này, nên chỉ game chơi thử ở đây hiện được. Để gửi tới máy của các con, điền trang web và khóa Studio trong Cài đặt (tạo khóa trên mạng: Thiết lập → Bảo mật).')}</p></div>`
     : c.error ? `<div class="card"><p class="badtxt">⚠️ ${esc(say(c.error))}</p></div>`
@@ -446,7 +458,7 @@ PAGES.message = async P => {
   <div class="card"><label>🇦🇺 English</label><textarea id="en" maxlength="400">${esc(m.en || '')}</textarea><label>🇻🇳 Tiếng Việt</label><textarea id="vi" maxlength="400">${esc(m.vi || '')}</textarea></div>
   <div class="bar"><button class="btn ghost" id="clear">${T('No message', 'Không nhắn')}</button><button class="btn" id="save">💾 ${T('Save', 'Lưu')}</button></div>`;
   $('#save').onclick = () => { CONTENT.message = { en: $('#en').value.trim(), vi: $('#vi').value.trim() }; if (!CONTENT.message.en && !CONTENT.message.vi) delete CONTENT.message; saveContent().catch(fail); };
-  $('#clear').onclick = () => { delete CONTENT.message; saveContent().then(render).catch(fail); };
+  $('#clear').onclick = () => { delete CONTENT.message; saveContent().then(() => render()).catch(fail); };
 };
 // ---------- family missions (round S, owner plan 8 Oct): content pack "missions", read by js/parents.js ----------
 PAGES.missions = async P => {
@@ -455,8 +467,8 @@ PAGES.missions = async P => {
   <div class="card"><label>🇦🇺 English</label><input id="men" maxlength="120" placeholder="Help set the table"><label>🇻🇳 Tiếng Việt</label><input id="mvi" maxlength="120" placeholder="Giúp dọn bàn ăn">
   <div class="bar"><button class="btn" id="madd">+ ${T('Add', 'Thêm')}</button></div></div>
   <div class="card">${list.map((m, k) => `<div class="row"><span>📝 <b>${esc(m.en)}</b> · ${esc(m.vi)}</span><button class="btn ghost" data-mdel="${k}" aria-label="${T('Take it off', 'Bỏ')}" style="flex:0 0 auto;min-width:44px">✕</button></div>`).join('') || `<p class="note">${T('No missions yet.', 'Chưa có nhiệm vụ.')}</p>`}</div>`;
-  $('#madd').onclick = () => { const en = $('#men').value.trim(), vi = $('#mvi').value.trim(); if (!en && !vi) return; CONTENT.missions = [{ id: 'm' + Date.now().toString(36), en: en || vi, vi: vi || en }, ...list].slice(0, 12); saveContent().then(render).catch(fail); };
-  P.querySelectorAll('[data-mdel]').forEach(b => b.onclick = () => { if (!confirm(T('Take this mission off?', 'Bỏ nhiệm vụ này?'))) return; CONTENT.missions = list.filter((_, k) => k !== +b.dataset.mdel); if (!CONTENT.missions.length) delete CONTENT.missions; saveContent().then(render).catch(fail); });
+  $('#madd').onclick = () => { const en = $('#men').value.trim(), vi = $('#mvi').value.trim(); if (!en && !vi) return; CONTENT.missions = [{ id: 'm' + Date.now().toString(36), en: en || vi, vi: vi || en }, ...list].slice(0, 12); saveContent().then(() => render()).catch(fail); };
+  P.querySelectorAll<HTMLInputElement>('[data-mdel]').forEach(b => b.onclick = () => { if (!confirm(T('Take this mission off?', 'Bỏ nhiệm vụ này?'))) return; CONTENT.missions = list.filter((_, k) => k !== +b.dataset.mdel); if (!CONTENT.missions.length) delete CONTENT.missions; saveContent().then(() => render()).catch(fail); });
 };
 // ---------- villagers: names and photo faces ----------
 PAGES.villagers = async P => {
@@ -469,13 +481,13 @@ PAGES.villagers = async P => {
       <td data-label="${T('Voice', 'Giọng')}"><select data-g><option value="">${T('auto', 'tự động')}</option><option value="f" ${CONTENT.genders[n.id] === 'f' ? 'selected' : ''}>👩 ${T('woman/girl', 'nữ')}</option><option value="m" ${CONTENT.genders[n.id] === 'm' ? 'selected' : ''}>👨 ${T('man/boy', 'nam')}</option></select></td></tr>`; }).join('')}</tbody></table></div>
   <div class="bar"><button class="btn" id="save">💾 ${T('Save names and faces', 'Lưu tên và khuôn mặt')}</button></div>${oldPicsNote()}`;
   bindOldPics(P);
-  $('#find').oninput = e => { const q = e.target.value.toLowerCase(); P.querySelectorAll('tbody tr').forEach(r => r.hidden = q && !r.textContent.toLowerCase().includes(q) && !r.dataset.id.toLowerCase().includes(q)); };
-  P.querySelectorAll('.face').forEach(b => b.onclick = () => {
-    const id = b.closest('tr').dataset.id;
+  $('#find').oninput = e => { const q = val(e).toLowerCase(); P.querySelectorAll<HTMLInputElement>('tbody tr').forEach(r => r.hidden = q && !r.textContent.toLowerCase().includes(q) && !r.dataset.id.toLowerCase().includes(q)); };
+  P.querySelectorAll<HTMLInputElement>('.face').forEach(b => b.onclick = () => {
+    const id = b.closest<HTMLInputElement>('tr').dataset.id;
     if (CONTENT.faces[id] && !confirm(T('Choose a new photo? (Cancel removes the face.)', 'Chọn ảnh mới? (Hủy để bỏ khuôn mặt.)'))) { delete CONTENT.faces[id]; b.innerHTML = '📷'; return; }
     cropper(id, async out => { if (!out) return; try { const r = await api('face', { id, dataUrl: out.photo }); CONTENT.faces[id] = { photo: r.photo, skin: out.skin }; b.innerHTML = `<img class="face" src="${esc(PIC(r.photo))}?${Date.now()}">`; } catch (e) { fail(e); } });
   });
-  $('#save').onclick = () => { P.querySelectorAll('tbody tr').forEach(r => { const en = r.querySelector('[data-l=en]').value.trim(), vi = r.querySelector('[data-l=vi]').value.trim(), g = r.querySelector('[data-g]').value; if (en || vi) CONTENT.names[r.dataset.id] = { en, vi }; else delete CONTENT.names[r.dataset.id]; if (g) { CONTENT.genders[r.dataset.id] = g; if (en) CONTENT.genders[en] = g; } else delete CONTENT.genders[r.dataset.id]; }); saveContent().catch(fail); };
+  $('#save').onclick = () => { P.querySelectorAll<HTMLInputElement>('tbody tr').forEach(r => { const en = r.querySelector<HTMLInputElement>('[data-l=en]').value.trim(), vi = r.querySelector<HTMLInputElement>('[data-l=vi]').value.trim(), g = r.querySelector<HTMLInputElement>('[data-g]').value; if (en || vi) CONTENT.names[r.dataset.id] = { en, vi }; else delete CONTENT.names[r.dataset.id]; if (g) { CONTENT.genders[r.dataset.id] = g; if (en) CONTENT.genders[en] = g; } else delete CONTENT.genders[r.dataset.id]; }); saveContent().catch(fail); };
 };
 // the round face cropper (drag to move, wheel or slider to zoom); gives { photo: JPEG data URL, skin }
 function cropper(id, done) {
@@ -485,18 +497,18 @@ function cropper(id, done) {
     <div class="row"><input type="file" accept="image/*"><input type="range" min="1" max="5" step=".01" value="1"></div>
     <div class="bar"><button class="btn ghost" data-x>${T('Cancel', 'Hủy')}</button><button class="btn" data-ok disabled>${T('Use this face', 'Dùng khuôn mặt này')}</button></div></div>`;
   document.body.appendChild(m);
-  const cv = m.querySelector('canvas'), cx = cv.getContext('2d'), zr = m.querySelector('[type=range]'), ok = m.querySelector('[data-ok]');
+  const cv = m.querySelector<HTMLCanvasElement>('canvas'), cx = cv.getContext('2d'), zr = m.querySelector<HTMLInputElement>('[type=range]'), ok = m.querySelector<HTMLInputElement>('[data-ok]');
   let img = null, zoom = 1, ox = 0, oy = 0, drag = null;
   const draw = () => { cx.fillStyle = '#eee'; cx.fillRect(0, 0, 480, 480); if (img) { const s = Math.max(480 / img.width, 480 / img.height) * zoom; cx.drawImage(img, 240 - img.width * s / 2 + ox, 240 - img.height * s / 2 + oy, img.width * s, img.height * s); }
     cx.save(); cx.fillStyle = 'rgba(30,20,40,.45)'; cx.beginPath(); cx.rect(0, 0, 480, 480); cx.arc(240, 240, 205, 0, 7, true); cx.fill('evenodd'); cx.restore(); cx.strokeStyle = '#fff'; cx.lineWidth = 5; cx.beginPath(); cx.arc(240, 240, 205, 0, 7); cx.stroke(); ok.disabled = !img; };
   draw();
-  m.querySelector('[type=file]').onchange = e => { const f = e.target.files[0]; if (!f) return; const i = new Image(); i.onload = () => { img = i; zoom = 1; ox = oy = 0; zr.value = 1; draw(); }; i.src = URL.createObjectURL(f); };
+  m.querySelector<HTMLInputElement>('[type=file]').onchange = e => { const f = fileOf(e); if (!f) return; const i = new Image(); i.onload = () => { img = i; zoom = 1; ox = oy = 0; zr.value = '1'; draw(); }; i.src = URL.createObjectURL(f); };
   zr.oninput = () => { zoom = +zr.value; draw(); };
-  cv.onwheel = e => { e.preventDefault(); zoom = Math.min(5, Math.max(1, zoom * (e.deltaY < 0 ? 1.06 : .94))); zr.value = zoom; draw(); };
+  cv.onwheel = e => { e.preventDefault(); zoom = Math.min(5, Math.max(1, zoom * (e.deltaY < 0 ? 1.06 : .94))); zr.value = String(zoom); draw(); };
   cv.onpointerdown = e => { drag = [e.clientX, e.clientY]; cv.setPointerCapture(e.pointerId); };
   cv.onpointermove = e => { if (!drag) return; const k = 480 / cv.clientWidth; ox += (e.clientX - drag[0]) * k; oy += (e.clientY - drag[1]) * k; drag = [e.clientX, e.clientY]; draw(); };
   cv.onpointerup = () => { drag = null; };
-  m.querySelector('[data-x]').onclick = () => { m.remove(); done(null); };
+  m.querySelector<HTMLInputElement>('[data-x]').onclick = () => { m.remove(); done(null); };
   ok.onclick = () => {
     const S = 256, o = document.createElement('canvas'); o.width = o.height = S; const c2 = o.getContext('2d'), s = Math.max(480 / img.width, 480 / img.height) * zoom, k = S / 410;
     c2.drawImage(img, (240 - img.width * s / 2 + ox - 35) * k, (240 - img.height * s / 2 + oy - 35) * k, img.width * s * k, img.height * s * k);
@@ -518,8 +530,8 @@ async function picker(btn, input) {
   const box = document.createElement('div'); box.className = 'picker';
   box.innerHTML = PICK_OK.map(e => `<button type="button" class="pk" aria-label="${T('Add this picture', 'Thêm hình này')}">${e}</button>`).join('') + `<button type="button" class="btn small ghost pkx">${T('Clear', 'Xóa hết')}</button>`;
   host.after(box);
-  box.querySelectorAll('.pk').forEach((b, i) => b.onclick = () => { input.value = input.dataset.f === 'pic' ? PICK_OK[i] : input.value + PICK_OK[i]; input.dispatchEvent(new Event('input', { bubbles: true })); });
-  box.querySelector('.pkx').onclick = () => { input.value = ''; input.dispatchEvent(new Event('input', { bubbles: true })); };
+  box.querySelectorAll<HTMLInputElement>('.pk').forEach((b, i) => b.onclick = () => { input.value = input.dataset.f === 'pic' ? PICK_OK[i] : input.value + PICK_OK[i]; input.dispatchEvent(new Event('input', { bubbles: true })); });
+  box.querySelector<HTMLInputElement>('.pkx').onclick = () => { input.value = ''; input.dispatchEvent(new Event('input', { bubbles: true })); };
 }
 const pickBtn = () => `<div class="picrow"></div><button type="button" class="btn small ghost" data-pick>+ ${T('Picture', 'Hình')}</button>`;
 const bindPick = root => root.querySelectorAll('[data-pick]').forEach(b => { const input = b.parentElement.querySelector('input'), row = b.parentElement.querySelector('.picrow');
@@ -533,8 +545,8 @@ PAGES.stories = async P => {
     P.innerHTML = `<h2>📖 ${T('The family’s own stories', 'Truyện của nhà mình')}</h2><p class="sub">${T('They appear on the Stories shelf and are read aloud page by page, with the pictures moving.', 'Truyện hiện trên kệ Truyện và được đọc to từng trang, hình ảnh chuyển động.')}</p>
     ${CONTENT.tales.map((t, i) => `<div class="card row"><div style="flex:3"><b>${esc(t.flag)} ${esc(T(t.en, t.vi))}</b><br><span class="note">${t.pages.length} ${T('pages', 'trang')}</span></div><button class="btn small" data-e="${i}">✏️ ${T('Edit', 'Sửa')}</button><button class="btn small bad" data-d="${i}">🗑️</button></div>`).join('') || `<div class="card note">${T('No stories yet.', 'Chưa có truyện nào.')}</div>`}
     <div class="bar"><button class="btn" id="new">➕ ${T('New story', 'Truyện mới')}</button></div>`;
-    P.querySelectorAll('[data-e]').forEach(b => b.onclick = () => { edit = +b.dataset.e; editor(); });
-    P.querySelectorAll('[data-d]').forEach(b => b.onclick = () => { if (confirm(T('Delete this story?', 'Xóa truyện này?'))) { CONTENT.tales.splice(+b.dataset.d, 1); saveContent().then(list).catch(fail); } });
+    P.querySelectorAll<HTMLInputElement>('[data-e]').forEach(b => b.onclick = () => { edit = +b.dataset.e; editor(); });
+    P.querySelectorAll<HTMLInputElement>('[data-d]').forEach(b => b.onclick = () => { if (confirm(T('Delete this story?', 'Xóa truyện này?'))) { CONTENT.tales.splice(+b.dataset.d, 1); saveContent().then(list).catch(fail); } });
     $('#new').onclick = () => { CONTENT.tales.push({ id: 's' + Date.now().toString(36), flag: '💛', en: '', vi: '', pages: [['🏡😊', '', '']] }); edit = CONTENT.tales.length - 1; editor(); };
   };
   const editor = () => {
@@ -546,11 +558,11 @@ PAGES.stories = async P => {
     const pages = () => { $('#pages').innerHTML = t.pages.map((p, i) => `<div class="card page-card" data-i="${i}"><div class="row"><div><label>${T('Page', 'Trang')} ${i + 1} · ${T('pictures', 'hình')}</label><input type="text" class="pics" data-k="0" value="${esc(p[0])}">${pickBtn()}</div>
       <div class="row" style="flex:0 0 auto"><button class="btn small ghost" data-up>⬆️</button><button class="btn small ghost" data-dn>⬇️</button><button class="btn small bad" data-rm>🗑️</button></div></div>
       <label>🇦🇺 English</label><textarea data-k="1">${esc(p[1])}</textarea><label>🇻🇳 Tiếng Việt</label><textarea data-k="2">${esc(p[2])}</textarea></div>`).join('');
-      $('#pages').querySelectorAll('.page-card').forEach(c => { const i = +c.dataset.i;
-        c.querySelectorAll('[data-k]').forEach(f => f.oninput = () => { t.pages[i][+f.dataset.k] = f.value; });
-        c.querySelector('[data-up]').onclick = () => { if (i) { [t.pages[i - 1], t.pages[i]] = [t.pages[i], t.pages[i - 1]]; pages(); } };
-        c.querySelector('[data-dn]').onclick = () => { if (i < t.pages.length - 1) { [t.pages[i + 1], t.pages[i]] = [t.pages[i], t.pages[i + 1]]; pages(); } };
-        c.querySelector('[data-rm]').onclick = () => { if (t.pages.length > 1) { t.pages.splice(i, 1); pages(); } }; }); bindPick($('#pages')); };
+      $('#pages').querySelectorAll<HTMLInputElement>('.page-card').forEach(c => { const i = +c.dataset.i;
+        c.querySelectorAll<HTMLInputElement>('[data-k]').forEach(f => f.oninput = () => { t.pages[i][+f.dataset.k] = f.value; });
+        c.querySelector<HTMLInputElement>('[data-up]').onclick = () => { if (i) { [t.pages[i - 1], t.pages[i]] = [t.pages[i], t.pages[i - 1]]; pages(); } };
+        c.querySelector<HTMLInputElement>('[data-dn]').onclick = () => { if (i < t.pages.length - 1) { [t.pages[i + 1], t.pages[i]] = [t.pages[i], t.pages[i + 1]]; pages(); } };
+        c.querySelector<HTMLInputElement>('[data-rm]').onclick = () => { if (t.pages.length > 1) { t.pages.splice(i, 1); pages(); } }; }); bindPick($('#pages')); };
     pages();
     $('#add').onclick = () => { t.pages.push(['', '', '']); pages(); };
     $('#back').onclick = list;
@@ -568,12 +580,12 @@ PAGES.quiz = async P => {
       ${q.answers.map((a, j) => `<div class="row"><label style="flex:0 0 auto"><input type="radio" name="r${i}" data-right="${j}" ${q.right === j ? 'checked' : ''}> ${T('right', 'đúng')}</label><input type="text" data-a="${j}" data-l="0" value="${esc(a[0])}" placeholder="English"><input type="text" data-a="${j}" data-l="1" value="${esc(a[1])}" placeholder="Tiếng Việt"></div>`).join('')}
       ${q.answers.length < 4 ? `<button class="btn small ghost" data-more>➕ ${T('Another answer', 'Thêm đáp án')}</button>` : ''}</div>`).join('')}
     <div class="bar"><button class="btn ghost" id="new">➕ ${T('New question', 'Câu hỏi mới')}</button><button class="btn" id="save">💾 ${T('Save quiz', 'Lưu câu đố')}</button></div>`;
-    P.querySelectorAll('[data-i]').forEach(c => { const q = CONTENT.quiz[+c.dataset.i];
-      c.querySelectorAll('[data-f]').forEach(f => f.oninput = () => { if (f.dataset.f === 'pic') q.pic = f.value; else q.q[f.dataset.f === 'q0' ? 0 : 1] = f.value; });
-      c.querySelectorAll('[data-a]').forEach(f => f.oninput = () => { q.answers[+f.dataset.a][+f.dataset.l] = f.value; });
-      c.querySelectorAll('[data-right]').forEach(f => f.onchange = () => { q.right = +f.dataset.right; });
-      c.querySelector('[data-rm]').onclick = () => { CONTENT.quiz.splice(+c.dataset.i, 1); draw(); };
-      const mo = c.querySelector('[data-more]'); if (mo) mo.onclick = () => { q.answers.push(['', '']); draw(); }; });
+    P.querySelectorAll<HTMLInputElement>('[data-i]').forEach(c => { const q = CONTENT.quiz[+c.dataset.i];
+      c.querySelectorAll<HTMLInputElement>('[data-f]').forEach(f => f.oninput = () => { if (f.dataset.f === 'pic') q.pic = f.value; else q.q[f.dataset.f === 'q0' ? 0 : 1] = f.value; });
+      c.querySelectorAll<HTMLInputElement>('[data-a]').forEach(f => f.oninput = () => { q.answers[+f.dataset.a][+f.dataset.l] = f.value; });
+      c.querySelectorAll<HTMLInputElement>('[data-right]').forEach(f => f.onchange = () => { q.right = +f.dataset.right; });
+      c.querySelector<HTMLInputElement>('[data-rm]').onclick = () => { CONTENT.quiz.splice(+c.dataset.i, 1); draw(); };
+      const mo = c.querySelector<HTMLInputElement>('[data-more]'); if (mo) mo.onclick = () => { q.answers.push(['', '']); draw(); }; });
     bindPick(P);
     $('#new').onclick = () => { CONTENT.quiz.push({ q: ['', ''], pic: '❓', answers: [['', ''], ['', '']], right: 0 }); draw(); };
     $('#save').onclick = () => { CONTENT.quiz = CONTENT.quiz.map(q => ({ ...q, answers: q.answers.filter(a => a[0] || a[1]) })).filter(q => (q.q[0] || q.q[1]) && q.answers.length >= 2 && q.right < q.answers.length); saveContent().then(draw).catch(fail); };
@@ -589,26 +601,46 @@ PAGES.path = async P => {
   CONTENT.activities = CONTENT.activities || {};
   // what this page shows comes from the choices made here (not yet published), over the usual ones
   const info = id => { const c = CONTENT.activities[id] || {}, base = A.GAME_INFO[id] || ['thinking', 5, 2]; return { area: c.area || base[0], little: c.little === undefined ? base[1] < 5 : c.little, hide: !!c.hide, base, changed: c.little !== undefined }; };
+  // (r85, owner 18 Oct AEDT) the group is no longer a dropdown on each row: tapping a game opens its own panel (Group,
+  // Under 5, Hide). Moving a game takes its row to the other group without drawing the page again, so the page does not
+  // jump, and says "Moved to <group>" with Undo.
+  const ORDER = Object.keys(GAMES), areaOf = k => A.AREAS.find(b => b.key === k) || A.AREAS[0];
+  const tags = id => { const g = info(id); return `${g.little ? `<span class="pill">🧒 ${T('Under 5', 'Dưới 5 tuổi')}</span>` : ''}${g.hide ? `<span class="pill">🙈 ${T('Hidden', 'Đã ẩn')}</span>` : ''}${g.changed ? ` <span class="sub">(${T('changed', 'đã đổi')}; ${T('usual', 'mặc định')}: ${g.base[1] < 5 ? '✓' : '✗'})</span>` : ''}`; };
+  const row = id => { const g = info(id);
+    return `<tr data-id="${id}"><td><button type="button" class="gopen" aria-expanded="false"><span class="gn">${GAMES[id].icon} ${esc(nm(GAMES[id].name))}</span><span class="gtags">${tags(id)}</span><span class="gv">▾</span></button>
+      <div class="gpanel" hidden><label>${T('Group', 'Nhóm')}<select data-f="area" data-nodirty>${A.AREAS.map(b => `<option value="${b.key}" ${g.area === b.key ? 'selected' : ''}>${b.icon} ${esc(nm(b.name))}</option>`).join('')}</select></label>
+        <label class="chk"><input type="checkbox" data-f="little" ${g.little ? 'checked' : ''}> ${T('Under 5', 'Dưới 5 tuổi')}</label>
+        <label class="chk"><input type="checkbox" data-f="hide" ${g.hide ? 'checked' : ''}> ${T('Hide', 'Ẩn')}</label></div></td></tr>`; };
+  const count = () => P.querySelectorAll('.card[data-area]').forEach(c => { c.querySelector('.gcount').textContent = `(${c.querySelectorAll('tr[data-id]').length})`; });
+  // take a game's row to another group, keeping what is on the screen where it is
+  const move = (id, to) => {
+    const r = P.querySelector(`tr[data-id="${id}"]`), body = P.querySelector(`.card[data-area="${to}"] tbody`); if (!r || !body || r.parentNode === body) return;
+    const anchor = r.nextElementSibling || r.closest('.card'), y0 = anchor.getBoundingClientRect().top;
+    const at = ORDER.indexOf(id), next = [...body.children].find(x => x instanceof HTMLElement && ORDER.indexOf(x.dataset.id) > at); body.insertBefore(r, next || null);
+    r.querySelector<HTMLSelectElement>('[data-f="area"]').value = to; count();
+    const dy = anchor.getBoundingClientRect().top - y0; if (dy) window.scrollBy(0, dy);
+  };
+  const setArea = (id, to) => { const base = info(id).base, c = CONTENT.activities[id] = { ...(CONTENT.activities[id] || {}) };
+    if (to === base[0]) delete c.area; else c.area = to; if (!Object.keys(c).length) delete CONTENT.activities[id]; move(id, to); };
+  const bind = r => { const id = r.dataset.id, base = A.GAME_INFO[id] || ['thinking', 5, 2], open = r.querySelector('.gopen'), panel = r.querySelector('.gpanel');
+    open.onclick = () => { panel.hidden = !panel.hidden; open.setAttribute('aria-expanded', String(!panel.hidden)); r.classList.toggle('open', !panel.hidden); };
+    r.querySelectorAll('[data-f]').forEach(f => f.onchange = () => {
+      if (f.dataset.f === 'area') { const from = info(id).area, to = f.value, was = DIRTY; if (to === from) return; setArea(id, to); DIRTY = true; paintState();   // (its own: Undo puts “not saved” back as it was)
+        toastUndo('✅ ' + T(`Moved to ${nm(areaOf(to).name)}`, `Đã chuyển sang ${nm(areaOf(to).name)}`), () => { setArea(id, from); DIRTY = was; paintState(); toast('↩️ ' + T(`Back in ${nm(areaOf(from).name)}`, `Đã về lại ${nm(areaOf(from).name)}`)); }); return; }
+      const c = CONTENT.activities[id] = { ...(CONTENT.activities[id] || {}) };
+      if (f.dataset.f === 'little') { if (f.checked === base[1] < 5) delete c.little; else c.little = f.checked; }
+      if (f.dataset.f === 'hide') { if (f.checked) c.hide = true; else delete c.hide; }
+      if (!Object.keys(c).length) delete CONTENT.activities[id];
+      r.querySelector('.gtags').innerHTML = tags(id);
+    }); };
   const draw = () => {
     const rows = A.AREAS.map(a => {
-      const ids = Object.keys(GAMES).filter(id => info(id).area === a.key);
-      return `<div class="card"><h3>${a.icon} ${esc(nm(a.name))} <span class="sub">(${ids.length})${a.key === 'reading' ? ' · ' + T('only while the reading trial is on', 'chỉ khi bật thử nghiệm đọc') : ''}</span></h3><table><tbody>${ids.map(id => { const g = info(id), base = g.base;
-        return `<tr data-id="${id}"><td>${GAMES[id].icon} ${esc(nm(GAMES[id].name))}</td>
-          <td><select data-f="area">${A.AREAS.map(b => `<option value="${b.key}" ${g.area === b.key ? 'selected' : ''}>${b.icon} ${esc(nm(b.name))}</option>`).join('')}</select></td>
-          <td><label><input type="checkbox" data-f="little" ${g.little ? 'checked' : ''}> ${T('Under 5', 'Dưới 5 tuổi')}</label>${!g.changed ? '' : ` <span class="sub">(${T('changed', 'đã đổi')}; ${T('usual', 'mặc định')}: ${base[1] < 5 ? '✓' : '✗'})</span>`}</td>
-          <td><label><input type="checkbox" data-f="hide" ${g.hide ? 'checked' : ''}> ${T('Hide', 'Ẩn')}</label></td></tr>`; }).join('')}</tbody></table></div>`;
+      const ids = ORDER.filter(id => info(id).area === a.key);
+      return `<div class="card garea" data-area="${a.key}"><h3>${a.icon} ${esc(nm(a.name))} <span class="sub"><span class="gcount">(${ids.length})</span>${a.key === 'reading' ? ' · ' + T('only while the reading trial is on', 'chỉ khi bật thử nghiệm đọc') : ''}</span></h3><table class="gtable"><tbody>${ids.map(row).join('')}</tbody></table></div>`;
     }).join('');
-    P.innerHTML = `<h2>🧸 ${T('Simple screen', 'Màn hình đơn giản')}</h2><p class="sub">${T('The Simple screen shows the games one area at a time (Animals, Music, Numbers…); children under 5 see at most six at once, and only the games ticked “Under 5”. Move a game to another area, or hide it from the Simple screen (it stays in the valley).', 'Màn hình đơn giản cho xem trò chơi theo từng khu (Con vật, Âm nhạc, Con số…); bé dưới 5 tuổi chỉ thấy tối đa sáu trò mỗi lần, và chỉ những trò được đánh dấu “Dưới 5 tuổi”. Có thể chuyển trò sang khu khác, hoặc ẩn khỏi màn hình đơn giản (vẫn còn trong thung lũng).')}</p>
+    P.innerHTML = `<h2>🧸 ${T('Simple screen', 'Màn hình đơn giản')}</h2><p class="sub">${T('The Simple screen shows the games one area at a time (Animals, Music, Numbers…); children under 5 see at most six at once, and only the games ticked “Under 5”. Move a game to another area, or hide it from the Simple screen (it stays in the valley).', 'Màn hình đơn giản cho xem trò chơi theo từng khu (Con vật, Âm nhạc, Con số…); bé dưới 5 tuổi chỉ thấy tối đa sáu trò mỗi lần, và chỉ những trò được đánh dấu “Dưới 5 tuổi”. Có thể chuyển trò sang khu khác, hoặc ẩn khỏi màn hình đơn giản (vẫn còn trong thung lũng).')} ${T('Tap a game to open it: its group, Under 5 and Hide are there.', 'Chạm vào một trò để mở: nhóm, Dưới 5 tuổi và Ẩn ở trong đó.')}</p>
       ${rows}<div class="bar"><button class="btn ghost" id="reset">↩️ ${T('Back to the usual', 'Về mặc định')}</button><button class="btn" id="save">💾 ${T('Save', 'Lưu')}</button></div>`;
-    P.querySelectorAll('tr[data-id]').forEach(r => { const id = r.dataset.id, base = A.GAME_INFO[id] || ['thinking', 5, 2];
-      r.querySelectorAll('[data-f]').forEach(f => f.onchange = () => {
-        const c = CONTENT.activities[id] = { ...(CONTENT.activities[id] || {}) };
-        if (f.dataset.f === 'area') { if (f.value === base[0]) delete c.area; else c.area = f.value; }
-        if (f.dataset.f === 'little') { if (f.checked === base[1] < 5) delete c.little; else c.little = f.checked; }
-        if (f.dataset.f === 'hide') { if (f.checked) c.hide = true; else delete c.hide; }
-        if (!Object.keys(c).length) delete CONTENT.activities[id];
-        if (f.dataset.f === 'area') draw();
-      }); });
+    P.querySelectorAll('tr[data-id]').forEach(bind);
     $('#reset').onclick = () => { CONTENT.activities = {}; draw(); };
     $('#save').onclick = () => saveContent().catch(fail);
   };
@@ -624,11 +656,11 @@ PAGES.music = async P => {
         <audio controls preload="none" src="${GAME + esc(m.file)}" style="width:100%;margin:8px 0"></audio>
         <div class="row" style="gap:6px">${TAGS.map(([k, ic, en, vi]) => `<label style="flex:0 0 auto;font-weight:400"><input type="checkbox" data-t="${k}" ${(m.tags || []).includes(k) ? 'checked' : ''}> ${ic} ${T(en, vi)}</label>`).join('')}</div></div>`).join('') || `<div class="card note">${T('No recordings yet.', 'Chưa có bản ghi nào.')}</div>`}
       <div class="bar"><label class="btn ghost" for="mfile">➕ ${T('Add an MP3', 'Thêm MP3')}</label><input type="file" id="mfile" accept="audio/mpeg,.mp3" hidden><button class="btn" id="save">💾 ${T('Save', 'Lưu')}</button></div>`;
-    P.querySelectorAll('[data-i]').forEach(c => { const m = CONTENT.music[+c.dataset.i];
-      c.querySelectorAll('[data-f]').forEach(f => f.oninput = () => { m[f.dataset.f] = f.value; });
-      c.querySelectorAll('[data-t]').forEach(f => f.onchange = () => { m.tags = TAGS.map(t => t[0]).filter(k => c.querySelector(`[data-t="${k}"]`).checked); });
-      c.querySelector('[data-rm]').onclick = () => { CONTENT.music.splice(+c.dataset.i, 1); draw(); }; });
-    $('#mfile').onchange = e => { const f = e.target.files[0]; if (!f) return; if (f.size > 4 * 1024 * 1024) { toast(T('That file is over 4 MB.', 'Tệp lớn hơn 4 MB.')); return; }
+    P.querySelectorAll<HTMLInputElement>('[data-i]').forEach(c => { const m = CONTENT.music[+c.dataset.i];
+      c.querySelectorAll<HTMLInputElement>('[data-f]').forEach(f => f.oninput = () => { m[f.dataset.f] = f.value; });
+      c.querySelectorAll<HTMLInputElement>('[data-t]').forEach(f => f.onchange = () => { m.tags = TAGS.map(t => t[0]).filter(k => c.querySelector<HTMLInputElement>(`[data-t="${k}"]`).checked); });
+      c.querySelector<HTMLInputElement>('[data-rm]').onclick = () => { CONTENT.music.splice(+c.dataset.i, 1); draw(); }; });
+    $('#mfile').onchange = e => { const f = fileOf(e); if (!f) return; if (f.size > 4 * 1024 * 1024) { toast(T('That file is over 4 MB.', 'Tệp lớn hơn 4 MB.')); return; }
       const rd = new FileReader(); rd.onload = async () => { try { const name = f.name.replace(/\.mp3$/i, ''); const r = await api('musicfile', { id: name, dataUrl: String(rd.result).replace(/^data:audio\/[^;]*;/, 'data:audio/mpeg;') });
         CONTENT.music.push({ id: name.replace(/[^\w-]/g, '').slice(0, 30) || 'song', file: r.file, en: name, vi: name, tags: ['lullaby'] }); draw(); toast(T('Added. Tick where it plays, then Save.', 'Đã thêm. Đánh dấu nơi phát rồi bấm Lưu.')); } catch (err) { fail(err); } }; rd.readAsDataURL(f); };
     $('#save').onclick = () => saveContent().catch(fail);
@@ -664,11 +696,11 @@ PAGES.play = async P => {
     <div><label>🎥 ${T('Stories and how-to guides as 3D films (where a film is made)', 'Truyện và hướng dẫn thành phim 3D (khi đã có phim)')}</label><select data-f="storyFilms">${[[true, T('On', 'Bật')], [false, T('Off', 'Tắt')]].map(([v, l]) => `<option value="${v}" ${((CONTENT.features || {}).storyFilms !== false) === v ? 'selected' : ''}>${l}</option>`).join('')}</select>${wins('storyFilms')}</div>
   </div>
   <div class="bar"><button class="btn" id="save">💾 ${T('Save', 'Lưu')}</button></div>`;
-  P.querySelectorAll('[data-torel]').forEach(b => b.onclick = () => go('releases'));
+  P.querySelectorAll<HTMLInputElement>('[data-torel]').forEach(b => b.onclick = () => go('releases'));
   $('#save').onclick = () => {
-    const out = {}; P.querySelectorAll('[data-k]').forEach(s => { const v = s.value; if (v === '') return; out[s.dataset.k] = v === 'true' ? true : v === 'false' ? false : /^\d+$/.test(v) ? +v : v; });
+    const out = {}; P.querySelectorAll<HTMLInputElement>('[data-k]').forEach(s => { const v = s.value; if (v === '') return; out[s.dataset.k] = v === 'true' ? true : v === 'false' ? false : /^\d+$/.test(v) ? +v : v; });
     CONTENT.defaults = out;
-    const f = Object.assign({}, CONTENT.features); P.querySelectorAll('[data-f]').forEach(s => { f[s.dataset.f] = s.value === 'true'; }); CONTENT.features = f;
+    const f = Object.assign({}, CONTENT.features); P.querySelectorAll<HTMLInputElement>('[data-f]').forEach(s => { f[s.dataset.f] = s.value === 'true'; }); CONTENT.features = f;
     saveContent().catch(fail);
   };
 };
@@ -704,7 +736,7 @@ async function drawReleases(P, lab) {
     if (!on) out.push(['off', '⏸️ ' + T('Off', 'Tắt')]);
     else if (r.start && r.start > today) out.push(['soon', '📅 ' + T(`Starts ${fmtDay(r.start)}`, `Bắt đầu ${fmtDay(r.start)}`)]);
     else out.push(['on', '✅ ' + T('On', 'Bật')]);
-    if (on && r.days) { const end = new Date(new Date((r.start || today) + 'T12:00:00').getTime() + r.days * 864e5), left = Math.ceil((end - Date.now()) / 864e5);
+    if (on && r.days) { const end = new Date(new Date((r.start || today) + 'T12:00:00').getTime() + r.days * 864e5), left = Math.ceil((end.getTime() - Date.now()) / 864e5);
       out.push([left > 0 ? 'end' : 'off', left > 0 ? '⏳ ' + T(`Ends in ${left} day${left === 1 ? '' : 's'}`, `Kết thúc sau ${left} ngày`) : '⌛ ' + T('Finished', 'Đã hết')]); }
     if (on && r.newDays) out.push(['new', '✨ ' + T(`“New” for ${r.newDays} day${r.newDays === 1 ? '' : 's'}`, `“Mới” trong ${r.newDays} ngày`)]);
     return out.map(([k, t]) => `<span class="rs ${k}">${t}</span>`).join(''); };
@@ -719,7 +751,7 @@ async function drawReleases(P, lab) {
         <label>${T('Days on (empty: always)', 'Số ngày (trống: luôn luôn)')}<input type="number" min="0" max="3650" data-r="days" value="${r.days || ''}" placeholder="${T('always', 'luôn')}"></label>
         <label>${T('“New” badge for (days)', 'Nhãn “Mới” trong (ngày)')}<input type="number" min="0" max="365" data-r="newDays" value="${r.newDays || ''}" placeholder="0"></label>
       </div></div>`; };
-  const allGroups = Object.entries(RELEASE_GROUPS).map(([g, [en, vi]]) => ({ g, en, vi, items: RELEASES.filter(x => x.group === g) }));
+  const allGroups = Object.entries<[string, string]>(RELEASE_GROUPS).map(([g, [en, vi]]) => ({ g, en, vi, items: RELEASES.filter(x => x.group === g) }));
   const groups = allGroups.map(g => ({ ...g, items: g.items.filter(inScope) })).filter(g => g.items.length);
   const closed = folds(), gkey = g => 'releases:group:' + g;
   P.innerHTML = `<h2>🆕 ${lab ? T('Sparkle Lab', 'Phòng thử Sparkle') : T('Releases', 'Ra mắt')}</h2><p class="sub">${T('Switch anything on or off. 📅 Schedule picks the day it starts, how long it stays and how long it shows a “New” badge. Switching off never takes away what a child already has.', 'Bật hoặc tắt bất cứ thứ gì. 📅 Lịch chọn ngày bắt đầu, ở lại bao lâu và nhãn “Mới” bao lâu. Tắt đi không lấy mất những gì con đã có.')}</p>
@@ -757,12 +789,9 @@ async function drawReleases(P, lab) {
   let deviceError = false;
   const devsP = lab ? api('players').then(r => (r && r.devices) || []).catch(() => { deviceError = true; return []; }) : Promise.resolve([]);
   const deviceNotice = () => deviceError ? `<p class="badtxt">${T('Could not load the device report. Saved settings are kept; reopen Sparkle Lab to retry.', 'Không tải được báo cáo máy. Các thiết lập đã lưu được giữ; mở lại Phòng thử Sparkle để thử lại.')}</p>` : '';
-  { const c = P.querySelector('.relc[data-id="autoplay"]'), mine = new Set((R.autoplay && R.autoplay.devices) || []);
+  { const c = P.querySelector('.relc[data-id="autoplay"]');
     if (c && !P.querySelector('#apdev')) { const box = document.createElement('div'); box.className = 'relpanel'; box.id = 'apdev'; c.classList.add('wide'); c.appendChild(box);
-      box.innerHTML = `<h4>📱 ${T('Which devices show the auto play window', 'Máy nào hiện cửa sổ tự chơi')}</h4><p class="note">${T('None ticked: every device (while the switch is on).', 'Không chọn máy nào: mọi máy (khi công tắc bật).')}</p><div id="apdl">${T('Loading the devices…', 'Đang tải danh sách máy…')}</div>`;
-      const devs = (await devsP).slice(); if (stale()) return; for (const id of mine) if (!devs.some(d => d.id === id)) devs.push({ id, label: '', kind: '?' });
-      $('#apdl').innerHTML = deviceNotice() + (devs.length ? devs.map(d => `<label class="chk devrow${isRobot(d) ? ' robot' : ''}" data-devrow="${esc(d.id)}"><input type="checkbox" data-dev="${esc(d.id)}" ${mine.has(d.id) ? 'checked' : ''}> ${devHTML(d)}</label>`).join('') : deviceError ? '' : `<p class="note">${T('No devices in the players report yet (a device appears after it plays with internet on).', 'Chưa có máy nào trong báo cáo (máy hiện ra sau khi chơi có mạng).')}</p>`);
-      devFilter($('#apdl')); } }
+      box.innerHTML = `<h4>📱 ${T('Which devices show the auto play window', 'Máy nào hiện cửa sổ tự chơi')}</h4><p class="note">${T('None ticked: every device (while the switch is on). Tick them under Devices with the Auto play chip.', 'Không chọn máy nào: mọi máy (khi công tắc bật). Chọn ở mục Các máy bằng nút Tự chơi.')}</p><p><button type="button" class="btn small ghost" data-todevs>📱 ${T('Choose devices', 'Chọn máy')}</button></p>`; } }
   // (owner, 12 Oct) testers: which devices, each one's level, and the sneak peeks (releases testers see early)
   { const c = P.querySelector('.relc[data-id="tester"]'), TR = R.tester || {}, mine = new Set(TR.devices || []), lv = TR.levels || {}, pk = new Set(TR.peeks || []);
     if (c && !P.querySelector('#tdev')) { const box = document.createElement('div'); box.className = 'relpanel'; box.id = 'tdev'; c.classList.add('wide'); c.appendChild(box);
@@ -771,25 +800,47 @@ async function drawReleases(P, lab) {
         const off = items.filter(x => !isOn(x)), on = items.filter(x => isOn(x)), lab = x => `<label class="chk peek${isOn(x) ? ' already' : ''}"><input type="checkbox" data-peek="${esc(x.id)}" ${pk.has(x.id) ? 'checked' : ''}> ${x.icon ? x.icon + ' ' : ''}${esc(T(x.en, x.vi))}</label>`;
         return `<details class="pkg" data-g="${G.g}"><summary><span class="gi">${REL_ICON[G.g] || '📦'}</span><b>${T(G.en, G.vi)}</b> <span class="pkn"></span><span class="relg-all"><button type="button" class="btn small ghost" data-pall="1">${T('All', 'Hết')}</button><button type="button" class="btn small ghost" data-pall="0">${T('None', 'Bỏ hết')}</button></span></summary>
           ${off.map(lab).join('')}${on.length ? `<p class="note">${T('Already on for everyone:', 'Đã bật cho mọi người:')}</p>${on.map(lab).join('')}` : ''}</details>`; };
-      box.innerHTML = `<h4>🐞 ${T('Which devices are testers, and how', 'Máy nào là người thử, và thế nào')}</h4><p class="note">${T('None ticked: every device (while the switch is on). A tester accepts what is collected the first time, on the device.', 'Không chọn máy nào: mọi máy (khi công tắc bật). Người thử đồng ý với những gì được thu thập lần đầu, trên máy.')}</p><div id="tdl">${T('Loading the devices…', 'Đang tải danh sách máy…')}</div>
+      box.innerHTML = `<h4>🐞 ${T('Which devices are testers, and how', 'Máy nào là người thử, và thế nào')}</h4><p class="note">${T('None ticked: every device (while the switch is on). A tester accepts what is collected the first time, on the device.', 'Không chọn máy nào: mọi máy (khi công tắc bật). Người thử đồng ý với những gì được thu thập lần đầu, trên máy.')}</p><p class="note">${T('Tick them under Devices with the Tester chip, each with its own settings.', 'Chọn ở mục Các máy bằng nút Người thử, mỗi máy có cài đặt riêng.')}</p><p><button type="button" class="btn small ghost" data-todevs>📱 ${T('Choose devices', 'Chọn máy')}</button></p>
         <h4>↩️ ${T('When someone stops being a tester', 'Khi ai đó thôi làm người thử')}</h4><p class="note">${T('These are defaults. Each device’s choice takes priority.', 'Đây là thiết lập mặc định. Lựa chọn của từng máy được ưu tiên.')}</p><div class="revert">${[['keep', 'Keep all progress after testing', 'Giữ mọi tiến trình sau khi thử'], ['progress', 'Everything since they became a tester goes back (badges, stickers and clothes stay)', 'Mọi tiến bộ từ khi làm người thử được trả lại (huy hiệu, nhãn dán và quần áo vẫn giữ)'], ['autoplay', 'Only what auto play did goes back, after each run (what they played themselves stays)', 'Chỉ trả lại phần tự chơi đã làm, sau mỗi lần chạy (phần con tự chơi vẫn giữ)']].map(([k, en, vi]) => `<label class="chk"><input type="radio" name="trevert" data-trevert="${k}" ${(['keep', 'autoplay', 'progress'].includes(TR.revert) ? TR.revert : 'progress') === k ? 'checked' : ''}> ${T(en, vi)}</label>`).join('')}</div>
         <h4>👀 ${T('Sneak peeks: testers see these early', 'Xem trước: người thử thấy sớm')} <span class="pill" id="pkcount"></span></h4><input type="search" id="pkq" placeholder="${T('Find a feature…', 'Tìm một tính năng…')}"><div id="tpk">${allGroups.map(peekGroup).join('')}</div>`;
-      const pcount = () => { box.querySelector('#pkcount').textContent = T(`${box.querySelectorAll('[data-peek]:checked').length} picked`, `đã chọn ${box.querySelectorAll('[data-peek]:checked').length}`);
-        box.querySelectorAll('details.pkg').forEach(d => { d.querySelector('.pkn').textContent = `${d.querySelectorAll('[data-peek]:checked').length}/${d.querySelectorAll('[data-peek]').length}`; }); };
-      box.querySelectorAll('[data-peek]').forEach(i => i.onchange = pcount);
-      box.querySelectorAll('details.pkg').forEach(d => d.querySelectorAll('[data-pall]').forEach(b => b.onclick = e => { e.preventDefault(); e.stopPropagation(); d.querySelectorAll('[data-peek]').forEach(i => { i.checked = b.dataset.pall === '1'; }); pcount(); }));
-      box.querySelector('#pkq').oninput = e => { const q = e.target.value.trim().toLowerCase(); box.querySelectorAll('label.peek').forEach(l => { l.hidden = q && !l.textContent.toLowerCase().includes(q); }); if (q) box.querySelectorAll('details.pkg').forEach(d => { d.open = true; }); };
-      pcount();
-      const devs = (await devsP).slice(); if (stale()) return; for (const id of new Set([...mine, ...Object.keys(lv), ...Object.keys(TR.policies || {})])) if (!devs.some(d => d.id === id)) devs.push({ id, label: '', kind: '?' });
-      $('#tdl').innerHTML = deviceNotice() + (devs.length ? devs.map(d => `<div class="tdrow devrow${isRobot(d) ? ' robot' : ''}" data-devrow="${esc(d.id)}"><label class="chk"><input type="checkbox" data-tdev="${esc(d.id)}" ${mine.has(d.id) ? 'checked' : ''}> ${devHTML(d)}</label>
-        <label>${T('Progress after testing', 'Tiến trình sau khi thử')}<select data-policy="${esc(d.id)}">${[['keep','Keep all progress','Giữ mọi tiến trình'],['autoplay','Restore after each auto check','Trả lại sau mỗi lần tự kiểm tra'],['progress','Restore when testing ends','Trả lại khi kết thúc thử nghiệm']].map(([k,en,vi]) => `<option value="${k}" ${(TR.policies?.[d.id]?.revert || TR.revert || 'progress') === k ? 'selected' : ''}>${T(en,vi)}</option>`).join('')}</select></label><label>${T('Checking speed','Tốc độ kiểm tra')}<select data-speed="${esc(d.id)}">${['watch','fast'].includes(TR.policies?.[d.id]?.speed) ? `<option value="${TR.policies[d.id].speed}" selected>${TR.policies[d.id].speed === 'watch' ? T('Watch', 'Xem') : T('Quick', 'Nhanh')}</option>` : ''}${[1,2,3,5].map(n => `<option value="x${n}" ${(TR.policies?.[d.id]?.speed || 'x1') === 'x'+n ? 'selected' : ''}>${n}×</option>`).join('')}</select></label><label class="chk"><input type="checkbox" data-deviceauto="${esc(d.id)}" ${TR.policies?.[d.id]?.autoplay === false ? '' : 'checked'}>${T('Allow automatic check', 'Cho phép tự kiểm tra')}</label><select data-tlv="${esc(d.id)}" aria-label="${T('Level', 'Mức')}"><option value="ladybird" ${lv[d.id] !== 'auto' ? 'selected' : ''}>${T('Auto reports and the ladybird', 'Tự báo lỗi và con bọ rùa')}</option><option value="auto" ${lv[d.id] === 'auto' ? 'selected' : ''}>${T('Auto reports only', 'Chỉ tự báo lỗi')}</option></select></div>`).join('') : deviceError ? '' : `<p class="note">${T('No devices in the players report yet (a device appears after it plays with internet on).', 'Chưa có máy nào trong báo cáo (máy hiện ra sau khi chơi có mạng).')}</p>`);
-      devFilter($('#tdl')); } }
+      const pcount = () => { box.querySelector<HTMLInputElement>('#pkcount').textContent = T(`${box.querySelectorAll<HTMLInputElement>('[data-peek]:checked').length} picked`, `đã chọn ${box.querySelectorAll<HTMLInputElement>('[data-peek]:checked').length}`);
+        box.querySelectorAll<HTMLInputElement>('details.pkg').forEach(d => { d.querySelector<HTMLInputElement>('.pkn').textContent = `${d.querySelectorAll<HTMLInputElement>('[data-peek]:checked').length}/${d.querySelectorAll<HTMLInputElement>('[data-peek]').length}`; }); };
+      box.querySelectorAll<HTMLInputElement>('[data-peek]').forEach(i => i.onchange = pcount);
+      box.querySelectorAll<HTMLInputElement>('details.pkg').forEach(d => d.querySelectorAll<HTMLInputElement>('[data-pall]').forEach(b => b.onclick = e => { e.preventDefault(); e.stopPropagation(); d.querySelectorAll<HTMLInputElement>('[data-peek]').forEach(i => { i.checked = b.dataset.pall === '1'; }); pcount(); }));
+      box.querySelector<HTMLInputElement>('#pkq').oninput = e => { const q = val(e).trim().toLowerCase(); box.querySelectorAll<HTMLInputElement>('label.peek').forEach(l => { l.hidden = q && !l.textContent.toLowerCase().includes(q); }); if (q) box.querySelectorAll<HTMLDetailsElement>('details.pkg').forEach(d => { d.open = true; }); };
+      pcount(); } }
+  // (r85, owner 18 Oct AEDT) one card per device for testers and auto play: line 1 the device's name and the children,
+  // line 2 (small, grey) the device, system, browser, town and last seen; the Tester and Auto play chips each open that
+  // feature's settings for this device only. The settings saved are the same as before (Save below reads them).
+  if (lab && P.querySelector('.relc[data-id="tester"]') && !P.querySelector('#devs')) {
+    const TR = R.tester || {}, tmine = new Set(TR.devices || []), lv = TR.levels || {}, amine = new Set((R.autoplay && R.autoplay.devices) || []);
+    const sec = document.createElement('section'); sec.className = 'card devsec'; sec.id = 'devs';
+    sec.innerHTML = `<h3>📱 ${T('Devices: testers and auto play', 'Các máy: người thử và tự chơi')}</h3><p class="note">${T('Tap Tester or Auto play on a device to choose it and its settings. None ticked: every device (while that switch is on).', 'Chạm Người thử hoặc Tự chơi trên một máy để chọn máy đó và cài đặt của nó. Không chọn máy nào: mọi máy (khi công tắc đó bật).')}</p><div id="tdl" class="devcards">${T('Loading the devices…', 'Đang tải danh sách máy…')}</div>`;
+    P.querySelector('.relsave').before(sec);
+    P.querySelectorAll('[data-todevs]').forEach(b => b.onclick = e => { e.preventDefault(); sec.scrollIntoView({ block: 'start', behavior: 'smooth' }); });
+    const devs = (await devsP).slice(); if (stale()) return;
+    for (const id of new Set([...tmine, ...amine, ...Object.keys(lv), ...Object.keys(TR.policies || {})])) if (!devs.some(d => d.id === id)) devs.push({ id, label: '', kind: '?' });
+    const chip = (k, on) => `<button type="button" class="chip devchip${on ? ' on' : ''}" data-open="${k}" aria-expanded="false">${k === 'tester' ? '🐞 ' + T('Tester', 'Người thử') : '🤖 ' + T('Auto play', 'Tự chơi')} · <span>${on ? T('On', 'Bật') : T('Off', 'Tắt')}</span></button>`;
+    $('#tdl').innerHTML = deviceNotice() + (devs.length ? devs.map(d => { const kids = devKids(d);
+      return `<div class="devcard devrow${isRobot(d) ? ' robot' : ''}" data-devrow="${esc(d.id)}">
+        <div class="dc1"><b class="dname">${esc(devTitle(d))}</b>${isRobot(d) ? ` <span class="pill robot">🤖 ${T('probably a robot', 'có lẽ là máy tự động')}</span>` : ''}${kids.length ? ` <span class="dkids">🧒 ${esc(kids.join(', '))}</span>` : ''}</div>
+        <div class="dc2">${esc(devMeta(d))}<small class="mini">${esc(d.id)}</small></div>
+        <div class="chips dchips">${chip('tester', tmine.has(d.id))}${chip('autoplay', amine.has(d.id))}</div>
+        <div class="dpanel" data-panel="tester" hidden><label class="chk"><input type="checkbox" data-tdev="${esc(d.id)}" ${tmine.has(d.id) ? 'checked' : ''}> ${T('This device is a tester', 'Máy này là người thử')}</label>
+        <label>${T('Progress after testing', 'Tiến trình sau khi thử')}<select data-policy="${esc(d.id)}">${[['keep','Keep all progress','Giữ mọi tiến trình'],['autoplay','Restore after each auto check','Trả lại sau mỗi lần tự kiểm tra'],['progress','Restore when testing ends','Trả lại khi kết thúc thử nghiệm']].map(([k,en,vi]) => `<option value="${k}" ${(TR.policies?.[d.id]?.revert || TR.revert || 'progress') === k ? 'selected' : ''}>${T(en,vi)}</option>`).join('')}</select></label><label>${T('Checking speed','Tốc độ kiểm tra')}<select data-speed="${esc(d.id)}">${['watch','fast'].includes(TR.policies?.[d.id]?.speed) ? `<option value="${TR.policies[d.id].speed}" selected>${TR.policies[d.id].speed === 'watch' ? T('Watch', 'Xem') : T('Quick', 'Nhanh')}</option>` : ''}${[1,2,3,5].map(n => `<option value="x${n}" ${(TR.policies?.[d.id]?.speed || 'x1') === 'x'+n ? 'selected' : ''}>${n}×</option>`).join('')}</select></label><label class="chk"><input type="checkbox" data-deviceauto="${esc(d.id)}" ${TR.policies?.[d.id]?.autoplay === false ? '' : 'checked'}>${T('Allow automatic check', 'Cho phép tự kiểm tra')}</label><select data-tlv="${esc(d.id)}" aria-label="${T('Level', 'Mức')}"><option value="ladybird" ${lv[d.id] !== 'auto' ? 'selected' : ''}>${T('Auto reports and the ladybird', 'Tự báo lỗi và con bọ rùa')}</option><option value="auto" ${lv[d.id] === 'auto' ? 'selected' : ''}>${T('Auto reports only', 'Chỉ tự báo lỗi')}</option></select></div>
+        <div class="dpanel" data-panel="autoplay" hidden><label class="chk"><input type="checkbox" data-dev="${esc(d.id)}" ${amine.has(d.id) ? 'checked' : ''}> ${T('Show the auto play window on this device', 'Hiện cửa sổ tự chơi trên máy này')}</label></div></div>`; }).join('') : deviceError ? '' : `<p class="note">${T('No devices in the players report yet (a device appears after it plays with internet on).', 'Chưa có máy nào trong báo cáo (máy hiện ra sau khi chơi có mạng).')}</p>`);
+    $('#tdl').querySelectorAll('.devcard').forEach(card => {
+      const paint = () => card.querySelectorAll<HTMLElement>('[data-open]').forEach(b => { const on = card.querySelector<HTMLInputElement>(b.dataset.open === 'tester' ? '[data-tdev]' : '[data-dev]').checked; b.classList.toggle('on', on); b.querySelector('span').textContent = on ? T('On', 'Bật') : T('Off', 'Tắt'); });
+      card.querySelectorAll<HTMLElement>('[data-open]').forEach(b => b.onclick = () => { const k = b.dataset.open, open = b.getAttribute('aria-expanded') !== 'true';
+        card.querySelectorAll('[data-open]').forEach(x => x.setAttribute('aria-expanded', String(open && x === b))); card.querySelectorAll<HTMLElement>('.dpanel').forEach(x => { x.hidden = !(open && x.dataset.panel === k); }); });
+      card.querySelectorAll('[data-tdev], [data-dev]').forEach(i => i.addEventListener('change', paint)); });
+    devFilter($('#tdl')); }
   $('#save').onclick = async () => {
     try {
       const latest = await loadLive(), out = { ...(latest.releases || {}) };
       for (const x of RELEASES.filter(inScope)) delete out[x.id];
       P.querySelectorAll('.relc[data-id]').forEach(c => { const id = c.dataset.id, x = RELEASES.find(y => y.id === id), v = k => c.querySelector(`[data-r="${k}"]`).value;
-        const r = {}, on = c.querySelector('[data-r="on"]').checked; if (id === 'wayfind') r.controlVersion = 1; if (on !== x.def || R[id]) r.on = on; if (v('start')) r.start = v('start'); if (+v('days') > 0) r.days = +v('days'); if (+v('newDays') > 0) { r.newDays = +v('newDays'); if (!r.start) r.since = (R[id] && R[id].since) || isoDay(new Date()); }
+        const r: Rule = {}, on = c.querySelector('[data-r="on"]').checked; if (id === 'wayfind') r.controlVersion = 1; if (on !== x.def || R[id]) r.on = on; if (v('start')) r.start = v('start'); if (+v('days') > 0) r.days = +v('days'); if (+v('newDays') > 0) { r.newDays = +v('newDays'); if (!r.start) r.since = (R[id] && R[id].since) || isoDay(new Date()); }
         if (id === 'autoplay') { const dv = [...P.querySelectorAll('[data-dev]:checked')].map(i => i.dataset.dev); if (dv.length) r.devices = dv; }
         if (id === 'tester') { const dv = [...P.querySelectorAll('[data-tdev]:checked')].map(i => i.dataset.tdev); if (dv.length) r.devices = dv;
           const policies = { ...(latest.releases?.tester?.policies || {}) }; P.querySelectorAll('[data-policy]').forEach(select => { const device = select.dataset.policy, speed = P.querySelector(`[data-speed="${CSS.escape(device)}"]`), auto = P.querySelector(`[data-deviceauto="${CSS.escape(device)}"]`); policies[device] = { revert: select.value, speed: speed.value, autoplay: auto.checked }; }); if (Object.keys(policies).length) r.policies = policies;
@@ -815,11 +866,11 @@ PAGES.festivals = async P => {
       <td data-label="${T('Decorations', 'Trang trí')}"><select data-f="deco">${[[1, 'As before', 'Như trước'], [2, '2x', '2x'], [3, '3x', '3x'], [5, '5x', '5x'], [7, '7x', '7x']].map(([n, en, vi]) => `<option value="${n}" ${(+r.deco || 5) === n ? 'selected' : ''}>${T(en, vi)}</option>`).join('')}</select></td>
       <td><a class="btn small ghost" target="_blank" href="${GAME}?festival=${f.id}">${T('Preview', 'Xem thử')}</a></td></tr>`; };
   P.innerHTML = `<h2>📅 ${T('Festivals', 'Lễ hội')}</h2><p class="sub">${T('Every festival on its real date (lunar dates are worked out each year). Party festivals decorate their places for 3 weeks before, quiet days a few days. On the day: 08:00 present, 15:00 festival game, 18:30 show (17:30 for under-5s). Decorations: half in week 1, three quarters in week 2, all of it in the last week; 5x by default (Decorations column). In the last week and on the day, 5 festival items are hidden among them to find.', 'Mỗi lễ hội đúng ngày thật (ngày âm lịch tự tính mỗi năm). Lễ hội vui trang trí 3 tuần trước, ngày yên lặng vài ngày. Đúng ngày: 08:00 nhận quà, 15:00 trò chơi lễ hội, 18:30 trình diễn (17:30 cho bé dưới 5 tuổi). Trang trí: tuần đầu một nửa, tuần hai ba phần tư, tuần cuối đầy đủ; mặc định gấp 5 lần (cột Trang trí). Tuần cuối và đúng ngày có 5 món đồ lễ hội giấu giữa đồ trang trí để các con tìm.')}</p>
-    ${liveNote()}${Object.entries(GROUPS).map(([g, [en, vi]]) => `<h3>${T(en, vi)}</h3><div class="card"><table class="rel"><thead><tr><th></th><th>${T('Now', 'Hiện')}</th><th>${T('Next date', 'Ngày tới')}</th><th>${T('Move to', 'Đổi sang ngày')}</th><th>${T('Decorate days before', 'Trang trí trước (ngày)')}</th><th>${T('Decorations', 'Trang trí')}</th><th></th></tr></thead><tbody>${FESTCAL.filter(f => f.group === g).map(row).join('')}</tbody></table></div>`).join('')}
+    ${liveNote()}${Object.entries<[string, string]>(GROUPS).map(([g, [en, vi]]) => `<h3>${T(en, vi)}</h3><div class="card"><table class="rel"><thead><tr><th></th><th>${T('Now', 'Hiện')}</th><th>${T('Next date', 'Ngày tới')}</th><th>${T('Move to', 'Đổi sang ngày')}</th><th>${T('Decorate days before', 'Trang trí trước (ngày)')}</th><th>${T('Decorations', 'Trang trí')}</th><th></th></tr></thead><tbody>${FESTCAL.filter(f => f.group === g).map(row).join('')}</tbody></table></div>`).join('')}
     <div class="bar"><button class="btn" id="save">💾 ${T('Save', 'Lưu')}</button></div>`;
   $('#save').onclick = async () => {
     const out = {};
-    P.querySelectorAll('tr[data-id]').forEach(tr => { const id = tr.dataset.id, v = k => tr.querySelector(`[data-f="${k}"]`).value, r = {};
+    P.querySelectorAll<HTMLInputElement>('tr[data-id]').forEach(tr => { const id = tr.dataset.id, v = k => tr.querySelector<HTMLInputElement>(`[data-f="${k}"]`).value, r: Rule = {};
       if (v('on') === 'false') r.on = false; if (v('date')) r.date = v('date'); if (v('buildup') !== '') r.buildup = +v('buildup'); if (+v('deco') !== 5) r.deco = +v('deco'); if (Object.keys(r).length) out[id] = r; });
     await saveLive({ releases: live.releases || {}, festivals: out }).catch(fail);
   };
@@ -829,16 +880,16 @@ PAGES.children = async P => {
   P.innerHTML = `<h2>👧 ${T('Children and their progress', 'Các con và tiến bộ')}</h2><p class="sub">${T('On a device: ⚙️ Grown-ups → Save backup. Open that file here to see each child’s progress, change names or coins, then save a new backup and open it on the device (Grown-ups → Open backup).', 'Trên máy: ⚙️ Người lớn → Lưu bản sao. Mở tệp đó ở đây để xem tiến bộ của từng con, đổi tên hay xu, rồi lưu bản sao mới và mở lại trên máy (Người lớn → Mở bản sao).')}</p>
   <div class="card"><input type="file" id="f" accept=".txt,.json,text/plain"></div><div id="kids"></div>`;
   $('#f').onchange = async e => {
-    const file = e.target.files[0]; if (!file) return; let data;
+    const file = fileOf(e); if (!file) return; let data;
     try { data = JSON.parse(await file.text()); if (data.app !== 'sparkle-valley' || !Array.isArray(data.profiles)) throw 0; } catch (x) { return toast(T('That is not a Sparkle Valley backup.', 'Đó không phải bản sao Thung Lũng Lấp Lánh.')); }
     const n = o => o ? Object.keys(o).length : 0;
     $('#kids').innerHTML = `<div class="card"><label>💰 ${T('Coins (shared)', 'Xu (dùng chung)')}</label><input type="number" id="coins" value="${+((data.farm || {}).coins) || 0}" min="0" max="99999"></div>` + data.profiles.map((p, i) => `<div class="card" data-i="${i}"><div class="row"><div><label>${T('Name', 'Tên')}</label><input type="text" data-n value="${esc(p.name)}" maxlength="16"></div>
       <div><label>${T('Age', 'Tuổi')}</label><select data-a><option value="little" ${p.age !== 'big' ? 'selected' : ''}>🧸 ${T('Little (under 5)', 'Bé nhỏ (dưới 5)')}</option><option value="big" ${p.age === 'big' ? 'selected' : ''}>🎒 ${T('Big kid (5–8)', 'Bé lớn (5–8)')}</option></select></div></div>
-      <p>📮 ${n(p.postcards)} ${T('postcards', 'bưu thiếp')} · 🌟 ${(p.stickers || []).length} ${T('stickers', 'hình dán')} · 🎮 ${Object.values(p.wins || {}).reduce((a, b) => a + b, 0)} ${T('games won', 'trò thắng')} · 📖 ${n(p.tales)} ${T('tales', 'truyện')} · 🔮 ${p.orbs || 0} · 🍃 ${n(p.leafies)}/24 · 🛂 ${n(p.stamps)}</p>
-      <details><summary>${T('Levels in each game', 'Cấp độ từng trò')}</summary><p class="note">${Object.entries(p.levels || {}).map(([g, l]) => `${esc(g)} ${'⭐'.repeat(l)}`).join(' · ') || '—'}</p></details></div>`).join('') +
+      <p>📮 ${n(p.postcards)} ${T('postcards', 'bưu thiếp')} · 🌟 ${(p.stickers || []).length} ${T('stickers', 'hình dán')} · 🎮 ${Object.values<number>(p.wins || {}).reduce((a, b) => a + b, 0)} ${T('games won', 'trò thắng')} · 📖 ${n(p.tales)} ${T('tales', 'truyện')} · 🔮 ${p.orbs || 0} · 🍃 ${n(p.leafies)}/24 · 🛂 ${n(p.stamps)}</p>
+      <details><summary>${T('Levels in each game', 'Cấp độ từng trò')}</summary><p class="note">${Object.entries<number>(p.levels || {}).map(([g, l]) => `${esc(g)} ${'⭐'.repeat(l)}`).join(' · ') || '—'}</p></details></div>`).join('') +
       `<div class="bar"><button class="btn" id="save">💾 ${T('Save a new backup', 'Lưu bản sao mới')}</button></div>`;
     $('#save').onclick = () => {
-      $('#kids').querySelectorAll('[data-i]').forEach(c => { const p = data.profiles[+c.dataset.i]; p.name = c.querySelector('[data-n]').value.trim().slice(0, 16) || p.name; p.age = c.querySelector('[data-a]').value; });
+      $('#kids').querySelectorAll<HTMLInputElement>('[data-i]').forEach(c => { const p = data.profiles[+c.dataset.i]; p.name = c.querySelector<HTMLInputElement>('[data-n]').value.trim().slice(0, 16) || p.name; p.age = c.querySelector<HTMLInputElement>('[data-a]').value; });
       data.farm = data.farm || {}; data.farm.coins = Math.max(0, Math.min(99999, +$('#coins').value || 0)); data.saved = Date.now();
       const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(data, null, 1)], { type: 'text/plain' })); a.download = 'sparkle-valley-backup-' + new Date().toISOString().slice(0, 10) + '-studio.txt'; a.click();
       markSaved(); toast('✅ ' + T('Saved. Open it on the device: Grown-ups → Open backup.', 'Đã lưu. Mở trên máy: Người lớn → Mở bản sao.'), 'good');
@@ -869,7 +920,7 @@ async function allJobs() {
   const { swapNames } = await import(GAME + 'js/i18n.js'), { LEARN } = await import(GAME + 'js/words2.js'), { lineHash: packHash } = await import(GAME + 'js/packhash.js'), { viRuns, mixed } = await import(GAME + 'js/viwords.js');
   const jobs = new Map(); const put = (lang, text) => { if (text) jobs.set(packHash(lang, text), { lang, text, ...(lang === 'en' && mixed(text) ? { runs: viRuns(text) } : {}) }); };
   for (const [en, vi] of seen.values()) { put('en', swapNames(en, 'en')); put('vi', swapNames(vi, 'vi')); }
-  for (const [lang, L] of Object.entries(LEARN)) for (const w of L.words) put(lang, w[3]);
+  for (const [lang, L] of Object.entries<{ words: string[][] }>(LEARN)) for (const w of L.words) put(lang, w[3]);
   const cities = SRC.cities, re = /\['([^'\\]+)', '(?:[^'\\]|\\.)*', '(?:[^'\\]|\\.)*', '(zh|hi)'\]/g; let m; while ((m = re.exec(cities))) put(m[2], m[1]);
   // lines built while playing (names, numbers, colours…): collected by tools/voice-harvest.mts and sent from devices
   for (const l of await api('voices/extra').catch(() => [])) if (CAST[l.lang]) put(l.lang, l.text);
@@ -896,15 +947,15 @@ PAGES.voices = async P => {
     <div class="card"><h3>📱 ${T('Lines a device said with the machine voice', 'Câu máy đã đọc bằng giọng máy')}</h3><p class="note">${T('On the device: ⚙️ Grown-ups → Save backup. Open that file here: every line it had to say without a recording is added to the list above, ready to make.', 'Trên máy: ⚙️ Phụ huynh → Lưu bản sao. Mở tệp đó ở đây: mọi câu máy phải đọc khi chưa có bản ghi sẽ được thêm vào danh sách trên, sẵn sàng để tạo.')}</p><input type="file" id="vrep" accept=".txt,.json,text/plain"><p class="note" id="vrepres"></p></div>
     <div class="card"><h3>🎤 ${T('Or record them yourselves', 'Hoặc tự thu giọng')}</h3><p class="note">${T('Tap ⏺, read the line, tap ⏹. Your own voice then plays in the game.', 'Bấm ⏺, đọc câu, bấm ⏹. Giọng của bạn sẽ được phát trong game.')}</p>
     <input type="text" id="vf" placeholder="🔎 ${T('Find a line…', 'Tìm câu…')}"><div class="lines"><table><tbody id="vl"></tbody></table></div></div>`;
-  const list = q => { $('#vl').innerHTML = missing.filter(x => !q || x.text.toLowerCase().includes(q)).slice(0, 200).map((x, i) => `<tr data-k="${missing.indexOf(x)}"><td><span class="pill">${x.lang} ${x.slot === 'f' ? '👩' : '👨'}</span></td><td>${x.asked ? '📥 ' : ''}${esc(x.text)}</td><td><button class="btn small" data-rec>⏺</button></td></tr>`).join(''); $('#vl').querySelectorAll('[data-rec]').forEach(b => b.onclick = () => record(missing[+b.closest('tr').dataset.k], b)); };
-  list(''); $('#vf').oninput = e => list(e.target.value.toLowerCase());
+  const list = q => { $('#vl').innerHTML = missing.filter(x => !q || x.text.toLowerCase().includes(q)).slice(0, 200).map((x, i) => `<tr data-k="${missing.indexOf(x)}"><td><span class="pill">${x.lang} ${x.slot === 'f' ? '👩' : '👨'}</span></td><td>${x.asked ? '📥 ' : ''}${esc(x.text)}</td><td><button class="btn small" data-rec>⏺</button></td></tr>`).join(''); $('#vl').querySelectorAll<HTMLInputElement>('[data-rec]').forEach(b => b.onclick = () => record(missing[+b.closest<HTMLInputElement>('tr').dataset.k], b)); };
+  list(''); $('#vf').oninput = e => list(val(e).toLowerCase());
   $('#vrep').onchange = async e => {
-    const f = e.target.files[0]; if (!f) return; let d; try { d = JSON.parse(await f.text()); } catch (x) { return toast(T('That is not a Sparkle Valley backup.', 'Đó không phải bản sao Thung Lũng Lấp Lánh.')); }
+    const f = fileOf(e); if (!f) return; let d; try { d = JSON.parse(await f.text()); } catch (x) { return toast(T('That is not a Sparkle Valley backup.', 'Đó không phải bản sao Thung Lũng Lấp Lánh.')); }
     const lines = (d.voiceMissing || []).map(m => ({ lang: m[0], text: m[1] }));
     if (!lines.length) { $('#vrepres').textContent = '✅ ' + T('That device had a recording for every line it said.', 'Máy đó có bản ghi cho mọi câu đã nói.') + (d.build ? ` (${T('build', 'bản')} ${esc(d.build)})` : ''); return; }
     const r = await api('voices/extra', { lines }); $('#vrepres').textContent = `✅ ${r.added} ${T('new lines added. Counting again…', 'câu mới được thêm. Đang đếm lại…')}`; setTimeout(render, 900);
   };
-  const run = async (engine, only) => {
+  const run = async (engine, only?) => {
     voiceStop = false; $('#stop').disabled = false; $('#az').disabled = $('#pi').disabled = true;
     const gap = engine === 'azure' ? 3200 : 0; let done = 0, errs = 0;
     for (const x of [...missing].filter(x => !only || x.asked)) {
@@ -925,7 +976,7 @@ PAGES.voices = async P => {
         stream.getTracks().forEach(t => t.stop()); delete btn.dataset.on; btn.textContent = '…';
         const ac = new AudioContext(), buf = await ac.decodeAudioData(await new Blob(parts).arrayBuffer()), data = buf.getChannelData(0);
         if (!window.lamejs) await new Promise((ok, no) => { const s = document.createElement('script'); s.src = BASE + '/ui/lame.min.js'; s.onload = ok; s.onerror = no; document.head.appendChild(s); });
-        const enc = new lamejs.Mp3Encoder(1, buf.sampleRate, 64), pcm = new Int16Array(data.length); for (let i = 0; i < data.length; i++) pcm[i] = Math.max(-1, Math.min(1, data[i])) * 32767;
+        const enc = new window.lamejs.Mp3Encoder(1, buf.sampleRate, 64), pcm = new Int16Array(data.length); for (let i = 0; i < data.length; i++) pcm[i] = Math.max(-1, Math.min(1, data[i])) * 32767;
         const out = []; for (let i = 0; i < pcm.length; i += 1152) { const b = enc.encodeBuffer(pcm.subarray(i, i + 1152)); if (b.length) out.push(b); } out.push(enc.flush());
         const blob = new Blob(out, { type: 'audio/mpeg' }), url = await new Promise(r => { const fr = new FileReader(); fr.onload = () => r(fr.result); fr.readAsDataURL(blob); });
         await api('voice', { engine: 'upload', lang: x.lang, slot: x.slot, hash: x.hash, text: x.text, audio: url }); btn.textContent = '✅'; btn.disabled = true; missing.splice(missing.indexOf(x), 1);
@@ -935,7 +986,7 @@ PAGES.voices = async P => {
   }
 };
 // ---------- publish ----------
-let jobTimer = 0, redrawWait = null;
+let jobTimer: ReturnType<typeof setInterval> | undefined, redrawWait = null;
 const watchJob = (out, done) => { clearInterval(jobTimer); jobTimer = setInterval(async () => { const j = await api('job').catch(() => ({})); if (!j.kind) return; out(j); if (j.end) { clearInterval(jobTimer); done && done(j); } }, 1000); };
 PAGES.publish = async P => {
   const c = INFO.conf; redrawWait = null;
@@ -953,20 +1004,20 @@ PAGES.publish = async P => {
     <button class="btn ghost" id="deploy" ${c.netlify ? '' : 'disabled'}>☁️ ${T('Upload to Netlify', 'Tải lên Netlify')}</button> <span id="dres" class="note"></span></div>`}`;
   // online (round P): every save waits here on the website; one Publish sends them all, or drop them
   if (INFO.online && CAN('publish')) {
-    const box = document.createElement('div'); box.className = 'card'; P.querySelector('.sub').after(box);
+    const box = document.createElement('div'); box.className = 'card'; P.querySelector<HTMLInputElement>('.sub').after(box);
     const drawWait = redrawWait = async () => {
       let files = []; try { files = (await api('pending')).files; } catch (e) { }
       const by = {}; for (const f of files) { const k = f.split('/').slice(0, 2).join('/'); by[k] = (by[k] || 0) + 1; }
       box.innerHTML = `<h3>📝 ${T('Waiting to publish', 'Đang chờ phát hành')}: ${files.length}</h3>${files.length ? `<p class="note">${Object.entries(by).map(([k, n]) => `${esc(k)} (${n})`).join(' · ')}</p>
         <p class="note">${T('Saving is instant now: changes wait here, and Publish sends them all to the children in one go.', 'Lưu giờ rất nhanh: thay đổi chờ ở đây, và Phát hành gửi tất cả tới các con trong một lần.')}</p>
         <button class="btn ghost" id="wdrop">🗑️ ${T('Drop all waiting changes', 'Bỏ tất cả thay đổi đang chờ')}</button>` : `<p class="ok">✅ ${T('Nothing waiting.', 'Không có gì đang chờ.')}</p>`}`;
-      const d = box.querySelector('#wdrop'); if (d) d.onclick = async () => { if (!confirm(T(`Drop ${files.length} waiting change(s)? They will not be published.`, `Bỏ ${files.length} thay đổi đang chờ? Chúng sẽ không được phát hành.`))) return; try { await api('pending/discard', {}); LOADED = false; await load(true); head(); toast(T('Dropped.', 'Đã bỏ.')); drawWait(); } catch (e) { fail(e); } };
+      const d = box.querySelector<HTMLInputElement>('#wdrop'); if (d) d.onclick = async () => { if (!confirm(T(`Drop ${files.length} waiting change(s)? They will not be published.`, `Bỏ ${files.length} thay đổi đang chờ? Chúng sẽ không được phát hành.`))) return; try { await api('pending/discard', {}); LOADED = false; await load(true); head(); toast(T('Dropped.', 'Đã bỏ.')); drawWait(); } catch (e) { fail(e); } };
     };
     drawWait();
   }
   if ($('#build')) $('#build').onclick = async () => { $('#bres').textContent = T('Packing…', 'Đang đóng gói…'); try { const r = await api('build', {}); $('#bres').innerHTML = `✅ ${r.files} ${T('files', 'tệp')}, ${(r.bytes / 1e6).toFixed(1)} MB · <a href="${BASE}/api/zip">⬇️ ${T('Download', 'Tải về')}</a>`; } catch (e) { $('#bres').textContent = '⚠️ ' + e.message; } };
   if ($('#deploy')) $('#deploy').onclick = async () => { if (c.github && !confirm(T('Your site is published from GitHub. Upload the zip to Netlify anyway?', 'Trang của bạn được phát hành từ GitHub. Vẫn tải tệp zip lên Netlify?'))) return; $('#dres').textContent = T('Uploading… (a minute or two)', 'Đang tải lên… (một hai phút)'); try { const r = await api('deploy', {}); $('#dres').innerHTML = `✅ ${T('Published!', 'Đã phát hành!')} <a href="${esc(r.url)}" target="_blank">${esc(r.url)}</a>`; } catch (e) { $('#dres').textContent = '⚠️ ' + e.message; } };
-  const ghRun = async (what, btn) => {
+  const ghRun = async (what, btn?) => {
     ['#gpub', '#gdraft'].forEach(k => { if ($(k)) $(k).disabled = true; }); $('#gres').textContent = T('Starting…', 'Bắt đầu…'); let j0;
     const again = () => ['#gpub', '#gdraft'].forEach(k => { if ($(k)) $(k).disabled = false; });
     try {
@@ -1018,9 +1069,9 @@ PAGES.looks = async P => {
         <div class="row" style="justify-content:flex-end;margin-top:10px"><button class="btn small ghost" data-usual="${id}" ${LK[id] ? '' : 'disabled'}>↩️ ${T('Back to the usual', 'Về như cũ')}</button></div></div>`; }).join('')}</div>
     <div class="bar"><button class="btn" id="save">💾 ${T('Save', 'Lưu')}</button></div>`;
     const set = (id, k, v) => { const L = lookOf(id, LK); LK[id] = { style: L.style, color: L.color, hair: L.hair, hairStyle: L.hairStyle, skin: L.skin, [k]: v }; CONTENT.looks = LK; draw(); };
-    P.querySelectorAll('.look .sw').forEach(b => b.onclick = () => set(b.dataset.id, b.dataset.k, b.dataset.v));
-    P.querySelectorAll('.look select').forEach(s => s.onchange = () => set(s.dataset.id, s.dataset.k, s.value));
-    P.querySelectorAll('[data-usual]').forEach(b => b.onclick = () => { delete LK[b.dataset.usual]; CONTENT.looks = LK; draw(); });
+    P.querySelectorAll<HTMLInputElement>('.look .sw').forEach(b => b.onclick = () => set(b.dataset.id, b.dataset.k, b.dataset.v));
+    P.querySelectorAll<HTMLInputElement>('.look select').forEach(s => s.onchange = () => set(s.dataset.id, s.dataset.k, s.value));
+    P.querySelectorAll<HTMLInputElement>('[data-usual]').forEach(b => b.onclick = () => { delete LK[b.dataset.usual]; CONTENT.looks = LK; draw(); });
     $('#save').onclick = () => { if (!Object.keys(LK).length) delete CONTENT.looks; else CONTENT.looks = LK; saveContent().catch(fail); };
   };
   draw();
@@ -1031,7 +1082,7 @@ PAGES.looks = async P => {
 // sp_<city>_<n>, made when the valley is built: found by opening the game out of sight). Never by x, z.
 let SPARE = null;
 async function sparePlots() {
-  const f = document.createElement('iframe'); f.style.cssText = 'position:fixed;left:-2000px;top:0;width:400px;height:300px;border:0'; f.src = GAME + 'index.html?studio=1'; document.body.appendChild(f);
+  const f: HTMLIFrameElement = document.createElement('iframe'); f.style.cssText = 'position:fixed;left:-2000px;top:0;width:400px;height:300px;border:0'; f.src = GAME + 'index.html?studio=1'; document.body.appendChild(f);
   try {
     for (let i = 0; i < 120; i++) { await new Promise(r => setTimeout(r, 500)); const G = f.contentWindow && f.contentWindow.__sv; if (G && G.world && G.world.boxes && G.interactables && G.interactables.length > 50) {
       const W = await f.contentWindow.eval(`import(${JSON.stringify(GAME + 'js/world.js')})`);
@@ -1040,7 +1091,7 @@ async function sparePlots() {
   } finally { f.remove(); }
 }
 PAGES.plots = async P => {
-  const M = await import(GAME + 'js/content/map.js'), WE = await import(GAME + 'js/worldedit.js'), HOMES = Object.entries(WE.BUILD_TYPES).filter(([, t]) => t.home);
+  const M = await import(GAME + 'js/content/map.js'), WE = await import(GAME + 'js/worldedit.js'), HOMES = Object.entries<BuildType>(WE.BUILD_TYPES).filter(([, t]) => t.home);
   const PL = CONTENT.plots && typeof CONTENT.plots === 'object' ? CONTENT.plots : {};
   const VILLAGES = M.PLACES.filter(p => p.kind === 'plots'), CITY = id => { const c = M.PLACES.find(p => p.id === id); return c && c.name ? T(c.name[0], c.name[1]) : id; };
   const known = new Set([...M.PLOTS.map(p => p.id), ...(SPARE || []).map(p => p.id)]);
@@ -1057,7 +1108,7 @@ PAGES.plots = async P => {
         : `<p class="note">${T('They are made when the valley is built, so Studio opens the game out of sight to find them (up to a minute).', 'Các mảnh này được tạo khi dựng thung lũng, nên Studio mở game ẩn để tìm (tối đa một phút).')}</p><button class="btn ghost" id="spare">🔎 ${T('Find the plots by the cities', 'Tìm các mảnh cạnh thành phố')}</button> <span class="note" id="spareres"></span>`}</div>
       ${Object.keys(PL).filter(id => !known.has(id) && !(/^sp_/.test(id) && !SPARE)).length ? `<div class="card"><p class="warn">⚠️ ${T('Some homes are on plots this map no longer has:', 'Có nhà nằm trên mảnh mà bản đồ này không còn:')} ${Object.keys(PL).filter(id => !known.has(id) && !(/^sp_/.test(id) && !SPARE)).map(esc).join(', ')}</p></div>` : ''}
       <div class="bar"><button class="btn" id="save">💾 ${T('Save', 'Lưu')}</button></div>`;
-    P.querySelectorAll('[data-plot]').forEach(b => b.onclick = () => edit(b.dataset.plot));
+    P.querySelectorAll<HTMLInputElement>('[data-plot]').forEach(b => b.onclick = () => edit(b.dataset.plot));
     if ($('#spare')) $('#spare').onclick = async () => { $('#spare').disabled = true; $('#spareres').textContent = T('Opening the game to look…', 'Đang mở game để xem…'); try { SPARE = await sparePlots(); draw(); } catch (e) { $('#spare').disabled = false; $('#spareres').textContent = '⚠️ ' + e.message; } };
     $('#save').onclick = () => { if (!Object.keys(PL).length) delete CONTENT.plots; else CONTENT.plots = PL; saveContent().catch(fail); };
   };
@@ -1074,30 +1125,30 @@ PAGES.plots = async P => {
       <label>${T('Wall colour', 'Màu tường')}</label><div class="swatches">${['#9fd8c8', '#ffb3a0', '#f2d6a0', '#efe0bf', '#cfe6ee', '#f6e27a', '#d9c3f0', '#ffffff'].map(c => `<button type="button" class="sw ${c === h.color ? 'on' : ''}" data-c="${c}" style="background:${c}" aria-label="${c}"></button>`).join('')}</div>
       <div class="bar" style="position:static;background:none">${PL[id] ? `<button class="btn bad" data-x="off">🗑️ ${T('Back to a garden', 'Trả lại vườn')}</button>` : ''}<button class="btn ghost" data-x="cancel">${T('Cancel', 'Hủy')}</button><button class="btn" data-x="ok">✅ ${T('Done', 'Xong')}</button></div></div>`;
     document.body.appendChild(m);
-    m.querySelectorAll('[data-c]').forEach(b => b.onclick = () => { h.color = b.dataset.c; m.querySelectorAll('[data-c]').forEach(x => x.classList.toggle('on', x === b)); });
-    const v = k => m.querySelector(`[data-f="${k}"]`).value.trim();
-    m.querySelector('[data-x="cancel"]').onclick = () => m.remove();
-    const off = m.querySelector('[data-x="off"]'); if (off) off.onclick = () => { delete PL[id]; CONTENT.plots = PL; m.remove(); draw(); paintState(); };
-    m.querySelector('[data-x="ok"]').onclick = () => { h.type = v('type'); h.name = [v('n0'), v('n1')]; h.owner = { name: v('o'), line: [v('l0'), v('l1')] }; if (!h.color) delete h.color; PL[id] = h; CONTENT.plots = PL; m.remove(); draw(); paintState(); };
+    m.querySelectorAll<HTMLInputElement>('[data-c]').forEach(b => b.onclick = () => { h.color = b.dataset.c; m.querySelectorAll<HTMLInputElement>('[data-c]').forEach(x => x.classList.toggle('on', x === b)); });
+    const v = k => m.querySelector<HTMLInputElement>(`[data-f="${k}"]`).value.trim();
+    m.querySelector<HTMLInputElement>('[data-x="cancel"]').onclick = () => m.remove();
+    const off = m.querySelector<HTMLInputElement>('[data-x="off"]'); if (off) off.onclick = () => { delete PL[id]; CONTENT.plots = PL; m.remove(); draw(); paintState(); };
+    m.querySelector<HTMLInputElement>('[data-x="ok"]').onclick = () => { h.type = v('type'); h.name = [v('n0'), v('n1')]; h.owner = { name: v('o'), line: [v('l0'), v('l1')] }; if (!h.color) delete h.color; PL[id] = h; CONTENT.plots = PL; m.remove(); draw(); paintState(); };
   };
   draw();
 };
 // ---------- map: add, place, move and remove the family's own villagers ----------
 const LOOKS = { style: ['dress', 'shirt', 'aodai', 'tunic', 'overalls', 'hoodie'], hairStyle: ['buns', 'short', 'long', 'ponytail', 'spiky'], color: ['#ff5fa2', '#a66bff', '#3cc7e8', '#ffd23f', '#e8434a', '#5fd39a', '#ff9f43', '#3b6fe0', '#ffffff'], hair: ['#1d1412', '#3b2618', '#6b4226', '#c98b4a', '#e8c26a', '#a8432a', '#d9d9d9'], skin: ['#ffe3d1', '#f6c7a5', '#e0aa80', '#b47a55', '#7a4e33'] };
 // the looks' choices in words (a list box cannot show pictures)
-const LOOK_WORDS = { dress: ['Dress', 'Váy'], shirt: ['Shirt and shorts', 'Áo và quần soóc'], aodai: ['Áo dài', 'Áo dài'], tunic: ['Tunic', 'Áo tunic'], overalls: ['Overalls', 'Quần yếm'], hoodie: ['Hoodie', 'Áo hoodie'],
+const LOOK_WORDS: Record<string, [string, string]> = { dress: ['Dress', 'Váy'], shirt: ['Shirt and shorts', 'Áo và quần soóc'], aodai: ['Áo dài', 'Áo dài'], tunic: ['Tunic', 'Áo tunic'], overalls: ['Overalls', 'Quần yếm'], hoodie: ['Hoodie', 'Áo hoodie'],
   buns: ['Buns', 'Búi tóc'], short: ['Short', 'Tóc ngắn'], long: ['Long', 'Tóc dài'], ponytail: ['Ponytail', 'Tóc đuôi ngựa'], spiky: ['Spiky', 'Tóc dựng'] };
 const lookWord = v => LOOK_WORDS[v] ? T(...LOOK_WORDS[v]) : v;
 let mapCanvas = null, mapMode = 'npc', SNAP = null;
 // the buildings that are in the game now: the game itself is opened out of sight and asked (it needs a moment)
 async function worldSnapshot() {
-  const f = document.createElement('iframe'); f.style.cssText = 'position:fixed;left:-2000px;top:0;width:400px;height:300px;border:0'; f.src = GAME + 'index.html?studio=1'; document.body.appendChild(f);
+  const f: HTMLIFrameElement = document.createElement('iframe'); f.style.cssText = 'position:fixed;left:-2000px;top:0;width:400px;height:300px;border:0'; f.src = GAME + 'index.html?studio=1'; document.body.appendChild(f);
   try {
     for (let i = 0; i < 120; i++) { await new Promise(r => setTimeout(r, 500)); const G = f.contentWindow && f.contentWindow.__sv; if (G && G.world && G.world.boxes && G.interactables && G.interactables.length > 50) {
       await new Promise(r => setTimeout(r, 1500));
       const lab = it => { try { return typeof it.label === 'function' ? it.label({ i: 0, profile: { leafies: {}, shrines: {} }, pos: { y: 0 } }) : it.id; } catch (e) { return it.id; } };
       const near = (x, z, r) => { let best = '', bd = r; for (const it of G.interactables) { const d = Math.hypot(it.x - x, it.z - z); if (d < bd && !/^g\d|^lf|^wr|^fl|^dig/.test(it.id)) { bd = d; best = lab(it); } } return best; };
-      const items = G.world.boxes.filter(b => !b.room && b.x1 - b.x0 < 40 && b.z1 - b.z0 < 40 && b.x1 - b.x0 > 1.5).map(b => ({ x: (b.x0 + b.x1) / 2, z: (b.z0 + b.z1) / 2, w: b.x1 - b.x0, d: b.z1 - b.z0 }));
+      const items: { x: number, z: number, w: number, d: number, round?: boolean, name?: string }[] = G.world.boxes.filter(b => !b.room && b.x1 - b.x0 < 40 && b.z1 - b.z0 < 40 && b.x1 - b.x0 > 1.5).map(b => ({ x: (b.x0 + b.x1) / 2, z: (b.z0 + b.z1) / 2, w: b.x1 - b.x0, d: b.z1 - b.z0 }));
       for (const c of G.world.colliders) if (c.r >= 2.5 && c.r <= 12 && Math.abs(c.r * 20 - Math.round(c.r * 20)) < 1e-6) items.push({ x: c.x, z: c.z, w: c.r * 1.6, d: c.r * 1.6, round: true });
       items.forEach(it => { it.name = near(it.x, it.z, Math.max(it.w, it.d) / 2 + 5).replace(/^(About|Giới thiệu|Talk to|Nói chuyện với):?\s*/i, ''); });
       return items;
@@ -1124,7 +1175,7 @@ PAGES.map = async P => {
       <button class="btn small pink" id="snap">🔎 ${SNAP ? T('Buildings shown', 'Đang hiện nhà cửa') : T('Show the buildings that are there now', 'Hiện nhà cửa đang có')}</button><span class="note" id="snapres"></span></div><p class="note" id="modehelp"></p></div>
     <div class="mapgrid"><div class="card mapbox"><div class="row modes" style="margin-bottom:6px"><span class="note">${T('Zoom', 'Phóng to')}</span>${[1, 2, 3].map(z => `<button class="btn small ghost" data-z="${z}">${z}×</button>`).join('')}</div><div class="mapscroll"><canvas id="mc" width="${S}" height="${S}"></canvas></div></div><div class="card" id="npcform"></div></div>
     <div class="card"><h3>📋 ${T('Your changes', 'Thay đổi của bạn')}</h3><div id="npclist"></div></div><div id="parkedbox"></div><div class="bar"><button class="btn" id="save">💾 ${T('Save the map', 'Lưu bản đồ')}</button></div>`;
-  const cv = $('#mc'), g = cv.getContext('2d'); let sel = null, drag = null, zoom = 1, rect = null;
+  const cv = $<HTMLCanvasElement>('#mc'), g = cv.getContext('2d'); let sel = null, drag = null, zoom = 1, rect = null;
   const HELP = { npc: T('Tap the map to add someone; drag a marker to move them; tap a marker to change or remove them.', 'Chạm bản đồ để thêm người; kéo dấu để dời; chạm dấu để sửa hoặc xóa.'),
     build: T('Choose a building on the right, then tap the map where it should stand. Drag it to move; turn it with the slider.', 'Chọn loại nhà bên phải, rồi chạm vào chỗ muốn xây. Kéo để dời; xoay bằng thanh trượt.'),
     move: T('Tap a building (show the buildings first), then drag the green arrow end to where it should go. Everything inside the circle moves with it: people, stalls, trees.', 'Chạm vào một ngôi nhà (bấm hiện nhà cửa trước), rồi kéo đầu mũi tên xanh tới chỗ mới. Mọi thứ trong vòng tròn đi theo: người, sạp, cây.'),
@@ -1151,7 +1202,7 @@ PAGES.map = async P => {
     PK.forEach(g => { g.world = g.world || {}; g.npcs = g.npcs || []; g.world.build = g.world.build || []; g.world.edits = g.world.edits || []; g.world.land = g.world.land || []; });
     const rows = [], circles = PK.reduce((a, g) => a + g.world.edits.length + g.world.land.length, 0);
     PK.forEach((g, gi) => { g.npcs.forEach((c, i) => rows.push({ gi, kind: 'npcs', i, label: (c.gender === 'm' ? '👨 ' : '👩 ') + (c.name || '?'), it: c }));
-      g.world.build.forEach((b, i) => rows.push({ gi, kind: 'build', i, label: ((TYPES[b.type] || {}).icon || '🏠') + ' ' + ((b.name && (b.name[1] || b.name[0])) || T(...((TYPES[b.type] || {}).name || ['A building', 'Một ngôi nhà']))), it: b })); });
+      g.world.build.forEach((b, i) => rows.push({ gi, kind: 'build', i, label: ((TYPES[b.type] || {}).icon || '🏠') + ' ' + ((b.name && (b.name[1] || b.name[0])) || T2(((TYPES[b.type] || {}).name || ['A building', 'Một ngôi nhà']))), it: b })); });
     if (!PK.length) { box.innerHTML = ''; return; }
     box.innerHTML = `<div class="card parked"><h3>📦 ${T('Kept aside from the old map', 'Cất riêng từ bản đồ cũ')} (${rows.length})</h3>
       <p class="note">${T('The valley has a new map, so these were not put in the game. “Place again” puts each one next to the same place on the new map (you can drag it after). Then Save.', 'Thung lũng có bản đồ mới, nên những thứ này chưa được đặt vào game. “Đặt lại” đặt từng thứ cạnh đúng nơi đó trên bản đồ mới (sau đó kéo được). Rồi bấm Lưu.')}</p>
@@ -1163,11 +1214,11 @@ PAGES.map = async P => {
     const place = r => { const to = reproject(PK[r.gi].map || 'C', r.it.x, r.it.z); if (!to) return; const it = { ...r.it, ...to }; (r.kind === 'npcs' ? CONTENT.npcs : WD.build).push(it); return it; };
     const drop = list => { list.sort((a, b) => b.i - a.i).forEach(r => { (r.kind === 'npcs' ? PK[r.gi].npcs : PK[r.gi].world.build).splice(r.i, 1); }); tidy(); };
     const again = () => { draw(); form(); list(); parkedCard(); paintState(); };
-    box.querySelectorAll('[data-place]').forEach(b => b.onclick = () => { const r = rows[+b.dataset.place]; if (place(r)) { drop([r]); sel = { list: r.kind, i: (r.kind === 'npcs' ? CONTENT.npcs : WD.build).length - 1 }; again(); } });
-    box.querySelectorAll('[data-forget]').forEach(b => b.onclick = () => { if (!confirm(T('Forget this one? It will not come back.', 'Bỏ mục này? Sẽ không lấy lại được.'))) return; drop([rows[+b.dataset.forget]]); again(); });
-    const fc = box.querySelector('[data-forgetc]'); if (fc) fc.onclick = () => { PK.forEach(g => { g.world.edits = []; g.world.land = []; }); tidy(); again(); };
-    const pa = box.querySelector('[data-placeall]'); if (pa) pa.onclick = () => { const done = rows.filter(r => place(r)); drop(done); again(); toast('📍 ' + T(`${done.length} placed again. Check them on the map, then Save.`, `Đã đặt lại ${done.length}. Xem trên bản đồ rồi bấm Lưu.`), 'good'); };
-    box.querySelector('[data-forgetall]').onclick = () => { if (!confirm(T('Forget everything kept aside from the old map? It will not come back.', 'Bỏ hết những thứ cất riêng từ bản đồ cũ? Sẽ không lấy lại được.'))) return; delete CONTENT.parked; again(); };
+    box.querySelectorAll<HTMLInputElement>('[data-place]').forEach(b => b.onclick = () => { const r = rows[+b.dataset.place]; if (place(r)) { drop([r]); sel = { list: r.kind, i: (r.kind === 'npcs' ? CONTENT.npcs : WD.build).length - 1 }; again(); } });
+    box.querySelectorAll<HTMLInputElement>('[data-forget]').forEach(b => b.onclick = () => { if (!confirm(T('Forget this one? It will not come back.', 'Bỏ mục này? Sẽ không lấy lại được.'))) return; drop([rows[+b.dataset.forget]]); again(); });
+    const fc = box.querySelector<HTMLInputElement>('[data-forgetc]'); if (fc) fc.onclick = () => { PK.forEach(g => { g.world.edits = []; g.world.land = []; }); tidy(); again(); };
+    const pa = box.querySelector<HTMLInputElement>('[data-placeall]'); if (pa) pa.onclick = () => { const done = rows.filter(r => place(r)); drop(done); again(); toast('📍 ' + T(`${done.length} placed again. Check them on the map, then Save.`, `Đã đặt lại ${done.length}. Xem trên bản đồ rồi bấm Lưu.`), 'good'); };
+    box.querySelector<HTMLInputElement>('[data-forgetall]').onclick = () => { if (!confirm(T('Forget everything kept aside from the old map? It will not come back.', 'Bỏ hết những thứ cất riêng từ bản đồ cũ? Sẽ không lấy lại được.'))) return; delete CONTENT.parked; again(); };
   }
   const draw = () => {
     g.drawImage(mapCanvas, 0, 0, S, S); g.font = 'bold 13px Segoe UI, sans-serif'; g.textAlign = 'center';
@@ -1183,7 +1234,8 @@ PAGES.map = async P => {
   const evPos = e => { const r = cv.getBoundingClientRect(); return [(e.clientX - r.left) * S / r.width, (e.clientY - r.top) * S / r.height]; };
   const hitAt = (px, py) => {
     const [x, z] = toW(px, py);
-    for (const [list, arr] of [['npcs', CONTENT.npcs], ['build', WD.build]]) { const i = arr.findIndex(c => Math.hypot(c.x - x, c.z - z) * k < 13); if (i >= 0) return { list, i }; }
+    const lists: [string, { x: number, z: number }[]][] = [['npcs', CONTENT.npcs], ['build', WD.build]];
+    for (const [list, arr] of lists) { const i = arr.findIndex(c => Math.hypot(c.x - x, c.z - z) * k < 13); if (i >= 0) return { list, i }; }
     for (let i = 0; i < WD.edits.length; i++) { const e = WD.edits[i]; if (e.op === 'move' && Math.hypot(e.x + (e.dx || 0) - x, e.z + (e.dz || 0) - z) * k < 12) return { list: 'edits', i, end: true }; if (Math.hypot(e.x - x, e.z - z) < e.r) return { list: 'edits', i }; }
     const li = WD.land.findIndex(L => x > Math.min(L.x0, L.x1) && x < Math.max(L.x0, L.x1) && z > Math.min(L.z0, L.z1) && z < Math.max(L.z0, L.z1)); if (li >= 0 && mapMode === 'land') return { list: 'land', i: li };
     return null;
@@ -1210,15 +1262,15 @@ PAGES.map = async P => {
   };
   cv.onpointerup = () => { if (drag && drag.rect) { const [x0, z0, x1, z1] = rect; if (Math.abs(x1 - x0) > 3 && Math.abs(z1 - z0) > 3) { WD.land.push({ x0: Math.min(x0, x1), x1: Math.max(x0, x1), z0: Math.min(z0, z1), z1: Math.max(z0, z1) }); sel = { list: 'land', i: WD.land.length - 1 }; } rect = null; }
     drag = null; draw(); form(); list(); };
-  P.querySelectorAll('[data-z]').forEach(b => b.onclick = () => { zoom = +b.dataset.z; cv.style.width = S * zoom + 'px'; cv.style.height = S * zoom + 'px'; });
-  P.querySelectorAll('[data-mode]').forEach(b => b.onclick = () => { mapMode = b.dataset.mode; P.querySelectorAll('[data-mode]').forEach(x => x.classList.toggle('ghost', x.dataset.mode !== mapMode)); $('#modehelp').textContent = HELP[mapMode]; sel = null; form(); draw(); });
+  P.querySelectorAll<HTMLInputElement>('[data-z]').forEach(b => b.onclick = () => { zoom = +b.dataset.z; cv.style.width = S * zoom + 'px'; cv.style.height = S * zoom + 'px'; });
+  P.querySelectorAll<HTMLInputElement>('[data-mode]').forEach(b => b.onclick = () => { mapMode = b.dataset.mode; P.querySelectorAll<HTMLInputElement>('[data-mode]').forEach(x => x.classList.toggle('ghost', x.dataset.mode !== mapMode)); $('#modehelp').textContent = HELP[mapMode]; sel = null; form(); draw(); });
   $('#modehelp').textContent = HELP[mapMode];
   $('#snap').onclick = async () => { $('#snapres').textContent = T('Opening the game to look… (up to a minute)', 'Đang mở game để xem… (tối đa một phút)'); try { SNAP = await worldSnapshot(); $('#snapres').textContent = `✅ ${SNAP.length} ${T('buildings', 'công trình')}`; draw(); } catch (e) { $('#snapres').textContent = '⚠️ ' + e.message; } };
   const sw = (key, vals, cur) => `<div class="swatches">${vals.map(v => `<button class="sw ${v === cur ? 'on' : ''}" data-${key}="${v}" style="background:${v}"></button>`).join('')}</div>`;
   function form() {
     const F = $('#npcform');
     if (!sel) {
-      if (mapMode === 'build') { F.innerHTML = `<h3>🏠 ${T('What to build', 'Xây gì')}</h3><div class="typelist">${Object.entries(TYPES).map(([id, t]) => `<button class="btn small ${id === buildType ? '' : 'ghost'}" data-type="${id}">${t.icon} ${esc(T(t.name[0], t.name[1]))}</button>`).join('')}</div><p class="note">${T('Then tap the map. Houses become homes the children can visit; give them a name and someone living there.', 'Rồi chạm vào bản đồ. Nhà sẽ thành nhà để các con ghé thăm; đặt tên và người ở trong đó.')}</p>`; F.querySelectorAll('[data-type]').forEach(b => b.onclick = () => { buildType = b.dataset.type; form(); }); return; }
+      if (mapMode === 'build') { F.innerHTML = `<h3>🏠 ${T('What to build', 'Xây gì')}</h3><div class="typelist">${Object.entries<BuildType>(TYPES).map(([id, t]) => `<button class="btn small ${id === buildType ? '' : 'ghost'}" data-type="${id}">${t.icon} ${esc(T(t.name[0], t.name[1]))}</button>`).join('')}</div><p class="note">${T('Then tap the map. Houses become homes the children can visit; give them a name and someone living there.', 'Rồi chạm vào bản đồ. Nhà sẽ thành nhà để các con ghé thăm; đặt tên và người ở trong đó.')}</p>`; F.querySelectorAll<HTMLInputElement>('[data-type]').forEach(b => b.onclick = () => { buildType = b.dataset.type; form(); }); return; }
       if (mapMode === 'land') { F.innerHTML = `<h3>🟫 ${T('Grow a place', 'Mở rộng một nơi')}</h3><p class="note">${T('Adds flat land all round a town, village or city, ready for new buildings.', 'Thêm đất bằng quanh một phố, làng hay thành phố, sẵn sàng để xây thêm.')}</p><select id="gp">${places.filter(p => p[4]).map((p, i) => `<option value="${i}">${p[3]} ${esc(p[2])}</option>`).join('')}</select><label>${T('Metres all round', 'Số mét mỗi phía')}</label><input type="number" id="gm" value="15" min="5" max="40"><button class="btn" id="gadd" style="margin-top:8px">➕ ${T('Add the land', 'Thêm đất')}</button>`;
         $('#gadd').onclick = () => { const p = places.filter(q => q[4])[+$('#gp').value][4], m = Math.max(5, Math.min(40, +$('#gm').value || 15)); const x0 = p.x0 ?? p.x - (p.w || 13) / 2, x1 = p.x1 ?? p.x + (p.w || 13) / 2, z0 = p.z0 ?? p.z - (p.d || 13) / 2, z1 = p.z1 ?? p.z + (p.d || 13) / 2; WD.land.push({ x0: +(x0 - m).toFixed(1), x1: +(x1 + m).toFixed(1), z0: +(z0 - m).toFixed(1), z1: +(z1 + m).toFixed(1) }); sel = { list: 'land', i: WD.land.length - 1 }; draw(); form(); list(); }; return; }
       F.innerHTML = `<p class="note">${HELP[mapMode]}</p>`; return;
@@ -1228,14 +1280,14 @@ PAGES.map = async P => {
     const bindDone = () => { $('#fdel').onclick = del; $('#fdone').onclick = () => { sel = null; draw(); form(); list(); }; };
     if (sel.list === 'build') {
       const b = WD.build[sel.i], t = TYPES[b.type] || {}, [okc, why] = where(b.x, b.z); b.name = b.name || ['', '']; b.owner = b.owner || { name: '', line: ['', ''] }; b.owner.line = b.owner.line || ['', ''];
-      F.innerHTML = `<h3>${t.icon || '🏠'} ${esc(T(t.name[0], t.name[1]))}</h3><label>${T('Type', 'Loại')}</label><select id="bt">${Object.entries(TYPES).map(([id, x]) => `<option value="${id}" ${id === b.type ? 'selected' : ''}>${x.icon} ${esc(T(x.name[0], x.name[1]))}</option>`).join('')}</select>
+      F.innerHTML = `<h3>${t.icon || '🏠'} ${esc(T(t.name[0], t.name[1]))}</h3><label>${T('Type', 'Loại')}</label><select id="bt">${Object.entries<BuildType>(TYPES).map(([id, x]) => `<option value="${id}" ${id === b.type ? 'selected' : ''}>${x.icon} ${esc(T(x.name[0], x.name[1]))}</option>`).join('')}</select>
         <label>${T('Turn', 'Xoay')}: <span id="brv">${Math.round((b.rot || 0) * 180 / Math.PI)}°</span></label><input type="range" id="br" min="-180" max="180" step="15" value="${Math.round((b.rot || 0) * 180 / Math.PI)}">
         ${t.home ? `<label>${T('Name on the door', 'Tên trên cửa')}</label><div class="row"><input type="text" id="bn0" value="${esc(b.name[0])}" placeholder="English"><input type="text" id="bn1" value="${esc(b.name[1])}" placeholder="Tiếng Việt"></div>
         <label>${T('Who lives there', 'Ai ở đó')}</label><input type="text" id="bo" value="${esc(b.owner.name)}" placeholder="${T('e.g. Bà Tư', 'vd. Bà Tư')}"><label>${T('What they say', 'Họ nói gì')}</label><div class="row"><input type="text" id="bl0" value="${esc(b.owner.line[0])}" placeholder="English"><input type="text" id="bl1" value="${esc(b.owner.line[1])}" placeholder="Tiếng Việt"></div>
         <label>${T('Wall colour', 'Màu tường')}</label>${sw('c', ['#9fd8c8', '#ffb3a0', '#f2d6a0', '#efe0bf', '#cfe6ee', '#f6e27a', '#d9c3f0', '#ffffff'], b.color)}` : ''}
         <p class="${okc === 'ok' ? 'ok' : 'badtxt'}">📍 ${b.x}, ${b.z} ${okc === 'ok' ? '✅' : '⚠️ ' + why}</p>${done}`;
-      $('#bt').onchange = e => { b.type = e.target.value; draw(); form(); }; $('#br').oninput = e => { b.rot = +e.target.value * Math.PI / 180; $('#brv').textContent = e.target.value + '°'; };
-      if (t.home) { $('#bn0').oninput = e => { b.name[0] = e.target.value; list(); }; $('#bn1').oninput = e => { b.name[1] = e.target.value; }; $('#bo').oninput = e => { b.owner.name = e.target.value; }; $('#bl0').oninput = e => { b.owner.line[0] = e.target.value; }; $('#bl1').oninput = e => { b.owner.line[1] = e.target.value; }; F.querySelectorAll('[data-c]').forEach(x => x.onclick = () => { b.color = x.dataset.c; form(); }); }
+      $('#bt').onchange = e => { b.type = val(e); draw(); form(); }; $('#br').oninput = e => { b.rot = +val(e) * Math.PI / 180; $('#brv').textContent = val(e) + '°'; };
+      if (t.home) { $('#bn0').oninput = e => { b.name[0] = val(e); list(); }; $('#bn1').oninput = e => { b.name[1] = val(e); }; $('#bo').oninput = e => { b.owner.name = val(e); }; $('#bl0').oninput = e => { b.owner.line[0] = val(e); }; $('#bl1').oninput = e => { b.owner.line[1] = val(e); }; F.querySelectorAll<HTMLInputElement>('[data-c]').forEach(x => x.onclick = () => { b.color = x.dataset.c; form(); }); }
       bindDone(); return;
     }
     if (sel.list === 'edits') {
@@ -1243,7 +1295,7 @@ PAGES.map = async P => {
       F.innerHTML = `<h3>${e.op === 'move' ? '↔️ ' + T('Move', 'Dời') : '🧹 ' + T('Remove', 'Xóa bỏ')}</h3><p>${esc(e.what || T('(whatever is in the circle)', '(mọi thứ trong vòng tròn)'))}</p>
         <label>${T('Circle size (metres)', 'Cỡ vòng tròn (mét)')}: <span id="erv">${e.r}</span></label><input type="range" id="er" min="1" max="30" step=".5" value="${e.r}">
         ${e.op === 'move' ? `<label>${T('Turn', 'Xoay')}: <span id="etv">${Math.round((e.turn || 0) * 180 / Math.PI)}°</span></label><input type="range" id="et" min="-180" max="180" step="15" value="${Math.round((e.turn || 0) * 180 / Math.PI)}"><p class="note">${T('Drag the green dot on the map to where it should go.', 'Kéo chấm xanh trên bản đồ tới chỗ mới.')}</p>` : `<p class="note">${T('Careful: people and shops inside the circle go too.', 'Cẩn thận: người và cửa hàng trong vòng tròn cũng mất.')}</p>`}${done}`;
-      $('#er').oninput = x => { e.r = +x.target.value; $('#erv').textContent = e.r; draw(); }; if ($('#et')) $('#et').oninput = x => { e.turn = +x.target.value * Math.PI / 180; $('#etv').textContent = x.target.value + '°'; };
+      $('#er').oninput = x => { e.r = +val(x); $('#erv').textContent = e.r; draw(); }; if ($('#et')) $('#et').oninput = x => { e.turn = +val(x) * Math.PI / 180; $('#etv').textContent = val(x) + '°'; };
       bindDone(); return;
     }
     if (sel.list === 'land') { const L = WD.land[sel.i]; F.innerHTML = `<h3>🟫 ${T('Flat land', 'Đất bằng')}</h3><p>${Math.round(L.x1 - L.x0)} × ${Math.round(L.z1 - L.z0)} m</p><p class="note">${T('Drag it on the map to move it.', 'Kéo trên bản đồ để dời.')}</p>${done}`; bindDone(); return; }
@@ -1261,19 +1313,19 @@ PAGES.map = async P => {
       <button class="btn small ghost" id="fadd">➕ ${T('Another line', 'Thêm dòng')}</button>
       <p class="${okc === 'ok' ? 'ok' : 'badtxt'}">📍 ${c.x}, ${c.z} ${okc === 'ok' ? '✅' : '⚠️ ' + why + ' – ' + T('drag them a little', 'kéo ra một chút')}</p>${done}`;
     const up = () => { draw(); list(); };
-    $('#fn').oninput = e => { c.name = e.target.value; up(); }; $('#fg').onchange = e => { c.gender = e.target.value; up(); };
-    $('#fa').onchange = e => { L.age = e.target.value; }; $('#fi').oninput = e => { c.icon = e.target.value; }; $('#fs').onchange = e => { L.style = e.target.value; }; $('#fh').onchange = e => { L.hairStyle = e.target.value; };
-    F.querySelectorAll('[data-c]').forEach(b => b.onclick = () => { L.color = b.dataset.c; form(); }); F.querySelectorAll('[data-h]').forEach(b => b.onclick = () => { L.hair = b.dataset.h; form(); }); F.querySelectorAll('[data-s]').forEach(b => b.onclick = () => { L.skin = b.dataset.s; form(); });
-    F.querySelectorAll('#flines [data-j]').forEach(r => { const j = +r.dataset.j; r.querySelectorAll('[data-l]').forEach(i => i.oninput = () => { c.lines[j][+i.dataset.l] = i.value; }); r.querySelector('[data-rm]').onclick = () => { c.lines.splice(j, 1); form(); }; });
+    $('#fn').oninput = e => { c.name = val(e); up(); }; $('#fg').onchange = e => { c.gender = val(e); up(); };
+    $('#fa').onchange = e => { L.age = val(e); }; $('#fi').oninput = e => { c.icon = val(e); }; $('#fs').onchange = e => { L.style = val(e); }; $('#fh').onchange = e => { L.hairStyle = val(e); };
+    F.querySelectorAll<HTMLInputElement>('[data-c]').forEach(b => b.onclick = () => { L.color = b.dataset.c; form(); }); F.querySelectorAll<HTMLInputElement>('[data-h]').forEach(b => b.onclick = () => { L.hair = b.dataset.h; form(); }); F.querySelectorAll<HTMLInputElement>('[data-s]').forEach(b => b.onclick = () => { L.skin = b.dataset.s; form(); });
+    F.querySelectorAll<HTMLInputElement>('#flines [data-j]').forEach(r => { const j = +r.dataset.j; r.querySelectorAll<HTMLInputElement>('[data-l]').forEach(i => i.oninput = () => { c.lines[j][+i.dataset.l] = i.value; }); r.querySelector<HTMLInputElement>('[data-rm]').onclick = () => { c.lines.splice(j, 1); form(); }; });
     $('#fadd').onclick = () => { (c.lines = c.lines || []).push(['', '']); form(); };
     bindDone();
   }
   function list() {
-    const chip = (list, i, label, warn) => `<button class="btn small ${sel && sel.list === list && sel.i === i ? '' : 'ghost'}" data-l="${list}" data-i="${i}">${label}${warn ? ' ⚠️' : ''}</button> `;
+    const chip = (list, i, label, warn?) => `<button class="btn small ${sel && sel.list === list && sel.i === i ? '' : 'ghost'}" data-l="${list}" data-i="${i}">${label}${warn ? ' ⚠️' : ''}</button> `;
     const html = [...CONTENT.npcs.map((c, i) => chip('npcs', i, (c.gender === 'm' ? '👨 ' : '👩 ') + esc(c.name), where(c.x, c.z)[0] !== 'ok')), ...WD.build.map((b, i) => chip('build', i, ((TYPES[b.type] || {}).icon || '🏠') + ' ' + esc((b.name && (b.name[1] || b.name[0])) || T((TYPES[b.type] || { name: ['', ''] }).name[0], (TYPES[b.type] || { name: ['', ''] }).name[1])), where(b.x, b.z)[0] !== 'ok')),
       ...WD.edits.map((e, i) => chip('edits', i, (e.op === 'move' ? '↔️ ' : '🧹 ') + esc(e.what || T('area', 'khu vực')))), ...WD.land.map((L, i) => chip('land', i, `🟫 ${Math.round(L.x1 - L.x0)}×${Math.round(L.z1 - L.z0)} m`))];
     $('#npclist').innerHTML = html.join('') || `<p class="note">${T('No changes yet.', 'Chưa có thay đổi.')}</p>`;
-    $('#npclist').querySelectorAll('[data-l]').forEach(b => b.onclick = () => { sel = { list: b.dataset.l, i: +b.dataset.i }; draw(); form(); list(); });
+    $('#npclist').querySelectorAll<HTMLInputElement>('[data-l]').forEach(b => b.onclick = () => { sel = { list: b.dataset.l, i: +b.dataset.i }; draw(); form(); list(); });
   }
   draw(); form(); list(); parkedCard();
   $('#save').onclick = () => { CONTENT.npcs = CONTENT.npcs.filter(c => c.name && c.name.trim()).map(c => placeOf({ ...c, id: c.id || crypto.randomUUID(), name: c.name.trim(), lines: (c.lines || []).filter(l => l[0] || l[1]) })); WD.build.forEach(placeOf); WD.map = W.MAP_VERSION; saveContent().then(() => list()).catch(fail); };
@@ -1283,7 +1335,7 @@ PAGES.photos = async P => {
   const RW = await import(GAME + 'js/realworld.js');
   const items = new Map();
   for (const [id, r] of Object.entries(RW.REAL)) items.set(RW.photoKey(r[0]), { key: RW.photoKey(r[0]), sources: r[0], name: r[0][0].split(/:(.+)/)[1] });
-  for (const [kind, src] of Object.entries(RW.REAL_KINDS || {})) if (src && src.length && !items.has(RW.photoKey(src))) items.set(RW.photoKey(src), { key: RW.photoKey(src), sources: src, name: src[0].split(/:(.+)/)[1] });
+  for (const [kind, src] of Object.entries<string[]>(RW.REAL_KINDS || {})) if (src && src.length && !items.has(RW.photoKey(src))) items.set(RW.photoKey(src), { key: RW.photoKey(src), sources: src, name: src[0].split(/:(.+)/)[1] });
   const all = [...items.values()];
   const draw = async () => {
     const pix = await api('photos/index', {}), have = all.filter(x => pix[x.key] && pix[x.key].length).length;
@@ -1294,18 +1346,18 @@ PAGES.photos = async P => {
       <div class="prog"><i id="ppb"></i></div><p class="note" id="pres"></p><p class="warn" id="pbad" hidden></p><button class="btn" id="pfix" hidden>🔄 ${T('Get those places again', 'Tải lại những nơi đó')}</button></div>
     <div class="grid">${all.map(x => `<div class="card"><b>${esc(x.name)}</b> <button class="btn small ghost" data-get="${esc(x.key)}">🔄</button><div class="thumbs">${(pix[x.key] || []).map(p => `<span class="thumb"><img src="${p.url ? esc(p.url) : FILE(esc(p.src))}" referrerpolicy="no-referrer" title="${esc(p.credit || '')}" alt="${esc(x.name)}" data-key="${esc(x.key)}">${p.credit ? `<small class="credit">${esc(p.credit)}</small>` : ''}<i class="thumbbad">${T('Can’t open: 🔄 get it again', 'Không mở được: 🔄 tải lại')}</i><button data-rm="${esc(x.key)}|${esc(p.url || p.src)}" title="${T('Not this place: take it off (it won’t be fetched again)', 'Không phải nơi này: bỏ ảnh (sẽ không tải lại)')}" aria-label="${T('Remove this photo', 'Bỏ ảnh này')}">✕</button></span>`).join('') || `<span class="note">${T('none yet', 'chưa có')}</span>`}</div></div>`).join('')}</div>`;
     // (r65) a photo that cannot be shown (too big for the website to send, or its file gone) says so, with 🔄 beside it
-    const broken = () => { const n = P.querySelectorAll('.thumb.bad').length; $('#pbad').hidden = $('#pfix').hidden = !n; $('#pbad').textContent = n ? T(`⚠️ ${n} photo(s) can’t be opened (gone from its website, too big, or the file is gone). 🔄 gets that place again (photos over 1.5 MB are skipped now).`, `⚠️ ${n} ảnh không mở được (đã bị xoá khỏi trang web, quá lớn, hoặc mất tệp). 🔄 tải lại nơi đó (ảnh trên 1,5 MB giờ được bỏ qua).`) : ''; };
-    P.querySelectorAll('.thumb img').forEach(im => { const bad = () => { im.closest('.thumb').classList.add('bad'); broken(); }; if (im.complete && !im.naturalWidth) bad(); else im.onerror = bad; });
+    const broken = () => { const n = P.querySelectorAll<HTMLInputElement>('.thumb.bad').length; $('#pbad').hidden = $('#pfix').hidden = !n; $('#pbad').textContent = n ? T(`⚠️ ${n} photo(s) can’t be opened (gone from its website, too big, or the file is gone). 🔄 gets that place again (photos over 1.5 MB are skipped now).`, `⚠️ ${n} ảnh không mở được (đã bị xoá khỏi trang web, quá lớn, hoặc mất tệp). 🔄 tải lại nơi đó (ảnh trên 1,5 MB giờ được bỏ qua).`) : ''; };
+    P.querySelectorAll<HTMLImageElement>('.thumb img').forEach(im => { const bad = () => { im.closest<HTMLInputElement>('.thumb').classList.add('bad'); broken(); }; if (im.complete && !im.naturalWidth) bad(); else im.onerror = bad; });
     const go = async list => { // one place at a time (online each request must be short), the progress shown here
-      P.querySelectorAll('button').forEach(b => b.disabled = true); let done = 0, errs = 0;
+      P.querySelectorAll<HTMLInputElement>('button').forEach(b => b.disabled = true); let done = 0, errs = 0;
       for (const item of list) { $('#pres').textContent = `${done}/${list.length} · ${item.name}${errs ? ' · ⚠️ ' + errs : ''}`; try { await api('photos/get1', { item, max: +$('#pmax').value }); } catch (e) { errs++; } done++; $('#ppb').style.width = (done / list.length * 100) + '%'; }
       toast(errs ? `⚠️ ${errs}` : T('Photos saved.', 'Đã lưu ảnh.')); draw(); };
     $('#pmiss').onclick = () => go(all.filter(x => !(pix[x.key] && pix[x.key].length)));
     $('#pall').onclick = () => go(all);
-    $('#pfix').onclick = () => { const keys = new Set([...P.querySelectorAll('.thumb.bad img')].map(i => i.dataset.key)); go(all.filter(x => keys.has(x.key))); };
-    P.querySelectorAll('[data-get]').forEach(b => b.onclick = () => go(all.filter(x => x.key === b.dataset.get)));
+    $('#pfix').onclick = () => { const keys = new Set([...P.querySelectorAll<HTMLInputElement>('.thumb.bad img')].map(i => i.dataset.key)); go(all.filter(x => keys.has(x.key))); };
+    P.querySelectorAll<HTMLInputElement>('[data-get]').forEach(b => b.onclick = () => go(all.filter(x => x.key === b.dataset.get)));
     // ✕ takes a photo off at once (it fades straight away; saving waits for Publish online) and it is never fetched again
-    P.querySelectorAll('[data-rm]').forEach(b => b.onclick = async () => { const [key, src] = b.dataset.rm.split('|'), th = b.closest('.thumb'); th.style.opacity = .3; try { await api('photos/remove', { key, src }); th.remove(); if (INFO) { INFO.unpublished = true; head(); } } catch (e) { th.style.opacity = 1; fail(e); } });
+    P.querySelectorAll<HTMLInputElement>('[data-rm]').forEach(b => b.onclick = async () => { const [key, src] = b.dataset.rm.split('|'), th = b.closest<HTMLInputElement>('.thumb'); th.style.opacity = '.3'; try { await api('photos/remove', { key, src }); th.remove(); if (INFO) { INFO.unpublished = true; head(); } } catch (e) { th.style.opacity = '1'; fail(e); } });
   };
   await draw();
 };
@@ -1331,8 +1383,8 @@ PAGES.site = async P => {
   <p class="note">${T('Each pull request gets its own preview link from Netlify (in its checks on GitHub): open it on a phone to try the update before merging.', 'Mỗi pull request có đường dẫn xem trước riêng từ Netlify (trong phần kiểm tra trên GitHub): mở trên điện thoại để thử trước khi gộp.')}</p>`;
   const again = () => setTimeout(() => PAGES.site(P), 1500);
   if ($('#rebuild')) $('#rebuild').onclick = async () => { try { await api('site/rebuild', {}); toast(T('Netlify is rebuilding the website.', 'Netlify đang dựng lại trang web.')); again(); } catch (e) { fail(e); } };
-  P.querySelectorAll('[data-restore]').forEach(b => b.onclick = async () => { if (!confirm(T('Make this older version the live website?', 'Đưa phiên bản cũ này lên làm trang chính?'))) return; try { await api('site/restore', { id: b.dataset.restore }); toast(T('Done: that version is live.', 'Xong: phiên bản đó đang chạy.')); again(); } catch (e) { fail(e); } });
-  P.querySelectorAll('[data-merge]').forEach(b => b.onclick = async () => { if (!confirm(T('Merge this update? The website changes in a minute or two.', 'Gộp bản cập nhật này? Trang web sẽ đổi sau một hai phút.'))) return; try { await api('github/merge', { n: +b.dataset.merge }); toast(T('Merged. Netlify is building it.', 'Đã gộp. Netlify đang dựng.')); again(); } catch (e) { fail(e); } });
+  P.querySelectorAll<HTMLInputElement>('[data-restore]').forEach(b => b.onclick = async () => { if (!confirm(T('Make this older version the live website?', 'Đưa phiên bản cũ này lên làm trang chính?'))) return; try { await api('site/restore', { id: b.dataset.restore }); toast(T('Done: that version is live.', 'Xong: phiên bản đó đang chạy.')); again(); } catch (e) { fail(e); } });
+  P.querySelectorAll<HTMLInputElement>('[data-merge]').forEach(b => b.onclick = async () => { if (!confirm(T('Merge this update? The website changes in a minute or two.', 'Gộp bản cập nhật này? Trang web sẽ đổi sau một hai phút.'))) return; try { await api('github/merge', { n: +b.dataset.merge }); toast(T('Merged. Netlify is building it.', 'Đã gộp. Netlify đang dựng.')); again(); } catch (e) { fail(e); } });
 };
 // ---------- check ----------
 PAGES.check = async P => {
@@ -1380,19 +1432,19 @@ PAGES.players = async P => {
   const big = (n, en, vi) => `<div class="card stat"><b>${n}</b><span>${T(en, vi)}</span></div>`, hrs = m => m >= 120 ? (m / 60).toFixed(m >= 600 ? 0 : 1) + ' h' : m + ' min';
   const max = Math.max(1, ...r.perDay.map(d => d.devices)), W = 600, H = 150, bw = W / r.perDay.length;
   const bars = r.perDay.map((d, i) => `<rect x="${(i * bw + 2).toFixed(1)}" y="${(H - 18 - d.devices / max * (H - 30)).toFixed(1)}" width="${(bw - 4).toFixed(1)}" height="${(d.devices / max * (H - 30)).toFixed(1)}" rx="3" fill="#8a5cf6"><title>${d.date}: ${d.devices} (${d.newDevices} ${T('new', 'mới')}), ${hrs(d.mins)}</title></rect>${d.newDevices ? `<rect x="${(i * bw + 2).toFixed(1)}" y="${(H - 18 - d.newDevices / max * (H - 30)).toFixed(1)}" width="${(bw - 4).toFixed(1)}" height="${(d.newDevices / max * (H - 30)).toFixed(1)}" rx="3" fill="#ff7eb8"/>` : ''}${i % 5 === 4 ? `<text x="${(i * bw + bw / 2).toFixed(1)}" y="${H - 4}" font-size="10" text-anchor="middle" fill="#6b5b80">${d.date.slice(5)}</text>` : ''}`).join('');
-  const pct = (n, t) => t ? Math.round(n / t * 100) + '%' : '–', tw = Object.values(r.kinds).reduce((a, b) => a + b, 0);
-  const table = (o, name) => Object.entries(o).sort((a, b) => b[1] - a[1]).map(([k, n]) => `<tr><td>${esc(name ? name(k) : k)}</td><td>${n}</td><td>${pct(n, tw)}</td></tr>`).join('');
+  const pct = (n, t) => t ? Math.round(n / t * 100) + '%' : '–', tw = Object.values<number>(r.kinds).reduce((a, b) => a + b, 0);
+  const table = (o: Record<string, number>, name?: (k: string) => string) => Object.entries(o).sort((a, b) => b[1] - a[1]).map(([k, n]) => `<tr><td>${esc(name ? name(k) : k)}</td><td>${n}</td><td>${pct(n, tw)}</td></tr>`).join('');
   // round L: names for games and places from the game itself; each device with its children, problems, suggestions
   let GN = {}, PN = {};
   await namesReady; if (stale()) return;
-  try { await import(GAME + 'js/games/all.js'); const { GAMES } = await import(GAME + 'js/games/registry.js'); for (const [id, g] of Object.entries(GAMES)) GN[id] = `${g.icon} ${g.name()}`; } catch (e) { }
+  try { await import(GAME + 'js/games/all.js'); const { GAMES } = await import(GAME + 'js/games/registry.js'); for (const [id, g] of Object.entries<{ icon: string, name: () => string }>(GAMES)) GN[id] = `${g.icon} ${g.name()}`; } catch (e) { }
   try { const W = await import(GAME + 'js/world.js'); for (const [id, f] of Object.entries(W.REGION_NAMES || {})) PN[id] = typeof f === 'function' ? f() : String(f); } catch (e) { }
   if (stale()) return;
   // how long ago a device was last on the screen (round O)
-  const ago = iso => { const m = Math.max(1, Math.round((Date.now() - new Date(iso)) / 60000)); return m < 60 ? T(`${m} min ago`, `${m} phút trước`) : m < 48 * 60 ? T(`${Math.round(m / 60)} h ago`, `${Math.round(m / 60)} giờ trước`) : T(`${Math.round(m / 1440)} days ago`, `${Math.round(m / 1440)} ngày trước`); };
+  const ago = iso => { const m = Math.max(1, Math.round((Date.now() - new Date(iso).getTime()) / 60000)); return m < 60 ? T(`${m} min ago`, `${m} phút trước`) : m < 48 * 60 ? T(`${Math.round(m / 60)} h ago`, `${Math.round(m / 60)} giờ trước`) : T(`${Math.round(m / 1440)} days ago`, `${Math.round(m / 1440)} ngày trước`); };
   const gname = g => GN[g] || g, pname = p => PN[p] || p, when = d => d ? new Date(d + 'T12:00:00').toLocaleDateString(LANG === 'vi' ? 'vi-VN' : 'en-AU', { day: 'numeric', month: 'short' }) : '–';
   // (owner, 11 Oct, #36) start-up times: seconds until the valley is built, by kind of device and for each device
-  const STEPS = { world: ['the land', 'mặt đất'], map: ['the map', 'bản đồ'], people: ['the people', 'mọi người'], roads: ['the roads', 'đường sá'], town: ['the towns', 'phố xá'], pretraffic: ['the vehicles', 'xe cộ'], traffic: ['the traffic', 'xe chạy'], things: ['things in the valley', 'đồ vật'], wideland: ['the wide land', 'vùng đất rộng'], levelled: ['levelling the ground', 'san đất'], roadside: ['the roadsides', 'lề đường'], solids: ['solid houses and things', 'nhà và đồ vật'], shaders: ['the first picture', 'hình đầu tiên'], ready: ['getting ready', 'chuẩn bị'] };
+  const STEPS: Record<string, [string, string]> = { world: ['the land', 'mặt đất'], map: ['the map', 'bản đồ'], people: ['the people', 'mọi người'], roads: ['the roads', 'đường sá'], town: ['the towns', 'phố xá'], pretraffic: ['the vehicles', 'xe cộ'], traffic: ['the traffic', 'xe chạy'], things: ['things in the valley', 'đồ vật'], wideland: ['the wide land', 'vùng đất rộng'], levelled: ['levelling the ground', 'san đất'], roadside: ['the roadsides', 'lề đường'], solids: ['solid houses and things', 'nhà và đồ vật'], shaders: ['the first picture', 'hình đầu tiên'], ready: ['getting ready', 'chuẩn bị'] };
   const stepName = k => STEPS[k] ? T(...STEPS[k]) : k, secs = v => v == null ? '–' : (v >= 10 ? Math.round(v) : v) + ' s';
   const startLine = st => !st ? '' : `<br>🏁 ${st.ready != null ? T(`usually ready in ${secs(st.ready)}`, `thường sẵn sàng sau ${secs(st.ready)}`) : st.readyFirst != null ? T(`ready in ${secs(st.readyFirst)} (first visits)`, `sẵn sàng sau ${secs(st.readyFirst)} (lần đầu)`) : ''}${st.slowest ? ` (${T('slowest', 'chậm nhất')}: ${esc(stepName(st.slowest))})` : ''}`;
   const kindName = k => ({ phone: T('Phone', 'Điện thoại'), tablet: T('Tablet', 'Máy tính bảng'), computer: T('Computer', 'Máy tính') }[k] || k);
@@ -1427,7 +1479,7 @@ PAGES.players = async P => {
   // mins, batteryPerHour, charging }; until they come, "not reported yet".
   const KINDS = ['phone', 'tablet', 'computer'], KICON = { phone: '📱', tablet: '📲', computer: '💻' };
   const median = a => { const v = a.filter(x => x != null && !isNaN(x)).sort((x, y) => x - y); return v.length ? v[v.length >> 1] : null; };
-  const tone = (v, good, watch, low) => v == null ? '' : (low ? (v >= good ? 'good' : v >= watch ? 'watch' : 'act') : (v <= good ? 'good' : v <= watch ? 'watch' : 'act'));
+  const tone = (v, good, watch, low?) => v == null ? '' : (low ? (v >= good ? 'good' : v >= watch ? 'watch' : 'act') : (v <= good ? 'good' : v <= watch ? 'watch' : 'act'));
   const TONE = { good: T('good', 'tốt'), watch: T('worth watching', 'nên để ý'), act: T('needs a look', 'cần xem lại') };
   const spark = (vals, col) => { const v = vals.length > 1 ? vals : [0, ...vals, 0], mx = Math.max(1, ...v), w = 120, h = 30; return `<svg class="spark" viewBox="0 0 ${w} ${h}" aria-hidden="true"><polyline fill="none" stroke="${col}" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round" points="${v.map((x, i) => `${(i / (v.length - 1) * (w - 4) + 2).toFixed(1)},${(h - 3 - x / mx * (h - 6)).toFixed(1)}`).join(' ')}"/></svg>`; };
   const NOT_YET = T('not reported yet', 'chưa có số liệu'), PW = r.power || {}, devs = r.devices || [];
@@ -1435,7 +1487,7 @@ PAGES.players = async P => {
   const fpsAll = median(devs.map(d => (d.power && d.power.fps) ?? d.fps)), startWorst = Math.max(...KINDS.map(k => r.startup && r.startup[k] ? r.startup[k].ready : -1));
   const batt = Math.max(...KINDS.map(k => PW[k] && PW[k].batteryPerHour != null ? PW[k].batteryPerHour : -1));
   const pctH = v => v == null || v < 0 ? NOT_YET : (Math.round(v * 10) / 10) + T(' % an hour', ' % mỗi giờ');
-  const tile = (icon, value, label, extra, t) => `<div class="card tile ${t ? 'tone-' + t : ''}"><span class="tl">${icon} ${label}</span><b>${value}</b>${extra || ''}${t ? `<span class="tt">${TONE[t]}</span>` : ''}</div>`;
+  const tile = (icon, value, label, extra?, t?) => `<div class="card tile ${t ? 'tone-' + t : ''}"><span class="tl">${icon} ${label}</span><b>${value}</b>${extra || ''}${t ? `<span class="tt">${TONE[t]}</span>` : ''}</div>`;
   const tiles = [
     tile('👨‍👩‍👧', r.week.devices, T('playing this week', 'chơi tuần này'), spark(per.map(d => d.devices), '#8a5cf6') + `<span class="tx">${T('30 days', '30 ngày')}${r.onlineNow ? ' · 🟢 ' + T(`${r.onlineNow} playing now`, `${r.onlineNow} đang chơi`) : ''}</span>`),
     tile('⏱️', hrs(weekMins), T('played this week', 'đã chơi tuần này'), spark(per.map(d => d.mins || 0), '#ff7eb8') + `<span class="tx">${T('about', 'khoảng')} ${hrs(r.minsPerDevice)} ${T('a device a day', 'mỗi máy mỗi ngày')}</span>`),
@@ -1478,16 +1530,16 @@ PAGES.players = async P => {
     <div class="card"><h3>🚪 ${T('Games left before the end', 'Trò bị bỏ dở')}</h3>${pb.quits.length ? `<table class="mini"><tbody>${pb.quits.map(([g, n, st, pc]) => `<tr><td>${esc(gname(g))}</td><td>${n}/${st}</td><td class="${pc >= 50 ? 'warn' : ''}">${pc}%</td></tr>`).join('')}</tbody></table>` : `<p class="ok">✅ ${T('None.', 'Không có.')}</p>`}</div>
     <div class="card"><h3>🐢 ${T('Slow devices', 'Máy chạy chậm')}</h3>${pb.slow.length ? `<table class="mini"><tbody>${pb.slow.map(([id, l, f, sm]) => { const d = r.devices.find(x => x.id === id) || { id, label: l, fps: f }; return `<tr class="devrow${isRobot(d) ? ' robot' : ''}"><td>${devHTML(d)}</td><td>${f} ${T('frames/s', 'khung/giây')}</td><td>${sm} ${T('slow min', 'phút chậm')}</td></tr>`; }).join('')}</tbody></table>` : `<p class="ok">✅ ${T('All smooth.', 'Đều mượt.')}</p>`}</div></div>`)}
   <p class="note">${T('Made', 'Lúc')} ${esc(new Date(r.made).toLocaleString(LANG === 'vi' ? 'vi-VN' : 'en-AU', { timeZone: 'Australia/Sydney' }))} ${sydneyZone(r.made)}</p>`;
-  { const tt = P.querySelector('#totesters'); if (tt) tt.onclick = () => go('testers'); }
+  { const tt = P.querySelector<HTMLInputElement>('#totesters'); if (tt) tt.onclick = () => go('testers'); }
   devFilter($('#devlist')); // (owner, 13 Oct) find a device by a child's name, its name, the town or the kind of device
-  P.querySelectorAll('.dev [data-rename]').forEach(b => b.onclick = async () => { const card = b.closest('.dev'), id = card.dataset.id, cur = card.querySelector('.dlabel').textContent;
+  P.querySelectorAll<HTMLInputElement>('.dev [data-rename]').forEach(b => b.onclick = async () => { const card = b.closest<HTMLInputElement>('.dev'), id = card.dataset.id, cur = card.querySelector<HTMLInputElement>('.dlabel').textContent;
     const l = prompt(T('A name for this device (e.g. “Na’s iPad”):', 'Tên cho máy này (ví dụ “iPad của Na”):'), cur); if (l === null) return;
-    try { await api('players/label', { id, label: l }); card.querySelector('.dlabel').textContent = l || cur; toast(T('Saved.', 'Đã lưu.')); } catch (e) { fail(e); } });
+    try { await api('players/label', { id, label: l }); card.querySelector<HTMLInputElement>('.dlabel').textContent = l || cur; toast(T('Saved.', 'Đã lưu.')); } catch (e) { fail(e); } });
 };
 // ---------- 👥 Admins (online, round O) ----------
-const ROLE_NAMES = { viewer: ['👀 Viewer: Analytics only', '👀 Xem: chỉ Phân tích'], editor: ['✏️ Editor: every page and Publish', '✏️ Sửa: mọi trang và Phát hành'], owner: ['👑 Owner: everything, also admins', '👑 Chủ: tất cả, cả quản trị viên'], custom: ['🧩 Chosen: only what is ticked', '🧩 Tự chọn: chỉ những gì được đánh dấu'] };
+const ROLE_NAMES: Record<string, [string, string]> = { viewer: ['👀 Viewer: Analytics only', '👀 Xem: chỉ Phân tích'], editor: ['✏️ Editor: every page and Publish', '✏️ Sửa: mọi trang và Phát hành'], owner: ['👑 Owner: everything, also admins', '👑 Chủ: tất cả, cả quản trị viên'], custom: ['🧩 Chosen: only what is ticked', '🧩 Tự chọn: chỉ những gì được đánh dấu'] };
 // (owner, 14 Oct AEDT) the permissions one by one (the server's list, netlify/lib/admins.mts PERMS): ticked = allowed
-const permList = (perms, on, name) => `<div class="perms">${Object.entries(perms || {}).map(([k, [i, en, vi]]) => `<label class="perm"><input type="checkbox" data-perm="${k}" ${on.includes(k) ? 'checked' : ''} ${name ? '' : 'disabled'}> ${i} ${T(en, vi)}</label>`).join('')}</div>`;
+const permList = (perms, on, name) => `<div class="perms">${Object.entries<[string, string, string]>(perms || {}).map(([k, [i, en, vi]]) => `<label class="perm"><input type="checkbox" data-perm="${k}" ${on.includes(k) ? 'checked' : ''} ${name ? '' : 'disabled'}> ${i} ${T(en, vi)}</label>`).join('')}</div>`;
 // (owner, 12 Oct) Tester reports: what tester devices found (netlify/lib/tester.mts). The day's summary; each problem with
 // how often, on how many devices and versions, where, and its status; filters; a problem's details (the notes, the
 // players, the errors, the last 30 seconds as steps, the screenshots) with Fixed in…, Being fixed, Not a bug, Same as…;
@@ -1519,7 +1571,7 @@ PAGES.testers = async P => {
     const st = $('#fst').value, kd = $('#fkd').value, bd = $('#fbd').value;
     const list = problems.filter(p => (st === 'open' ? ['new', 'fixing', 'back'].includes(p.status) : !st || p.status === st) && (!kd || (kd === 'tester' ? p.kind !== 'auto' : p.kind === kd)) && (!bd || (p.builds || []).includes(bd)));
     $('#tpb').innerHTML = list.map(p => `<tr data-open="${esc(p.k)}" class="click"><td>${kindName(p.kind)}${p.auto ? ' · ' + esc(p.auto) : ''}<br><b>${esc(p.title)}</b>${p.spoken ? ' 🎤' : ''}</td><td>${esc(whereText(p.where))}</td><td>${p.n}</td><td>${p.devices}</td><td>${esc((p.builds || []).join(', '))}</td><td>${sydney(p.lastAt)}</td><td>${stName(p.status)}${p.fixedIn ? ' · ' + esc(p.fixedIn) : ''}</td></tr>`).join('') || `<tr><td colspan="7" class="note">${T('Nothing here.', 'Không có gì.')}</td></tr>`;
-    P.querySelectorAll('[data-open]').forEach(x => x.onclick = e => { e.preventDefault(); open(x.dataset.open); });
+    P.querySelectorAll<HTMLInputElement>('[data-open]').forEach(x => x.onclick = e => { e.preventDefault(); open(x.dataset.open); });
   };
   const open = async k => {
     const box = $('#tdetail'); box.innerHTML = `<div class="card">${T('Loading…', 'Đang tải…')}</div>`;
@@ -1537,17 +1589,17 @@ PAGES.testers = async P => {
         ${x.shot ? `<button class="btn small" data-shot="${esc(x.rid)}">🖼️ ${T('Screenshot', 'Ảnh màn hình')}</button><div class="tshot"></div>` : ''}</div>`).join('')}</div>`;
     const set = async b => { try { const q = await api('testers/set', { k, ...b }); Object.assign(problems.find(x => x.k === k) || {}, q); toast('✅ ' + T('Saved', 'Đã lưu'), 'good'); draw(); open(k); } catch (e) { fail(e); } };
     $('#tfix').onclick = () => { const v = $('#tfin').value.trim(); if (!/^r\d{1,4}$/.test(v)) return toast('⚠️ ' + T('Write the version like r67.', 'Viết phiên bản như r67.'), 'bad'); set({ status: 'fixed', fixedIn: v }); };
-    box.querySelectorAll('[data-set]').forEach(b => b.onclick = () => set({ status: b.dataset.set }));
+    box.querySelectorAll<HTMLInputElement>('[data-set]').forEach(b => b.onclick = () => set({ status: b.dataset.set }));
     $('#tdup').onchange = () => { if ($('#tdup').value) set({ dupOf: $('#tdup').value }); };
-    box.querySelectorAll('[data-shot]').forEach(b => b.onclick = async () => { try { const s = await api('testers/shot/' + b.dataset.shot); b.nextElementSibling.innerHTML = s.shot ? `<img alt="" src="${esc(s.shot)}">` : T('No picture.', 'Không có ảnh.'); } catch (e) { fail(e); } });
+    box.querySelectorAll<HTMLInputElement>('[data-shot]').forEach(b => b.onclick = async () => { try { const s = await api('testers/shot/' + b.dataset.shot); b.nextElementSibling.innerHTML = s.shot ? `<img alt="" src="${esc(s.shot)}">` : T('No picture.', 'Không có ảnh.'); } catch (e) { fail(e); } });
     box.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
   ['#fst', '#fkd', '#fbd'].forEach(s => $(s).onchange = draw); draw();
   // Stop tester: take the device off the Releases page's list (with no list, every device is a tester: tick the others there)
-  P.querySelectorAll('[data-stop]').forEach(b => b.onclick = async () => {
+  P.querySelectorAll<HTMLInputElement>('[data-stop]').forEach(b => b.onclick = async () => {
     try { const live = await loadLive(), rel = live.releases || {}, tr = rel.tester || {}, list = (tr.devices || []).filter(d => d !== b.dataset.stop);
       if (!(tr.devices || []).length) return toast('⚠️ ' + T('Every device is a tester now: tick the testers in 🎮 Game → 🆕 Releases first.', 'Hiện mọi máy đều là máy thử: hãy chọn các máy thử trong 🎮 Trò chơi → 🆕 Ra mắt trước.'), 'bad');
-      if (!list.length) tr.on = false; tr.devices = list; await saveLive({ releases: { ...rel, tester: tr }, festivals: live.festivals || {} }); b.closest('tr').remove();
+      if (!list.length) tr.on = false; tr.devices = list; await saveLive({ releases: { ...rel, tester: tr }, festivals: live.festivals || {} }); b.closest<HTMLInputElement>('tr').remove();
     } catch (e) { fail(e); } });
 };
 PAGES.admins = async P => {
@@ -1567,21 +1619,21 @@ PAGES.admins = async P => {
       ${admins.map(a => `<tr data-n="${esc(a.name)}"><td><b>${esc(a.name)}</b></td><td><select data-role>${opt(a.role)}</select></td><td class="note">${T('added', 'thêm')} ${esc(new Date(a.at).toLocaleDateString(LANG === 'vi' ? 'vi-VN' : 'en-AU', { timeZone: 'Australia/Sydney' }))} · ${esc(a.by)} · ${a.twoStepOn === false ? T('password only', 'chỉ mật khẩu') : a.twoStep ? T('two-step on', 'đã bật hai bước') : T('two-step at next sign-in', 'hai bước khi đăng nhập lần tới')}</td><td><select data-2s><option value="on" ${a.twoStepOn !== false ? 'selected' : ''}>${T('Password and code', 'Mật khẩu và mã')}</option><option value="off" ${a.twoStepOn !== false ? '' : 'selected'}>${T('Password only', 'Chỉ mật khẩu')}</option></select> <button class="btn small ghost" data-pw>🔑 ${T('New password', 'Mật khẩu mới')}</button> ${a.twoStep && a.twoStepOn !== false ? `<button class="btn small ghost" data-2fa>📱 ${T('New phone', 'Điện thoại mới')}</button> ` : ''}<button class="btn small ghost" data-rm>🗑️</button></td></tr>
       <tr class="permrow" data-pn="${esc(a.name)}"><td colspan="4"><details><summary>🧩 ${T('What they may do', 'Họ được làm gì')} <span class="pc">(${(a.perms || []).length} / ${Object.keys(perms || {}).length})</span></summary>${permList(perms, a.perms || [], a.name)}<p class="note">${T('Ticking or unticking one makes their role “Chosen”. Managing admins, Security and the Access log come only with Owner.', 'Đánh dấu hoặc bỏ một ô sẽ đổi vai trò của họ thành “Tự chọn”. Quản lý quản trị viên, Bảo mật và Nhật ký truy cập chỉ đi kèm vai trò Chủ.')}</p></details></td></tr>`).join('')}
     </tbody></table>${admins.length ? '' : `<p class="note">${T('Nobody else yet.', 'Chưa có ai khác.')}</p>`}</div>`;
-  const newPerms = document.createElement('div'); newPerms.className = 'new-admin-perms'; newPerms.hidden = true; newPerms.innerHTML = `<p>${T('Choose permissions for this new admin before adding them.', 'Chọn quyền cho quản trị viên mới trước khi thêm.')}</p>${permList(perms, [], 'new')}`; $('#ar').closest('.card').appendChild(newPerms); $('#ar').onchange = () => { newPerms.hidden = $('#ar').value !== 'custom'; };
-  $('#aadd').onclick = async () => { try { await api('admins/save', { name: $('#an').value, password: $('#ap').value, role: $('#ar').value, ...($('#ar').value === 'custom' ? { perms: [...newPerms.querySelectorAll('[data-perm]:checked')].map(x => x.dataset.perm) } : {}) }); toast(T('Added.', 'Đã thêm.')); PAGES.admins(P); } catch (e) { fail(e); } };
+  const newPerms = document.createElement('div'); newPerms.className = 'new-admin-perms'; newPerms.hidden = true; newPerms.innerHTML = `<p>${T('Choose permissions for this new admin before adding them.', 'Chọn quyền cho quản trị viên mới trước khi thêm.')}</p>${permList(perms, [], 'new')}`; $('#ar').closest<HTMLInputElement>('.card').appendChild(newPerms); $('#ar').onchange = () => { newPerms.hidden = $('#ar').value !== 'custom'; };
+  $('#aadd').onclick = async () => { try { await api('admins/save', { name: $('#an').value, password: $('#ap').value, role: $('#ar').value, ...($('#ar').value === 'custom' ? { perms: [...newPerms.querySelectorAll<HTMLInputElement>('[data-perm]:checked')].map(x => x.dataset.perm) } : {}) }); toast(T('Added.', 'Đã thêm.')); PAGES.admins(P); } catch (e) { fail(e); } };
   // (owner, 9 Oct) two-step or the password only, for each admin (the owner: the password only, 11 Oct)
-  P.querySelectorAll('[data-2s]').forEach(s => s.onchange = async () => { const tr = s.closest('tr'), name = tr.dataset.n || 'owner', on = s.value === 'on';
+  P.querySelectorAll<HTMLInputElement>('[data-2s]').forEach(s => s.onchange = async () => { const tr = s.closest<HTMLInputElement>('tr'), name = tr.dataset.n || 'owner', on = s.value === 'on';
     if (!on && !confirm(T(`Let ${name} sign in with the password only (no code)? It is less safe: anyone with the password gets in.`, `Cho ${name} đăng nhập chỉ bằng mật khẩu (không mã)? Kém an toàn hơn: ai có mật khẩu cũng vào được.`))) { s.value = 'on'; return; }
     try { await api('admins/twostep', { name, on }); toast(on ? T('Two-step on: they set it up at their next sign-in if needed.', 'Đã bật hai bước: họ cài khi đăng nhập lần tới nếu cần.') : T('Password only.', 'Chỉ mật khẩu.')); PAGES.admins(P); } catch (e) { fail(e); } });
-  P.querySelectorAll('tr[data-n]').forEach(tr => { const name = tr.dataset.n;
-    tr.querySelector('[data-role]').onchange = async e => { const open = e.target.value === 'custom' || P.querySelector(`tr[data-pn="${CSS.escape(name)}"] details`).open; try { await api('admins/save', { name, role: e.target.value, ...(e.target.value === 'custom' ? { perms: [...P.querySelectorAll(`tr[data-pn="${CSS.escape(name)}"] [data-perm]:checked`)].map(x => x.dataset.perm) } : {}) }); toast(T('Saved.', 'Đã lưu.')); await PAGES.admins(P); if (open) P.querySelector(`tr[data-pn="${CSS.escape(name)}"] details`).open = true; } catch (x) { fail(x); } };
+  P.querySelectorAll<HTMLInputElement>('tr[data-n]').forEach(tr => { const name = tr.dataset.n;
+    tr.querySelector<HTMLInputElement>('[data-role]').onchange = async e => { const open = val(e) === 'custom' || P.querySelector<HTMLDetailsElement>(`tr[data-pn="${CSS.escape(name)}"] details`).open; try { await api('admins/save', { name, role: val(e), ...(val(e) === 'custom' ? { perms: [...P.querySelectorAll<HTMLInputElement>(`tr[data-pn="${CSS.escape(name)}"] [data-perm]:checked`)].map(x => x.dataset.perm) } : {}) }); toast(T('Saved.', 'Đã lưu.')); await PAGES.admins(P); if (open) P.querySelector<HTMLDetailsElement>(`tr[data-pn="${CSS.escape(name)}"] details`).open = true; } catch (x) { fail(x); } };
     // (owner, 14 Oct AEDT) one permission at a time
-    P.querySelectorAll(`tr[data-pn="${CSS.escape(name)}"] [data-perm]`).forEach(cb => cb.onchange = async () => {
-      const row = P.querySelector(`tr[data-pn="${CSS.escape(name)}"]`), list = [...row.querySelectorAll('[data-perm]:checked')].map(x => x.dataset.perm);
-      try { await api('admins/save', { name, role: 'custom', perms: list }); tr.querySelector('[data-role]').value = 'custom'; row.querySelector('.pc').textContent = `(${list.length} / ${row.querySelectorAll('[data-perm]').length})`; toast(T('Saved: it applies at their next step in Studio.', 'Đã lưu: có hiệu lực ở thao tác tiếp theo của họ trong Studio.')); } catch (x) { cb.checked = !cb.checked; fail(x); } });
-    tr.querySelector('[data-pw]').onclick = async () => { const pw = prompt(T(`A new password for ${name} (12+ characters):`, `Mật khẩu mới cho ${name} (từ 12 ký tự):`)); if (!pw) return; try { await api('admins/save', { name, password: pw, role: tr.querySelector('[data-role]').value }); toast(T('Changed: they are signed out everywhere.', 'Đã đổi: họ bị đăng xuất khỏi mọi nơi.')); } catch (e) { fail(e); } };
-    const tf = tr.querySelector('[data-2fa]'); if (tf) tf.onclick = async () => { if (!confirm(T(`Clear ${name}’s two-step? They set it up again (with their new phone) the next time they sign in.`, `Xóa xác thực hai bước của ${name}? Họ sẽ cài lại (bằng điện thoại mới) khi đăng nhập lần tới.`))) return; try { await api('admins/reset2fa', { name }); toast(T('Cleared: they are signed out everywhere.', 'Đã xóa: họ bị đăng xuất khỏi mọi nơi.')); PAGES.admins(P); } catch (e) { fail(e); } };
-    tr.querySelector('[data-rm]').onclick = async () => { if (!confirm(T(`Remove ${name}? They can no longer sign in.`, `Xóa ${name}? Họ sẽ không đăng nhập được nữa.`))) return; try { await api('admins/remove', { name }); PAGES.admins(P); } catch (e) { fail(e); } }; });
+    P.querySelectorAll<HTMLInputElement>(`tr[data-pn="${CSS.escape(name)}"] [data-perm]`).forEach(cb => cb.onchange = async () => {
+      const row = P.querySelector<HTMLInputElement>(`tr[data-pn="${CSS.escape(name)}"]`), list = [...row.querySelectorAll<HTMLInputElement>('[data-perm]:checked')].map(x => x.dataset.perm);
+      try { await api('admins/save', { name, role: 'custom', perms: list }); tr.querySelector<HTMLInputElement>('[data-role]').value = 'custom'; row.querySelector<HTMLInputElement>('.pc').textContent = `(${list.length} / ${row.querySelectorAll<HTMLInputElement>('[data-perm]').length})`; toast(T('Saved: it applies at their next step in Studio.', 'Đã lưu: có hiệu lực ở thao tác tiếp theo của họ trong Studio.')); } catch (x) { cb.checked = !cb.checked; fail(x); } });
+    tr.querySelector<HTMLInputElement>('[data-pw]').onclick = async () => { const pw = prompt(T(`A new password for ${name} (12+ characters):`, `Mật khẩu mới cho ${name} (từ 12 ký tự):`)); if (!pw) return; try { await api('admins/save', { name, password: pw, role: tr.querySelector<HTMLInputElement>('[data-role]').value }); toast(T('Changed: they are signed out everywhere.', 'Đã đổi: họ bị đăng xuất khỏi mọi nơi.')); } catch (e) { fail(e); } };
+    const tf = tr.querySelector<HTMLInputElement>('[data-2fa]'); if (tf) tf.onclick = async () => { if (!confirm(T(`Clear ${name}’s two-step? They set it up again (with their new phone) the next time they sign in.`, `Xóa xác thực hai bước của ${name}? Họ sẽ cài lại (bằng điện thoại mới) khi đăng nhập lần tới.`))) return; try { await api('admins/reset2fa', { name }); toast(T('Cleared: they are signed out everywhere.', 'Đã xóa: họ bị đăng xuất khỏi mọi nơi.')); PAGES.admins(P); } catch (e) { fail(e); } };
+    tr.querySelector<HTMLInputElement>('[data-rm]').onclick = async () => { if (!confirm(T(`Remove ${name}? They can no longer sign in.`, `Xóa ${name}? Họ sẽ không đăng nhập được nữa.`))) return; try { await api('admins/remove', { name }); PAGES.admins(P); } catch (e) { fail(e); } }; });
   explainPage(P, 'admins'); foldPage(P, 'admins');
 };
 function bindMine(P) { const b = P.querySelector('#chg'); if (b) b.onclick = async () => { try { await api('admins/me', { old: $('#op').value, password: $('#np').value }); toast(T('Password changed. Please sign in again.', 'Đã đổi mật khẩu. Vui lòng đăng nhập lại.')); setTimeout(signIn, 1200); } catch (e) { fail(e); } }; }
@@ -1597,19 +1649,19 @@ PAGES.security = async P => {
     <div class="row" style="margin-top:8px"><input type="text" id="klabel" maxlength="40" placeholder="${T('Which computer? e.g. Family PC', 'Máy nào? ví dụ Máy tính gia đình')}"><button class="btn" id="kmake">➕ ${T('Make a key', 'Tạo khóa')}</button></div><p class="note" id="kout"></p></div>`;
   const drawTrusted = async () => { let L = []; try { L = (await api('trusted')).trusted || []; } catch (e) { $('#trusted').textContent = say(e.message); return; }
     $('#trusted').innerHTML = L.length ? `<table class="mini"><tbody>${L.map(x => `<tr data-tid="${esc(x.id)}"><td><b>${esc(x.who === 'owner' ? T('Owner', 'Chủ') : x.who)}</b>${x.here ? ` <span class="pill">${T('this browser', 'trình duyệt này')}</span>` : ''}</td><td>${esc(x.browser)}${x.where ? ' · ' + esc(x.where) : ''}</td><td class="note">${T('since', 'từ')} ${esc(whenAEST(x.at))} · ${T('last used', 'dùng gần nhất')} ${esc(whenAEST(x.last))}</td><td><button class="btn small ghost" data-tforget>${T('Forget', 'Quên')}</button></td></tr>`).join('')}</tbody></table>` : `<p class="note">${T('None yet.', 'Chưa có.')}</p>`;
-    P.querySelectorAll('[data-tforget]').forEach(b => b.onclick = async () => { const tr = b.closest('tr'); if (!confirm(T('Forget this browser? It must sign in again.', 'Quên trình duyệt này? Nó sẽ phải đăng nhập lại.'))) return;
+    P.querySelectorAll<HTMLInputElement>('[data-tforget]').forEach(b => b.onclick = async () => { const tr = b.closest<HTMLInputElement>('tr'); if (!confirm(T('Forget this browser? It must sign in again.', 'Quên trình duyệt này? Nó sẽ phải đăng nhập lại.'))) return;
       try { await api('trusted/forget', { id: tr.dataset.tid }); toast(T('Forgotten.', 'Đã quên.'), 'ok'); drawTrusted(); } catch (e) { fail(e); } }); };
   drawTrusted();
   $('#allout').onclick = async () => { if (!confirm(T('Sign everyone out, on every device? You sign in again yourself.', 'Đăng xuất mọi người trên mọi máy? Bạn sẽ đăng nhập lại.'))) return; try { await api('security/signout-all', {}); signIn(); } catch (e) { fail(e); } };
   $('#kmake').onclick = async () => { try { const r = await api('keys/make', { label: $('#klabel').value }); $('#kout').innerHTML = `${T('Copy it now (it is not shown again):', 'Sao chép ngay (sẽ không hiện lại):')}<br><code style="user-select:all;word-break:break-all">${esc(r.key)}</code>`; } catch (e) { fail(e); } };
-  P.querySelectorAll('[data-krm]').forEach(b => b.onclick = async () => { if (!confirm(T('Remove this key? That computer can no longer reach the website.', 'Xóa khóa này? Máy đó sẽ không đến được trang web nữa.'))) return; try { await api('keys/remove', { id: b.closest('tr').dataset.id }); PAGES.security(P); } catch (e) { fail(e); } });
+  P.querySelectorAll<HTMLInputElement>('[data-krm]').forEach(b => b.onclick = async () => { if (!confirm(T('Remove this key? That computer can no longer reach the website.', 'Xóa khóa này? Máy đó sẽ không đến được trang web nữa.'))) return; try { await api('keys/remove', { id: b.closest<HTMLInputElement>('tr').dataset.id }); PAGES.security(P); } catch (e) { fail(e); } });
 };
 // ---------- 📜 Access log (online, the owner; round R privacy): the last 200 ----------
 const WHAT = { signin: ['signed in', 'đăng nhập'], 'signin-trusted': ['signed in, trusted this browser', 'đăng nhập, tin cậy trình duyệt'], 'trust-forget': ['forgot a trusted browser', 'quên một trình duyệt tin cậy'], 'signin-failed': ['wrong password', 'sai mật khẩu'], 'code-failed': ['wrong code', 'sai mã'], locked: ['locked out', 'bị khóa'], 'two-step-set': ['set up two-step', 'cài hai bước'], 'two-step-reset': ['cleared two-step', 'xóa hai bước'], analytics: ['opened the Analytics', 'mở Phân tích'], 'signout-all': ['signed everyone out', 'đăng xuất mọi người'], 'family-code': ['made a new family code', 'tạo mã gia đình mới'], 'key-made': ['made a Studio key', 'tạo khóa Studio'], 'key-removed': ['removed a Studio key', 'xóa khóa Studio'] };
 PAGES.accesslog = async P => {
   const { entries } = await api('log');
   P.innerHTML = `<h2>📜 ${T('Access log', 'Nhật ký truy cập')}</h2><p class="sub">${T('The last 200: who signed in (or tried), from which town and country (worked out from the connection; the address itself is never kept), and who opened the Analytics.', '200 lần gần nhất: ai đăng nhập (hoặc thử), từ thành phố và nước nào (lấy từ kết nối; không bao giờ giữ địa chỉ), và ai đã mở Phân tích.')}</p>
-  <div class="card"><table class="mini"><thead><tr><th>${T('When', 'Lúc')}</th><th>${T('Who', 'Ai')}</th><th>${T('What', 'Việc')}</th><th>${T('Where', 'Ở đâu')}</th></tr></thead><tbody>${entries.map(e => `<tr><td class="note">${esc(whenAEST(e.at))}</td><td><b>${esc(e.who)}</b>${e.role ? ` <span class="note">${esc(e.role)}</span>` : ''}</td><td class="${/failed|locked/.test(e.what) ? 'warn' : ''}">${esc(T(...(WHAT[e.what] || [e.what, e.what])))}${e.note ? ' · ' + esc(e.note) : ''}</td><td>${esc(e.where || '–')}</td></tr>`).join('') || `<tr><td class="note">${T('Nothing yet.', 'Chưa có gì.')}</td></tr>`}</tbody></table></div>`;
+  <div class="card"><table class="mini"><thead><tr><th>${T('When', 'Lúc')}</th><th>${T('Who', 'Ai')}</th><th>${T('What', 'Việc')}</th><th>${T('Where', 'Ở đâu')}</th></tr></thead><tbody>${entries.map(e => `<tr><td class="note">${esc(whenAEST(e.at))}</td><td><b>${esc(e.who)}</b>${e.role ? ` <span class="note">${esc(e.role)}</span>` : ''}</td><td class="${/failed|locked/.test(e.what) ? 'warn' : ''}">${esc(T2(WHAT[e.what] || [e.what, e.what]))}${e.note ? ' · ' + esc(e.note) : ''}</td><td>${esc(e.where || '–')}</td></tr>`).join('') || `<tr><td class="note">${T('Nothing yet.', 'Chưa có gì.')}</td></tr>`}</tbody></table></div>`;
 };
 // ---------- signing in (online only): the password, then the code from an authenticator app (round R privacy) ----------
 function signIn() {
@@ -1640,17 +1692,17 @@ async function checkUpdate(manual) {
   let u; try { u = await api('update/check'); } catch (e) { if (manual) toast('⚠️ ' + say(e.message), 'bad'); return null; }
   if (u.error) { if (manual) toast('⚠️ ' + say(u.error), 'bad'); return u; }
   if (!u.newer) { if (manual) toast('✅ ' + T(`Sparkle Studio ${u.here} is the newest.`, `Sparkle Studio ${u.here} là bản mới nhất.`), 'good'); return u; }
-  let bar = $('#updbar'); if (!bar) { bar = document.createElement('div'); bar.id = 'updbar'; bar.className = 'card warn'; bar.style.cssText = 'position:fixed;left:50%;transform:translateX(-50%);bottom:16px;z-index:50;display:flex;gap:12px;align-items:center;flex-wrap:wrap;max-width:calc(100vw - 32px)'; document.body.appendChild(bar); }
+  let bar = $<HTMLElement>('#updbar'); if (!bar) { bar = document.createElement('div'); bar.id = 'updbar'; bar.className = 'card warn'; bar.style.cssText = 'position:fixed;left:50%;transform:translateX(-50%);bottom:16px;z-index:50;display:flex;gap:12px;align-items:center;flex-wrap:wrap;max-width:calc(100vw - 32px)'; document.body.appendChild(bar); }
   bar.innerHTML = `<span>🆕 ${T(`New Sparkle Studio ${esc(u.latest)} (you have ${esc(u.here)}).`, `Có Sparkle Studio ${esc(u.latest)} mới (bạn đang dùng ${esc(u.here)}).`)}</span>${u.can ? `<button class="btn" id="updgo">⬇️ ${T('Update now', 'Cập nhật ngay')}</button>` : ''}<button class="btn ghost" id="updno">${T('Later', 'Để sau')}</button>`;
   $('#updno').onclick = () => bar.remove();
   if ($('#updgo')) $('#updgo').onclick = async () => {
     if (!leaveOk()) return;
-    $('#updgo').disabled = true; bar.querySelector('span').textContent = T('Downloading the new Sparkle Studio…', 'Đang tải Sparkle Studio mới…');
+    $('#updgo').disabled = true; bar.querySelector<HTMLInputElement>('span').textContent = T('Downloading the new Sparkle Studio…', 'Đang tải Sparkle Studio mới…');
     let r; try { r = await api('update/apply', {}); } catch (e) { r = { error: e.message }; }
-    if (r.error) { bar.querySelector('span').textContent = '⚠️ ' + say(r.error); $('#updgo').disabled = false; return; }
-    bar.querySelector('span').textContent = T(`Starting Sparkle Studio ${r.latest}…`, `Đang mở Sparkle Studio ${r.latest}…`);
+    if (r.error) { bar.querySelector<HTMLInputElement>('span').textContent = '⚠️ ' + say(r.error); $('#updgo').disabled = false; return; }
+    bar.querySelector<HTMLInputElement>('span').textContent = T(`Starting Sparkle Studio ${r.latest}…`, `Đang mở Sparkle Studio ${r.latest}…`);
     let gone = false; for (let k = 0; k < 60; k++) { await new Promise(ok => setTimeout(ok, 1500)); try { const i = await api('info'); if (gone || i.studio !== INFO.studio) { location.reload(); return; } } catch (e) { gone = true; } } // (the old one stops, then the new one answers)
-    bar.querySelector('span').textContent = T('Please open Sparkle Studio again.', 'Hãy mở lại Sparkle Studio.');
+    bar.querySelector<HTMLInputElement>('span').textContent = T('Please open Sparkle Studio again.', 'Hãy mở lại Sparkle Studio.');
   };
   return u;
 }

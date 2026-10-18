@@ -123,13 +123,13 @@ document.getElementById('stage').appendChild(renderer.domElement);
 // the page). Save at once, show a friendly card, and if the picture does not come back by itself, reload: progress
 // is already saved, so the child carries on where they were.
 {
-  let lostT = 0;
+  let lostT: ReturnType<typeof setTimeout> | 0 = 0;
   renderer.domElement.addEventListener('webglcontextlost', e => {
     e.preventDefault(); try { G.heroes.forEach(h => { if (h.profile && h.onGround && !h.towerClimb && !h.indoors) { h.profile.pos = { x: +h.lastSafe.x.toFixed(1), z: +h.lastSafe.z.toFixed(1) }; h.profile.posMap = MAP_VERSION; } }); saveProfiles(true); } catch (err) { }
-    if (!document.querySelector('.ctxlost')) document.body.appendChild(el('div', 'ctxlost', `<div>🌈</div><p>${T('One moment, the valley is coming back…', 'Chờ một chút, thung lũng đang trở lại…')}</p>`));
+    if (!document.querySelector<HTMLElement>('.ctxlost')) document.body.appendChild(el('div', 'ctxlost', `<div>🌈</div><p>${T('One moment, the valley is coming back…', 'Chờ một chút, thung lũng đang trở lại…')}</p>`));
     clearTimeout(lostT); lostT = setTimeout(() => { noteReload('3D picture lost', G); location.reload(); }, 4000); // (#355: noted for Studio's report)
   });
-  renderer.domElement.addEventListener('webglcontextrestored', () => { clearTimeout(lostT); document.querySelectorAll('.ctxlost').forEach(e => e.remove()); });
+  renderer.domElement.addEventListener('webglcontextrestored', () => { clearTimeout(lostT); document.querySelectorAll<HTMLElement>('.ctxlost').forEach(e => e.remove()); });
 }
 const scene = new THREE.Scene();
 { // soft sky light bouncing off everything, so materials look real rather than flat
@@ -140,7 +140,7 @@ const BOOT0 = performance.now(), bootTimes = { start: Math.round(BOOT0) }, bootM
 // (round R, faster launch) the title and "Who's playing?" show at once; the valley is built behind them in steps, with a
 // breath between steps so the screen keeps answering taps. Pressing Go before it is ready waits a moment (startWhenBuilt).
 let framesSeen = 0, framesDone = null; const firstFrames = new Promise(r => { framesDone = r; });
-let bootDone = null, booted = false; const bootReady = new Promise(r => { bootDone = () => { booted = true; r(); }; });
+let bootDone = null, booted = false; const bootReady = new Promise<void>(r => { bootDone = () => { booted = true; r(); }; });
 const breathe = () => new Promise(r => setTimeout(r, 0));
 async function startWhenBuilt(mode, chosen) {
   if (!booted) {
@@ -159,7 +159,88 @@ const mapPic = cachedCanvas('map', 320, paintMap, bootReady); // (round T: 320 p
 mapPic.onReady = () => { G.fogMaps = {}; }; // (a map shown before the picture was ready is drawn again)
 const titleCam = new THREE.PerspectiveCamera(50, 1, .3, 1200);
 
-const G = {
+// (TypeScript, r86) the shared game object: every part main.ts, and the modules it hands G to, add to it. Parts made
+// later in the start-up are optional; the modules that add their own part are typed by what main.ts uses of it.
+/** a child in the valley (js/player.js), with what the other modules add to it */
+type SvHeroT = Hero & { walkTo?: { x: number, z: number, friend?: string, name?: string } | null, _tiredHint?: boolean, _rescuing?: boolean, cancelCarry?: (() => void) | null, indoors?: unknown, view?: string, zoom?: number,
+  carry?: unknown, carryIt?: unknown, followId?: string | null, goalAct?: SvItem | null, _dancing?: boolean, _followHop?: number };
+type SvAt = (h: SvHeroT, x: number, z: number) => Promise<void>;
+/** a window that closes by itself when the children walk away from where it opened */
+type SvWalkClose = HTMLElement & { _from?: { x: number, z: number }[], _autoClose?: (() => void) | null };
+/** someone walking about who is not a child playing here: a wanderer at home, or a friend online */
+type SvPerson = { av: { root: THREE.Object3D, anim?(st: string, t: number, sp: number): void }, tag: THREE.Object3D, pos: THREE.Vector3, yaw: number };
+type SvFriend = SvPerson & { id: string, name: string, st: string, look: Record<string, unknown>, photoURL: string, [k: string]: unknown };
+/** a friend's game played online: who sits where, and which seat is mine (js/netgames.ts) */
+type SvOnline = { names: string[], mine: number, [k: string]: unknown };
+/** something in the valley a child can walk up to and use (a person, a game, a door…) */
+interface SvItem { id?: string, x: number, z: number, r?: number, icon?: string, bubble?: string, slot?: string, auto?: boolean,
+  y?: number, label?: () => string, short?: () => string, visible?: (h?: SvHeroT) => boolean, act(h: SvHeroT, game?: SvGame): void | Promise<unknown>, npc?: unknown, st?: unknown, [k: string]: unknown }
+interface SvMain {
+  actCount: number; events: typeof events; settings: typeof settings; world: typeof world; scene: typeof scene; pads: typeof pads;
+  heroes: SvHeroT[]; huds: Hud[]; mode: string; partner: unknown; zoom: number; fogMaps: Record<string, HTMLCanvasElement>;
+  regionOf: (string | null)[]; interactables: SvItem[]; gatherState: Record<string, unknown>; bubbles: { s: THREE.Sprite, target: { pos: THREE.Vector3 }, until?: number }[];
+  paused?: boolean; lastPlayer?: number; firstFrames?: typeof firstFrames; renderer?: typeof renderer; npcs?: typeof NPCS;
+  halfBusy?: (i?: number) => boolean; quality?: typeof quality; battery?: { frameMs: number, titleMs: number, idleMs: number, idleFps: number, [k: string]: unknown };
+  // places, people and things of the valley (each made by its own module)
+  farm?: ReturnType<typeof createFarm>; ferries?: ReturnType<typeof createFerries>; festivals?: ReturnType<typeof createFestivals>;
+  folkShow?: ReturnType<typeof createFolkShow>; hoilang?: ReturnType<typeof import('./hoilang.js').createHoiLang>; kidplay?: ReturnType<typeof createKidPlay>;
+  kites?: ReturnType<typeof createKites>; lanterns?: ReturnType<typeof createLanterns>; lotus?: ReturnType<typeof createLotus>;
+  nameTags?: ReturnType<typeof createNameTags>; netGames?: ReturnType<typeof createNetGames>; pets?: ReturnType<typeof createPets>;
+  placeBook?: ReturnType<typeof createPlaceBook>; places?: ReturnType<typeof createPlaces>; plots?: ReturnType<typeof createPlots>;
+  reeds?: ReturnType<typeof createReeds>; report?: ReturnType<typeof createReport>; secrets?: ReturnType<typeof createSecrets>;
+  seeThrough?: ReturnType<typeof createSeeThrough>; shop?: ReturnType<typeof import('./shop.js').createShop>; signposts?: ReturnType<typeof createSignposts>;
+  simple?: ReturnType<typeof createSimple>; town?: ReturnType<typeof createTown>; weather?: ReturnType<typeof createWeather>;
+  yard?: ReturnType<typeof createYard>; chests?: ReturnType<typeof createTwinChests>; claims?: ReturnType<typeof createClaims>;
+  coop?: ReturnType<typeof createCoop>; familyCards?: ReturnType<typeof createFamilyCards>; parents?: ReturnType<typeof import('./parents.js').createParents>;
+  boxes?: ReturnType<typeof import('./boxes.js').createBoxes>; surprises?: ReturnType<typeof import('./surprises.js').createSurprises>; myHouse?: ReturnType<typeof createMyHouse> | null;
+  solidsReady?: ReturnType<typeof buildSolids>;
+  // parts other modules add (js/homes.js, js/traffic.js, js/wayfind.js, js/autoplay.js, js/tester.js, js/fun.js, js/chatter.js, js/learn.js…)
+  homes?: { list: unknown[], isInside(h: SvHeroT): boolean, [k: string]: unknown }; traffic?: { apply(big: boolean): void, [k: string]: unknown };
+  wayfind?: { open(i: number): void, stop(quiet?: boolean): void, [k: string]: unknown }; autoplay?: { running(): boolean, unmount(): void, [k: string]: unknown };
+  tester?: { [k: string]: unknown }; tapReact?: (h: SvHeroT, ray: THREE.Raycaster) => boolean; chatGroup?: (...a: unknown[]) => unknown;
+  showcaseCam?: (i: number, h: SvHeroT, dt: number) => boolean; TALES?: { id: string, title(): string, [k: string]: unknown }[];
+  readTaleNow?: (h: SvHeroT, tale: { id: string }, sync?: unknown) => Promise<unknown>;
+  GAME_SPOT?: Record<string, string>; lookUpT?: number; tapTargets?: THREE.Object3D[]; travelling?: boolean;
+  // values main.ts shares
+  LANDMARKS?: typeof LANDMARKS; STICKERS?: typeof STICKERS; VIEWS?: typeof VIEWS; PLACES?: { id?: string, x: number, z: number, [k: string]: unknown }[];
+  bootTimes?: Record<string, number>; mapPic?: typeof mapPic; waterPic?: typeof waterPic; parked?: unknown;
+  bubbleIcons?: THREE.Sprite[]; wanderers?: (SvPerson & { tx: number, tz: number, wave: number })[]; partners?: Record<string, SvFriend>;
+  caroSize?: number; _padRemotes?: number; _familyMsgLive?: boolean; _owlAuto?: boolean; _previewed?: boolean; _reading?: boolean;
+  resumedAway?: boolean; valleyGrew?: boolean; closeUp?: number | null;
+  // what main.ts does for the screens and the other modules (made further down)
+  GAMES_ICON?: (id: string) => string; keep?: (id: string, def?: boolean) => boolean; tried?: (h: SvHeroT | SvHeroT['profile'], id: string) => void;
+  toast?: (h: SvHeroT, m: string) => void; dialog?: typeof dialog; hint?: (h: SvHeroT, k: string) => void; hurt?: (h: SvHeroT, n: number) => void;
+  stats?: (h: SvHeroT, sp: number) => void; eat?: (h: SvHeroT, id: string) => void; mount?: (h: SvHeroT, b: unknown) => void;
+  job?: (kind: string, n?: number, h?: SvHeroT) => void; checkQuests?: (h: SvHeroT) => void; onCooked?: (h: SvHeroT) => void; onGlide?: (h: SvHeroT) => void;
+  objective?: (h: SvHeroT) => string; objectiveIcon?: (h: SvHeroT) => string; sayObjective?: (i: number) => void; goToObjective?: (i: number) => Promise<void>;
+  kidTalk?: (h: SvHeroT, game: string, name: string, line: string) => void; townTalk?: (h: SvHeroT, who: unknown) => Promise<void>;
+  chatWith?: (i: number, pid: string, firstAsk?: boolean) => void; emote?: (i: number, id: string) => void; fx?: (x: number, y: number, z: number, ch: string) => void;
+  rescue?: (h: SvHeroT, fainted?: boolean) => Promise<void>; onTowerTop?: (h: SvHeroT, tw: (typeof TOWERS)[number]) => Promise<void>;
+  travel?: SvAt; travelTo?: SvAt; landBy?: SvAt; clearSpot?: (x: number, z: number, pad?: number) => [number, number]; goodSpot?: (x: number, z: number) => boolean;
+  npcAt?: (id: string) => { x: number, z: number } | undefined; npcNear?: (x: number, z: number, r?: number) => SvItem | null; gameSpot?: (id: string) => SvItem | undefined;
+  goToGame?: (i: number, id: string) => void; playGameOnline?: (id: string, level: number, online: SvOnline) => Promise<ReturnType<typeof openGame> extends Promise<infer R> ? R | undefined : unknown>;
+  openPad?: (i: number, tab?: string) => void; closePad?: () => void; closePadNow?: () => void; openGamesHub?: (i: number) => void; openQuick?: (i: number) => void;
+  openWardrobe?: (i: number) => void; openWhere?: (i: number) => void; openTrade?: (i: number, id?: string) => void; openSongs?: (start?: unknown) => void;
+  openSound?: (anchor?: Element) => Promise<unknown>; openPlayTogether?: () => void; mapCard?: () => void; avatarPreview?: (i: number) => void;
+  rebuildHero?: (i: number) => void; changePlayer?: () => void; cycleView?: (i: number) => void; setView?: (i: number, id: string) => void;
+  zoomBy?: (i: number, f: number, quiet?: boolean) => void; snapshot?: (i: number, max?: number, q?: number) => string; screenFacts?: () => Record<string, unknown>;
+  camBlockers?: () => THREE.Object3D[]; camBlockerMats?: () => unknown; farCull?: (now: number) => void; fogMapFor?: (p: { id: string }) => HTMLCanvasElement;
+  setAudio?: (kind: string, on: boolean) => void; toggleAudio?: (kind: string) => void; toggleMute?: () => Promise<void>; voiceCommand?: (i: number) => void;
+  sideStories?: () => unknown[]; walkAwayClose?: (node: SvWalkClose, close: () => void) => void; barsHTML?: (n: number) => string;
+  // friends online
+  together?: () => boolean; shareStatus?: () => void; listenFriends?: () => void; autoMeet?: () => void; onNet?: () => void; netTick?: (body: Element) => void;
+  netQuality?: (id: string) => ReturnType<typeof Net.quality>; drawOnlinePanel?: (body: Element, redraw: () => void) => void;
+  inviteFriend?: (code: string) => Promise<unknown>; joinFriend?: (room: string, hostPub?: string) => Promise<void>; inviteGame?: (game: string, to?: string, level?: number, size?: number) => void;
+  meetAndPlay?: (i: number, id: string, source?: string) => Promise<void>; findFriend?: (i: number) => void; followFriend?: (i: number, id: string) => void;
+  friendWhere?: (h: SvHeroT, P: { pos: THREE.Vector3 }) => string; askFriendToCome?: (h: SvHeroT, id: string) => void;
+  flyToFriend?: (h: SvHeroT, id: string) => void; walkToFriend?: (h: SvHeroT, id: string) => void;
+  // values and functions main.ts shares
+  save?: typeof save; give?: typeof give; goAndDo?: typeof goAndDo; playGame?: typeof playGame; currentQuest?: typeof currentQuest;
+  questTarget?: typeof questTarget; sendHello?: typeof sendHello; worldHidden?: typeof worldHidden; rects?: typeof rects;
+  reward?: typeof reward; fmt?: typeof fmt; addCoins?: (xu: number) => void; giveSticker?: typeof giveSticker; voiceControlOn?: typeof voiceControlOn;
+  readingCheck?: () => void; faceToFace?: () => boolean;
+}
+const G: SvMain = {
   actCount: 0,
   events, // the event bus (js/core/events.js, architecture step 1)
   settings, world, scene, pads, heroes: [], huds: [], mode: 'solo', partner: null, zoom: 1,
@@ -204,7 +285,9 @@ function startAct(it, h) {
   try { events.emit('InteractionStarted', { playerId: makeId('player', h.profile.id || 'guest'), entityId: 'interaction:' + String(it.id).toLowerCase().replace(/[^a-z0-9]+/g, '-'), action: 'act', it: it.id }); } catch (e) { }
   return it.act(h, G);
 }
-function addNPC({ id, name, faceName, look, model, x, z, face = 0, icon = '💬', talk }) {
+/** a person of the valley: a drawn model or a look for the people's maker, where they stand and what they say */
+type SvNpcDef = { id: string, name: string, faceName?: string, look?: Record<string, unknown>, model?: THREE.Object3D, x: number, z: number, face?: number, icon?: string, talk(h: SvHeroT): void | Promise<unknown> };
+function addNPC({ id, name, faceName, look, model, x, z, face = 0, icon = '💬', talk }: SvNpcDef) {
   const A = model ? null : nameAvatar(buildAvatar(look, null), faceName || name, true, id), obj = model || A.root;
   const av = model ? null : obj;
   obj.position.set(x, world.groundAt(x, z), z); obj.rotation.y = face; scene.add(obj);
@@ -269,7 +352,7 @@ function setupInteractables() {
   G.interactables.push(...world.interactables);
   SHRINES.forEach(s => G.interactables.push({ id: s.id, x: s.x, z: s.z, r: 4.2, icon: '✨', label: () => T('Enter shrine', 'Vào đền') + ': ' + GAMES[s.game].name(), act: h => playGame(h.i, s.game, 'shrine', s) }));
   TOWERS.forEach(tw => G.interactables.push({ id: tw.id, x: tw.x, z: tw.z, r: 5.5, icon: '🧗', label: () => T('Climb ', 'Leo ') + tw.name(), visible: h => h.pos.y < world.towerMeshes[tw.id].y + 5, act: h => { SFX.whoosh(); h.startTowerClimb(tw); } }));
-  LEAFIES.forEach(lf => G.interactables.push({ id: lf.id, x: lf.x, z: lf.z, r: lf.kind === 'rock' ? 2.6 : 1.8, icon: lf.kind === 'rock' ? '🪨' : '✨', auto: lf.kind === 'sparkle',
+  LEAFIES.forEach(lf => G.interactables.push({ id: lf.id, x: +lf.x, z: +lf.z, r: lf.kind === 'rock' ? 2.6 : 1.8, icon: lf.kind === 'rock' ? '🪨' : '✨', auto: lf.kind === 'sparkle',
     label: () => lf.kind === 'rock' ? T('Lift rock', 'Nhấc hòn đá') : T('Touch the sparkle', 'Chạm tia lấp lánh'), visible: h => !h.profile.leafies[lf.id], act: h => foundLeafy(h, lf) }));
   world.pots.forEach((p, k) => G.interactables.push({ id: 'pot' + k, x: p.x, z: p.z, r: 2.8, icon: '🍲', label: () => T('Cook', 'Nấu ăn'), act: h => openCooking(G, h.i) }));
   G.interactables.push({ id: 'statue', x: world.statue.x, z: world.statue.z, r: 3.6, icon: '🪷', label: () => T('Lotus Statue', 'Tượng Sen'), act: statueTalk });
@@ -316,7 +399,7 @@ function setupGuides() {
   bang.userData.it = bangIt; (G.tapTargets = G.tapTargets || []).push(bang);
   const arrowGeo = new THREE.ConeGeometry(.45, 1.1, 4); arrowGeo.rotateX(Math.PI / 2);
   const feet = sprite('👣', .8).material; // footprints when walking to a place chosen on the map
-  const guides = [0, 1].map(() => {
+  const guides = [0, 1].map((): { arrow: THREE.Mesh, dots: THREE.Sprite[], sparkle?: THREE.SpriteMaterial } => {
     const arrow = new THREE.Mesh(arrowGeo, new THREE.MeshBasicMaterial({ color: '#ffd23f', fog: false }));
     const dots = Array.from({ length: 14 }, () => { const d = sprite('✨', .7); d.material = d.material.clone(); scene.add(d); return d; });
     scene.add(arrow); return { arrow, dots };
@@ -403,7 +486,7 @@ G.quality = quality; // (feel and sound) js/fun.js leaves out the running dust o
 G.fx = (x, y, z, ch) => { const s = sprite(ch, 1.4); s.material = s.material.clone(); s.position.set(x, y, z); scene.add(s); const t0 = performance.now(); const f = () => { const k = (performance.now() - t0) / 900; s.position.y = y + k * 2; s.material.opacity = 1 - k; if (k < 1) requestAnimationFrame(f); else { scene.remove(s); s.material.dispose(); } }; f(); };
 G.mount = (h, b) => { h.mount(b); h.profile.quests.buffalo = true; save(); say('Moo! Hold on tight!', 'Ụm bò! Bám chắc nhé!'); hudFor(h).toast(T('Press Jump to get off', 'Bấm Nhảy để xuống')); };
 
-async function playGame(i, id, source, shrine) {
+async function playGame(i: number, id: string, source: string, shrine?: (typeof SHRINES)[number]) {
   const h = G.heroes[i]; if (!h) return;
   if (gameOpen()) { if (twoHalves()) hudFor(h).toast(T('Your friend is playing a game. Play it together, or wait a moment!', 'Bạn con đang chơi một trò. Chơi cùng bạn, hoặc chờ một chút nhé!')); return; }
   G.paused = true; hush();
@@ -568,7 +651,7 @@ G.townTalk = async (h, who) => {
   }
 };
 // ---------- chatting with villagers ----------
-G.chatWith = (i, pid, firstAsk) => { if (!PERSONAS[pid] || gameOpen()) return; const was = G.paused; G.paused = true; openChat(G, i, pid, () => { G.paused = was && !!document.querySelector('.modal'); }, firstAsk); };
+G.chatWith = (i, pid, firstAsk) => { if (!PERSONAS[pid] || gameOpen()) return; const was = G.paused; G.paused = true; openChat(G, i, pid, () => { G.paused = was && !!document.querySelector<HTMLElement>('.modal'); }, firstAsk); };
 G.voiceCommand = i => voiceCommand(G, i); G.voiceControlOn = voiceControlOn;
 dialogHooks.canChat = name => !!personaByName(name);
 dialogHooks.chat = name => {
@@ -623,7 +706,7 @@ G.goToObjective = async i => {
   if (dist2(h.pos.x, h.pos.z, dest.x, dest.z) > 3 && wayBlocked(h.pos.x, h.pos.z, dest.x, dest.z)) await G.landBy(h, dest.x, dest.z);
   if (near) goAndDo(h, near); else h.goal = { x: tg.x, z: tg.z };
 };
-const GOURD_GIFTS = [[3, 'money', 15], [6, 'money', 25], [10, 'glider', 2], [15, 'money', 40], [20, 'money', 60], [24, 'glider', 4]];
+const GOURD_GIFTS: [number, string, number][] = [[3, 'money', 15], [6, 'money', 25], [10, 'glider', 2], [15, 'money', 40], [20, 'money', 60], [24, 'glider', 4]];
 async function gourdTalk(h) {
   const p = h.profile, n = Object.keys(p.leafies).length;
   const due = GOURD_GIFTS.filter(([need]) => n >= need && !p.quests['gourd' + need]);
@@ -709,7 +792,7 @@ async function checkQuests(h) {
     // every new goal is told as a little story; "Let's go!" walks there straight away
     if (q && q.id !== 'owl') setTimeout(async () => {
       // wait until no game, book, chat or menu is open
-      for (let k = 0; k < 600 && (gameOpen() || document.querySelector('.storybook, .modal, .dialog, .reward, .howto')); k++) await wait(500);
+      for (let k = 0; k < 600 && (gameOpen() || document.querySelector<HTMLElement>('.storybook, .modal, .dialog, .reward, .howto')); k++) await wait(500);
       if (currentQuest(p) !== q || !playing) return;
       const was = G.paused; G.paused = true; const go = await showQuestTale(q, p.name); G.paused = was;
       if (go) G.goToObjective(h.i); else hudFor(h)?.toast(T('New goal: ', 'Mục tiêu mới: ') + q.title());
@@ -726,7 +809,7 @@ async function celebrateAll(h) {
 G.onTowerTop = async (h, tw) => {
   const p = h.profile; if (p.towers[tw.id]) { hudFor(h).toast(T('What a view! Jump off and glide!', 'Đẹp quá! Nhảy xuống và lượn nào!')); return; }
   p.towers[tw.id] = true;
-  SHRINES.concat(TOWERS).forEach(s => { if (dist2(s.x, s.z, tw.x, tw.z) < REVEAL_R) p.discovered[s.id] = true; });
+  [...SHRINES, ...TOWERS].forEach(s => { if (dist2(s.x, s.z, tw.x, tw.z) < REVEAL_R) p.discovered[s.id] = true; });
   save(); delete G.fogMaps[p.id]; world.setTowerDone(tw.id, true);
   SFX.tower(); h.cheerT = 2.5;
   await wait(1200);
@@ -778,7 +861,7 @@ G.avatarPreview = i => {
   preview.add(new THREE.HemisphereLight(0xffffff, 0xd9c79a, 1.8)); const sun = new THREE.DirectionalLight(0xffffff, 2); sun.position.set(3, 5, 4); preview.add(sun);
   // Hidden gliders/idle copies must not enlarge the bounds and shrink the outfit.
   avatar.updateMatrixWorld(true); const bounds=new THREE.Box3();
-  avatar.traverseVisible(o=>{if(o.isMesh&&o.geometry){if(!o.geometry.boundingBox)o.geometry.computeBoundingBox();bounds.union(o.geometry.boundingBox.clone().applyMatrix4(o.matrixWorld));}});
+  avatar.traverseVisible(o=>{if(o instanceof THREE.Mesh&&o.geometry){if(!o.geometry.boundingBox)o.geometry.computeBoundingBox();bounds.union(o.geometry.boundingBox.clone().applyMatrix4(o.matrixWorld));}});
   const size=bounds.getSize(new THREE.Vector3()),center=bounds.getCenter(new THREE.Vector3()),width=260,height=320,aspect=width/height;
   const cam=new THREE.PerspectiveCamera(32,aspect,.1,100),distance=Math.max(size.y,size.x/aspect)/(2*Math.tan(THREE.MathUtils.degToRad(16)))*1.12;
   cam.position.set(center.x,center.y,center.z+distance+size.z/2);cam.lookAt(center);
@@ -849,7 +932,7 @@ world.updaters.push((dt, t) => G.wanderers.forEach((w, k) => {
 }));
 G.openPad = (i, tab) => { if (twoHalves()) G.lastPlayer = i; if (G.paused) return; G.paused = true; openPad(G, i, tab); };
 G.closePad = () => { G.paused = false; };
-G.closePadNow = () => { const m = document.querySelector('.modal.pad'); if (m) { m.remove(); G.paused = false; } };   // (Round V) close the Pad from outside it
+G.closePadNow = () => { const m = document.querySelector<HTMLElement>('.modal.pad'); if (m) { m.remove(); G.paused = false; } };   // (Round V) close the Pad from outside it
 
 // ---------- talking: quick phrases, speech bubbles, voice calls ----------
 function bubble(target, text) {
@@ -886,11 +969,11 @@ G.openSound = anchor => import('./soundsheet.js').then(m => m.openSoundSheet(G, 
 G.toggleMute = async () => { if (!Net.micLive) { Net.resumeAudio(); await Net.getMic(true); } else { Net.setMuted(!Net.muted); Net.resumeAudio(); } G.huds.forEach(hd => hd.setCall(Net.connected, false, Net.muted || !Net.micLive)); };
 // Keyboard shortcuts on computers (shown as little key badges on the buttons). Player 1's screen.
 addEventListener('keydown', e => {
-  if (!playing || e.repeat || e.ctrlKey || e.metaKey || e.altKey || /INPUT|TEXTAREA|SELECT/.test((e.target && e.target.tagName) || '')) return;
+  if (!playing || e.repeat || e.ctrlKey || e.metaKey || e.altKey || /INPUT|TEXTAREA|SELECT/.test((e.target instanceof Element && e.target.tagName) || '')) return;
   const k = e.code;
   // Escape closes the top pop-up, chat or game card
-  if (k === 'Escape') { const x = [...document.querySelectorAll('.modal .x, .vc-pop .vc-x, .chatwin .x, .dlg-close')].pop(); if (x) { x.click(); e.preventDefault(); } return; }
-  if (G.paused || gameOpen() || document.querySelector('.modal, .storybook, .vc-pop')) return;
+  if (k === 'Escape') { const x = [...document.querySelectorAll<HTMLElement>('.modal .x, .vc-pop .vc-x, .chatwin .x, .dlg-close')].pop(); if (x) { x.click(); e.preventDefault(); } return; }
+  if (G.paused || gameOpen() || document.querySelector<HTMLElement>('.modal, .storybook, .vc-pop')) return;
   const two = G.heroes.length > 1, i = 0;
   const map = { KeyG: () => G.openGamesHub(i), KeyM: () => G.openPad(i, 'map'), KeyB: () => G.openPad(i, 'bag'), KeyK: () => G.voiceCommand(i),
     KeyT: () => G.huds[i].toggleEmotes(), KeyC: () => Net.connected && G.toggleMute(), KeyN: () => G.toggleAudio('music'), KeyO: () => G.toggleAudio('sound'),
@@ -982,7 +1065,7 @@ G.openPlayTogether = () => {
   const ids = Object.keys(Net.remotes); if (!ids.length) { toast(T('Nobody is in your room yet.', 'Chưa có bạn nào trong phòng.')); return; }
   const little = G.heroes[0].profile.age !== 'big', made = Object.keys(ONLINE_GAMES).filter(id => GAMES[id]);
   const race = Object.keys(GAMES).filter(id => !ONLINE_GAMES[id] && (!little || !gameInfoAge(id) || gameInfoAge(id) < 5)), tales = (G.TALES || []).slice(0, 12);
-  const btn = (id, sub) => `<button class="pt-g" data-g="${esc(id)}" aria-label="${esc(GAMES[id].name())}">${pic(GAMES[id].icon)}<b>${esc(GAMES[id].name())}</b>${sub ? `<small>${sub}</small>` : ''}</button>`;
+  const btn = (id: string, sub?: string) => `<button class="pt-g" data-g="${esc(id)}" aria-label="${esc(GAMES[id].name())}">${pic(GAMES[id].icon)}<b>${esc(GAMES[id].name())}</b>${sub ? `<small>${sub}</small>` : ''}</button>`;
   const m = modal('playtogether', `<button class="x" aria-label="${T('Close', 'Đóng')}">✕</button><h2>${pic('🎲')} ${T('Play together', 'Chơi cùng nhau')}</h2>
     <h3>${pic('👫')} ${T('Games made for friends', 'Trò chơi dành cho bạn bè')}</h3><div class="pt-grid">${made.map(id => btn(id, T(`up to ${ONLINE_GAMES[id].max}`, `tối đa ${ONLINE_GAMES[id].max}`))).join('')}</div>
     <h3>${pic('🏁')} ${T('Race side by side', 'Thi đua cùng nhau')} <small>${T('everyone plays the same game, stars for all', 'mọi người chơi cùng một trò, ai cũng có sao')}</small></h3><div class="pt-grid">${race.map(id => btn(id)).join('')}</div>
@@ -1041,7 +1124,7 @@ G.findFriend = i => {
   const h = G.heroes[i]; if (!h) return null;
   const list = Object.values(G.partners).filter(P => P.pos.y > -40);
   if (!list.length) { G.openPad(i, 'friend'); return ['No friends are in your room yet. Start a room and tell your friend the number!', 'Chưa có bạn nào trong phòng. Tạo phòng rồi đọc số cho bạn nhé!']; }
-  document.querySelector('.vc-pop')?.remove();
+  document.querySelector<HTMLElement>('.vc-pop')?.remove();
   const pop = el('div', 'vc-pop friendfind', `<p class="vc-heard">👫 ${T('Where are my friends?', 'Bạn của con ở đâu?')}</p>
     ${list.map(P => { const d = Math.round(dist2(h.pos.x, h.pos.z, P.pos.x, P.pos.z)); return `<div class="ff-row"><img src="${P.photoURL || ''}" alt="" ${P.photoURL ? '' : 'hidden'}><div class="ff-txt"><b>${esc(nm(P.name))}</b><small>${d} m · ${compass(h, P.pos.x, P.pos.z)}${G.friendWhere(h, P) ? ' · ' + esc(G.friendWhere(h, P)) : ''}</small></div>
       <div class="ff-btns"><button class="btn primary" data-walk="${P.id}">👣 ${T('Walk', 'Đi bộ')}</button><button class="btn" data-fly="${P.id}">✨ ${T('Fly', 'Bay')}</button><button class="btn" data-call="${P.id}">📣 ${T('Ask to come', 'Gọi bạn đến')}</button></div></div>`; }).join('')}`);
@@ -1054,7 +1137,7 @@ G.findFriend = i => {
 };
 // the signal bars change every few seconds: only their words are updated (round O, owner: the Friends screen was
 // redrawn whole every two seconds, so a tap could land on a button that had just been replaced and ✕ seemed stuck)
-Net.on('quality', () => { const b = document.querySelector('.pad .online.on'); if (b && G.netTick) G.netTick(b); });
+Net.on('quality', () => { const b = document.querySelector<HTMLElement>('.pad .online.on'); if (b && G.netTick) G.netTick(b); });
 addEventListener('online', () => { toast(T('Back online!', 'Có mạng lại rồi!')); G.listenFriends && G.listenFriends(); });
 addEventListener('offline', () => toast(T('No internet right now. Friends will come back when it returns.', 'Đang mất mạng. Khi có mạng lại, các bạn sẽ quay lại.')));
 Net.on('micchange', () => G.huds.forEach(hd => hd.setCall(Net.connected, false, Net.muted || !Net.micLive)));
@@ -1087,7 +1170,7 @@ Net.on('status', s => {
   if (s.key === 'oldmap') G.mapCard();
   if (s.key === 'waiting') { const code = s.code; msg = T(`Room code: ${code} (${animalSay(code)}). Tell your friend!`, `Mã phòng: ${code} (${animalSay(code)}). Đọc cho bạn nhé!`); }
   // with Friends open the message shows in it, not over its tabs (round O)
-  netStatus = msg; if (msg && s.key !== 'oldmap' && !document.querySelector('.pad .online')) toast(msg); /* (the map card says it) */ if (G.onNet) G.onNet(); if (['waiting', 'connected', 'cloud', 'left'].includes(s.key)) G.shareStatus();
+  netStatus = msg; if (msg && s.key !== 'oldmap' && !document.querySelector<HTMLElement>('.pad .online')) toast(msg); /* (the map card says it) */ if (G.onNet) G.onNet(); if (['waiting', 'connected', 'cloud', 'left'].includes(s.key)) G.shareStatus();
 });
 // Knock knock: someone wants to come into my room. The room's starter sees their name and picture and decides;
 // they hear and see nothing of the room until then. Saved friends come straight in (net.js).
@@ -1120,7 +1203,7 @@ const leaveOk = async () => !(Net.role && Net.count > 1) || (await dialog(T('You
 // (Online, r57, ROUND-T §4) a friend on another map layout can't play together (positions are raw x, z): a picture card
 // with a voice instead of joining (owner, 11 Oct: only the one who wanted to join is told)
 G.mapCard = () => {
-  document.querySelectorAll('.modal.mapcard').forEach(m => m.remove());
+  document.querySelectorAll<HTMLElement>('.modal.mapcard').forEach(m => m.remove());
   const m = modal('mapcard', `<div class="mc-pic">${pic('🗺️')}</div><h2>${T('Different valley', 'Thung lũng khác')}</h2>
     <p class="center">${T('Your friend has a different valley. Ask a grown-up to update the game.', 'Thung lũng của bạn khác với của con. Nhờ người lớn cập nhật trò chơi nhé.')}</p>
     <div class="actions center"><button class="btn primary big" data-ok>${T('OK', 'Được rồi')}</button></div>`);
@@ -1170,7 +1253,7 @@ G.autoMeet = () => {
     const st = Net.friends.status[f.code], on = st && st.online && now - (st.seen || 0) < 3 * 60000;
     if (!on) { told.delete(f.code); continue; }
     if (told.has(f.code) || (st.room && st.room === Net.code)) { told.add(f.code); continue; }
-    if (gameOpen() || (G.worldHidden && G.worldHidden() && !(G.simple && G.simple.open)) || document.querySelector('.friendnote, .storybook, .dialog, .modal, .theatre')) continue; // (later: not over a game, a story or a question)
+    if (gameOpen() || (G.worldHidden && G.worldHidden() && !(G.simple && G.simple.open)) || document.querySelector<HTMLElement>('.friendnote, .storybook, .dialog, .modal, .theatre')) continue; // (later: not over a game, a story or a question)
     told.add(f.code); friendNote(f, st);
   }
 };
@@ -1202,14 +1285,14 @@ const friendStatus = f => {
 };
 // (round R privacy, 9 Oct) a friend made in a room (＋👫) is saved with their key: it lets them straight into my room later
 // (if they can prove it), and locks invitations and "where I am" notes for them alone
-const addFriend = (code, name, pub) => { code = String(code || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6); if (code.length !== 6 || code === settings.friendCode) return false; let f = settings.friends.find(x => x.code === code); if (f) { if (name) f.name = name; } else settings.friends.push(f = { code, name: name || code }); if (okPub(pub)) f.pub = pub; settings.friendsOn = true; saveSettings(); G.listenFriends(); return true; };
+const addFriend = (code: string, name?: string, pub?: string) => { code = String(code || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6); if (code.length !== 6 || code === settings.friendCode) return false; let f = settings.friends.find(x => x.code === code); if (f) { if (name) f.name = name; } else settings.friends.push(f = { code, name: name || code }); if (okPub(pub)) f.pub = pub; settings.friendsOn = true; saveSettings(); G.listenFriends(); return true; };
 // (Round V, owner 13 Oct) the microphone test for grown-ups (js/mictest.js), with or without a room
 const micTestHTML = () => `<p class="center"><button class="btn" data-mictest>🎙️ ${T('Microphone test (grown-ups)', 'Thử micrô (người lớn)')}</button></p>`;
 const netLineHTML = () => (n => `<p class="note center netline">📶 ${T('This device', 'Máy này')}: ${n.online ? (n.type ? esc(n.type) + ' · ' : '') + (n.eff ? esc(n.eff.toUpperCase()) + ' · ' : '') + (n.down ? n.down + ' Mbps · ' : '') : T('no internet!', 'mất mạng!') + ' · '}${n.cloud ? T(`cloud relay on (${n.brokers} server${n.brokers === 1 ? '' : 's'})`, `đang dùng mạng đám mây (${n.brokers} máy chủ)`) : T('direct link', 'kết nối trực tiếp')}${n.voice ? ' · 🎙️ ' + T('voice on', 'đang gọi') : n.cloud ? ' · ' + T('voices can’t travel over the cloud relay yet: use 💬', 'giọng nói chưa đi qua mạng đám mây được: dùng nút 💬') : ''}</p>`)(Net.netInfo());
 const pqHTML = id => (q => q ? `<small class="pq">${G.barsHTML(q.bars)} ${q.rtt != null ? q.rtt + ' ms' : '…'} · ${routeName(q.route)}${q.weak ? ' · ' + T('weak', 'yếu') : ''}</small>` : '')(Net.quality(id));
 G.netTick = body => {
-  const nl = body.querySelector('.netline'); if (nl) nl.outerHTML = netLineHTML();
-  body.querySelectorAll('.prow.roomp[data-pid]').forEach(row => { const old = row.querySelector('.pq'), now = pqHTML(row.dataset.pid); if (old) old.outerHTML = now || ''; else if (now) row.querySelector('.pw').insertAdjacentHTML('beforeend', now); });
+  const nl = body.querySelector<HTMLElement>('.netline'); if (nl) nl.outerHTML = netLineHTML();
+  body.querySelectorAll<HTMLElement>('.prow.roomp[data-pid]').forEach(row => { const old = row.querySelector<HTMLElement>('.pq'), now = pqHTML(row.dataset.pid); if (old) old.outerHTML = now || ''; else if (now) row.querySelector<HTMLElement>('.pw').insertAdjacentHTML('beforeend', now); });
 };
 // (bug #37, owner 11 Oct) a small note for grown-ups saying where the switch is (Grown-ups → "Internet and playing online"
 // → "Use the internet"), with the Grown-ups button right here: press and hold only, so a child can't switch it on
@@ -1221,7 +1304,7 @@ const bindGUHow = (body, redraw) => {
   const b = body.querySelector('.gu-hold'); if (!b) return;
   holdButton(b, () => {
     openGrownups(() => { if (document.body.contains(body)) redraw(); });
-    const d = document.querySelector('.modal.grownups details[data-sec="online"]'); if (d) { d.open = true; d.scrollIntoView({ block: 'start' }); }
+    const d = document.querySelector<HTMLDetailsElement>('.modal.grownups details[data-sec="online"]'); if (d) { d.open = true; d.scrollIntoView({ block: 'start' }); }
   });
 };
 G.drawOnlinePanel = (body, redraw) => {
@@ -1241,14 +1324,14 @@ G.drawOnlinePanel = (body, redraw) => {
       ${settings.friends.length ? `<p class="note">${T('Friends are never put in a room by themselves: 📨 Invite asks them, ▶ Join goes to theirs.', 'Bạn bè không bao giờ tự bị đưa vào phòng: 📨 Mời là hỏi bạn, ▶ Vào chơi là sang phòng bạn.')}</p>` : ''}${gUHow(true)}</details>`;
   const bindFriends = () => {
     bindGUHow(body, redraw);
-    { const d = body.querySelector('details.friends'); if (d) d.ontoggle = () => { settings.friendsFold = !d.open; saveSettings(); }; }
-    body.querySelectorAll('[data-mapdiff]').forEach(b => b.onclick = () => { SFX.tap(); G.mapCard(); });
-    body.querySelector('#fOn').onchange = e => { settings.friendsOn = e.target.checked; saveSettings(); G.listenFriends(); };
-    body.querySelector('#fAddB').onclick = () => { if (addFriend(body.querySelector('#fAdd').value)) { SFX.chime(); redraw(); } else toast(T('A friend code has 6 letters and numbers.', 'Mã bạn bè gồm 6 chữ và số.')); };
-    body.querySelectorAll('[data-rm]').forEach(b => b.onclick = () => { settings.friends = settings.friends.filter(f => f.code !== b.dataset.rm); saveSettings(); redraw(); });
-    body.querySelectorAll('[data-joinf]').forEach(b => b.onclick = async () => { SFX.tap(); const f = settings.friends.find(x => x.code === b.dataset.fc), st = Net.friends.status[b.dataset.fc] || {}; await G.joinFriend(b.dataset.joinf, f && st.host ? f.pub : null); redraw(); });
-    body.querySelectorAll('[data-inv]').forEach(b => b.onclick = async () => { b.disabled = true; inviteToast(await G.inviteFriend(b.dataset.inv)); b.disabled = false; });
-    body.querySelectorAll('[data-mictest]').forEach(b => b.onclick = () => { SFX.tap(); import('./mictest.js').then(M => M.openMicTest()); });
+    { const d = body.querySelector<HTMLDetailsElement>('details.friends'); if (d) d.ontoggle = () => { settings.friendsFold = !d.open; saveSettings(); }; }
+    body.querySelectorAll<HTMLElement>('[data-mapdiff]').forEach(b => b.onclick = () => { SFX.tap(); G.mapCard(); });
+    body.querySelector<HTMLInputElement>('#fOn').onchange = () => { settings.friendsOn = body.querySelector<HTMLInputElement>('#fOn').checked; saveSettings(); G.listenFriends(); };
+    body.querySelector<HTMLElement>('#fAddB').onclick = () => { if (addFriend(body.querySelector<HTMLInputElement>('#fAdd').value)) { SFX.chime(); redraw(); } else toast(T('A friend code has 6 letters and numbers.', 'Mã bạn bè gồm 6 chữ và số.')); };
+    body.querySelectorAll<HTMLElement>('[data-rm]').forEach(b => b.onclick = () => { settings.friends = settings.friends.filter(f => f.code !== b.dataset.rm); saveSettings(); redraw(); });
+    body.querySelectorAll<HTMLElement>('[data-joinf]').forEach(b => b.onclick = async () => { SFX.tap(); const f = settings.friends.find(x => x.code === b.dataset.fc), st = Net.friends.status[b.dataset.fc] || {}; await G.joinFriend(b.dataset.joinf, f && st.host ? f.pub : null); redraw(); });
+    body.querySelectorAll<HTMLButtonElement>('[data-inv]').forEach(b => b.onclick = async () => { b.disabled = true; inviteToast(await G.inviteFriend(b.dataset.inv)); b.disabled = false; });
+    body.querySelectorAll<HTMLElement>('[data-mictest]').forEach(b => b.onclick = () => { SFX.tap(); import('./mictest.js').then(M => M.openMicTest()); });
   };
   if (Net.connected || Net.role === 'host') {
     const list = Object.values(Net.remotes);
@@ -1264,23 +1347,23 @@ G.drawOnlinePanel = (body, redraw) => {
       <p class="note center">${T('Talk to each other with your voices, or use the 💬 buttons. Up to 6 players in a room.', 'Nói chuyện bằng giọng nói, hoặc dùng nút 💬. Mỗi phòng tối đa 6 người.')}</p>
       <div class="actions center"><button class="btn big${Net.micLive ? '' : ' primary'}" id="oMute">${!Net.micLive ? '🎙️ ' + T('Microphone on', 'Bật micrô') : Net.muted ? '🔇 ' + T('Unmute', 'Bật mic') : '🎙️ ' + T('Mute', 'Tắt mic')}</button><button class="btn big danger" id="oEnd">📵 ${T('Leave the room', 'Rời phòng')}</button></div>
       ${micTestHTML()}${friendsBox()}</div>`;
-    body.querySelector('#oMute').onclick = async () => { SFX.tap(); await G.toggleMute(); redraw(); };
+    body.querySelector<HTMLElement>('#oMute').onclick = async () => { SFX.tap(); await G.toggleMute(); redraw(); };
     bindCode(body);
-    body.querySelectorAll('[data-admit]').forEach(b => b.onclick = () => { SFX.tap(); Net.admit(b.dataset.admit); });
-    body.querySelectorAll('[data-deny]').forEach(b => b.onclick = () => { SFX.tap(); Net.deny(b.dataset.deny); });
-    body.querySelector('#oEnd').onclick = () => { Net.close(); Object.keys(G.partners).forEach(id => Net.emit('left', { id, name: G.partners[id].name })); G.huds.forEach(hd => hd.setCall(false)); redraw(); };
-    body.querySelectorAll('[data-fly]').forEach(b => b.onclick = () => { const P = G.partners[b.dataset.fly]; if (P) { $('.modal.pad')?.remove(); G.paused = false; G.flyToFriend(G.heroes[0], P.id); } });
-    body.querySelectorAll('[data-walkf]').forEach(b => b.onclick = () => { $('.modal.pad')?.remove(); G.paused = false; G.walkToFriend(G.heroes[0], b.dataset.walkf); });
-    body.querySelectorAll('[data-callf]').forEach(b => b.onclick = () => { $('.modal.pad')?.remove(); G.paused = false; G.askFriendToCome(G.heroes[0], b.dataset.callf); });
-    body.querySelectorAll('[data-kick]').forEach(b => b.onclick = () => { if (confirm(T('Remove this player from the room?', 'Mời bạn này ra khỏi phòng?'))) { Net.kick(b.dataset.kick); setTimeout(redraw, 600); } });
-    body.querySelectorAll('[data-tr]').forEach(b => b.onclick = () => { $('.modal.pad')?.remove(); G.paused = false; openTrade(G, G.heroes[0], b.dataset.tr); });
+    body.querySelectorAll<HTMLElement>('[data-admit]').forEach(b => b.onclick = () => { SFX.tap(); Net.admit(b.dataset.admit); });
+    body.querySelectorAll<HTMLElement>('[data-deny]').forEach(b => b.onclick = () => { SFX.tap(); Net.deny(b.dataset.deny); });
+    body.querySelector<HTMLElement>('#oEnd').onclick = () => { Net.close(); Object.keys(G.partners).forEach(id => Net.emit('left', { id, name: G.partners[id].name })); G.huds.forEach(hd => hd.setCall(false)); redraw(); };
+    body.querySelectorAll<HTMLElement>('[data-fly]').forEach(b => b.onclick = () => { const P = G.partners[b.dataset.fly]; if (P) { $('.modal.pad')?.remove(); G.paused = false; G.flyToFriend(G.heroes[0], P.id); } });
+    body.querySelectorAll<HTMLElement>('[data-walkf]').forEach(b => b.onclick = () => { $('.modal.pad')?.remove(); G.paused = false; G.walkToFriend(G.heroes[0], b.dataset.walkf); });
+    body.querySelectorAll<HTMLElement>('[data-callf]').forEach(b => b.onclick = () => { $('.modal.pad')?.remove(); G.paused = false; G.askFriendToCome(G.heroes[0], b.dataset.callf); });
+    body.querySelectorAll<HTMLElement>('[data-kick]').forEach(b => b.onclick = () => { if (confirm(T('Remove this player from the room?', 'Mời bạn này ra khỏi phòng?'))) { Net.kick(b.dataset.kick); setTimeout(redraw, 600); } });
+    body.querySelectorAll<HTMLElement>('[data-tr]').forEach(b => b.onclick = () => { $('.modal.pad')?.remove(); G.paused = false; openTrade(G, G.heroes[0], b.dataset.tr); });
     // games with friends (round G): Caro with one friend, Oẳn tù tì with everyone in the room
-    body.querySelectorAll('[data-follow]').forEach(b => b.onclick = () => { SFX.tap(); G.followFriend(0, b.dataset.follow); $('.modal.pad')?.remove(); G.paused = false; });
-    body.querySelectorAll('[data-caro]').forEach(b => b.onclick = () => { SFX.tap(); G.inviteGame('caro', b.dataset.caro); });
-    { const r = body.querySelector('[data-rpsall]'); if (r) r.onclick = () => { SFX.tap(); G.inviteGame('oantuti'); }; }
-    body.querySelectorAll('[data-allg]').forEach(b => b.onclick = () => { SFX.tap(); G.inviteGame(b.dataset.allg); });
-    { const t = body.querySelector('[data-together]'); if (t) t.onclick = () => { SFX.tap(); G.openPlayTogether(); }; }
-    body.querySelectorAll('[data-addf]').forEach(b => b.onclick = () => { addFriend(b.dataset.addf, b.dataset.n, (Net.remotes[b.dataset.pid] || {}).pub); SFX.chime(); toast(T('Friend added!', 'Đã thêm bạn!')); redraw(); });
+    body.querySelectorAll<HTMLElement>('[data-follow]').forEach(b => b.onclick = () => { SFX.tap(); G.followFriend(0, b.dataset.follow); $('.modal.pad')?.remove(); G.paused = false; });
+    body.querySelectorAll<HTMLElement>('[data-caro]').forEach(b => b.onclick = () => { SFX.tap(); G.inviteGame('caro', b.dataset.caro); });
+    { const r = body.querySelector<HTMLElement>('[data-rpsall]'); if (r) r.onclick = () => { SFX.tap(); G.inviteGame('oantuti'); }; }
+    body.querySelectorAll<HTMLElement>('[data-allg]').forEach(b => b.onclick = () => { SFX.tap(); G.inviteGame(b.dataset.allg); });
+    { const t = body.querySelector<HTMLElement>('[data-together]'); if (t) t.onclick = () => { SFX.tap(); G.openPlayTogether(); }; }
+    body.querySelectorAll<HTMLElement>('[data-addf]').forEach(b => b.onclick = () => { addFriend(b.dataset.addf, b.dataset.n, (Net.remotes[b.dataset.pid] || {}).pub); SFX.chime(); toast(T('Friend added!', 'Đã thêm bạn!')); redraw(); });
     bindFriends();
     return;
   }
@@ -1288,7 +1371,7 @@ G.drawOnlinePanel = (body, redraw) => {
     body.innerHTML = `<div class="online knockwait"><p class="note center">🚪 ${T(`Knock knock on room <b class="bigcode">${esc(Net.code)}</b>`, `Cốc cốc phòng <b class="bigcode">${esc(Net.code)}</b>`)}</p>
       <p class="note center status">${esc(netStatus)}</p><p class="note center">🔇 ${T('Your microphone stays off until you are let in.', 'Micrô của con tắt cho đến khi được cho vào.')}</p>
       <div class="actions center"><button class="btn big" id="oStop">✕ ${T('Stop knocking', 'Thôi không gõ nữa')}</button></div>${friendsBox()}</div>`;
-    body.querySelector('#oStop').onclick = () => { Net.close(); redraw(); };
+    body.querySelector<HTMLElement>('#oStop').onclick = () => { Net.close(); redraw(); };
     bindFriends(); return;
   }
   let code = '', animals = !!settings.padAnimals;
@@ -1298,14 +1381,14 @@ G.drawOnlinePanel = (body, redraw) => {
       <div class="ocard"><h3>1. ${T('Start a room', 'Tạo phòng')}</h3><button class="btn big primary" id="oHost">📞 ${T('Start', 'Bắt đầu')}</button>${Net.role === 'host' && Net.code ? codeHTML(Net.code) : ''}<p class="note">${T('Friends knock, and you choose who comes in. Saved friends come straight in.', 'Bạn bè gõ cửa, con chọn ai được vào. Bạn đã lưu thì vào thẳng.')}</p></div>
       <div class="ocard joinpad"><h3>2. ${T('Join a room', 'Vào phòng')}</h3><div class="padwrap"></div></div>
     </div><p class="note center status">${esc(netStatus)}</p>${micTestHTML()}${friendsBox()}</div>`;
-  body.querySelector('#oHost').onclick = async () => { ac(); await Net.host(sendHello() || {}); redraw(); };
+  body.querySelector<HTMLElement>('#oHost').onclick = async () => { ac(); await Net.host(sendHello() || {}); redraw(); };
   bindCode(body);
   const go = () => { Net.join(code, sendHello() || {}); setTimeout(redraw, 50); };
   const drawPad = () => {
-    const wrap = body.querySelector('.padwrap'); wrap.innerHTML = padHTML(animals);
-    const box = wrap.querySelector('.codebox'), show = () => { box.innerHTML = boxHTML(code, animals); }; show();
-    wrap.querySelectorAll('[data-mode]').forEach(b => b.onclick = () => { SFX.tap(); animals = b.dataset.mode === 'ani'; settings.padAnimals = animals; saveSettings(); drawPad(); });
-    wrap.querySelectorAll('.numpad button').forEach(b => b.onclick = () => {
+    const wrap = body.querySelector<HTMLElement>('.padwrap'); wrap.innerHTML = padHTML(animals);
+    const box = wrap.querySelector<HTMLElement>('.codebox'), show = () => { box.innerHTML = boxHTML(code, animals); }; show();
+    wrap.querySelectorAll<HTMLElement>('[data-mode]').forEach(b => b.onclick = () => { SFX.tap(); animals = b.dataset.mode === 'ani'; settings.padAnimals = animals; saveSettings(); drawPad(); });
+    wrap.querySelectorAll<HTMLElement>('.numpad button').forEach(b => b.onclick = () => {
       const v = b.dataset.v; SFX.tap();
       if (v === 'back') code = code.slice(0, -1); else if (v === 'ok') { if (code.length === ROOM_LEN) go(); } else if (code.length < ROOM_LEN) code += v;
       show();
@@ -1366,7 +1449,7 @@ function placeHolders() {
 document.addEventListener('pointerdown', e => {
   if (!twoHalves()) return;
   const t = e.target instanceof Element ? e.target : null, w = t && t.closest('.halfwrap');
-  if (w) { G.lastPlayer = holders.indexOf(w); return; }
+  if (w) { G.lastPlayer = holders.findIndex(x => x === w); return; }
   if (t && t.closest('.hud')) { const k = G.huds.findIndex(h => h.root.contains(t)); if (k >= 0) { G.lastPlayer = k; return; } }
   const k = rects().findIndex(q => e.clientX >= q.x && e.clientX < q.x + q.w && e.clientY >= q.y && e.clientY < q.y + q.h); if (k >= 0) G.lastPlayer = k;
 }, true);
@@ -1468,14 +1551,14 @@ const keepSpot = () => G.heroes.forEach(h => { if (h.profile && h.onGround && !h
 // the "New!" moment (round R, owner): what Studio's Releases page marked new, once per child, at most three at a time
 // (round T) once, when a child who already played opens the valley's new layout
 async function grownMoment() {
-  for (let k = 0; k < 60 && document.querySelector('.storybook, .reward, .modal, .dialog'); k++) await new Promise(r => setTimeout(r, 500));
+  for (let k = 0; k < 60 && document.querySelector<HTMLElement>('.storybook, .reward, .modal, .dialog'); k++) await new Promise(r => setTimeout(r, 500));
   say('The valley has grown! New rivers, bridges and places to visit.', 'Thung lũng đã lớn hơn rồi! Có sông mới, cầu mới và nhiều nơi mới để đi chơi.'); // (read aloud: under-5s can't read it)
   await reward('🗺️', T('The valley has grown!', 'Thung lũng đã lớn hơn rồi!'), T('New rivers, bridges and places to visit. Your stickers, stories, farm and house are all still here.', 'Có sông mới, cầu mới và nhiều nơi mới để đi chơi. Nhãn dán, truyện, nông trại và nhà của con vẫn còn nguyên.'));
 }
 async function newMoment(h) {
   if (!h || !h.profile) return; const p = h.profile; p.seenNew = p.seenNew && typeof p.seenNew === 'object' ? p.seenNew : {};
   const fresh = RELEASES.filter(r => releaseNew(r.id) && !p.seenNew[r.id]).slice(0, 3); if (!fresh.length) return;
-  for (let k = 0; k < 60 && document.querySelector('.storybook, .reward, .modal, .dialog'); k++) await new Promise(r => setTimeout(r, 500));
+  for (let k = 0; k < 60 && document.querySelector<HTMLElement>('.storybook, .reward, .modal, .dialog'); k++) await new Promise(r => setTimeout(r, 500));
   fresh.forEach(r => { p.seenNew[r.id] = new Date().toISOString().slice(0, 10); }); save();
   await reward('🆕', T('New in the valley!', 'Mới trong thung lũng!'), fresh.map(r => T(r.en, r.vi)).join(' · '));
 }
@@ -1565,7 +1648,7 @@ function adaptResolution(rawMs) {
 const FRAME_MS = settings.quality === 'max' ? 0 : settings.quality === 'high' || (settings.quality !== 'low' && !matchMedia('(pointer: coarse)').matches) ? 1000 / 60 : 1000 / 30;
 const TITLE_MS = 1000 / 20, IDLE_MS = 15000, IDLE_FPS = 8;
 // what the drawing costs, for the battery statistics (js/players.js takes it once a minute) and the `battery` check
-const BAT = G.battery = { frameMs: FRAME_MS, titleMs: TITLE_MS, idleMs: IDLE_MS, idleFps: IDLE_FPS, idle: false, input: performance.now(), moved: performance.now(), key: '', at: null, due: 0, prStart: renderer.getPixelRatio(), prMax: settings.quality === 'auto' ? adapt.max : renderer.getPixelRatio(),
+const BAT = G.battery = { frameMs: FRAME_MS, titleMs: TITLE_MS, idleMs: IDLE_MS, idleFps: IDLE_FPS, idle: false, input: performance.now(), moved: performance.now(), key: '', at: null, atT: 0, due: 0, prStart: renderer.getPixelRatio(), prMax: settings.quality === 'auto' ? adapt.max : renderer.getPixelRatio(),
   // (counted only while a child plays and something moves: the title, the idle frames and the time the world rests
   // behind a game or a menu are left out, so frames a second say how smooth playing is)
   frames: 0, work: 0, draws: 0, ms: 0, idleFrames: 0, lastDrawn: 0,
@@ -1586,7 +1669,7 @@ function stillCheck(now) {
 }
 // pages that cover the whole screen: nothing of the valley shows, so it isn't drawn at all (the Simple screen, which
 // under-5s start on, the 🎵 Songs page, often left playing lullabies at bedtime, and the real photos)
-const worldHidden = () => (G.simple && G.simple.open) || !!document.querySelector('.songs, .realview');
+const worldHidden = () => (G.simple && G.simple.open) || !!document.querySelector<HTMLElement>('.songs, .realview');
 G.worldHidden = worldHidden;
 function frame(now) {
   requestAnimationFrame(frame);
@@ -1598,7 +1681,7 @@ function frame(now) {
   const work0 = performance.now();
   // the 3D world rests while a full-screen game, the storybook or a page that covers it is open (saves battery)
   // (two players: the world rests only when both halves have a window open)
-  if (twoHalves() && playing ? G.halfBusy(0) && G.halfBusy(1) : gameOpen() || document.querySelector('.storybook, .theatre.film') || (G.paused && document.querySelector('.modal')) || (playing && worldHidden())) return;
+  if (twoHalves() && playing ? G.halfBusy(0) && G.halfBusy(1) : gameOpen() || document.querySelector<HTMLElement>('.storybook, .theatre.film') || (G.paused && document.querySelector<HTMLElement>('.modal')) || (playing && worldHidden())) return;
   world.update(dt, t);
   if (playing) G.farCull(now); // (round T: small things far from every camera are not drawn)
   if (!playing) {
@@ -1634,7 +1717,7 @@ function frame(now) {
       h._dancing = G.places.onStage(h);
       if (pads[i].act() && it) { SFX.tap(); (G.lastPlayer = i, startAct(it, h)); }
       // discover shrines and towers you walk near
-      for (const s of SHRINES.concat(TOWERS)) if (!h.profile.discovered[s.id] && dist2(s.x, s.z, h.pos.x, h.pos.z) < 45) { h.profile.discovered[s.id] = true; save(); }
+      for (const s of [...SHRINES, ...TOWERS]) if (!h.profile.discovered[s.id] && dist2(s.x, s.z, h.pos.x, h.pos.z) < 45) { h.profile.discovered[s.id] = true; save(); }
       const rg = h.indoors ? G.regionOf[i] : regionAt(h.pos.x, h.pos.z); // inside a house: still where the house is
       if (rg !== G.regionOf[i]) {
         if (i === 0) setTimeout(() => G.shareStatus(), 50);
@@ -1727,7 +1810,7 @@ const WALK_AWAY = 6;
 G.walkAwayClose = (node, close) => { node._from = G.heroes.map(h => ({ x: h.pos.x, z: h.pos.z })); node._autoClose = close; node.classList.add('walkclose'); };
 const walkedAway = () => {
   if (G.travelling) return;
-  for (const d of document.querySelectorAll('.dialog:not(.out), .walkclose')) {
+  for (const d of document.querySelectorAll<SvWalkClose>('.dialog:not(.out), .walkclose')) {
     if (!d._from || !d._autoClose || !d._from.length) continue;
     if (G.heroes.every((h, k) => !d._from[k] || dist2(h.pos.x, h.pos.z, d._from[k].x, d._from[k].z) > WALK_AWAY)) { const f = d._autoClose; d._autoClose = null; f(); SFX.tap(); }
   }
@@ -1788,7 +1871,7 @@ setupTrading(G);
   parts.push(P(new THREE.BoxGeometry(2.6, .9, 1.2), '#c98a4a', [0, .45, 0]), P(new THREE.BoxGeometry(2.8, .1, 1.4), '#f6e7c8', [0, .95, 0]));
   [[-1.25, -.55], [1.25, -.55], [-1.25, .55], [1.25, .55]].forEach(([x, z]) => parts.push(P(new THREE.CylinderGeometry(.06, .06, 2.3, 6), '#8a5a3b', [x, 1.15, z])));
   for (let i = 0; i < 6; i++) parts.push(P(new THREE.BoxGeometry(.5, .08, 1.7), i % 2 ? '#ffffff' : '#2fb04f', [-1.25 + i * .5, 2.35, 0], [.12, 0, 0]));
-  [['#ff4f9a', -.8], ['#ffd23f', -.2], ['#3cc7e8', .4], ['#5fd36a', .9]].forEach(([c, x]) => parts.push(P(new THREE.SphereGeometry(.16, 10, 8), c, [x, 1.12, .15])));
+  const balls: [string, number][] = [['#ff4f9a', -.8], ['#ffd23f', -.2], ['#3cc7e8', .4], ['#5fd36a', .9]]; balls.forEach(([c, x]) => parts.push(P(new THREE.SphereGeometry(.16, 10, 8), c, [x, 1.12, .15])));
   const m = new THREE.Mesh(merge(parts), toonVC()); m.position.set(sx, y, sz); m.rotation.y = S.face; m.castShadow = true; scene.add(m); world.colliders.push({ x: sx, z: sz, r: 1.4 }); world.stalls.push({ id: 'stall', place: 'market', kind: 'stall', x: sx, z: sz, w: 2.8, d: 1.4, face: S.face, tap: 'stall' });
   G.interactables.push({ id: 'stall', x: sx + S.fx * 1.45, z: sz + S.fz * 1.45, r: 3, icon: '🏪', label: () => T('My market stall: trade with friends', 'Sạp hàng của con: đổi đồ với bạn'), act: h => G.openTrade(h.i) });
 }
@@ -1838,7 +1921,7 @@ startCounting(G); // how many children play, and what they play, for Studio's re
   const collect = () => {
     list = []; const sphere = new THREE.Sphere();
     scene.traverse(o => {
-      if (!o.isMesh || o.isInstancedMesh || o.userData.outline || o.userData.noCam || o === world.terrain || !o.visible) return;
+      if (!(o instanceof THREE.Mesh) || o instanceof THREE.InstancedMesh || o.userData.outline || o.userData.noCam || o === world.terrain || !o.visible) return;
       const mt = o.material; if (!mt || Array.isArray(mt) || mt.transparent || mt.side === THREE.BackSide || mt.isMeshBasicMaterial) return;
       if (!o.geometry.boundingSphere) o.geometry.computeBoundingSphere();
       sphere.copy(o.geometry.boundingSphere).applyMatrix4(o.matrixWorld);
@@ -1863,7 +1946,7 @@ startCounting(G); // how many children play, and what they play, for Studio's re
 // moves to layer 1, which the cameras do not show (`visible` is left alone). Checked twice a second; the list is
 // gathered again every 30 s, and what is added to the scene joins it straight away.
 {
-  const FAR = 240, DETAIL = 65, OUTLINE = 40, SMALL = 14, BUSY = 4000, units = [], box = new THREE.Box3(), s = new THREE.Sphere(), v = new THREE.Vector3();
+  const FAR = 240, DETAIL = 65, OUTLINE = 40, SMALL = 14, BUSY = 4000, LABEL = 80, BUBBLE = 100, units = [], box = new THREE.Box3(), s = new THREE.Sphere(), v = new THREE.Vector3();
   let at = -1e9, next = 0, count = -1, seen = new WeakSet();
   const skip = o => o === world.terrain || o.userData.road || o.userData.noFar || o.isInstancedMesh || o.isLight || o.isCamera;
   const visit = (o, top, heroes) => {
@@ -1871,9 +1954,11 @@ startCounting(G); // how many children play, and what they play, for Studio's re
     box.setFromObject(o); if (box.isEmpty()) return; box.getBoundingSphere(s);
     if (s.radius > SMALL) { o.children.forEach(c => visit(c, top, heroes)); return; }
     const meshes = []; let tris = 0;
-    o.traverse(m => { if (!m.isMesh || skip(m)) return; meshes.push(m); const g = m.geometry; tris += (g.index ? g.index.count : g.attributes.position.count) / 3; });
+    o.traverse(m => { if (!(m.isMesh || m.isSprite) || skip(m)) return; meshes.push(m); const g = m.geometry; if (m.isMesh) tris += (g.index ? g.index.count : g.attributes.position.count) / 3; });
     if (!meshes.length) return;
-    const d = Math.min(FAR, 90 + 20 * s.radius, tris > BUSY * Math.max(1, s.radius) ? DETAIL : FAR);
+    // (r86, S3) a picture or name on a sprite is unreadable from LABEL m (about 25 px wide on a phone); an activity's
+    // bubble, which shows children where the fun is, stays to BUBBLE m. Each sprite is a draw of its own.
+    const flat = meshes.every(m => m.isSprite), d = flat ? Math.min(FAR, o.userData.it ? BUBBLE : LABEL) : Math.min(FAR, 90 + 20 * s.radius, tris > BUSY * Math.max(1, s.radius) ? DETAIL : FAR);
     o.updateMatrixWorld(); units.push({ o, top, c: o.worldToLocal(s.center.clone()), far2: d * d, meshes });
   };
   // (all of it every 30 s; in between only what was added to the scene, which takes no time)
@@ -1918,10 +2003,10 @@ import('./pricetags.js').then(m => m.createPriceTags(G));
 import('./jobs.js').then(m => m.createJobs(G));
 import('./wayfind.js').then(m => m.createWayfind(G));   // (Round U) "Where is…?" sparkles
 G.openWhere = i => featureOn('wayfind', false) && G.wayfind && G.wayfind.open(i);
-onLive(() => { if (!featureOn('wayfind',false)) { G.wayfind?.stop(true); document.querySelectorAll('.wherepick').forEach(m => m.querySelector('.x')?.click()); } });
+onLive(() => { if (!featureOn('wayfind',false)) { G.wayfind?.stop(true); document.querySelectorAll<HTMLElement>('.wherepick').forEach(m => m.querySelector<HTMLElement>('.x')?.click()); } });
 import('./animalhomes.js').then(m => m.createAnimalHomes(G));   // (Round U) animals with homes   // (Round U) a job board in every place   // (Round U) a coin-picture price over every food stall
 // (Round U) a tap on a coin, orb or Leafy chip (top bar, Backpack) says what it is (js/chipinfo.js, loaded on the first tap)
-document.addEventListener('click', e => { const c = e.target.closest && e.target.closest('[data-chip]'); if (c) import('./chipinfo.js').then(m => m.showChip(c.dataset.chip, c)); });
+document.addEventListener('click', e => { const c = e.target instanceof Element && e.target.closest<HTMLElement>('[data-chip]'); if (c) import('./chipinfo.js').then(m => m.showChip(c.dataset.chip, c)); });
 import('./state.js').then(S => { if (S.restoredFromCopy) setTimeout(() => toast(T('Your progress was brought back from the safe copy on this device.', 'Tiến trình chơi đã được khôi phục từ bản lưu dự phòng trên máy.')), 1200); });
 document.addEventListener('visibilitychange', () => { if (document.hidden) { if (playing) keepSpot(); save(); hush(); } });
 addEventListener('pagehide', () => { if (playing) keepSpot(); saveProfiles(true); });
