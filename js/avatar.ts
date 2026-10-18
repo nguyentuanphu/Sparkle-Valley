@@ -354,38 +354,41 @@ function setFace(A, f) {
 let stillMat = null;
 const _inv = new THREE.Matrix4(), _mm = new THREE.Matrix4(), _nm = new THREE.Matrix3(), _v = new THREE.Vector3();
 const shown = (o, top) => { for (; o && o !== top; o = o.parent) if (!o.visible) return false; return true; };
+// (r86, S3: less memory, #355) each part's corners are written once and its triangles kept as an index, as the part
+// had them: the same triangles with the same colours and normals, in about a fifth of the memory (people were most of
+// the valley's 530 MB of shapes, every triangle's corners written out separately)
 function bake(list, inv, withColor) {
-  let n = 0; for (const { m } of list) n += (m.geometry.index ? m.geometry.index.count : m.geometry.attributes.position.count);
-  const pos = new Float32Array(n * 3), nor = new Float32Array(n * 3), col = withColor ? new Float32Array(n * 3) : null;
-  let o = 0;
+  let nv = 0, ni = 0; for (const { m } of list) { const g = m.geometry; nv += g.attributes.position.count; ni += g.index ? g.index.count : g.attributes.position.count; }
+  const pos = new Float32Array(nv * 3), nor = new Float32Array(nv * 3), col = withColor ? new Float32Array(nv * 3) : null, tri = nv > 65535 ? new Uint32Array(ni) : new Uint16Array(ni);
+  let o = 0, q = 0;
   for (const { m, c } of list) {
-    const g = m.geometry, P = g.attributes.position, N = g.attributes.normal, C = g.attributes.color, idx = g.index;
+    const g = m.geometry, P = g.attributes.position, N = g.attributes.normal, C = g.attributes.color, idx = g.index, o0 = o;
     _mm.multiplyMatrices(inv, m.matrixWorld); _nm.getNormalMatrix(_mm);
-    const cnt = idx ? idx.count : P.count;
+    if (idx) for (let k = 0; k < idx.count; k++) tri[q++] = o0 + idx.getX(k); else for (let k = 0; k < P.count; k++) tri[q++] = o0 + k;
     // (17 Oct AEDT, PERF-001: about 1.3 s of a tablet's start) plain arrays: the same sums as three.js's
     // Vector3.applyMatrix4, applyMatrix3 and normalize, in the same order, straight on the numbers (same results)
     const plain = A => A && !A.isInterleavedBufferAttribute && !A.normalized && A.itemSize === 3;
-    if (plain(P) && plain(N) && (!col || c || plain(C)) && (!idx || !idx.isInterleavedBufferAttribute)) {
-      const pa = P.array, na = N.array, ca = C && C.array, ia = idx && idx.array, e = _mm.elements, q = _nm.elements;
-      for (let k = 0; k < cnt; k++, o++) {
-        const i = (ia ? ia[k] : k) * 3, x = pa[i], y = pa[i + 1], z = pa[i + 2], w = 1 / (e[3] * x + e[7] * y + e[11] * z + e[15]);
+    if (plain(P) && plain(N) && (!col || c || plain(C))) {
+      const pa = P.array, na = N.array, ca = C && C.array, e = _mm.elements, q3 = _nm.elements;
+      for (let k = 0; k < P.count; k++, o++) {
+        const i = k * 3, x = pa[i], y = pa[i + 1], z = pa[i + 2], w = 1 / (e[3] * x + e[7] * y + e[11] * z + e[15]);
         pos[o * 3] = (e[0] * x + e[4] * y + e[8] * z + e[12]) * w; pos[o * 3 + 1] = (e[1] * x + e[5] * y + e[9] * z + e[13]) * w; pos[o * 3 + 2] = (e[2] * x + e[6] * y + e[10] * z + e[14]) * w;
-        const a = na[i], b = na[i + 1], d = na[i + 2], nx = q[0] * a + q[3] * b + q[6] * d, ny = q[1] * a + q[4] * b + q[7] * d, nz = q[2] * a + q[5] * b + q[8] * d, s = 1 / (Math.sqrt(nx * nx + ny * ny + nz * nz) || 1);
+        const a = na[i], b = na[i + 1], d = na[i + 2], nx = q3[0] * a + q3[3] * b + q3[6] * d, ny = q3[1] * a + q3[4] * b + q3[7] * d, nz = q3[2] * a + q3[5] * b + q3[8] * d, s = 1 / (Math.sqrt(nx * nx + ny * ny + nz * nz) || 1);
         nor[o * 3] = nx * s; nor[o * 3 + 1] = ny * s; nor[o * 3 + 2] = nz * s;
         if (col) { if (c) { col[o * 3] = c.r; col[o * 3 + 1] = c.g; col[o * 3 + 2] = c.b; } else { col[o * 3] = ca[i]; col[o * 3 + 1] = ca[i + 1]; col[o * 3 + 2] = ca[i + 2]; } }
       }
       continue;
     }
-    for (let k = 0; k < cnt; k++, o++) {
-      const i = idx ? idx.getX(k) : k;
-      _v.fromBufferAttribute(P, i).applyMatrix4(_mm); pos[o * 3] = _v.x; pos[o * 3 + 1] = _v.y; pos[o * 3 + 2] = _v.z;
-      _v.fromBufferAttribute(N, i).applyMatrix3(_nm).normalize(); nor[o * 3] = _v.x; nor[o * 3 + 1] = _v.y; nor[o * 3 + 2] = _v.z;
-      if (col) { if (c) { col[o * 3] = c.r; col[o * 3 + 1] = c.g; col[o * 3 + 2] = c.b; } else { col[o * 3] = C.getX(i); col[o * 3 + 1] = C.getY(i); col[o * 3 + 2] = C.getZ(i); } }
+    for (let k = 0; k < P.count; k++, o++) {
+      _v.fromBufferAttribute(P, k).applyMatrix4(_mm); pos[o * 3] = _v.x; pos[o * 3 + 1] = _v.y; pos[o * 3 + 2] = _v.z;
+      _v.fromBufferAttribute(N, k).applyMatrix3(_nm).normalize(); nor[o * 3] = _v.x; nor[o * 3 + 1] = _v.y; nor[o * 3 + 2] = _v.z;
+      if (col) { if (c) { col[o * 3] = c.r; col[o * 3 + 1] = c.g; col[o * 3 + 2] = c.b; } else { col[o * 3] = C.getX(k); col[o * 3 + 1] = C.getY(k); col[o * 3 + 2] = C.getZ(k); } }
     }
   }
   const g = new THREE.BufferGeometry();
   g.setAttribute('position', new THREE.BufferAttribute(pos, 3)); g.setAttribute('normal', new THREE.BufferAttribute(nor, 3));
   if (col) g.setAttribute('color', new THREE.BufferAttribute(col, 3));
+  g.setIndex(new THREE.BufferAttribute(tri, 1));
   g.computeBoundingSphere(); return g;
 }
 export function stillOf(A) {
@@ -433,7 +436,8 @@ function compact(A) {
       if (list.length < 2) continue;
       N.updateMatrixWorld(true); const inv = new THREE.Matrix4().copy(N.matrixWorld).invert();
       const ranges = []; let at = 0;
-      const parts = list.map(m => { const n = m.geometry.index ? m.geometry.index.count : m.geometry.attributes.position.count; if (m.material === A.skinMat) ranges.push([at, n]); at += n; return { m, c: m.material.vertexColors && m.geometry.attributes.color ? null : m.material.color }; });
+      // (r86: the baked shape keeps each part's corners once, so a skin range counts the part's corners)
+      const parts = list.map(m => { const n = m.geometry.attributes.position.count; if (m.material === A.skinMat) ranges.push([at, n]); at += n; return { m, c: m.material.vertexColors && m.geometry.attributes.color ? null : m.material.color }; });
       const one = new THREE.Mesh(bake(parts, inv, true), compactMat(+side)); one.castShadow = true;
       // (r67) an arm keeps an empty marker where each of its parts was (the hand at y -0.42), so a rider's grip can still be found
       if (N === A.armL || N === A.armR) list.forEach(m => { const k = new THREE.Object3D(); k.position.copy(m.position); k.quaternion.copy(m.quaternion); k.userData.part = true; N.add(k); });
