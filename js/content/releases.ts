@@ -3,7 +3,9 @@
 // for), en, vi, group, def (what it is when Studio never set it: the owner chose "everything on"). Every festival is
 // one too (fest_<id>, from js/content/festcal.js). Part 2 of round R adds the rest of the list as each one is built.
 import { FESTCAL } from './festcal.js';
-export const RELEASES = [
+// game: the money game it switches; icon: a festival's picture
+export type Release = { id: string, en: string, vi: string, group: string, def: boolean, icon?: string, game?: string };
+export const RELEASES: Release[] = [
   { id: 'autoplay', en: 'Auto play check (for grown-ups testing: a small window that plays everything; every device, or only the ticked ones)', vi: 'Tự chơi để kiểm tra (cho người lớn thử game: một cửa sổ nhỏ tự chơi mọi thứ; mọi máy, hoặc chỉ các máy được chọn)', group: 'tools', def: false },
   { id: 'tester', en: 'Testers (devices that report problems by themselves, with the ladybird; every device, or only the ticked ones)', vi: 'Người thử (máy tự báo lỗi, có con bọ rùa; mọi máy, hoặc chỉ các máy được chọn)', group: 'tools', def: false },
   { id: 'traffic', en: 'Traffic on the roads', vi: 'Xe cộ trên đường', group: 'world', def: true },
@@ -17,6 +19,8 @@ export const RELEASES = [
   { id: 'story_ch2', en: 'Story chapter 2: Hà Nội (Tèo\'s challenge, Văn Miếu, Cầu Thê Húc lights up, Trung Thu parade)', vi: 'Truyện chương 2: Hà Nội (Tèo thách đấu, Văn Miếu, Cầu Thê Húc sáng đèn, rước đèn Trung Thu)', group: 'story', def: true }, // (owner 10 Oct: off until an admin switches it on or schedules it)
   { id: 'story_ch3', en: 'Story chapter 3: Sydney (Chi\'s Aussie words, the ferries, cricket with Jack and Ruby, the Opera House lights up, fireworks)', vi: 'Truyện chương 3: Sydney (Chi dạy từ tiếng Úc, phà, chơi cricket với Jack và Ruby, Nhà hát Opera sáng đèn, pháo hoa)', group: 'story', def: true },
   { id: 'story_yard', en: 'Story: Bà Huệ and ông Nghi\'s yard (coach from Hà Tĩnh, dump truck, excavator, a house built together)', vi: 'Truyện: Công trường của bà Huệ và ông Nghi (xe khách từ Hà Tĩnh, xe ben, máy xúc, cùng xây nhà)', group: 'story', def: true },
+  // (owner, 18 Oct AEDT: "stories film switch is not available on studio") js/tales.js, js/howto-player.js; also on Studio's Defaults page (Releases wins)
+  { id: 'storyFilms', en: 'Stories and how-to guides as 3D films (where a film is made). Off: the tale opens as a picture book and the guide as pictures', vi: 'Truyện và hướng dẫn thành phim 3D (khi đã có phim). Tắt: truyện mở thành sách tranh và hướng dẫn thành tranh', group: 'story', def: true },
   // (round R, owner 9 Oct: "add these in and add to the studio so we can switch on/off") what keeps little ones playing
   { id: 'yardHands', en: 'The yard by hand: steer the dump truck, drag the excavator arm, stack the bricks', vi: 'Công trường tự tay làm: lái xe ben, kéo cần máy xúc, xếp gạch', group: 'kids', def: true },
   { id: 'simpleStart', en: 'Under-5s start on the Simple screen (until they choose)', vi: 'Bé dưới 5 tuổi bắt đầu ở màn hình Đơn giản (đến khi bé tự chọn)', group: 'kids', def: true },
@@ -41,7 +45,7 @@ export const RELEASES = [
   { id: 'birthday', en: 'A birthday surprise (birthday kept on the device only)', vi: 'Quà bất ngờ ngày sinh nhật (ngày sinh chỉ lưu trên máy)', group: 'kids', def: true },
   ...FESTCAL.map(F => ({ id: 'fest_' + F.id, en: F.en, vi: F.vi, group: 'festivals', def: true, icon: F.icon }))
 ];
-export const RELEASE_GROUPS = { story: ['The lantern story', 'Truyện đèn lồng'], kids: ['For little ones', 'Cho các bé'], rewards: ['Shop and rewards', 'Cửa hàng và phần thưởng'], world: ['In the valley', 'Trong thung lũng'], festivals: ['Festivals', 'Lễ hội'], tools: ['For testing', 'Để thử'] };
+export const RELEASE_GROUPS: Record<string, [string, string]> = { story: ['The lantern story', 'Truyện đèn lồng'], kids: ['For little ones', 'Cho các bé'], rewards: ['Shop and rewards', 'Cửa hàng và phần thưởng'], world: ['In the valley', 'Trong thung lũng'], festivals: ['Festivals', 'Lễ hội'], tools: ['For testing', 'Để thử'] };
 // (Play reading trial, owner 11 Oct 2026 AEDT) the ten reading games: off until an admin switches them on
 // (owner, 12 Oct AEDT: "all other features should be on for now until I say or switch it off"; only power poles and
 // the auto play check stay off) the reading games and story chapters 2 and 3 are on unless Studio switches them off

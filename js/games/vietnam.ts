@@ -29,6 +29,18 @@ function simulate(st, from, dir) {
   }
   return { s, steps };
 }
+// (#350, r85) a player whose five squares are all empty puts one seed back in each from their own pile; when the pile
+// is short, the rest is borrowed from the other player (vay) and given back when the game ends, as in the real game.
+// Nothing left anywhere: no seeds go out (n 0) and the game ends.
+function refill(st, turn) {
+  const range = turn === 0 ? [1, 2, 3, 4, 5] : [7, 8, 9, 10, 11], other = 1 - turn;
+  const own = Math.min(5, st.score[turn]), borrow = Math.min(5 - own, st.score[other]), n = own + borrow;
+  st.score[turn] -= own; st.score[other] -= borrow; st.owe = st.owe || [0, 0]; st.owe[turn] += borrow;
+  range.slice(0, n).forEach(i => { st.seeds[i] = 1; });
+  return { n, borrow };
+}
+// at the end, a borrowed seed goes back to the player it came from
+function repay(st) { const o = st.owe || [0, 0]; for (const t of [0, 1]) { const back = Math.min(o[t], st.score[t]); st.score[t] -= back; st.score[1 - t] += back; } st.owe = [0, 0]; }
 register({
   id: 'oanquan', icon: '🪨', name: () => T('Ô Ăn Quan (Mandarin Squares)', 'Ô Ăn Quan'),
   async run(api) {
@@ -99,9 +111,12 @@ register({
     while (!over()) {
       const range = turn === 0 ? [1, 2, 3, 4, 5] : [7, 8, 9, 10, 11];
       if (range.every(i => st.seeds[i] === 0)) {
-        // Out of seeds: put one back in each square (from your own pile, or borrowed).
-        range.forEach(i => st.seeds[i] = 1); st.score[turn] = Math.max(0, st.score[turn] - 5); draw();
-        api.say(`${names[turn]} puts out 5 new seeds.`, `${names[turn]} rải lại 5 hạt mới.`); await wait(1400);
+        // Out of seeds: put one back in each square (from your own pile, or borrowed from the other player).
+        const r = refill(st, turn); draw(); if (!r.n) break;
+        if (r.borrow) api.show(`${names[turn]} borrows ${r.borrow} from ${names[1 - turn]}`, `${names[turn]} vay ${names[1 - turn]} ${r.borrow} hạt`);
+        if (r.n === 5) api.say(`${names[turn]} puts out 5 new seeds.`, `${names[turn]} rải lại 5 hạt mới.`);
+        else api.show(`${names[turn]} puts out the last ${r.n}`, `${names[turn]} rải ${r.n} hạt cuối cùng`);
+        await wait(1400);
       }
       board.classList.toggle('turn-top', turn === 1); board.classList.toggle('turn-bot', turn === 0);
       if (turn === 1 && !api.two) {
@@ -127,7 +142,7 @@ register({
     // Game over: each side keeps the seeds left on its row.
     for (let i = 1; i <= 5; i++) { st.score[0] += st.seeds[i]; st.seeds[i] = 0; }
     for (let i = 7; i <= 11; i++) { st.score[1] += st.seeds[i]; st.seeds[i] = 0; }
-    draw();
+    repay(st); draw();
     const w = st.score[0] === st.score[1] ? -1 : st.score[0] > st.score[1] ? 0 : 1;
     let title = w < 0 ? T("It's a tie!", 'Hòa rồi!') : T(`${names[w]} wins!`, `${names[w]} thắng!`);
     // nobody loses in little mode: celebrate what the child captured instead
@@ -257,7 +272,7 @@ register({
       const pull = d => { x += d * .045; api.sfx.pop(Math.abs(Math.round(x * 10))); };
       b0.onclick = () => pull(-1); if (b1) b1.onclick = () => pull(1);
       const aiRate = api.little ? 1.4 : ([1.9, 2.3, 2.8, 3.2, 3.6][Math.min(4, api.level - 1)] + (api.strong ? .4 : 0) + attempt * -.25);
-      await new Promise(res => {
+      await new Promise<void>(res => {
         const tick = now => {
           if (api.closed) return res();
           const dt = Math.min(.1, (now - last) / 1000); last = now;

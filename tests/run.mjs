@@ -2787,6 +2787,24 @@ await check('dialogtap', async () => {
   return 'no repeat or OK buttons for under-5s or older children; tapping the box goes on and closes it';
 });
 
+await check('talkonce', async () => {
+  // (#339, r85) a second "Talk to Tèo" while his speech box is still open (the quest's Go button walking up, the Act key)
+  // opened a second box; "Play!" on one opened the game and the other stayed under it, its "Play!" button covered.
+  // One talk with a child at a time: the second ask is ignored, and nothing is left under the game
+  const P = await open(b, { w: 1180, h: 820 }); await clear(P.page);
+  const line = ['Want to play Ô ăn quan with me?', 'Chơi ô ăn quan với tớ không?'];
+  const n = await P.page.evaluate(line => { const h = __sv.heroes[0]; __sv.kidTalk(h, 'oanquan', 'Tèo', line); __sv.kidTalk(h, 'oanquan', 'Tèo', line); return document.querySelectorAll('.dialog:not(.out)').length; }, line);
+  ok(n === 1, `asking twice opened ${n} speech boxes`);
+  await P.page.click('.dialog:not(.out) .dch'); await P.page.waitForSelector('.gl', { timeout: 15000 }); await P.page.waitForTimeout(600);
+  const left = await P.page.evaluate(() => [...document.querySelectorAll('.dialog')].filter(d => !d.classList.contains('out')).map(d => d.textContent.slice(0, 40)));
+  ok(!left.length, `a speech box left under the game: ${left.join(' | ')}`);
+  await P.page.evaluate(() => document.querySelector('.gl .gl-x').click()); await P.page.waitForTimeout(500);
+  const again = await P.page.evaluate(line => { __sv.kidTalk(__sv.heroes[0], 'oanquan', 'Tèo', line); return document.querySelectorAll('.dialog:not(.out)').length; }, line);
+  ok(again === 1, `after the game, talking to Tèo again opened ${again} speech boxes`);
+  ok(!P.errors.length, P.errors.join(' | ')); await P.ctx.close();
+  return 'a second ask while Tèo is talking is ignored; Play! leaves nothing under the game; he talks again afterwards';
+});
+
 await check('viwords', async () => {
   // (round R, owner: "bánh khọt" and "nước mía" said by the English voice can't be understood) Vietnamese names and dishes
   // inside English lines are cut out and said by the Vietnamese voice: by the recorded pack, the phone voice and online voices
