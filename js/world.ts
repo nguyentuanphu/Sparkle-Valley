@@ -384,7 +384,7 @@ PADS = [...SHRINES, ...LEAFIES.filter(l => l.kind === 'rock')];
 // lot (so trees and suburbs keep off it); once the roads are made it is levelled at the height of the lane in front of it
 // (levelUnderBuildings). Families put the homes they remember on them later (Studio's Plots page); until then, a garden.
 /** a Memory Village garden plot (js/plots.js); spareFrom: the first one no family has yet */
-export const PLOTS: { id: string, village: string, x: number, z: number, rot: number, w: number, d: number, h?: number, address?: unknown }[] & { spareFrom?: number } = [];
+export const PLOTS: { id: string, village: string, x: number, z: number, rot: number, w: number, d: number, h?: number, address?: unknown, occupied?: boolean }[] & { spareFrom?: number } = [];
 {
   const add = P => { const fx = Math.sin(P.rot), fz = Math.cos(P.rot), sx = Math.cos(P.rot), sz = -Math.sin(P.rot), hs = [];
     for (const u of [-.5, 0, .5]) for (const v of [-.5, 0, .5]) hs.push(heightAt(P.x + sx * P.w * u + fx * P.d * v, P.z + sz * P.w * u + fz * P.d * v));
@@ -1131,7 +1131,7 @@ export function levelUnderBuildings(world, scene) {
   const keep = [];
   if (scene) for (const o of scene.children) {
     if (o === world.terrain || o.isLight || o.isInstancedMesh || !o.position) continue;
-    if (o.isMesh && o.geometry) { if (!o.geometry.boundingSphere) o.geometry.computeBoundingSphere(); if (o.geometry.boundingSphere.radius > 6) continue; }
+    if (o.isMesh && o.geometry && !o.userData.plotId) { if (!o.geometry.boundingSphere) o.geometry.computeBoundingSphere(); if (o.geometry.boundingSphere.radius > 6) continue; }
     keep.push([o, heightAt(o.position.x, o.position.z)]);
   }
   const want = [];
@@ -1153,7 +1153,8 @@ export function levelUnderBuildings(world, scene) {
     scene.traverse(o => { if (!o.isMesh || o.isInstancedMesh || o === world.terrain || !o.visible || o.userData.plots) return;
       for (let q = o; q; q = q.parent) { const u = q.userData || {}; if (u.road || u.walk || u.avatar || u.moving) return; }
       bb.setFromObject(o); if (bb.max.y - bb.min.y > .3 && bb.max.x - bb.min.x < 40 && bb.max.z - bb.min.z < 40) stands.push(bb.clone()); }); }   // (not the sky, the sea or the ground)
-  for (let i = PLOTS.length - 1; i >= PLOTS.spareFrom; i--) { const P = PLOTS[i], B = plotBox(P), y = heightAt(P.x, P.z);
+  for (let i = PLOTS.length - 1; i >= PLOTS.spareFrom; i--) { const P = PLOTS[i]; if (P.occupied) continue; // its remembered home is supposed to stand here
+    const B = plotBox(P), y = heightAt(P.x, P.z);
     const hit = (x0, x1, z0, z1) => x1 > B.x0 && x0 < B.x1 && z1 > B.z0 && z0 < B.z1;
     if (FOOTPRINTS.some(F => !F.plot && hit(F.x0 - F.pad, F.x1 + F.pad, F.z0 - F.pad, F.z1 + F.pad)) || world.boxes.some(b => !b.room && hit(b.x0, b.x1, b.z0, b.z1))
       || world.colliders.some(c => c.r >= .3 && hit(c.x - c.r, c.x + c.r, c.z - c.r, c.z + c.r))

@@ -2,41 +2,39 @@
   "windows": 30,
   "games": 20,
   "before": {
-    "dom": 527,
+    "lazyStillGeometries": 1515,
+    "dom": 521,
     "canvases": 3,
-    "geometries": 536,
-    "textures": 207,
+    "geometries": 538,
+    "textures": 206,
     "programs": 42,
     "contextLosses": 0,
-    "nodes": 10288,
-    "heapMB": 45.53874588012695
+    "nodes": 5955,
+    "heapMB": 45.23262405395508
   },
   "after": {
-    "dom": 527,
+    "lazyStillGeometries": 1560,
+    "dom": 521,
     "canvases": 3,
-    "geometries": 546,
-    "textures": 211,
+    "geometries": 540,
+    "textures": 208,
     "programs": 42,
     "contextLosses": 0,
-    "nodes": 61295,
-    "heapMB": 47.259342193603516
+    "nodes": 3498,
+    "heapMB": 46.74832534790039
   },
   "growth": {
-    "nodes": 51007,
-    "heapMB": 1.7205963134765625,
+    "lazyStillGeometries": 45,
+    "nodes": -2457,
+    "heapMB": 1.5157012939453125,
     "dom": 0,
     "canvases": 0,
-    "geometries": 10,
-    "textures": 4,
+    "geometries": 2,
+    "textures": 2,
     "programs": 0
   },
   "navigations": 0,
-  "retainedGrownups": 15,
-  "bad": [
-    "15 closed Grown-ups windows retained",
-    "retained DOM node growth over 1000",
-    "GPU object growth over 8"
-  ],
-  "note": "Chromium phone viewport, not physical iPhone. GPU figures are renderer object counts, not GPU bytes.",
-  "measurement_caveat": "Intermediate diagnostic: ignored Playwright waitForSelector element handles and console references retained nodes. Do not use these counts as the application leak size or final stability verdict. Application install-button retaining path was separately confirmed by heap analysis."
+  "retainedGrownups": 0,
+  "bad": [],
+  "note": "Chromium phone viewport, not physical iPhone. GPU figures are renderer object counts, not GPU bytes."
 }

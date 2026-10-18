@@ -1,14 +1,16 @@
 // (round T3) Garden plots: the two Memory Villages (Làng Kỷ Niệm) and up to three spare plots by the roads out of each city
 // (PLOTS in js/world.js, from js/content/map.js). Until a family puts the home they remember on one (Studio's Plots page,
-// later), each shows a small garden: a lawn, a low hedge round the back and sides, and flowers. Every garden is one
+// on the next open), each empty plot shows a small garden: a lawn, a low hedge round the back and sides, and flowers. Every garden is one
 // instance of one mesh, so all of them together are a single draw. Nothing in a garden is taller than 30 cm, so the
 // plot stays open ground (the solid map starts at 35 cm) and the `plots` check finds nothing standing on it.
 import { THREE, toonVC, P, merge } from './gfx.js';
 import { PLOTS } from './world.js';
+import { builtPlotIds } from './worldedit.js';
 
 export function createPlots(G) {
   const { scene } = G;
-  if (!PLOTS.length) return null;
+  const gardens = PLOTS.filter(p => !builtPlotIds.has(p.id));
+  if (!gardens.length) return null;
   const { w: W, d: D } = PLOTS[0], B = (x, y, z) => new THREE.BoxGeometry(x, y, z);
   // the garden for a W × D plot, its front (+z) to the lane: lawn, hedges, a path from the front, flower beds
   const parts = [P(B(W - .1, .06, D - .1), '#8fcf7a', [0, .03, 0]),
@@ -20,8 +22,8 @@ export function createPlots(G) {
     const side = k % 2 ? 1 : -1, row = Math.floor(k / 2), x = side * (1.2 + (row % 2) * .9), z = -D / 2 + 1.1 + row * .75;
     parts.push(P(new THREE.SphereGeometry(.16, 6, 4), flowers[k % flowers.length], [x, .2, z]), P(B(.05, .16, .05), '#3f7a3a', [x, .09, z]));
   }
-  const geo = merge(parts), mesh = new THREE.InstancedMesh(geo, toonVC(), PLOTS.length), m = new THREE.Matrix4(), q = new THREE.Quaternion(), up = new THREE.Vector3(0, 1, 0), one = new THREE.Vector3(1, 1, 1);
-  PLOTS.forEach((p, i) => { q.setFromAxisAngle(up, p.rot); m.compose(new THREE.Vector3(p.x, p.h, p.z), q, one); mesh.setMatrixAt(i, m); });
+  const geo = merge(parts), mesh = new THREE.InstancedMesh(geo, toonVC(), gardens.length), m = new THREE.Matrix4(), q = new THREE.Quaternion(), up = new THREE.Vector3(0, 1, 0), one = new THREE.Vector3(1, 1, 1);
+  gardens.forEach((p, i) => { q.setFromAxisAngle(up, p.rot); m.compose(new THREE.Vector3(p.x, p.h, p.z), q, one); mesh.setMatrixAt(i, m); });
   mesh.instanceMatrix.needsUpdate = true; mesh.computeBoundingSphere(); mesh.receiveShadow = true; mesh.userData.plots = true;
   scene.add(mesh);
   return mesh;

@@ -7242,6 +7242,7 @@ await check('oanquanrules', async () => {
   return `a two-player game finishes through ${result.taps} legal square/direction taps; autoplay waits while seeds move`;
 });
 
+await check('rememberedhomes', async () => (await import('./remembered-homes.mts')).rememberedHomesCheck(b));
 await check('settingsgc', async () => (await import('./settings-gc.mts')).settingsGcCheck(b));
 await check('stability', async () => (await import('./stability.mts')).stabilityCheck(b));
 await check('rigidmodels', async () => (await import('./rigid-models.mts')).rigidModelsCheck(b));

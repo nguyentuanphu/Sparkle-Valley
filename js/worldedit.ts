@@ -8,12 +8,24 @@
 // levelled under it afterwards like everywhere else.
 import { THREE, toonVC, merge, outline } from './gfx.js';
 import { addPole } from './powerlines.js';
-import { heightAt, STUDIO_ON_MAP } from './world.js';
+import { heightAt, STUDIO_ON_MAP, PLOTS, HALF } from './world.js';
 import { houseTube, houseVilla, houseCottage, houseVillage } from './houses.js';
 import { raisedHouse } from './town.js';
 import { MODELS } from './cities.js';
 import { registerName } from './i18n.js';
 import { CUSTOM } from './custom.js';
+import { studioPosition } from './studio-position.js';
+
+export const builtPlotIds = new Set<string>();
+// Builders' w/d describe their walls; roofs, palms and verandas can extend farther.
+export function fitPlotHouse(object: THREE.Object3D, plot: { w: number, d: number }): number {
+  const bounds = new THREE.Box3().setFromObject(object);
+  const width = 2 * Math.max(Math.abs(bounds.min.x), Math.abs(bounds.max.x));
+  const depth = 2 * Math.max(Math.abs(bounds.min.z), Math.abs(bounds.max.z));
+  const scale = Math.min(1, (plot.w - 1) / Math.max(1, width), (plot.d - 1) / Math.max(1, depth));
+  object.scale.setScalar(scale);
+  return scale;
+}
 
 const house = (mk, kind, room) => ({ mk, kind, room, home: true });
 const landmark = key => ({ mk: () => ({ parts: MODELS[key]() }), kind: 'landmark' });
@@ -41,14 +53,24 @@ const pair = v => Array.isArray(v) ? [str(v[0], 300), str(v[1] || v[0], 300)] : 
 // new buildings: before the homes are made (js/homes.js turns world.houses into visitable homes)
 export function addFamilyBuildings(G) {
   const { scene, world } = G; let n = 0;
-  for (const b of (Array.isArray(W().build) ? W().build : []).slice(0, 80)) {
-    const T = b && BUILD_TYPES[b.type]; if (!T || !num(b.x) || !num(b.z) || Math.abs(b.x) > 190 || Math.abs(b.z) > 190) continue;
+  builtPlotIds.clear();
+  const builds = (Array.isArray(CUSTOM.world?.build) ? CUSTOM.world.build : []).slice(0, 80).flatMap(b => {
+    const pos = studioPosition(b, STUDIO_ON_MAP); return pos ? [{ ...b, ...pos, plot: null }] : [];
+  });
+  const remembered = PLOTS.flatMap(plot => {
+    const b = CUSTOM.plots?.[plot.id], T = b && BUILD_TYPES[b.type];
+    return T?.home ? [{ ...b, x: plot.x, z: plot.z, rot: plot.rot, plot }] : [];
+  });
+  for (const b of [...builds, ...remembered]) {
+    const T = b && BUILD_TYPES[b.type]; if (!T || typeof T.mk !== 'function' || !num(b.x) || !num(b.z) || Math.abs(b.x) > HALF - 5 || Math.abs(b.z) > HALF - 5) continue;
     if (T.pole) { if (addPole(world, b.x, heightAt(b.x, b.z), b.z)) n++; continue; }
     const rot = num(b.rot) ? b.rot : 0, y = heightAt(b.x, b.z), m = T.mk({ color: /^#[0-9a-f]{6}$/i.test(b.color || '') ? b.color : null });
     const obj = m.obj || new THREE.Mesh(m.geo || merge(m.parts), toonVC());
+    const scale = b.plot ? fitPlotHouse(obj, b.plot) : 1;
+    obj.scale.setScalar(scale);
     obj.castShadow = obj.receiveShadow = true; obj.position.set(b.x, y - (m.parts ? .05 : 0), b.z); obj.rotation.y = rot; obj.userData.family = true; scene.add(obj);
     if (m.parts) outline(obj, .025, '#4a3a3f');
-    const half = Math.max(m.w || 6, m.d || 6) / 2 * .8;
+    const half = Math.max(m.w || 6, m.d || 6) * scale / 2 * .8;
     world.boxes.push({ x0: b.x - half, x1: b.x + half, z0: b.z - half, z1: b.z + half });
     if (T.home) {
       const name = pair(b.name) || [T.name[0], T.name[1]], about = pair(b.about) || [`A new ${T.name[0].toLowerCase()} the family built.`, `Một ${T.name[1].toLowerCase()} mới cả nhà vừa xây.`];
@@ -56,8 +78,9 @@ export function addFamilyBuildings(G) {
       const look = { style: str(L.style, 12) || 'shirt', color: /^#[0-9a-f]{6}$/i.test(L.color || '') ? L.color : '#5fb0ff', hair: /^#[0-9a-f]{6}$/i.test(L.hair || '') ? L.hair : '#2a1d14', hairStyle: str(L.hairStyle, 12) || 'short', hat: 'none', skin: /^#[0-9a-f]{6}$/i.test(L.skin || '') ? L.skin : '#f1c6a4', back: 'none', glider: 0 };
       const people = o && str(o.name, 40) ? [[str(o.name, 40), look, 0, pair(o.line) || ['Welcome to our new home!', 'Chào mừng con đến nhà mới của cô chú!'], [1.6, .8]]] : [];
       people.forEach(p => registerName(p[0]));
-      world.houses.push({ x: b.x, z: b.z, rot, d: m.d || 7, kind: T.kind, info: { kind: T.kind, room: T.room, name, about, people } });
+      world.houses.push({ x: b.x, z: b.z, rot, d: (m.d || 7) * scale, kind: T.kind, info: { kind: T.kind, room: T.room, name, about, people } });
     } else world.colliders.push({ x: b.x, z: b.z, r: half });
+    if (b.plot) { b.plot.occupied = true; builtPlotIds.add(b.plot.id); obj.userData.plotId = b.plot.id; }
     n++;
   }
   return n;

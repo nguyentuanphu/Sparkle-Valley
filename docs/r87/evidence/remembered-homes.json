@@ -1,0 +1,82 @@
+{
+  "foundations": [
+    {
+      "id": "memory_e_1_1",
+      "offset": 0
+    },
+    {
+      "id": "memory_e_1_2",
+      "offset": 0
+    },
+    {
+      "id": "memory_e_1_3",
+      "offset": 0
+    },
+    {
+      "id": "memory_e_1_4",
+      "offset": 0
+    },
+    {
+      "id": "memory_e_1_5",
+      "offset": 0
+    },
+    {
+      "id": "memory_e_1_6",
+      "offset": 0
+    },
+    {
+      "id": "sp_hanoi_1",
+      "offset": 0.0013852385268631195
+    }
+  ],
+  "footprints": [
+    {
+      "id": "tube",
+      "width": 2.6363187882363315,
+      "depth": 5.3899057075255286
+    },
+    {
+      "id": "tube2",
+      "width": 2.6382771980850155,
+      "depth": 5.391681067507002
+    },
+    {
+      "id": "village",
+      "width": 4.958783782866007,
+      "depth": 3.1434905599723266
+    },
+    {
+      "id": "villa",
+      "width": 4.98461547264686,
+      "depth": 5.030769274784968
+    },
+    {
+      "id": "cottage",
+      "width": 4.215576506523824,
+      "depth": 4.38191534969015
+    },
+    {
+      "id": "raised",
+      "width": 4.252136739944992,
+      "depth": 3.279211635739769
+    }
+  ],
+  "name": "Grandma’s home",
+  "owner": "Bà Lan",
+  "people": 1,
+  "built": [
+    "memory_e_1_1",
+    "memory_e_1_2",
+    "memory_e_1_3",
+    "memory_e_1_4",
+    "memory_e_1_5",
+    "memory_e_1_6",
+    "sp_hanoi_1"
+  ],
+  "gardens": 59,
+  "total": 66,
+  "width": 4.984615472646851,
+  "depth": 5.030769274784973,
+  "w": 6,
+  "d": 7
+}
