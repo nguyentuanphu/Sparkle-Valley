@@ -13,6 +13,26 @@ const _ray = new THREE.Raycaster(), _dir = new THREE.Vector3();
 const easeYaw = (cur, want, dt, rate, maxSpeed) => { const d = Math.atan2(Math.sin(want - cur), Math.cos(want - cur)), step = d * Math.min(1, dt * rate), cap = maxSpeed * dt; return cur + Math.max(-cap, Math.min(cap, step)); };
 const GRAV = 22, WALK = 5.5, RUN = 9.5, SWIM = 3.4, CLIMB = 2.6, GLIDE = 8, RIDE = 11.5;
 
+import type { Profile } from '../types/save.js';
+export type RideVehicle = { o: THREE.Object3D, wheels: THREE.Object3D[], wr: number, seat: number[], grips?: number[][], feet?: number[][],
+  cabin?: { width: number, length: number, bottom: number, top: number, color: string } };
+type RideMount = { mesh: THREE.Object3D, shadow: THREE.Object3D, yaw: number, rider?: Hero | null, speed?: number, quiet?: boolean,
+  tx?: number, tz?: number, back?: boolean, home?: number[], slot?: { taken: unknown }, vehicle?: RideVehicle };
+type CarryResult = { x: number, y: number, z: number, yaw?: number, swim?: boolean, state?: string, rest?: boolean, speed?: number, rideY?: number, vehicle?: RideVehicle };
+type HeroPad = { mx: number, mz: number, cdx: number, cdy: number, run?: boolean, jump(): boolean, act?(): boolean };
+export interface Hero {
+  i: number; profile: Profile; scene: THREE.Scene; world: ReturnType<typeof import('./world.js').createWorld>;
+  pos: THREE.Vector3; lastSafe: THREE.Vector3; camPos: THREE.Vector3; camLook?: THREE.Vector3; cam: THREE.PerspectiveCamera;
+  av: ReturnType<typeof buildAvatar>; yaw: number; vy: number; camYaw: number; camPitch: number; camDist: number;
+  state: string; speed: number; onGround: boolean; stamina: number; exhausted: boolean; bonusStamina: number; hearts: number;
+  fallStart?: number; towerClimb?: { tw: { id: string, x: number, z: number }, top: number, ax: number, az: number }; riding?: RideMount;
+  safeTimer: number; stepTimer: number; emoteT: number; manualCamT: number; cheerT: number;
+  easyT?: number; stillT?: number; steerYaw?: number; goal?: { x: number, z: number }; goalT?: number; view?: string; zoom?: number;
+  autoRun?: boolean; gliding?: boolean; climbing?: boolean; _swimSfx?: boolean; _dancing?: boolean; _pov?: boolean;
+  _camFreeT?: number; _camHitRay?: boolean; _camK?: number; _camLift?: number; _lmF?: number; _lm?: { x: number, z: number };
+  _houseFront?: { x: number, z: number, rot: number, d: number }; indoors?: unknown; ferry?: unknown;
+  carry?: (dt: number, t: number, pad: HeroPad) => CarryResult | void; carryVehicle?: RideVehicle;
+}
 export class Hero {
   constructor(index, profile, scene, world) {
     this.i = index; this.profile = profile; this.scene = scene; this.world = world;
@@ -30,7 +50,7 @@ export class Hero {
     this.av = buildAvatar(this.profile.look, this.profile.photo); this.av.root.userData.own = true; // (Round V) a child's own character, never a villager (js/villagertalk.js)
     this.scene.add(this.av.root);
   }
-  place(x, z, y) {
+  place(x, z, y?: number) {
     // ground, bridge or deck, but not a tower top (those are reached by climbing)
     let g = this.world.groundAt(x, z); if (y == null && g - heightAt(x, z) > 12) g = this.world.groundAt(x, z, heightAt(x, z) + 10);
     this.pos.set(x, y != null ? y : g, z); this.vy = 0; this.lastSafe.copy(this.pos);
