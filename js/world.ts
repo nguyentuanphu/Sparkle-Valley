@@ -22,7 +22,9 @@ export const SIZE = MAP.WORLD.size, HALF = SIZE / 2, WATER = MAP.WORLD.water;
 const MTN = MAP.WORLD.mountains, EDGE = MAP.WORLD.edge, SADDLES = MAP.SADDLES, RELIEF = MAP.RELIEF, COAST = MAP.WORLD.coast, RAMP = MAP.WORLD.ramp;
 const PL = id => MAP.PLACES.find(p => p.id === id);
 // a circle place { x, z, r, h }, a box place { x, z, x0, x1, z0, z1, h, roadZ }
-const circle = id => { const p = PL(id), [x, z] = MAP.anchorOf(id), o = { x, z }; if (p.r != null) o.r = p.r; if (p.h != null) o.h = p.h; return o; };
+/** a round place of the map: its middle, and its size and ground height where the map gives them */
+type SvCircle = { x: number, z: number, r?: number, h?: number };
+const circle = (id: string): SvCircle => { const p = PL(id), [x, z] = MAP.anchorOf(id), o: SvCircle = { x, z }; if (p.r != null) o.r = p.r; if (p.h != null) o.h = p.h; return o; };
 const box = id => { const p = PL(id), [x, z] = MAP.anchorOf(id); return { x, z, x0: x - p.w, x1: x + p.w, z0: z - p.d, z1: z + p.d, h: p.h, roadZ: z + p.street.roadZ }; };
 export const PLATEAU = circle('plateau');
 export const VILLAGE = circle('village');
@@ -43,12 +45,15 @@ export const MARKET = box('market');    // Chợ Ba Miền: the Three Regions ma
 export const AUSSIE = box('aussie'); // Aussie Corner: milk bar, fish and chips, ice-cream van, playground
 // Cities around the valley: each a paved square with a welcome gate, landmarks, a game host and food kiosks (js/cities.js)
 // gates: where the roads come in (the first is the main gate); the main street runs straight through
-export const CITIES = MAP.PLACES.filter(p => p.kind === 'city').map(p => { const [x, z] = p.at;
+/** a city: its square (the corners are added just below), gates and look */
+export type SvCity = { id: string, cc: string, x: number, z: number, w: number, d: number, h: number, icon: string, name: unknown, gates: number[][], x0?: number, x1?: number, z0?: number, z1?: number };
+export const CITIES = MAP.PLACES.filter(p => p.kind === 'city').map((p): SvCity => { const [x, z] = p.at;
   return { id: p.id, cc: p.cc, x, z, w: p.w, d: p.d, h: p.h, icon: p.icon, name: p.name, gates: p.gates.map(([dx, dz]) => [x + dx, z + dz]) }; });
 CITIES.forEach(c => Object.assign(c, { x0: c.x - c.w, x1: c.x + c.w, z0: c.z - c.d, z1: c.z + c.d }));
-const FLATS = [TOWN, MARKET, AUSSIE, ...CITIES];
+const FLATS: { x0?: number, x1?: number, z0?: number, z1?: number, h: number, family?: boolean }[] = [TOWN, MARKET, AUSSIE, ...CITIES];
 // the places whose ground is one flat level (see the hard rule at the end of heightAt): circles and boxes
-let LEVELS = null;
+type SvLevel = { x?: number, z?: number, r?: number, h: number, x0: number, x1: number, z0: number, z1: number };
+let LEVELS: SvLevel[] = null;
 // the level of the village or city at (x, z), or null outside them (roads crossing a place run at its level)
 export function levelAt(x, z) { if (LEVELS) for (const A of LEVELS) { if (A.r ? dist2(x, z, A.x, A.z) <= A.r : x >= A.x0 && x <= A.x1 && z >= A.z0 && z <= A.z1) return A.h; } return null; }
 // building lots along the roads out of each city (js/suburbs.js builds on them): levelled ground, no trees
@@ -75,11 +80,14 @@ const PD_NEAR = { id: null };
 export const RIVER = (() => { const out = []; for (const id of [].concat(MAP.BOATS.find(b => b.id === 'raft').water)) RIVERS.find(r => r.id === id).pts.forEach((p, i) => { if (!(out.length && i === 0)) out.push(p.slice()); }); return out; })();
 export const CHINA = circle('china');  // (4.5 m: the road up from Đà Nẵng stays under 8 %)    // China Town: lanterns, tiled roofs, a pagoda and a little Great Wall
 export const INDIA = circle('india');  // (5.5 m: the road from the Brisbane junction stays under 8 %)  // India Village: colourful houses, a little Taj Mahal, rangoli and marigolds
-LEVELS = [VILLAGE, HOME, CHINA, INDIA].map(C => ({ x: C.x, z: C.z, r: C.r, h: C.h, x0: C.x - C.r, x1: C.x + C.r, z0: C.z - C.r, z1: C.z + C.r }))
-  .concat([TOWN, MARKET, AUSSIE, ...CITIES].map(B => ({ h: B.h, x0: B.x0, x1: B.x1, z0: B.z0, z1: B.z1 })));
+LEVELS = [VILLAGE, HOME, CHINA, INDIA].map((C): SvLevel => ({ x: C.x, z: C.z, r: C.r, h: C.h, x0: C.x - C.r, x1: C.x + C.r, z0: C.z - C.r, z1: C.z + C.r }))
+  .concat([TOWN, MARKET, AUSSIE, ...CITIES].map((B): SvLevel => ({ h: B.h, x0: B.x0, x1: B.x1, z0: B.z0, z1: B.z1 })));
 // Bridges (round T: along the x or the z axis, from the map): { id, axis, a0, a1, c, w, h, … }, plus the old x0/x1/z
 // (or z0/z1/x) names. BRIDGE and DRAGON are the two of today, by their old names.
-export const BRIDGES = MAP.BRIDGES.map(B => ({ ...B, ...(B.axis === 'z' ? { z0: B.a0, z1: B.a1, x: B.c } : { x0: B.a0, x1: B.a1, z: B.c }) }));
+/** a bridge: the map's bridge, its span along its axis, and the bank box worked out the first time it is needed */
+export type SvBridge = { id: string, axis: string, a0: number, a1: number, c: number, w: number, h: number, bankOut?: number, over?: string, style?: string,
+  name?: string[], landmark?: string, foot?: unknown, x?: number, z?: number, x0?: number, x1?: number, z0?: number, z1?: number, bank?: ReturnType<typeof bridgeBox> };
+export const BRIDGES = MAP.BRIDGES.map((B): SvBridge => ({ ...B, ...(B.axis === 'z' ? { z0: B.a0, z1: B.a1, x: B.c } : { x0: B.a0, x1: B.a1, z: B.c }) }));
 export const BRIDGE = BRIDGES.find(B => B.id === 'haique');   // the Harbour-style bridge carrying Two Homes Street over the river
 export const DRAGON = BRIDGES.find(B => B.id === 'rong');   // Đà Nẵng's golden Dragon Bridge carrying the road east over the river
 // along and across a bridge: how far along its axis, and how far off its middle line
@@ -97,7 +105,9 @@ export const bridgeDist = (B, x, z) => { const u = bridgeAlong(B, x, z); return 
 export const bridgeBox = (B, a, b, l, r) => B.axis === 'z' ? { x0: B.c + l, x1: B.c + r, z0: a, z1: b } : { x0: a, x1: b, z0: B.c + l, z1: B.c + r };
 // Roads: asphalt roads join every village and city; dirt roads link the quieter places to each other (the map has
 // them and says why each runs where it does). Each has an id, a kind, its points and the place at each end (gates).
-export const ROADS = MAP.ROADS.map(R => { const o = { id: R.id, kind: R.kind, pts: R.pts.map(p => p.slice()) }; if (R.gates) o.gates = R.gates.slice(); if (R.loop) o.loop = true; if (R.tone) o.tone = R.tone; return o; });
+/** a road or path: its points, and its width, gates, loop and colour where it has them */
+export type SvRoad = { id: string, kind: string, pts: number[][], w?: number, gates?: unknown[], loop?: boolean, tone?: string };
+export const ROADS = MAP.ROADS.map(R => { const o: SvRoad = { id: R.id, kind: R.kind, pts: R.pts.map(p => p.slice()) }; if (R.gates) o.gates = R.gates.slice(); if (R.loop) o.loop = true; if (R.tone) o.tone = R.tone; return o; });
 ROADS.forEach(R => { R.w = MAP.ROAD_WIDTH[R.kind]; }); // (rule R1: asphalt 6.4 m, dirt 3.4 m, footpath 1.6 m)
 // HARD RULE: roads are straight lines joined by perfect circular curves (asphalt bends round a 24 m circle, dirt
 // roads round 16 m, tighter only where two bends are close), and every road runs straight for its last 14 m into
@@ -359,7 +369,7 @@ export const SHRINES = MAP.SHRINES.map(({ id, game, at }) => ({ id, game, x: at[
 const TOWER_NAMES = { tw_plateau: () => T('Dawn Tower', 'Tháp Bình Minh'), tw_bamboo: () => T('Bamboo Tower', 'Tháp Rừng Tre'), tw_peaks: () => T('Peak Tower', 'Tháp Núi Tuyết'), tw_lake: () => T('Lake Tower', 'Tháp Hồ Gương') };
 export const TOWERS = MAP.TOWERS.map(({ id, at }) => ({ id, x: at[0], z: at[1], name: TOWER_NAMES[id] || (() => id) }));
 export const TOWER_H = 26, REVEAL_R = 130;
-export const LEAFIES = MAP.LEAFIES.map(({ id, kind, at, inWater }) => ({ id, kind, x: at[0], z: at[1], ...(inWater ? { inWater } : {}) }));
+export const LEAFIES = MAP.LEAFIES.map(({ id, kind, at, inWater }) => ({ id, kind, x: Number(at[0]), z: Number(at[1]), ...(inWater ? { inWater } : {}) }));
 PADS = [...SHRINES, ...LEAFIES.filter(l => l.kind === 'rock')];
 
 // ---------- the world object ----------
@@ -367,7 +377,8 @@ PADS = [...SHRINES, ...LEAFIES.filter(l => l.kind === 'rock')];
 // { id, village (or city), x, z, rot (the way the front faces), w (along the lane), d, address: [en, vi], h }. Each is also a
 // lot (so trees and suburbs keep off it); once the roads are made it is levelled at the height of the lane in front of it
 // (levelUnderBuildings). Families put the homes they remember on them later (Studio's Plots page); until then, a garden.
-export const PLOTS = [];
+/** a Memory Village garden plot (js/plots.js); spareFrom: the first one no family has yet */
+export const PLOTS: { id: string, village: string, x: number, z: number, rot: number, w: number, d: number, h?: number, address?: unknown }[] & { spareFrom?: number } = [];
 {
   const add = P => { const fx = Math.sin(P.rot), fz = Math.cos(P.rot), sx = Math.cos(P.rot), sz = -Math.sin(P.rot), hs = [];
     for (const u of [-.5, 0, .5]) for (const v of [-.5, 0, .5]) hs.push(heightAt(P.x + sx * P.w * u + fx * P.d * v, P.z + sz * P.w * u + fz * P.d * v));
@@ -468,10 +479,20 @@ export const plotBox = P => { const c = Math.abs(Math.cos(P.rot)), s = Math.abs(
 // the ground as it was before the level land was widened (the same while the world is being built)
 export function oldHeightAt(x, z) { const w = WIDE; WIDE = 0; try { return heightAt(x, z); } finally { WIDE = w; } }
 export function createWorld(scene, quality) {
-  const W = {
+  const wParts = {
     colliders: [], boxes: [], platforms: [], stalls: [], walks: [], houses: [], plants: [], overcast: 0, interactables: [], updaters: [], lanterns: [], shrineMeshes: {}, towerMeshes: {}, leafyMeshes: {},
     time: .36
   };
+  // (TypeScript, r86) what the valley's object gets after it is made: here, and by js/solids.js, js/roads.js, js/main.ts…
+  type SvWorldMore = { terrain?: THREE.Mesh, groundCover?: THREE.InstancedMesh[], critters?: unknown, fireflies?: unknown, buffalo?: { id: string, mesh: THREE.Mesh, shadow: THREE.Object3D, home: number[], tx: number, tz: number, rider: unknown, yaw: number, back?: boolean }[],
+    pots?: { x: number, z: number, [k: string]: unknown }[], statue?: { x: number, z: number, [k: string]: unknown },
+    groundAt?: (x: number, z: number, y?: number) => number, platformAt?: (x: number, z: number, y?: number) => unknown, collide?: (pos: { x: number, y?: number, z: number }, r?: number) => unknown,
+    update?: (dt: number, t: number) => void, updateSky?: (dt: number, camPos: THREE.Vector3, focus?: THREE.Vector3) => void, isNight?: () => boolean,
+    waterMap?: (cv: HTMLCanvasElement) => void, setShrineDone?: (id: string, done: boolean) => void, setTowerDone?: (id: string, done: boolean) => void, hideLeafy?: (id: string) => void,
+    solid?: unknown, solidAt?: (x: number, z: number) => boolean, solidGround?: unknown, solidStats?: Record<string, number>, busStops?: unknown[],
+    familyBuilt?: unknown, familyEdits?: unknown, gates?: unknown[], heroesNear?: (x: number, z: number, r: number) => boolean, levelled?: unknown,
+    priceTags?: unknown[], roadLines?: { kind: string, pts: number[][], [k: string]: unknown }[], roadTop?: Map<number, number> | null, roadside?: unknown, waterSites?: { id: string, x: number, z: number, r: number }[] };
+  const W: typeof wParts & SvWorldMore = wParts;
   const rnd = seeded(20250921);
 
   // ---------- sky ----------
@@ -498,7 +519,7 @@ export function createWorld(scene, quality) {
   }
   scene.environmentIntensity = .35;
 
-  const PAL = [
+  const PAL: [number, THREE.Color, THREE.Color, THREE.Color, THREE.Color, number, number][] = [
     // t, top, horizon, bottom, sun colour, sun intensity, hemi intensity
     [0, '#0b1433', '#1d2b5a', '#10183a', '#7fa0ff', .15, .32],
     [.22, '#24306a', '#e78f6a', '#3a3f6a', '#ffb07a', .35, .45],
@@ -508,7 +529,7 @@ export function createWorld(scene, quality) {
     [.78, '#3a3a7a', '#f08a5a', '#4a3f6a', '#ff9a6a', .4, .5],
     [.86, '#0b1433', '#1d2b5a', '#10183a', '#7fa0ff', .15, .32],
     [1, '#0b1433', '#1d2b5a', '#10183a', '#7fa0ff', .15, .32]
-  ].map(r => [r[0], new THREE.Color(r[1]), new THREE.Color(r[2]), new THREE.Color(r[3]), new THREE.Color(r[4]), r[5], r[6]]);
+  ].map((r): [number, THREE.Color, THREE.Color, THREE.Color, THREE.Color, number, number] => [+r[0], new THREE.Color(r[1]), new THREE.Color(r[2]), new THREE.Color(r[3]), new THREE.Color(r[4]), +r[5], +r[6]]);
   const tmpA = new THREE.Color(), tmpB = new THREE.Color();
   W.isNight = () => W.time < .24 || W.time > .8;
   W.updateSky = (dt, camPos, focus = camPos) => {
@@ -765,7 +786,7 @@ export function createWorld(scene, quality) {
       P(new THREE.BoxGeometry(3.4, 1, 1.6), '#a9764a', [0, .5, 0]),
       ...[-1.5, 1.5].flatMap(px => [P(new THREE.CylinderGeometry(.08, .08, 3, 5), '#7a5236', [px, 1.5, -.7])]),
       P(new THREE.ConeGeometry(2.6, 1.1, 8), col, [0, 3.2, 0]),
-      ...[[-1, '#e8433a'], [-.4, '#ffd23f'], [.3, '#ff9a2e'], [.9, '#4cbf5c']].map(([px, cc]) => P(new THREE.SphereGeometry(.24, 8, 6), cc, [px, 1.15, .1]))
+      ...([[-1, '#e8433a'], [-.4, '#ffd23f'], [.3, '#ff9a2e'], [.9, '#4cbf5c']] satisfies [number, string][]).map(([px, cc]) => P(new THREE.SphereGeometry(.24, 8, 6), cc, [px, 1.15, .1]))
     ]), toonVC()); m.position.set(x, y, z); m.rotation.y = rot; scene.add(m);
     W.colliders.push({ x, z, r: 1.9 });
   };
@@ -883,7 +904,7 @@ export function createWorld(scene, quality) {
     };
     if (STYLES[B.style]) parts.length = 0, parts.push(...STYLES[B.style]());
     else if (B.style !== 'harbour') parts.length = 0, parts.push(...plain());
-    const br = new THREE.Mesh(merge(parts), toonVC()); br.castShadow = true; br.receiveShadow = true; br.position.set(...(B.axis === 'z' ? [B.c, y, (B.a0 + B.a1) / 2] : [(B.a0 + B.a1) / 2, y, B.c])); if (B.axis === 'z') br.rotation.y = -Math.PI / 2; scene.add(br);
+    const br = new THREE.Mesh(merge(parts), toonVC()); br.castShadow = true; br.receiveShadow = true; br.position.set(...(B.axis === 'z' ? [B.c, y, (B.a0 + B.a1) / 2] : [(B.a0 + B.a1) / 2, y, B.c]) satisfies [number, number, number]); if (B.axis === 'z') br.rotation.y = -Math.PI / 2; scene.add(br);
     // railings keep little explorers on the bridge
     W.boxes.push(bridgeBox(B, B.a0, B.a1, hw - .1, hw + .3), bridgeBox(B, B.a0, B.a1, -hw - .3, -hw + .1));
     // (Round U, owner: no step where a road meets a bridge) the deck is walked on over the bridge itself; for 1.2 m past each
@@ -1057,7 +1078,7 @@ export function paintWater(size = 256) {
   }
   // soften where two waters meet (a river into the sea, two channels joining): a small box blur of the colours, twice
   const tmp = new Float32Array(col.length), R = 2;
-  for (let pass = 0; pass < 2; pass++) for (const [src, dst, dx, dy] of [[col, tmp, 1, 0], [tmp, col, 0, 1]]) for (let j = 0; j < size; j++) for (let i = 0; i < size; i++) {
+  for (let pass = 0; pass < 2; pass++) for (const [src, dst, dx, dy] of [[col, tmp, 1, 0], [tmp, col, 0, 1]] satisfies [Float32Array, Float32Array, number, number][]) for (let j = 0; j < size; j++) for (let i = 0; i < size; i++) {
     let r = 0, g = 0, bl = 0, n = 0; for (let o = -R; o <= R; o++) { const ii = i + o * dx, jj = j + o * dy; if (ii < 0 || jj < 0 || ii >= size || jj >= size) continue; const q = (jj * size + ii) * 3; r += src[q]; g += src[q + 1]; bl += src[q + 2]; n++; }
     const q = (j * size + i) * 3; dst[q] = r / n; dst[q + 1] = g / n; dst[q + 2] = bl / n;
   }
