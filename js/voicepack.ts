@@ -180,7 +180,7 @@ function packFiles(groups?: string[], mine = packLangs()) {
   for (const [h, slots] of Object.entries(PACK.lines)) {
     if (want && !want.has(groupOf(h))) continue;
     const L1 = langOf(h);
-    for (const s of Array.isArray(slots) ? slots : []) for (const L of L1 ? [L1] : langs) if (!(L === 'en' || L === 'vi') || mine.includes(L)) urls.push(`voices/${L}/${s}/${h}.mp3`);
+    for (const s of typeof slots === 'string' || Array.isArray(slots) ? slots : []) for (const L of L1 ? [L1] : langs) if (!(L === 'en' || L === 'vi') || mine.includes(L)) urls.push(`voices/${L}/${s}/${h}.mp3`);
   }
   const first = 'voices/' + mine[0] + '/'; urls.sort((a, b) => b.startsWith(first) - a.startsWith(first));
   return urls;
