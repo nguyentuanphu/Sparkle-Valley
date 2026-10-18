@@ -344,3 +344,5 @@ Format for a request:
 - [ ] (Release repair -> Voice & Audio) Record companion hat explanation EN “Save coins for a hat for your companion. Choose Buy when you are ready.” / VI “Để dành tiền mua mũ cho bạn đồng hành. Chọn Mua khi con đã sẵn sàng.” Four f/m files missing; isolated checkpoint voice workflow is being enabled so active PR300 full suite stays fixed at87f9d334. 15 Oct AEDT.
 
 Release repair update (15 Oct 2026 AEDT): repair13 narration cancellation / legal Robot-maze-sorting autoplay passed focused4/4, eight EN/VI completions. Nine existing regressions running; not ready for Release/deployment. b09 Full38681986376 failed163/164; together retry still open. Checkpoint branch work/owner-repair-checkpoint-20261015.
+
+- **Release r87 source claim (18 Oct AEDT):** `sw.js` becomes `sw.ts` before changing the offline file list/version; new deferred sources `js/chat-player.ts`, `js/howto-registry.ts`, `js/howto-data.ts`, and browser type notes in `types/globals.d.ts`.
