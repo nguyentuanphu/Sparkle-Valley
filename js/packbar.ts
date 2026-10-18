@@ -7,7 +7,7 @@
 import { T } from './i18n.js';
 import { onPackProgress } from './voice.js';
 
-let box = null, hideT = 0;
+let box = null, hideT: ReturnType<typeof setTimeout> | 0 = 0;
 const show = (text, pct) => {
   if (!box) { box = document.createElement('div'); box.className = 'packbar'; box.setAttribute('role', 'status'); box.innerHTML = '<span></span><i><b></b></i>'; document.body.appendChild(box); }
   clearTimeout(hideT); box.classList.remove('out');

@@ -21,13 +21,13 @@ function load() {
   try { all = window.speechSynthesis ? speechSynthesis.getVoices() : []; } catch (e) { all = []; }
   listeners.forEach(f => f());
 }
-const listeners = new Set();
+const listeners = new Set<() => void>();
 export const onVoices = f => listeners.add(f);
 if (window.speechSynthesis) { load(); try { speechSynthesis.addEventListener('voiceschanged', load); } catch (e) { } }
 
 export function voicesFor(lang) {
   const re = new RegExp('^' + (lang || 'en'), 'i');   // en, vi, zh (Chinese), hi (Hindi)
-  return all.filter(v => re.test(v.lang)).sort((a, b) => score(b) - score(a) || (/en[-_](au|us)/i.test(b.lang) - /en[-_](au|us)/i.test(a.lang)));
+  return all.filter(v => re.test(v.lang)).sort((a, b) => score(b) - score(a) || (Number(/en[-_](au|us)/i.test(b.lang)) - Number(/en[-_](au|us)/i.test(a.lang))));
 }
 export function voiceFor(lang) {
   const list = voicesFor(lang), want = lang === 'vi' ? settings.voiceVi : lang === 'en' ? settings.voiceEn : null;
@@ -100,7 +100,7 @@ function deviceSpeak(text, lang, my) {
   // English line are said by the phone's Vietnamese voice when it has one
   chunks = chunks.map(c => [lang, c]);
   if (lang === 'en' && mixed(text) && voicesFor('vi').length) chunks = chunks.flatMap(([, c]) => viRuns(c)).filter(([, c]) => /[\p{L}\d]/u.test(c));
-  return new Promise(res => {
+  return new Promise<void>(res => {
     let left = chunks.length, ended = false;
     const end = () => { if (!ended) { ended = true; res(); } };
     chunks.forEach(([l, c]) => { const u = utter(c.trim(), l); u.onend = u.onerror = () => { if (--left <= 0) end(); }; try { speechSynthesis.speak(u); } catch (e) { end(); } });
@@ -118,7 +118,7 @@ export function say(en, vi) { const t = swapNames(settings.lang === 'vi' ? (vi ?
 export function sayAsync(en, vi) { return speak(en, vi); }
 // (owner, 13 Oct: soft music under the story films) how many lines are being spoken now; the theatre lowers its music
 // while it is more than 0
-const activeSpeech = new Set(), talkers = new Set();
+const activeSpeech = new Set<object>(), talkers = new Set<(speaking: number) => void>();
 export const onSpeaking = f => { talkers.add(f); return () => talkers.delete(f); };
 const told = () => talkers.forEach(f => { try { f(activeSpeech.size); } catch (e) { } });
 async function speak(en, vi) {
@@ -152,7 +152,7 @@ async function speakNow(en, vi) {
     if (PACK && bits.length > 1 && bits.some(b => packSlot(lang, b) || tplMatch(lang, b))) {
       for (const b of bits) {
         if (my !== seq) return;
-        let ok = false; try { ok = await playPack(lang, b, my) || await playParts(lang, b, my); } catch (e) { }
+        let ok: unknown = false; try { ok = await playPack(lang, b, my) || await playParts(lang, b, my); } catch (e) { }
         if (!ok) { noteMiss(lang, b); await otherVoice(b, lang, my); }
       }
       continue;
@@ -189,7 +189,7 @@ async function playParts(lang, text, my) {
   const parts = tplMatch(lang, text); if (!parts) return false;
   for (const [, q] of parts) {
     if (my !== seq) return true;
-    let ok = false; try { ok = await playPack(lang, q, my); } catch (e) { }
+    let ok: unknown = false; try { ok = await playPack(lang, q, my); } catch (e) { }
     if (ok || isName(q)) continue;
     noteMiss(lang, q); await otherVoice(q, lang, my);
   }
@@ -205,7 +205,7 @@ async function otherVoice(text, lang, my) { await deviceSpeak(text, lang, my); }
 const MISS_KEY = 'sv2_voicemiss';
 let misses = null;
 const loadMisses = () => { if (!misses) { try { misses = JSON.parse(localStorage.getItem(MISS_KEY) || '[]'); } catch (e) { misses = []; } } return misses; };
-let missTimer = 0;
+let missTimer: ReturnType<typeof setTimeout> | 0 = 0;
 function noteMiss(lang, text) {
   if (!PACK || !text || /^[\d\s.,!?]+$/.test(text)) return;
   const L = loadMisses(), f = L.find(m => m[0] === lang && m[1] === text);
@@ -259,7 +259,7 @@ const tx = async (mode, f) => { const d = await db(); return new Promise((res, r
 export async function loadClips() {
   try {
     const d = await db();
-    await new Promise(res => {
+    await new Promise<void>(res => {
       const req = d.transaction('clips').objectStore('clips').openCursor();
       req.onsuccess = async () => {
         const c = req.result; if (!c) return res();

@@ -43,7 +43,7 @@ const unlock = () => {
 // when the game is back on the screen.
 export function quiet() {
   try { if (AC && AC.state === 'running') AC.suspend(); } catch (e) { }
-  document.querySelectorAll('audio, video').forEach(m => { try { m.pause(); } catch (e) { } });
+  document.querySelectorAll<HTMLMediaElement>('audio, video').forEach(m => { try { m.pause(); } catch (e) { } });
   try { speechSynthesis.cancel(); } catch (e) { }
 }
 document.addEventListener('visibilitychange', () => {
@@ -54,7 +54,10 @@ document.addEventListener('visibilitychange', () => {
 addEventListener('pagehide', quiet); document.addEventListener('freeze', quiet); addEventListener('blur', () => { if (document.hidden) quiet(); });
 const midi = m => 440 * Math.pow(2, (m - 69) / 12);
 
-export function tone(f, dur, o = {}) {
+// what a tone or a burst of noise can be told (bus: 'music' follows the Music switch, anything else the Sounds switch)
+type ToneOpts = { bus?: string, when?: number, at?: number, vol?: number, type?: OscillatorType, bend?: [number, number, number] | null, to?: number, vib?: number, vibRate?: number, attack?: number, filter?: BiquadFilterType, ff?: number, q?: number };
+type NoiseOpts = { bus?: string, when?: number, at?: number, vol?: number, type?: BiquadFilterType, freq?: number, q?: number };
+export function tone(f: number, dur: number, o: ToneOpts = {}) {
   const a = ac(); if (!a) return;
   if (o.bus === 'music' ? !settings.music : !settings.sound) return;
   const t = o.when != null ? o.when : a.currentTime + (o.at || 0), vol = o.vol || .16;
@@ -68,7 +71,7 @@ export function tone(f, dur, o = {}) {
   if (o.filter) { const f2 = a.createBiquadFilter(); f2.type = o.filter; f2.frequency.value = o.ff || 1000; f2.Q.value = o.q || 1; g.connect(f2); out = f2; }
   out.connect(o.bus === 'music' ? musicBus : sfxBus); osc.start(t); osc.stop(t + dur + .05);
 }
-export function noise(dur, o = {}) {
+export function noise(dur: number, o: NoiseOpts = {}) {
   const a = ac(); if (!a) return; if (o.bus === 'music' ? !settings.music : !settings.sound) return;
   const t = o.when != null ? o.when : a.currentTime + (o.at || 0);
   const s = a.createBufferSource(); s.buffer = noiseBuf;
@@ -305,13 +308,13 @@ Object.assign(SONGS, {
 export const PARTY = ['party1', 'party2', 'party3'];
 function playInst(inst, m, t, v = 1) {
   const f = midi(m), o = { when: t, bus: 'music' };
-  if (inst === 'marimba') { tone(f, .45, Object.assign({ vol: .17 * v }, o)); tone(f * 4, .07, Object.assign({ vol: .04 * v }, o)); }
-  else if (inst === 'bell') { tone(f, .9, Object.assign({ vol: .13 * v }, o)); tone(f * 2.01, .45, Object.assign({ vol: .04 * v }, o)); }
-  else if (inst === 'lead') { tone(f, .22, Object.assign({ type: 'square', vol: .045 * v }, o)); tone(f, .3, Object.assign({ type: 'triangle', vol: .1 * v }, o)); }
-  else if (inst === 'danbau') { tone(f, .7, Object.assign({ vol: .13 * v, vib: 5, vibRate: 5.5, bend: Math.random() < .3 ? [.2, 1.059, .15] : null }, o)); }
-  else if (inst === 'soft') { tone(f, 1.6, Object.assign({ vol: .09 * v, attack: .12 }, o)); tone(f * 2, .9, Object.assign({ vol: .015 * v, attack: .1 }, o)); } // a hushed music-box for lullabies
-  else if (inst === 'flute') { tone(f, .5, Object.assign({ vol: .12 * v, vib: 3, vibRate: 5, attack: .05 }, o)); noise(.08, Object.assign({ freq: f * 2, vol: .015, q: 4 }, o)); }
-  else tone(f, .28, Object.assign({ type: 'triangle', vol: .13 * v }, o));
+  if (inst === 'marimba') { tone(f, .45, { vol: .17 * v, ...o }); tone(f * 4, .07, { vol: .04 * v, ...o }); }
+  else if (inst === 'bell') { tone(f, .9, { vol: .13 * v, ...o }); tone(f * 2.01, .45, { vol: .04 * v, ...o }); }
+  else if (inst === 'lead') { tone(f, .22, { type: 'square', vol: .045 * v, ...o }); tone(f, .3, { type: 'triangle', vol: .1 * v, ...o }); }
+  else if (inst === 'danbau') { tone(f, .7, { vol: .13 * v, vib: 5, vibRate: 5.5, bend: Math.random() < .3 ? [.2, 1.059, .15] : null, ...o }); }
+  else if (inst === 'soft') { tone(f, 1.6, { vol: .09 * v, attack: .12, ...o }); tone(f * 2, .9, { vol: .015 * v, attack: .1, ...o }); } // a hushed music-box for lullabies
+  else if (inst === 'flute') { tone(f, .5, { vol: .12 * v, vib: 3, vibRate: 5, attack: .05, ...o }); noise(.08, { freq: f * 2, vol: .015, q: 4, ...o }); }
+  else tone(f, .28, { type: 'triangle', vol: .13 * v, ...o });
 }
 function songStep(s, i, t) {
   const m = s.mel[i % s.mel.length], bar = Math.floor(i / s.bar) % s.bass.length, inBar = i % s.bar;
@@ -329,10 +332,10 @@ let filePlayer = null;
 // the music's own loudness: quieter in calm mode, and lowered under a speaking narrator (Music.under)
 const fullGain = () => (settings.calm ? .17 : .35) * (Music.low ? .3 : 1);
 export const Music = {
-  key: null, timer: null, next: 0, step: 0, low: false,
+  key: null, timer: null, next: 0, step: 0, low: false, duckT: undefined as ReturnType<typeof setTimeout> | undefined,
   pinned: false, // the 🎵 Songs page chose the music: the valley leaves it alone until the page closes
   files: {},     // 'file:<id>' → its address (js/songs.js fills it from Studio's content pack)
-  play(key, force) {
+  play(key, force = false) {
     if (this.key === key) return;
     this.key = key; clearInterval(this.timer); this.timer = null; if (filePlayer) filePlayer.pause();
     if (!settings.music && !force) return;

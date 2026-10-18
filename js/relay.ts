@@ -20,7 +20,10 @@ const remLen = n => { const o = []; do { let d = n % 128; n = Math.floor(n / 128
 const packet = (type, body) => new Uint8Array([type, ...remLen(body.length), ...body]);
 
 class Mqtt {
-  constructor(url) { this.url = url; this.subs = new Set(); this.onmessage = null; this.onclose = null; this.open = false; this.pid = 1; this.buf = new Uint8Array(0); }
+  declare url: string; declare subs: Set<string>; declare open: boolean; declare pid: number; declare buf: Uint8Array;
+  declare onmessage: ((topic: string, bytes: Uint8Array) => void) | null; declare onclose: (() => void) | null;
+  declare ws: WebSocket | undefined; declare ka: ReturnType<typeof setInterval> | undefined;
+  constructor(url: string) { this.url = url; this.subs = new Set(); this.onmessage = null; this.onclose = null; this.open = false; this.pid = 1; this.buf = new Uint8Array(0); }
   connect(will, timeout = 7000) {
     return new Promise(res => {
       let done = false; const finish = ok => { if (done) return; done = true; clearTimeout(t); res(ok); };
@@ -82,8 +85,10 @@ export async function open(key, bytes) { try { const pt = await crypto.subtle.de
 // ---------- a channel: one encrypted topic on every broker that answers ----------
 // onMsg(obj) gets each message once. status() tells how many brokers are connected.
 export class Channel {
-  /** @param {{ kind: string, code: string, onMsg?: (m: any) => void, will?: any }} o */
-  constructor({ kind, code, onMsg, will }) { this.kind = kind; this.code = code; this.onMsg = onMsg; this.will = will; this.clients = []; this.seen = new Map(); this.alive = true; this.extra = new Set(); }
+  declare kind: string; declare code: string; declare onMsg: ((m: any) => void) | undefined; declare will: unknown;
+  declare clients: Mqtt[]; declare seen: Map<string, number>; declare alive: boolean; declare extra: Set<string>;
+  declare key: CryptoKey | undefined; declare topic: string | undefined; declare extraKeys: Map<string, CryptoKey> | undefined;
+  constructor({ kind, code, onMsg, will }: { kind: string, code: string, onMsg?: (m: any) => void, will?: unknown }) { this.kind = kind; this.code = code; this.onMsg = onMsg; this.will = will; this.clients = []; this.seen = new Map(); this.alive = true; this.extra = new Set(); }
   async start() {
     this.key = await keyFor(this.code); this.topic = await topicFor(this.kind, this.code);
     const will = this.will ? { topic: this.topic, payload: await seal(this.key, this.will), retain: true } : null;
@@ -110,7 +115,7 @@ export class Channel {
   // extra topics with their own keys (friends' presence)
   async watch(kind, code) { this.extraKeys = this.extraKeys || new Map(); const t = await topicFor(kind, code); this.extraKeys.set(t, await keyFor(code)); this.extra.add(t); this.clients.forEach(c => c.subscribe(t)); return t; }
   async unwatch(kind, code) { const t = await topicFor(kind, code); this.extra.delete(t); this.extraKeys && this.extraKeys.delete(t); this.clients.forEach(c => c.unsubscribe(t)); }
-  async send(obj, { retain = false, kind, code } = {}) {
+  async send(obj: object, { retain = false, kind, code }: { retain?: boolean, kind?: string, code?: string } = {}) {
     if (!this.key) return;
     const m = Object.assign({ _id: Math.random().toString(36).slice(2, 10) + Date.now().toString(36) }, obj);
     const topic = kind ? await topicFor(kind, code) : this.topic, key = kind ? await keyFor(code) : this.key;

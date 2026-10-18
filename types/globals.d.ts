@@ -3,18 +3,41 @@
 // and the older names some phones still use. Type notes only.
 export {};
 declare global {
+  /** the parts of the browser's speech recognition the microphone test uses (js/mictest.ts) */
+  interface SvSpeechRecognition { lang: string; interimResults: boolean; continuous: boolean; start(): void; stop(): void; abort(): void;
+    onresult: ((e: { results: Iterable<ArrayLike<{ transcript: string }>> }) => void) | null; onerror: ((e: { error?: string }) => void) | null; onend: (() => void) | null }
+  /** the game object the checks and the tools drive in a test browser (js/main.js); only the parts they use so far
+   *  (the whole shared game object gets its own type later in the TypeScript plan) */
+  type SvHero = { profile: import('../js/state.js').Profile };
+  type SvThing = { id?: string, x: number, z: number, act(hero: SvHero, game: SvGame): Promise<unknown> | void };
+  type SvGame = { heroes: SvHero[], interactables: SvThing[], paused: boolean, renderer: { setPixelRatio(ratio: number): void },
+    playGame(player: number, id: string, how: string): void, openPad(player: number, tab: string): void, _owlAuto?: boolean,
+    bootTimes?: Record<string, number> };
   interface Window {
+    /** the game object, for the checks and the tools (js/main.js) */
+    __sv: SvGame;
+    /** the checks and tools/voice-harvest.mts hear every line the game says (js/voice.ts) */
+    __svVoiceLog?: (lang: string, text: string, has: boolean) => void;
+    /** speech recognition, for voice control (js/mictest.ts); only whether it exists is read */
+    SpeechRecognition?: new () => SvSpeechRecognition;
+    webkitSpeechRecognition?: new () => SvSpeechRecognition;
     /** PeerJS, for playing with friends (vendor/peerjs.min.js); its own types are not shipped */
     Peer?: new (...args: any[]) => any;
     /** the checks: a pretend voice relay (TURN) and a pretend PeerJS server */
     SV_TURN_TEST?: any;
     SV_PEER?: { host: string, port: number, path: string, secure: boolean };
+    /** the checks: the local MQTT brokers to use instead of the public ones (js/relay.ts BROKERS) */
+    SV_MQTT?: string[];
     /** older Safari */
     webkitAudioContext?: typeof AudioContext;
   }
   interface Navigator {
+    /** Safari 17+: how the page's sound mixes with the phone (js/audio.ts setSession) */
+    audioSession?: { type: string };
+    /** iPhone: the game opened from the Home Screen */
+    standalone?: boolean;
     /** how the device is connected (Wi-Fi or mobile data), where the browser says */
-    connection?: { type?: string, effectiveType?: string, saveData?: boolean, downlink?: number, rtt?: number };
+    connection?: { type?: string, effectiveType?: string, saveData?: boolean, downlink?: number, rtt?: number, addEventListener?(type: string, f: () => void): void };
     mozConnection?: Navigator['connection'];
     webkitConnection?: Navigator['connection'];
   }

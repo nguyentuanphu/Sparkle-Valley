@@ -23,12 +23,12 @@ export function createNetGames({ net, me, onAsk, onStart, onEnd, waitMs = 12000 
     get session() { return session; },
     // invite one friend (to) or everyone in the room (to omitted) to a game
     // (r63) opts.size: Caro's board, chosen by the one who invites (3 to 19 squares a side)
-    invite(game, level, to, opts = {}) {
+    invite(game, level, to, opts: { size?: number } = {}) {
       const def = defOf(game); if (!def || session) return null;
       const gid = newGid(), asked = new Set(to ? [to] : net.ids());
       if (!asked.size) return null;
       const size = Number.isInteger(opts.size) && opts.size >= 3 && opts.size <= 19 ? opts.size : undefined;
-      const a = { gid, game, level, size, yes: new Set(), no: new Set(), asked };
+      const a = { gid, game, level, size, yes: new Set(), no: new Set(), asked, timer: undefined as ReturnType<typeof setTimeout> | undefined };
       asks.set(gid, a);
       for (const id of asked) net.send({ t: 'gask', to: id, gid, game, level, size });
       a.timer = setTimeout(() => go(gid), waitMs);
@@ -93,7 +93,7 @@ export function createNetGames({ net, me, onAsk, onStart, onEnd, waitMs = 12000 
 
 // who wins a round of Oẳn tù tì among any number of hands (0 rock, 1 paper, 2 scissors; null: left):
 // the seats that won, or [] for a draw (all the same, or all three shapes out)
-export function rpsWinners(hands) {
+export function rpsWinners(hands: (number | null)[]) {
   const live = hands.map((h, s) => [h, s]).filter(([h]) => h === 0 || h === 1 || h === 2), kinds = new Set(live.map(([h]) => h));
   if (kinds.size !== 2) return [];
   const [a, b] = [...kinds], win = (a + 1) % 3 === b ? b : a; // paper beats rock, scissors beat paper, rock beats scissors

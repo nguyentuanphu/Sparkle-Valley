@@ -26,7 +26,7 @@ export function startPack(pack, emit, here) {
   if (packStarted) { if (changed) checkPack().catch(() => { }); return; }
   packStarted = true;
   setTimeout(() => { checkPack().catch(() => { }); }, 6000);
-  let againT = 0; const again = () => { if (mayFetchRest()) close(); clearTimeout(againT); againT = setTimeout(() => checkPack().catch(() => { }), 1500); };
+  let againT: ReturnType<typeof setTimeout> | 0 = 0; const again = () => { if (mayFetchRest()) close(); clearTimeout(againT); againT = setTimeout(() => checkPack().catch(() => { }), 1500); };
   addEventListener('online', again);
   try { const c = navigator.connection; if (c && c.addEventListener) c.addEventListener('change', again); } catch (e) { } // (onto Wi-Fi: the rest goes on)
   events.on('LanguageChanged', again); // (a new language, or both spoken: its core, then its areas)
@@ -131,7 +131,7 @@ async function checkPack() {
         if (g !== 'core' && !mayFetchRest()) break;
         await Promise.all(miss.slice(i, i + 6).map(async u => { try { const r = await fetch(u); if (r.ok) { await cache.put(u, r); have.add(abs(u)); pending.delete(u); done = Math.min(total, done + 1); } } catch (e) { } }));
         packEmit({ state: 'loading', done, total, area: g });
-        if (navigator.onLine === false) { packEmit({ state: 'waiting', left: total - done }); return; } // goes on when the internet is back
+        if (offline()) { packEmit({ state: 'waiting', left: total - done }); return; } // goes on when the internet is back
         await rest(g === 'core' ? PACK_REST.core : PACK_REST.rest);
       }
       if (languageChanged()) return;
@@ -169,7 +169,9 @@ async function askRest() {
 const packSig = () => voicePackSignature(PACK, packLangs());
 // the files of the pack in these areas (all areas when none are named), in the children's own languages (Chinese and
 // Hindi only come with the places and games that speak them)
-function packFiles(groups, mine = packLangs()) {
+// (read fresh each time: the connection can drop while the pack downloads)
+const offline = () => navigator.onLine === false;
+function packFiles(groups?: string[], mine = packLangs()) {
   const urls = [], langs = ['en', 'vi', 'zh', 'hi'], want = groups && new Set(groups);
   // (round R) which language each line is in: `other` lists the lines that are not English, space-separated per
   // language (half the size of the old `langOf`, which named every line's language; older packs still have that)
@@ -178,7 +180,7 @@ function packFiles(groups, mine = packLangs()) {
   for (const [h, slots] of Object.entries(PACK.lines)) {
     if (want && !want.has(groupOf(h))) continue;
     const L1 = langOf(h);
-    for (const s of slots) for (const L of L1 ? [L1] : langs) if (!(L === 'en' || L === 'vi') || mine.includes(L)) urls.push(`voices/${L}/${s}/${h}.mp3`);
+    for (const s of Array.isArray(slots) ? slots : []) for (const L of L1 ? [L1] : langs) if (!(L === 'en' || L === 'vi') || mine.includes(L)) urls.push(`voices/${L}/${s}/${h}.mp3`);
   }
   const first = 'voices/' + mine[0] + '/'; urls.sort((a, b) => b.startsWith(first) - a.startsWith(first));
   return urls;
@@ -208,7 +210,7 @@ export function askCard(mb) {
   const row = document.createElement('div'); row.style.cssText = 'display:flex;gap:8px;justify-content:center;flex-wrap:wrap';
   const btn = (text, bg) => { const b = document.createElement('button'); b.type = 'button'; b.style.cssText = `position:relative;overflow:hidden;min-height:48px;min-width:120px;flex:1 1 130px;padding:6px 12px;border:0;border-radius:12px;font:700 14px/1.2 var(--font);color:#fff;background:${bg};touch-action:none`; b.innerHTML = '<span style="position:absolute;left:0;top:0;bottom:0;width:0;background:rgba(255,255,255,.35)"></span><span style="position:relative"></span>'; b.lastChild.textContent = text; return b; };
   const yes = btn(T('Grown-ups: hold for Yes', 'Người lớn: giữ để đồng ý'), 'var(--purple, #8a5cf6)'), no = btn(T('Not now', 'Để sau'), '#9a8aa8');
-  const fill = yes.firstChild; let t = 0;
+  const fill = yes.firstChild; let t: ReturnType<typeof setTimeout> | 0 = 0; if (!(fill instanceof HTMLElement)) return;
   const stop = () => { clearTimeout(t); fill.style.transition = 'none'; fill.style.width = '0'; };
   cancelCardHold = stop;
   yes.addEventListener('pointerdown', ev => { ev.preventDefault(); fill.style.transition = 'width 1.2s linear'; fill.style.width = '100%'; t = setTimeout(() => { close(); allowMobilePack(true); }, 1200); });
