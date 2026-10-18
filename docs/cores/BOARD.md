@@ -354,3 +354,7 @@ Release repair update (15 Oct 2026 AEDT): repair13 narration cancellation / lega
 - **Release r87 rendering claim (18 Oct AEDT):** `js/avatar.ts`; merge only the rigid meshes of Grandpa Owl and Ông Bầu, keeping their round shadow last for the film helpers. No limb animation, face mapping, terrain or camera rules change. Before/after geometry and model screenshots will be checked.
 
 - **Release r87 reliability claim (18 Oct AEDT):** `js/ui.js` (rename to TypeScript first), `js/voice.ts`, `js/popups.ts`; verify and fix Grown-ups voice-change subscriptions retaining closed settings windows. New `stability` check uses actual close controls, detached-window WeakRefs, heap/DOM/GPU-object budgets, 30 windows and 20 games.
+
+- **Release r87 S4 additional source (18 Oct AEDT):** `js/ui-settings.ts`; move Grown-ups and villager-photo settings out of the startup UI graph, retaining the existing controls and close/subscription cleanup. `js/ui.ts` remains the public loader with missing-module recovery.
+
+- **Release r87 additional reliability claim (18 Oct AEDT):** `js/install.js` (rename-only conversion first). Its install-change callbacks retain every closed Grown-ups window through the install button; replace per-button strong callbacks with one bounded weak registry. Voice cleanup alone did not clear the retained windows (3/3 still retained).
