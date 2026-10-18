@@ -12,7 +12,9 @@ declare global {
   type SvThing = { id?: string, x: number, z: number, act(hero: SvHero, game: SvGame): Promise<unknown> | void };
   type SvGame = { heroes: SvHero[], interactables: SvThing[], paused?: boolean, renderer?: { setPixelRatio(ratio: number): void },
     playGame?(player: number, id: string, how: string): void, openPad?(player: number, tab: string): void, _owlAuto?: boolean,
-    bootTimes?: Record<string, number> };
+    bootTimes?: Record<string, number>,
+    /** Studio's map view reads the valley's boxes and round colliders (studio/ui/app.ts) */
+    world?: { boxes: { x0: number, x1: number, z0: number, z1: number, room?: unknown, [k: string]: unknown }[], colliders: { x: number, z: number, r: number }[] } };
   interface Window {
     /** the game object, for the checks and the tools (js/main.js) */
     __sv: SvGame;
