@@ -1,6 +1,6 @@
-# r87 release review — final checkpoint in preparation
+# r87 release — deployed 19 October 2026 AEDT
 
-Runtime candidate: `50c1a344` on `release/r87`, draft [PR #366](https://github.com/nguyentuanphu/Sparkle-Valley/pull/366). Live remains r86. No deployment approved. The rebuilt Netlify zip is available in the workspace; its checksum and package verification are committed here. The final GitHub run will be linked in the PR review.
+Runtime candidate: `50c1a344` on `release/r87`, [PR #366](https://github.com/nguyentuanphu/Sparkle-Valley/pull/366). Owner approved “Deploy”; PR #366 merged as 9576a97c. Live r87 verified at 4:43 pm AEDT, 19 October 2026. Matching Studio exe r87 is published (studio-exe b6bddab0). The rebuilt Netlify zip (266,930,863 bytes) is available in the workspace; its checksum and package verification are committed here. Final GitHub run 39185040930 passed 222/222 with no retries on reviewed PR head 799c2ec1.
 
 ## What changes
 
@@ -31,7 +31,7 @@ Runtime candidate: `50c1a344` on `release/r87`, draft [PR #366](https://github.c
 | Battery | Pass on final candidate, 154 s (earlier repaired run 173 s): caps/gates, idle/wake, far still people, pixel ratio and Analytics-off assertions unchanged; recorded playing seconds now nonzero |
 | Performance | **World-time assertion fails**: final candidate 11.368 s (earlier 10.736/11.900 s); same-machine exact r86 check also fails at 10.659 s. Other limits pass: final packed download 2.519 MB (earlier 2.518/2.500) versus r86 2.612; final home 450 draws versus r86 460; final village 367 draws / 727,551 triangles; heap +0 MB and DOM +2 after ten games |
 | Startup | Final **968 KB first / 0 KB cached**, no unwanted muted voice-index requests. **All four time assertions fail**: title 1.957 s, first ready 39.956 s, cached ready 48.259 s, freeze 12.919 s (machine x1.22). Existing time limits remain unchanged |
-| GitHub full suite | 4ba8a5b9: 222/222, with ownerfamily and festhunt passing only on retry. Family race fixed and deterministic local check passes (438 s); festival midnight fixture corrected. Final-source full run required before review decision |
+| GitHub full suite | [Final run 39185040930](https://github.com/nguyentuanphu/Sparkle-Valley/actions/runs/39185040930): **222/222, no retries**, on 799c2ec1. Earlier 4ba8a5b9 needed ownerfamily/festhunt retries; causes fixed and both pass first try in final CI |
 | Netlify zip | Built and verified from runtime 50c1a344; archive integrity, all offline-listed paths, ten animal MP3s and r87 markers pass; checksum in netlify-zip.sha256 |
 | AI review | **Did not finish.** Run 39149385863 produced no verdict; bot says usage or time may have run out. Green workflow is not an AI pass; no automatic usage retry |
 
@@ -60,4 +60,4 @@ Fresh-context ABBA diagnostic (same supplied content, not the cached perf verdic
 - Physical Mac/iPhone verification for #341/#355 remains outstanding. Chromium viewport/stress tests do not establish a device cure.
 - Technical decoding/routing tests do not establish animal recognisability, pronunciation or instrument authenticity. Source-clip review: `audio-review.html`.
 
-Final GitHub status is required before the round’s one explicit “yes, deploy” pop-up. Nothing reaches main without that answer.
+Owner approved “Deploy” on 19 October 2026 AEDT; the round is published. Live service worker, Studio version and pig recording return 200; Studio exe version/checksum and Windows GUI header verified. Windows execution, perceptual listening and reporting Mac/iPhone confirmation remain unverified. Live verification and Studio publication evidence are in evidence/.

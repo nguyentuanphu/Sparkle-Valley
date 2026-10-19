@@ -1,0 +1,23 @@
+{
+  "mergeCommit": "9576a97c01ebf1e0074cb22c520d036707bbecb4",
+  "verifiedAEDT": "2026-10-19T16:43:50.972008+11:00",
+  "checks": {
+    "sw.js": {
+      "status": 200,
+      "bytes": 12992,
+      "type": "application/javascript; charset=UTF-8",
+      "version": "sv-2026-10-18-r87"
+    },
+    "studio/version.json": {
+      "status": 200,
+      "bytes": 20,
+      "type": "application/json",
+      "version": "r87"
+    },
+    "sounds/animals/pig.mp3": {
+      "status": 200,
+      "bytes": 4976,
+      "type": "audio/mpeg"
+    }
+  }
+}

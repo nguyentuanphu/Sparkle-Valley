@@ -1,0 +1,14 @@
+{
+  "branchCommit": "b6bddab0ad71b895e367052f92e6427af9232146",
+  "sourceCommit": "9576a97c01ebf1e0074cb22c520d036707bbecb4",
+  "publishedVersion": {
+    "studio": "r87",
+    "sha256": "6d29b06846b6f21c06fd996770ed0e67f759fa3bf5b2933671c8c666f4923e6d",
+    "size": 93811712,
+    "notes": "r87: clearer riding views, sound playback controls, remembered homes and Studio save guidance",
+    "built": "2026-10-19T05:44:15.407Z"
+  },
+  "checksumMatchesLocalBuild": true,
+  "windowsGuiHeader": true,
+  "windowsExecutionTested": false
+}
