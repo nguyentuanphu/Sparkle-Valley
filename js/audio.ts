@@ -1,8 +1,8 @@
-// Sound effects and calm generative music, all synthesised with Web Audio (no files to download).
+// Sound effects, real animal recordings and calm generative music, played with Web Audio.
 import { settings } from './state.js';
 import { pick, rand } from './util.js';
 
-let AC = null, sfxBus = null, musicBus = null, noiseBuf = null;
+let AC = null, sfxBus = null, musicBus = null, animalBus = null, noiseBuf = null;
 // (Round V, owner 13 Oct: on iPhone the microphone did nothing in Friends and in voice control, with every setting on
 // "Ask") "playback" is a play-only mode: while it is set, iPhone never asks for the microphone and voice control cannot
 // listen. While anything needs the microphone (a call, voice control, the recorder, the microphone test) the mode is
@@ -197,8 +197,8 @@ export const SFX = {
 };
 // (owner, 17 Oct AEDT: "need real voice for animals") real recordings of the ten animals children are asked to tell apart
 // (sounds/animals/, credits in js/credits.js): once a recording is loaded the animal's sound plays it, everywhere it is
-// heard (the listening game, the sticker book, the animals in the valley); the drawn-out tone above stays as the fallback
-// (before the file has arrived, or a browser that cannot decode it)
+// heard (the listening game, the sticker book, the animals in the valley). Before it is ready, wait for the recording;
+// never teach a different, synthetic noise as the animal’s real voice.
 const ANIMAL_REC = { moo: 'cow', baa: 'sheep', oink: 'pig', woof: 'dog', meow: 'cat', quack: 'duck', cluck: 'hen', neigh: 'horse', ribbit: 'frog', hoot: 'owl' };
 const recBuf = {}, recTry = {};
 function recOf(name) {
@@ -208,15 +208,37 @@ function recOf(name) {
     .then(b => new Promise((res, rej) => a.decodeAudioData(b, res, rej))).then(buf => { recBuf[name] = buf; }).catch(() => { recTry[name] = null; });
   return null;
 }
-// every recording loaded (the listening game waits for this, up to a few seconds, before its first round)
-export const loadAnimalCalls = (ms = 4000) => Promise.race([Promise.all(Object.keys(ANIMAL_REC).map(n => (recOf(n), recTry[n] || null))), new Promise(r => setTimeout(r, ms))]);
+// Loading has an explicit result: a quiz must not silently substitute an oscillator for a missing recording.
+export async function loadAnimalCalls(ms = 4000): Promise<boolean> {
+  let timer: ReturnType<typeof setTimeout>;
+  try { return await Promise.race([
+    Promise.all(Object.keys(ANIMAL_REC).map(n => (recOf(n), recTry[n] || null))).then(() => Object.keys(ANIMAL_REC).every(n => !!recBuf[n])),
+    new Promise<boolean>(resolve => { timer = setTimeout(() => resolve(false), ms); })
+  ]); } finally { clearTimeout(timer); }
+}
 export const animalRecording = name => recBuf[name] || null;
+function recordedAnimal(name: string): AudioBufferSourceNode | null {
+  const a = ac(), buffer = recBuf[name];
+  if (!settings.sound || document.hidden || !a || !buffer) return null;
+  if (!animalBus) {
+      // Real calls keep their recorded dynamics; the synth compressor's -24 dB threshold coloured their sound.
+      // A high-threshold limiter only catches several animals overlapping, not a single normalised call.
+      const animalLimit = a.createDynamicsCompressor(); animalLimit.threshold.value = -3; animalLimit.knee.value = 0;
+      animalLimit.ratio.value = 20; animalLimit.attack.value = .003; animalLimit.release.value = .15; animalLimit.connect(a.destination);
+      animalBus = a.createGain(); animalBus.gain.value = .7; animalBus.connect(animalLimit);
+  }
+  const src = a.createBufferSource(), gain = a.createGain();
+  src.buffer = buffer; gain.gain.value = .9; src.connect(gain); gain.connect(animalBus);
+  src.onended = () => { src.disconnect(); gain.disconnect(); }; src.start(); return src;
+}
+const pendingAnimalPlay = new Set<string>();
 for (const name of Object.keys(ANIMAL_REC)) {
-  const drawn = SFX[name];
   SFX[name] = () => {
     if (!settings.sound) return;
-    const a = ac(), buf = recOf(name); if (!buf || !a || !sfxBus) return drawn();
-    const src = a.createBufferSource(), g = a.createGain(); g.gain.value = .9; src.buffer = buf; src.connect(g); g.connect(sfxBus); src.start();
+    if (recOf(name)) { recordedAnimal(name); return; }
+    if (!recTry[name] || pendingAnimalPlay.has(name)) return;
+    pendingAnimalPlay.add(name);
+    recTry[name].then(() => recordedAnimal(name)).finally(() => pendingAnimalPlay.delete(name));
   };
 }
 
@@ -379,13 +401,24 @@ export const Music = {
 // (tester's notes, 12 Oct) an animal's call for the listening games: about two seconds long (the call again until it
 // fills them), louder than the other sounds, with the music dipped under it, so a child can tell which animal it is
 const CALL_LEN = { moo: 1.1, quack: .35, woof: .35, meow: .75, baa: .75, oink: .45, cluck: .75, neigh: .8, ribbit: .32, hoot: .65 };
-export function animalCall(name, sec = 2) {
-  const f = SFX[name], a = ac(); if (!f) return;
-  // a real recording is one whole call (1 to 3 s): played once, the music dipped for as long as it lasts
-  const rec = animalRecording(name); if (rec) sec = Math.max(sec, rec.duration);
+export function animalCall(name: string, sec = 2): () => void {
+  let stopped = false, source: AudioBufferSourceNode | null = null;
+  const timers: ReturnType<typeof setTimeout>[] = [];
+  const stop = () => { stopped = true; timers.forEach(clearTimeout); if (source) { try { source.stop(); } catch {} source = null; } };
+  if (name in ANIMAL_REC) {
+    const play = () => {
+      const rec = animalRecording(name); if (stopped || !rec || !settings.sound || document.hidden) return;
+      Music.duck(Math.max(sec, rec.duration) + .3);
+      // These files are already normalised. The old 1.6x synthetic-call boost drove them into the compressor.
+      source = recordedAnimal(name);
+    };
+    if (recOf(name)) play(); else if (recTry[name]) recTry[name].then(play);
+    return stop;
+  }
+  const f = SFX[name], a = ac(); if (!f) return stop;
   Music.duck(sec + .3);
   if (a && sfxBus) { const g = sfxBus.gain, now = a.currentTime; g.cancelScheduledValues(now); g.setValueAtTime(1.6, now); g.setValueAtTime(1.6, now + sec + .2); g.linearRampToValueAtTime(.7, now + sec + .5); }
   const gap = (CALL_LEN[name] || .8) + .3;
-  if (rec) { f(); return; }
-  for (let t = 0; t < sec - .1; t += gap) setTimeout(() => f(), t * 1000);
+  for (let t = 0; t < sec - .1; t += gap) timers.push(setTimeout(() => { if (!stopped) f(); }, t * 1000));
+  return stop;
 }

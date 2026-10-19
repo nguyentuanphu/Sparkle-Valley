@@ -117,9 +117,11 @@ async function checkPack() {
     // (both languages switched on, say) used to add files to an area's list that the total never counted
     const pending = new Set(missingOf(want));
     let total = pending.size, done = 0;
+    const fullTotal = new Set(packFiles(want, langs)).size, savedBefore = fullTotal - total;
+    const progress = () => ({ done, total, saved: savedBefore + done, fullTotal });
     if (!total) { if (languageChanged()) return; donePack(want, langs); packEmit({ state: 'ready', quiet: true, total: packFiles(want, langs).length, core: want.length === 1 }); if (want.length === 1) askRest().catch(() => { }); return; }
     if (navigator.onLine === false) { packEmit({ state: 'waiting', left: total }); return; }
-    packEmit({ state: 'loading', done, total });
+    packEmit({ state: 'loading', ...progress() });
     // one area at a time, the next chosen again after each (the child may have walked somewhere new meanwhile)
     const left = new Set(want);
     while (left.size) {
@@ -130,7 +132,7 @@ async function checkPack() {
         if (languageChanged()) return; // finish only the current batch, then start the new selected language
         if (g !== 'core' && !mayFetchRest()) break;
         await Promise.all(miss.slice(i, i + 6).map(async u => { try { const r = await fetch(u); if (r.ok) { await cache.put(u, r); have.add(abs(u)); pending.delete(u); done = Math.min(total, done + 1); } } catch (e) { } }));
-        packEmit({ state: 'loading', done, total, area: g });
+        packEmit({ state: 'loading', ...progress(), area: g });
         if (offline()) { packEmit({ state: 'waiting', left: total - done }); return; } // goes on when the internet is back
         await rest(g === 'core' ? PACK_REST.core : PACK_REST.rest);
       }

@@ -1,0 +1,30 @@
+// Live r86 b37a52de rigid model builders, preserved for geometry regression.
+function buildOwl() {
+  const g = new THREE.Group();
+  const body = new THREE.Mesh(new THREE.SphereGeometry(.9, 20, 16), toon('#a0724a')); body.scale.set(1, 1.2, .9); body.position.y = 1.1; g.add(body);
+  const belly = new THREE.Mesh(new THREE.SphereGeometry(.65, 16, 12), toon('#f2dcb0')); belly.scale.set(1, 1.2, .6); belly.position.set(0, 1, .45); g.add(belly);
+  [-1, 1].forEach(s => {
+    const eye = new THREE.Mesh(new THREE.SphereGeometry(.27, 14, 10), toon('#ffffff')); eye.position.set(s * .3, 1.75, .62); g.add(eye);
+    const pu = new THREE.Mesh(new THREE.SphereGeometry(.13, 10, 8), toon('#2b1a2e')); pu.position.set(s * .3, 1.75, .85); g.add(pu);
+    const tuft = new THREE.Mesh(new THREE.ConeGeometry(.15, .45, 5), toon('#7a5236')); tuft.position.set(s * .55, 2.35, 0); tuft.rotation.z = -s * .4; g.add(tuft);
+    const wing = new THREE.Mesh(new THREE.SphereGeometry(.4, 12, 10), toon('#7a5236')); wing.scale.set(.4, 1, .8); wing.position.set(s * .85, 1.1, 0); g.add(wing);
+  });
+  const beak = new THREE.Mesh(new THREE.ConeGeometry(.12, .3, 6), toon('#ffb52e')); beak.rotation.x = Math.PI / 2; beak.position.set(0, 1.5, .9); g.add(beak);
+  const glasses = new THREE.Mesh(new THREE.TorusGeometry(.3, .03, 6, 20), toon('#3a2a20')); glasses.position.set(.3, 1.75, .66); g.add(glasses);
+  const g2 = glasses.clone(); g2.position.x = -.3; g.add(g2);
+  const sh = blobShadow(); sh.scale.setScalar(1.6); g.add(sh);
+  return g;
+}
+
+// A gourd-shaped collector who loves Leafies.
+function buildGourd() {
+  const g = new THREE.Group();
+  const lo = new THREE.Mesh(new THREE.SphereGeometry(.9, 18, 14), toon('#e2b84a')); lo.position.y = .9; g.add(lo);
+  const hi = new THREE.Mesh(new THREE.SphereGeometry(.6, 18, 14), toon('#e8c45a')); hi.position.y = 2.1; g.add(hi);
+  const stem = new THREE.Mesh(new THREE.CylinderGeometry(.08, .1, .4, 6), toon('#6a8a3a')); stem.position.y = 2.8; g.add(stem);
+  const leaf = new THREE.Mesh(new THREE.SphereGeometry(.25, 8, 6), toon('#5fbf4a')); leaf.scale.set(1.4, .3, .8); leaf.position.set(.25, 2.9, 0); g.add(leaf);
+  [-1, 1].forEach(s => { const e = new THREE.Mesh(new THREE.SphereGeometry(.08, 8, 6), toon('#2b1a2e')); e.position.set(s * .2, 2.15, .55); g.add(e); });
+  const m = new THREE.Mesh(new THREE.TorusGeometry(.12, .03, 6, 12, Math.PI), toon('#a33b52')); m.rotation.z = Math.PI; m.position.set(0, 1.98, .57); g.add(m);
+  const sh = blobShadow(); sh.scale.setScalar(1.8); g.add(sh);
+  return g;
+}

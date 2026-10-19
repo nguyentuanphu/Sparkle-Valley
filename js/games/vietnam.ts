@@ -46,8 +46,10 @@ register({
   async run(api) {
     const names = api.two ? [api.players[0].name, api.players[1].name] : [api.players[0].name, 'Tèo'];
     let st = { seeds: [0, 5, 5, 5, 5, 5, 0, 5, 5, 5, 5, 5], big: [true, false, false, false, false, false, true, false, false, false, false, false], score: [0, 0] };
-    const wrap = el('div', 'oaq-wrap'); api.stage.appendChild(wrap);
+    const wrap = el('div', 'oaq-wrap' + (api.little ? ' oaq-little' : '')); api.stage.appendChild(wrap);
     const scoreEl = el('div', 'oaq-score'); wrap.appendChild(scoreEl);
+    const directionSlot = api.little ? el('div', 'oaq-directions') : null;
+    if (directionSlot) wrap.appendChild(directionSlot);
     const board = el('div', 'oaq'); wrap.appendChild(board);
     const cells = {};
     const mk = (i, cls) => { const c = el('button', 'oaq-c ' + cls); c._i = i; cells[i] = c; return c; };
@@ -129,9 +131,10 @@ register({
         for (;;) {
           const c = await tapOne(range.map(i => cells[i]).filter(c => st.seeds[c._i] > 0), api); if (api.closed) return;
           from = c._i;
-          const arrows = el('div', 'oaq-arrows', `<button data-d="l">⬅️</button><button data-d="r">➡️</button>`); c.appendChild(arrows); directionButtons = arrows;
+          const arrows = el('div', 'oaq-arrows', `<button data-d="l" aria-label="${T('Left / up', 'Trái / lên')}">⬅️</button><button data-d="r" aria-label="${T('Right / down', 'Phải / xuống')}">➡️</button>`);
+          c.classList.add('chosen'); (directionSlot || c).appendChild(arrows); directionButtons = arrows;
           const b = await tapOne([...arrows.querySelectorAll('button'), ...range.map(i => cells[i]).filter(x => x !== c && st.seeds[x._i] > 0)], api);
-          arrows.remove(); directionButtons = null; if (api.closed) return;
+          arrows.remove(); c.classList.remove('chosen'); directionButtons = null; if (api.closed) return;
           if (b.dataset && b.dataset.d) { const right = b.dataset.d === 'r'; dir = turn === 0 ? (right ? 1 : -1) : (right ? -1 : 1); break; }
         }
         choosing = false; plannedMove = null;

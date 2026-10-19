@@ -313,8 +313,23 @@ export function buildOwl() {
   const beak = new THREE.Mesh(new THREE.ConeGeometry(.12, .3, 6), toon('#ffb52e')); beak.rotation.x = Math.PI / 2; beak.position.set(0, 1.5, .9); g.add(beak);
   const glasses = new THREE.Mesh(new THREE.TorusGeometry(.3, .03, 6, 20), toon('#3a2a20')); glasses.position.set(.3, 1.75, .66); g.add(glasses);
   const g2 = glasses.clone(); g2.position.x = -.3; g.add(g2);
+  compactRigidGuide(g);
   const sh = blobShadow(); sh.scale.setScalar(1.6); g.add(sh);
   return g;
+}
+
+// These guides sway as a whole. Their opaque pieces share lighting; one coloured mesh keeps the same triangles.
+// The shadow is added afterwards so the film builders can still remove the last child.
+function compactRigidGuide(root: THREE.Group) {
+  root.updateMatrixWorld(true);
+  const parts: { m: THREE.Mesh<THREE.BufferGeometry, THREE.MeshToonMaterial>; c: THREE.Color }[] = [];
+  for (const child of root.children) {
+    if (child instanceof THREE.Mesh && child.material instanceof THREE.MeshToonMaterial && !child.material.transparent && !child.material.map) parts.push({ m: child, c: child.material.color });
+  }
+  if (parts.length < 2) return;
+  const inv = new THREE.Matrix4().copy(root.matrixWorld).invert();
+  const one = new THREE.Mesh(bake(parts, inv, true), compactMat(THREE.FrontSide));
+  parts.forEach(({m}) => root.remove(m)); root.add(one);
 }
 
 // A gourd-shaped collector who loves Leafies.
@@ -326,6 +341,7 @@ export function buildGourd() {
   const leaf = new THREE.Mesh(new THREE.SphereGeometry(.25, 8, 6), toon('#5fbf4a')); leaf.scale.set(1.4, .3, .8); leaf.position.set(.25, 2.9, 0); g.add(leaf);
   [-1, 1].forEach(s => { const e = new THREE.Mesh(new THREE.SphereGeometry(.08, 8, 6), toon('#2b1a2e')); e.position.set(s * .2, 2.15, .55); g.add(e); });
   const m = new THREE.Mesh(new THREE.TorusGeometry(.12, .03, 6, 12, Math.PI), toon('#a33b52')); m.rotation.z = Math.PI; m.position.set(0, 1.98, .57); g.add(m);
+  compactRigidGuide(g);
   const sh = blobShadow(); sh.scale.setScalar(1.8); g.add(sh);
   return g;
 }

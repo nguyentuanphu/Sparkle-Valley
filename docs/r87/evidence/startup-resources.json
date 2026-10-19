@@ -1,0 +1,451 @@
+{
+  "first": [
+    {
+      "path": "/bundle/c-PQP7MSXJ.js",
+      "transferred": 232508,
+      "encoded": 232208
+    },
+    {
+      "path": "/bundle/c-77KUOTUT.js",
+      "transferred": 172011,
+      "encoded": 171711
+    },
+    {
+      "path": "/bundle/style-ee492c1a.css",
+      "transferred": 55449,
+      "encoded": 55149
+    },
+    {
+      "path": "/bundle/c-ND74D7OE.js",
+      "transferred": 40822,
+      "encoded": 40522
+    },
+    {
+      "path": "/bundle/c-ZF5WWERC.js",
+      "transferred": 37422,
+      "encoded": 37122
+    },
+    {
+      "path": "/fonts/Baloo2-latin-600.woff2",
+      "transferred": 33488,
+      "encoded": 33188
+    },
+    {
+      "path": "/bundle/c-G7FYAW2J.js",
+      "transferred": 30089,
+      "encoded": 29789
+    },
+    {
+      "path": "/fonts/Fredoka-latin-500.woff2",
+      "transferred": 30032,
+      "encoded": 29732
+    },
+    {
+      "path": "/fonts/Baloo2-latin-ext-600.woff2",
+      "transferred": 27684,
+      "encoded": 27384
+    },
+    {
+      "path": "/bundle/c-ESDXMTQW.js",
+      "transferred": 25138,
+      "encoded": 24838
+    },
+    {
+      "path": "/bundle/c-RBLNVTF6.js",
+      "transferred": 14934,
+      "encoded": 14634
+    },
+    {
+      "path": "/bundle/c-3OCEVTAD.js",
+      "transferred": 12983,
+      "encoded": 12683
+    },
+    {
+      "path": "/bundle/c-3CQYI7V2.js",
+      "transferred": 11922,
+      "encoded": 11622
+    },
+    {
+      "path": "/bundle/c-QZ6P2BTP.js",
+      "transferred": 11521,
+      "encoded": 11221
+    },
+    {
+      "path": "/bundle/c-X6HMWCJJ.js",
+      "transferred": 11297,
+      "encoded": 10997
+    },
+    {
+      "path": "/bundle/c-65QH2BBG.js",
+      "transferred": 10345,
+      "encoded": 10045
+    },
+    {
+      "path": "/fonts/Baloo2-vietnamese-600.woff2",
+      "transferred": 10188,
+      "encoded": 9888
+    },
+    {
+      "path": "/bundle/c-NHYTGKSZ.js",
+      "transferred": 9061,
+      "encoded": 8761
+    },
+    {
+      "path": "/bundle/c-2LPSKRN3.js",
+      "transferred": 8496,
+      "encoded": 8196
+    },
+    {
+      "path": "/bundle/c-F5V654L2.js",
+      "transferred": 8429,
+      "encoded": 8129
+    },
+    {
+      "path": "/bundle/c-7UL6QAOW.js",
+      "transferred": 8297,
+      "encoded": 7997
+    },
+    {
+      "path": "/bundle/c-ZQYBZGK7.js",
+      "transferred": 8256,
+      "encoded": 7956
+    },
+    {
+      "path": "/bundle/c-JW5OYOTB.js",
+      "transferred": 7518,
+      "encoded": 7218
+    },
+    {
+      "path": "/bundle/c-ISAQJZLS.js",
+      "transferred": 7362,
+      "encoded": 7062
+    },
+    {
+      "path": "/bundle/c-ZEDVORBE.js",
+      "transferred": 7194,
+      "encoded": 6894
+    },
+    {
+      "path": "/bundle/c-AUA5NNK6.js",
+      "transferred": 6736,
+      "encoded": 6436
+    },
+    {
+      "path": "/bundle/c-PBWDVM2Z.js",
+      "transferred": 6471,
+      "encoded": 6171
+    },
+    {
+      "path": "/bundle/c-VDUVVS5R.js",
+      "transferred": 6344,
+      "encoded": 6044
+    },
+    {
+      "path": "/bundle/c-46FAENUS.js",
+      "transferred": 6204,
+      "encoded": 5904
+    },
+    {
+      "path": "/bundle/c-EQZLPZJY.js",
+      "transferred": 6009,
+      "encoded": 5709
+    },
+    {
+      "path": "/bundle/c-HQ6QCFHK.js",
+      "transferred": 5898,
+      "encoded": 5598
+    },
+    {
+      "path": "/bundle/c-624BGPR5.js",
+      "transferred": 5522,
+      "encoded": 5222
+    },
+    {
+      "path": "/bundle/c-AAFOT7YZ.js",
+      "transferred": 5413,
+      "encoded": 5113
+    },
+    {
+      "path": "/bundle/c-GLVLOYG6.js",
+      "transferred": 5278,
+      "encoded": 4978
+    },
+    {
+      "path": "/fonts/Fredoka-latin-ext-500.woff2",
+      "transferred": 4876,
+      "encoded": 4576
+    },
+    {
+      "path": "/bundle/c-TW5ASICO.js",
+      "transferred": 4846,
+      "encoded": 4546
+    },
+    {
+      "path": "/bundle/c-HFG6MSYG.js",
+      "transferred": 4628,
+      "encoded": 4328
+    },
+    {
+      "path": "/bundle/c-VHH664G3.js",
+      "transferred": 4286,
+      "encoded": 3986
+    },
+    {
+      "path": "/bundle/c-XNOYYBBK.js",
+      "transferred": 4262,
+      "encoded": 3962
+    },
+    {
+      "path": "/bundle/c-MN77G574.js",
+      "transferred": 4005,
+      "encoded": 3705
+    },
+    {
+      "path": "/bundle/c-ROYFDAY3.js",
+      "transferred": 3992,
+      "encoded": 3692
+    },
+    {
+      "path": "/bundle/c-4SRKAM22.js",
+      "transferred": 3924,
+      "encoded": 3624
+    },
+    {
+      "path": "/bundle/c-QV5Y5LXH.js",
+      "transferred": 3802,
+      "encoded": 3502
+    },
+    {
+      "path": "/bundle/c-DATYZGSD.js",
+      "transferred": 3727,
+      "encoded": 3427
+    },
+    {
+      "path": "/bundle/c-ARYXQIBT.js",
+      "transferred": 3452,
+      "encoded": 3152
+    },
+    {
+      "path": "/bundle/c-SAKLRXF7.js",
+      "transferred": 3345,
+      "encoded": 3045
+    },
+    {
+      "path": "/bundle/c-KZPRVILX.js",
+      "transferred": 3189,
+      "encoded": 2889
+    },
+    {
+      "path": "/bundle/c-46BLILEL.js",
+      "transferred": 2635,
+      "encoded": 2335
+    },
+    {
+      "path": "/bundle/c-CD7UVGBN.js",
+      "transferred": 2521,
+      "encoded": 2221
+    },
+    {
+      "path": "/bundle/main-QYF6PCYC.js",
+      "transferred": 2494,
+      "encoded": 2194
+    },
+    {
+      "path": "/bundle/c-DTIDILVR.js",
+      "transferred": 2461,
+      "encoded": 2161
+    },
+    {
+      "path": "/bundle/c-TCYJBV2S.js",
+      "transferred": 2428,
+      "encoded": 2128
+    },
+    {
+      "path": "/bundle/c-FHMFUMHC.js",
+      "transferred": 2362,
+      "encoded": 2062
+    },
+    {
+      "path": "/bundle/c-V653D7EC.js",
+      "transferred": 2155,
+      "encoded": 1855
+    },
+    {
+      "path": "/bundle/c-O2LTZTDZ.js",
+      "transferred": 1994,
+      "encoded": 1694
+    },
+    {
+      "path": "/bundle/c-PWX7NMHC.js",
+      "transferred": 1884,
+      "encoded": 1584
+    },
+    {
+      "path": "/bundle/c-FARRBAVV.js",
+      "transferred": 1822,
+      "encoded": 1522
+    },
+    {
+      "path": "/bundle/c-6VPRAPHU.js",
+      "transferred": 1728,
+      "encoded": 1428
+    },
+    {
+      "path": "/bundle/c-QDCWDFM6.js",
+      "transferred": 1699,
+      "encoded": 1399
+    },
+    {
+      "path": "/bundle/c-JPKMOEMD.js",
+      "transferred": 1689,
+      "encoded": 1389
+    },
+    {
+      "path": "/",
+      "transferred": 1502,
+      "encoded": 1202
+    },
+    {
+      "path": "/bundle/c-RGYSWS5M.js",
+      "transferred": 1487,
+      "encoded": 1187
+    },
+    {
+      "path": "/bundle/c-FE3DZ4SH.js",
+      "transferred": 1401,
+      "encoded": 1101
+    },
+    {
+      "path": "/bundle/c-W2KGZR4O.js",
+      "transferred": 1394,
+      "encoded": 1094
+    },
+    {
+      "path": "/bundle/c-OAQEL44P.js",
+      "transferred": 1376,
+      "encoded": 1076
+    },
+    {
+      "path": "/bundle/c-OMOUQA7D.js",
+      "transferred": 1239,
+      "encoded": 939
+    },
+    {
+      "path": "/bundle/c-GV6UENIR.js",
+      "transferred": 1228,
+      "encoded": 928
+    },
+    {
+      "path": "/bundle/c-N6W6OVJA.js",
+      "transferred": 1220,
+      "encoded": 920
+    },
+    {
+      "path": "/bundle/c-XWQLPVLJ.js",
+      "transferred": 1218,
+      "encoded": 918
+    },
+    {
+      "path": "/bundle/c-FKOL65ST.js",
+      "transferred": 1178,
+      "encoded": 878
+    },
+    {
+      "path": "/bundle/c-EOBZK4QF.js",
+      "transferred": 1072,
+      "encoded": 772
+    },
+    {
+      "path": "/bundle/c-3WNRVEUK.js",
+      "transferred": 982,
+      "encoded": 682
+    },
+    {
+      "path": "/css/fonts.css",
+      "transferred": 830,
+      "encoded": 530
+    },
+    {
+      "path": "/bundle/c-Z5XJYEHO.js",
+      "transferred": 738,
+      "encoded": 438
+    },
+    {
+      "path": "/bundle/state-5KCBJ75H.js",
+      "transferred": 715,
+      "encoded": 415
+    },
+    {
+      "path": "/bundle/c-6SXMZOWD.js",
+      "transferred": 672,
+      "encoded": 372
+    },
+    {
+      "path": "/bundle/c-I3EH323K.js",
+      "transferred": 670,
+      "encoded": 370
+    },
+    {
+      "path": "/bundle/custom-TA3CODJH.js",
+      "transferred": 657,
+      "encoded": 357
+    },
+    {
+      "path": "/bundle/c-TWH5JT54.js",
+      "transferred": 640,
+      "encoded": 340
+    },
+    {
+      "path": "/bundle/c-XUXUBJGI.js",
+      "transferred": 598,
+      "encoded": 298
+    },
+    {
+      "path": "/bundle/c-A3TBX65P.js",
+      "transferred": 584,
+      "encoded": 284
+    },
+    {
+      "path": "/bundle/c-5OWXR35E.js",
+      "transferred": 542,
+      "encoded": 242
+    },
+    {
+      "path": "/bundle/c-RR4HTXT4.js",
+      "transferred": 537,
+      "encoded": 237
+    },
+    {
+      "path": "/bundle/c-N4Q3EMTC.js",
+      "transferred": 527,
+      "encoded": 227
+    },
+    {
+      "path": "/bundle/c-VHNSBD2M.js",
+      "transferred": 420,
+      "encoded": 120
+    },
+    {
+      "path": "/content/custom.json",
+      "transferred": 396,
+      "encoded": 96
+    },
+    {
+      "path": "/content/custom.json",
+      "transferred": 396,
+      "encoded": 96
+    },
+    {
+      "path": "/api/live",
+      "transferred": 300,
+      "encoded": 0
+    }
+  ],
+  "second": [
+    {
+      "path": "/api/live",
+      "transferred": 300,
+      "encoded": 0
+    }
+  ]
+}

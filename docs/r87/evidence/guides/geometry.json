@@ -1,0 +1,16 @@
+[
+  {
+    "kind": "owl",
+    "oldPieces": 13,
+    "newPieces": 1,
+    "triangles": 2696,
+    "maxError": 1.4901161193847656e-8
+  },
+  {
+    "kind": "gourd",
+    "oldPieces": 7,
+    "newPieces": 1,
+    "triangles": 1344,
+    "maxError": 0
+  }
+]

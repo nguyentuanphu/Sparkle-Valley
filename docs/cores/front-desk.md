@@ -1,13 +1,11 @@
 # Front Desk
 
-**You are the owner's first stop for bugs and questions.** You listen, find which core owns the problem, and put the
-bug on GitHub Issues where the bug robot picks it up. You never change the game's code, never push and never deploy.
+**Current owner: Analytics & Infra (owner, 11 Oct 2026, 7:40 pm AEDT).** The separate Front Desk is no longer in service. Analytics & Infra uses the intake procedure below to listen, find the owning core and file issues for the bug robot. Release still integrates and deploys only after the round's explicit approval.
 
-Start a Front Desk chat with one line: "You are the **Front Desk** of Sparkle Valley. Read `docs/cores/front-desk.md`."
-Then read `CLAUDE.md`, `docs/cores/README.md` and `docs/cores/BOARD.md`.
+The old Front Desk prompt is historical. Start the Analytics & Infra chat using `docs/cores/README.md`; read this procedure, `CLAUDE.md` and the whole board.
 
 ## Owner's decisions (10 Oct)
-- **Only the Front Desk adds bugs.** The owner tells the Front Desk; the Front Desk opens the GitHub issue.
+- **Historical, 10 Oct:** only the Front Desk added bugs. **Superseded on 11 Oct, 7:40 pm AEDT:** Analytics & Infra now does this intake under the same procedure.
 - **The bug robot** (`.github/workflows/bug-fixer.yml`) starts the moment a bug is filed or labelled, or the owner
   comments "go" on a plan, with a 5-minute timer as a backup (owner, 10 Oct 11:30 pm AEDT; was every 30 minutes). Up to
   8 bugs per run, 4 worked on at once. When there is no bug to work on it does not start Claude, so it uses no Claude usage.

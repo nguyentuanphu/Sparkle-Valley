@@ -1,0 +1,44 @@
+{
+  "windows": 30,
+  "games": 20,
+  "before": {
+    "lazyStillGeometries": 1505,
+    "dom": 527,
+    "canvases": 3,
+    "geometries": 537,
+    "textures": 207,
+    "programs": 40,
+    "contextLosses": 0,
+    "nodes": 8967,
+    "heapMB": 45.452518463134766
+  },
+  "after": {
+    "lazyStillGeometries": 1560,
+    "dom": 527,
+    "canvases": 3,
+    "geometries": 547,
+    "textures": 210,
+    "programs": 40,
+    "contextLosses": 0,
+    "nodes": 56122,
+    "heapMB": 46.690067291259766
+  },
+  "growth": {
+    "lazyStillGeometries": 55,
+    "nodes": 47155,
+    "heapMB": 1.237548828125,
+    "dom": 0,
+    "canvases": 0,
+    "geometries": 10,
+    "textures": 3,
+    "programs": 0
+  },
+  "navigations": 0,
+  "retainedGrownups": 15,
+  "bad": [
+    "15 closed Grown-ups windows retained",
+    "retained DOM node growth over 1000"
+  ],
+  "note": "Chromium phone viewport, not physical iPhone. GPU figures are renderer object counts, not GPU bytes.",
+  "measurement_caveat": "Intermediate diagnostic: ignored Playwright waitForSelector element handles and console references retained nodes. Do not use these counts as the application leak size or final stability verdict. Application install-button retaining path was separately confirmed by heap analysis."
+}

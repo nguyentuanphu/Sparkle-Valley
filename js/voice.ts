@@ -22,7 +22,7 @@ function load() {
   listeners.forEach(f => f());
 }
 const listeners = new Set<() => void>();
-export const onVoices = f => listeners.add(f);
+export const onVoices = (f: () => void): (() => void) => { listeners.add(f); return () => { listeners.delete(f); }; };
 if (window.speechSynthesis) { load(); try { speechSynthesis.addEventListener('voiceschanged', load); } catch (e) { } }
 
 export function voicesFor(lang) {
@@ -365,7 +365,7 @@ navigator.serviceWorker?.addEventListener('message', e => {
 addEventListener('click', () => loadPack(), { once: true, passive: true });
 // Language/settings changes fetch only the newly selected index. Saved MP3s are kept.
 for (const ev of ['LanguageChanged', 'SettingsChanged']) events.on(ev, () => { if (packReady) loadPack(); });
-{ const t0 = Date.now(), wait = setInterval(() => { const g = window.__sv; if (packReady) return clearInterval(wait); if ((g && g.bootTimes) || Date.now() - t0 > 30000) { clearInterval(wait); setTimeout(() => loadPack(), 3000); } }, 500); }
+{ const t0 = Date.now(), wait = setInterval(() => { const g = window.__sv; if (packReady) return clearInterval(wait); if ((g && g.bootTimes) || Date.now() - t0 > 30000) { clearInterval(wait); setTimeout(() => { if (settings.voice || settings.autoPack !== false) loadPack(); }, 3000); } }, 500); }
 const waitPack = async (langs = voiceLanguages(settings)) => {
   let timer;
   try { await Promise.race([loadPack(langs), new Promise(r => { timer = setTimeout(r, 12000); })]); } finally { clearTimeout(timer); }

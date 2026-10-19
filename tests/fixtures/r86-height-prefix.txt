@@ -1,0 +1,11 @@
+// Pinned live r86 b37a52de; original noise/ridge terrain stage, before the unchanged plateau stage.
+export function heightAt(x, z) {
+  let h = 5 + fbm(x * .011, z * .011, 4) * 11 + fbm(x * .05 + 3, z * .05, 2) * 1.2;
+  const mtn = smooth(MTN.z0, MTN.z1, z);
+  if (mtn) h += mtn * (22 + fbm(x * .018 + 7, z * .018 - 3, 4) * 34); // (no mountains here: nothing to add, so no noise worked out)
+  h += smooth(EDGE[0], EDGE[1], Math.max(Math.abs(x), -z)) * 45; // (round T: east, west and north; the south is the coast)
+  if (h < 3) h = 3 - (3 - h) * .3; // (round T) the open ground never dips into the water by itself: only rivers, lakes and the sea are wet
+  // a low ridge (the Great Dividing Range), lower at its pass
+  for (const R of RELIEF) { let d = 1e9; for (let i = 0; i < R.pts.length - 1; i++) { const [ax, az] = R.pts[i], [bx, bz] = R.pts[i + 1], dx = bx - ax, dz = bz - az, t = clamp(((x - ax) * dx + (z - az) * dz) / (dx * dx + dz * dz), 0, 1); d = Math.min(d, Math.hypot(x - ax - dx * t, z - az - dz * t)); }
+    if (d > R.w * 1.5) continue; const top = R.pass ? lerp(R.pass.h, R.h, smooth(R.pass.w * .5, R.pass.w * 1.6, dist2(x, z, R.pass.at[0], R.pass.at[1]))) : R.h; h += top * (1 - smooth(R.w * .35, R.w * 1.4, d)); }
+  // The Dawn Plateau

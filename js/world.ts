@@ -20,6 +20,12 @@ export const STUDIO_ON_MAP = MAP.onThisMap(CUSTOM.world && typeof CUSTOM.world =
 export const PARKED = STUDIO_ON_MAP ? null : { map: (CUSTOM.world && CUSTOM.world.map) || 'C', world: CUSTOM.world || null, npcs: CUSTOM.npcs || null };
 export const SIZE = MAP.WORLD.size, HALF = SIZE / 2, WATER = MAP.WORLD.water;
 const MTN = MAP.WORLD.mountains, EDGE = MAP.WORLD.edge, SADDLES = MAP.SADDLES, RELIEF = MAP.RELIEF, COAST = MAP.WORLD.coast, RAMP = MAP.WORLD.ramp;
+
+// Only nearby ridge segments can change the terrain. The 1.5-width boxes include the full 1.4-width falloff.
+const RELIEF_SEGMENTS = RELIEF.map(R => ({ R, segments: R.pts.slice(0, -1).map(([ax, az], i) => {
+  const [bx, bz] = R.pts[i + 1], dx = bx - ax, dz = bz - az, pad = R.w * 1.5;
+  return { ax, az, dx, dz, len2: dx * dx + dz * dz, x0: Math.min(ax, bx) - pad, x1: Math.max(ax, bx) + pad, z0: Math.min(az, bz) - pad, z1: Math.max(az, bz) + pad };
+}) }));
 const PL = id => MAP.PLACES.find(p => p.id === id);
 // a circle place { x, z, r, h }, a box place { x, z, x0, x1, z0, z1, h, roadZ }
 /** a round place of the map: its middle, and its size and ground height where the map gives them */
@@ -220,7 +226,7 @@ export function heightAt(x, z) {
   h += smooth(EDGE[0], EDGE[1], Math.max(Math.abs(x), -z)) * 45; // (round T: east, west and north; the south is the coast)
   if (h < 3) h = 3 - (3 - h) * .3; // (round T) the open ground never dips into the water by itself: only rivers, lakes and the sea are wet
   // a low ridge (the Great Dividing Range), lower at its pass
-  for (const R of RELIEF) { let d = 1e9; for (let i = 0; i < R.pts.length - 1; i++) { const [ax, az] = R.pts[i], [bx, bz] = R.pts[i + 1], dx = bx - ax, dz = bz - az, t = clamp(((x - ax) * dx + (z - az) * dz) / (dx * dx + dz * dz), 0, 1); d = Math.min(d, Math.hypot(x - ax - dx * t, z - az - dz * t)); }
+  for (const { R, segments } of RELIEF_SEGMENTS) { let d = 1e9; for (const S of segments) { if (x < S.x0 || x > S.x1 || z < S.z0 || z > S.z1) continue; const t = clamp(((x - S.ax) * S.dx + (z - S.az) * S.dz) / S.len2, 0, 1); d = Math.min(d, Math.hypot(x - S.ax - S.dx * t, z - S.az - S.dz * t)); }
     if (d > R.w * 1.5) continue; const top = R.pass ? lerp(R.pass.h, R.h, smooth(R.pass.w * .5, R.pass.w * 1.6, dist2(x, z, R.pass.at[0], R.pass.at[1]))) : R.h; h += top * (1 - smooth(R.w * .35, R.w * 1.4, d)); }
   // The Dawn Plateau, with a gentle ramp down to the south so little legs can walk off it.
   const dp = dist2(x, z, PLATEAU.x, PLATEAU.z);
@@ -378,7 +384,7 @@ PADS = [...SHRINES, ...LEAFIES.filter(l => l.kind === 'rock')];
 // lot (so trees and suburbs keep off it); once the roads are made it is levelled at the height of the lane in front of it
 // (levelUnderBuildings). Families put the homes they remember on them later (Studio's Plots page); until then, a garden.
 /** a Memory Village garden plot (js/plots.js); spareFrom: the first one no family has yet */
-export const PLOTS: { id: string, village: string, x: number, z: number, rot: number, w: number, d: number, h?: number, address?: unknown }[] & { spareFrom?: number } = [];
+export const PLOTS: { id: string, village: string, x: number, z: number, rot: number, w: number, d: number, h?: number, address?: unknown, occupied?: boolean }[] & { spareFrom?: number } = [];
 {
   const add = P => { const fx = Math.sin(P.rot), fz = Math.cos(P.rot), sx = Math.cos(P.rot), sz = -Math.sin(P.rot), hs = [];
     for (const u of [-.5, 0, .5]) for (const v of [-.5, 0, .5]) hs.push(heightAt(P.x + sx * P.w * u + fx * P.d * v, P.z + sz * P.w * u + fz * P.d * v));
@@ -484,7 +490,7 @@ export function createWorld(scene, quality) {
     time: .36
   };
   // (TypeScript, r86) what the valley's object gets after it is made: here, and by js/solids.js, js/roads.js, js/main.ts…
-  type SvWorldMore = { terrain?: THREE.Mesh, groundCover?: THREE.InstancedMesh[], critters?: unknown, fireflies?: unknown, buffalo?: { id: string, mesh: THREE.Mesh, shadow: THREE.Object3D, home: number[], tx: number, tz: number, rider: unknown, yaw: number, back?: boolean }[],
+  type SvWorldMore = { terrain?: THREE.Mesh, groundCover?: THREE.InstancedMesh[], critters?: unknown, fireflies?: unknown, buffalo?: { id: string, mesh: THREE.Mesh, shadow: THREE.Object3D, firstPersonHide?: THREE.Object3D[], home: number[], tx: number, tz: number, rider: unknown, yaw: number, back?: boolean }[],
     pots?: { x: number, z: number, [k: string]: unknown }[], statue?: { x: number, z: number, [k: string]: unknown },
     groundAt?: (x: number, z: number, y?: number) => number, platformAt?: (x: number, z: number, y?: number) => unknown, collide?: (pos: { x: number, y?: number, z: number }, r?: number) => unknown,
     update?: (dt: number, t: number) => void, updateSky?: (dt: number, camPos: THREE.Vector3, focus?: THREE.Vector3) => void, isNight?: () => boolean,
@@ -970,15 +976,17 @@ export function createWorld(scene, quality) {
   // ---------- simple animals ----------
   const buffaloGeo = merge([
     P(new THREE.BoxGeometry(1.6, 1.3, 2.8), '#55555e', [0, 1.4, 0]), P(new THREE.BoxGeometry(1, 1, 1.1), '#4a4a52', [0, 1.7, 1.8]),
-    P(new THREE.TorusGeometry(.7, .12, 5, 12, Math.PI), '#d8d0c0', [0, 2.2, 1.9]),
     ...[[.55, .9], [-.55, .9], [.55, -.9], [-.55, -.9]].map(([x, z]) => P(new THREE.CylinderGeometry(.18, .16, 1, 6), '#44444c', [x, .5, z])),
     P(new THREE.SphereGeometry(.12, 6, 5), '#ffffff', [.3, 1.9, 2.36]), P(new THREE.SphereGeometry(.12, 6, 5), '#ffffff', [-.3, 1.9, 2.36])
   ]);
+  // A separate draw preserves the exterior but lets a rider see past the large storybook horns.
+  const buffaloHorns = merge([P(new THREE.TorusGeometry(.7, .12, 5, 12, Math.PI), '#d8d0c0', [0, 2.2, 1.9])]);
   W.buffalo = [];
   [[PADDIES.x - 6, PADDIES.z + 4], [V.x - 26, V.z + 18]].forEach(([x, z], i) => {
     const m = new THREE.Mesh(buffaloGeo, toonVC()); m.position.set(x, heightAt(x, z), z); m.userData.moving = true; scene.add(m); // it wanders and rests: never part of the solid map (js/solids.js)
+    const horns = new THREE.Mesh(buffaloHorns, m.material); m.add(horns);
     const sh = blobShadow(); sh.scale.setScalar(2.2); scene.add(sh);
-    const b = { id: 'buffalo' + i, mesh: m, shadow: sh, home: [x, z], tx: x, tz: z, rider: null, yaw: 0 };
+    const b = { id: 'buffalo' + i, mesh: m, shadow: sh, firstPersonHide: [horns], home: [x, z], tx: x, tz: z, rider: null, yaw: 0 };
     W.buffalo.push(b);
     W.interactables.push({ id: b.id, get x() { return m.position.x; }, get z() { return m.position.z; }, r: 3, icon: '🐃', label: () => T('Ride buffalo', 'Cưỡi trâu'), visible: () => !b.rider, act: (pl, game) => game.mount(pl, b) });
   });
@@ -1125,7 +1133,7 @@ export function levelUnderBuildings(world, scene) {
   const keep = [];
   if (scene) for (const o of scene.children) {
     if (o === world.terrain || o.isLight || o.isInstancedMesh || !o.position) continue;
-    if (o.isMesh && o.geometry) { if (!o.geometry.boundingSphere) o.geometry.computeBoundingSphere(); if (o.geometry.boundingSphere.radius > 6) continue; }
+    if (o.isMesh && o.geometry && !o.userData.plotId) { if (!o.geometry.boundingSphere) o.geometry.computeBoundingSphere(); if (o.geometry.boundingSphere.radius > 6) continue; }
     keep.push([o, heightAt(o.position.x, o.position.z)]);
   }
   const want = [];
@@ -1147,7 +1155,8 @@ export function levelUnderBuildings(world, scene) {
     scene.traverse(o => { if (!o.isMesh || o.isInstancedMesh || o === world.terrain || !o.visible || o.userData.plots) return;
       for (let q = o; q; q = q.parent) { const u = q.userData || {}; if (u.road || u.walk || u.avatar || u.moving) return; }
       bb.setFromObject(o); if (bb.max.y - bb.min.y > .3 && bb.max.x - bb.min.x < 40 && bb.max.z - bb.min.z < 40) stands.push(bb.clone()); }); }   // (not the sky, the sea or the ground)
-  for (let i = PLOTS.length - 1; i >= PLOTS.spareFrom; i--) { const P = PLOTS[i], B = plotBox(P), y = heightAt(P.x, P.z);
+  for (let i = PLOTS.length - 1; i >= PLOTS.spareFrom; i--) { const P = PLOTS[i]; if (P.occupied) continue; // its remembered home is supposed to stand here
+    const B = plotBox(P), y = heightAt(P.x, P.z);
     const hit = (x0, x1, z0, z1) => x1 > B.x0 && x0 < B.x1 && z1 > B.z0 && z0 < B.z1;
     if (FOOTPRINTS.some(F => !F.plot && hit(F.x0 - F.pad, F.x1 + F.pad, F.z0 - F.pad, F.z1 + F.pad)) || world.boxes.some(b => !b.room && hit(b.x0, b.x1, b.z0, b.z1))
       || world.colliders.some(c => c.r >= .3 && hit(c.x - c.r, c.x + c.r, c.z - c.r, c.z + c.r))

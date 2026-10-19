@@ -1,0 +1,40 @@
+{
+  "windows": 30,
+  "games": 20,
+  "before": {
+    "lazyStillGeometries": 1515,
+    "dom": 521,
+    "canvases": 3,
+    "geometries": 538,
+    "textures": 206,
+    "programs": 42,
+    "contextLosses": 0,
+    "nodes": 5955,
+    "heapMB": 45.23262405395508
+  },
+  "after": {
+    "lazyStillGeometries": 1560,
+    "dom": 521,
+    "canvases": 3,
+    "geometries": 540,
+    "textures": 208,
+    "programs": 42,
+    "contextLosses": 0,
+    "nodes": 3498,
+    "heapMB": 46.74832534790039
+  },
+  "growth": {
+    "lazyStillGeometries": 45,
+    "nodes": -2457,
+    "heapMB": 1.5157012939453125,
+    "dom": 0,
+    "canvases": 0,
+    "geometries": 2,
+    "textures": 2,
+    "programs": 0
+  },
+  "navigations": 0,
+  "retainedGrownups": 0,
+  "bad": [],
+  "note": "Chromium phone viewport, not physical iPhone. GPU figures are renderer object counts, not GPU bytes."
+}

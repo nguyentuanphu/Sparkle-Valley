@@ -14,6 +14,7 @@ import { songsFor, VN_AREAS, familySongs } from './content/songs.js';
 import { fmt } from './money.js';
 import { el, esc, $, dist2, pick, wait, clamp } from './util.js';
 import { createWorld, levelUnderBuildings, widenFlatLand, paintMap, paintWater, heightAt, regionAt, REGION_NAMES, MARKET, CHINA, INDIA, SHRINES, TOWERS, LEAFIES, VILLAGE, HOME, PLAYGROUND, REVEAL_R, WATER, PLATEAU, TOWN, AUSSIE, LAKE, ULURU, HALF, STUDIO_ON_MAP, PARKED } from './world.js';
+import { studioPosition } from './studio-position.js';
 import { landmarkAt, MAP_VERSION, onThisMap, rowSlot } from './content/map.js';
 import { buildAvatar, nameAvatar, applyNpcFaces, buildOwl, buildGourd, avatarURL, OUTLINED, showStill } from './avatar.js';
 import { Hero } from './player.js';
@@ -175,7 +176,8 @@ type SvOnline = { names: string[], mine: number, [k: string]: unknown };
 /** something in the valley a child can walk up to and use (a person, a game, a door…) */
 interface SvItem { id?: string, x: number, z: number, r?: number, icon?: string, bubble?: string, slot?: string, auto?: boolean,
   y?: number, label?: () => string, short?: () => string, visible?: (h?: SvHeroT) => boolean, act(h: SvHeroT, game?: SvGame): void | Promise<unknown>, npc?: unknown, st?: unknown, [k: string]: unknown }
-interface SvMain {
+type SvHome = { hs: { x: number, z: number }, name(): string, people: { name: string }[] };
+export interface SvMain {
   actCount: number; events: typeof events; settings: typeof settings; world: typeof world; scene: typeof scene; pads: typeof pads;
   heroes: SvHeroT[]; huds: Hud[]; mode: string; partner: unknown; zoom: number; fogMaps: Record<string, HTMLCanvasElement>;
   regionOf: (string | null)[]; interactables: SvItem[]; gatherState: Record<string, unknown>; bubbles: { s: THREE.Sprite, target: { pos: THREE.Vector3 }, until?: number }[];
@@ -195,14 +197,14 @@ interface SvMain {
   boxes?: ReturnType<typeof import('./boxes.js').createBoxes>; surprises?: ReturnType<typeof import('./surprises.js').createSurprises>; myHouse?: ReturnType<typeof createMyHouse> | null;
   solidsReady?: ReturnType<typeof buildSolids>;
   // parts other modules add (js/homes.js, js/traffic.js, js/wayfind.js, js/autoplay.js, js/tester.js, js/fun.js, js/chatter.js, js/learn.js…)
-  homes?: { list: unknown[], isInside(h: SvHeroT): boolean, [k: string]: unknown }; traffic?: { apply(big: boolean): void, [k: string]: unknown };
+  homes?: { list: SvHome[], enter(h: SvHeroT, home: SvHome): void, inside(): SvHome | null, isInside(h: SvHeroT): boolean, [k: string]: unknown }; traffic?: { apply(big: boolean): void, [k: string]: unknown };
   wayfind?: { open(i: number): void, stop(quiet?: boolean): void, [k: string]: unknown }; autoplay?: { running(): boolean, unmount(): void, [k: string]: unknown };
   tester?: { [k: string]: unknown }; tapReact?: (h: SvHeroT, ray: THREE.Raycaster) => boolean; chatGroup?: (...a: unknown[]) => unknown;
   showcaseCam?: (i: number, h: SvHeroT, dt: number) => boolean; TALES?: { id: string, title(): string, [k: string]: unknown }[];
   readTaleNow?: (h: SvHeroT, tale: { id: string }, sync?: unknown) => Promise<unknown>;
   GAME_SPOT?: Record<string, string>; lookUpT?: number; tapTargets?: THREE.Object3D[]; travelling?: boolean;
   // values main.ts shares
-  LANDMARKS?: typeof LANDMARKS; STICKERS?: typeof STICKERS; VIEWS?: typeof VIEWS; PLACES?: { id?: string, x: number, z: number, [k: string]: unknown }[];
+  LANDMARKS?: typeof LANDMARKS; STICKERS?: typeof STICKERS; VIEWS?: typeof VIEWS; getViews?: (i: number) => typeof VIEWS; PLACES?: { id?: string, x: number, z: number, [k: string]: unknown }[];
   bootTimes?: Record<string, number>; mapPic?: typeof mapPic; waterPic?: typeof waterPic; parked?: unknown;
   bubbleIcons?: THREE.Sprite[]; wanderers?: (SvPerson & { tx: number, tz: number, wave: number })[]; partners?: Record<string, SvFriend>;
   caroSize?: number; _padRemotes?: number; _familyMsgLive?: boolean; _owlAuto?: boolean; _previewed?: boolean; _reading?: boolean;
@@ -1302,8 +1304,8 @@ const gUHow = on => `<div class="gunote"><p class="note">${on
   <button class="grown gu-hold"><span class="ring"></span>${T('Grown-ups', 'Phụ huynh')}<small>${T('press and hold', 'nhấn giữ')}</small></button></div>`;
 const bindGUHow = (body, redraw) => {
   const b = body.querySelector('.gu-hold'); if (!b) return;
-  holdButton(b, () => {
-    openGrownups(() => { if (document.body.contains(body)) redraw(); });
+  holdButton(b, async () => {
+    await openGrownups(() => { if (document.body.contains(body)) redraw(); });
     const d = document.querySelector<HTMLDetailsElement>('.modal.grownups details[data-sec="online"]'); if (d) { d.open = true; d.scrollIntoView({ block: 'start' }); }
   });
 };
@@ -1527,7 +1529,8 @@ renderer.domElement.addEventListener('wheel', e => { const r = rects(), k = Math
 // camera views: behind (normal) → high up → street level (to see house fronts) → my face (close-up when standing still)
 const VIEWS = [['follow', '🎥', 'Behind me', 'Sau lưng'], ['high', '🦅', 'High up', 'Trên cao'], ['street', '🏘️', 'Street view', 'Ngang phố'], ['face', '😊', 'My face', 'Mặt của con']];
 G.VIEWS = VIEWS;
-G.setView = (i, id) => { const h = G.heroes[i]; if (!h) return; h.view = id; h.manualCamT = 0; const v = VIEWS.find(v => v[0] === id) || VIEWS[0]; G.huds[i] && G.huds[i].toast(v[1] + ' ' + T(v[2], v[3])); const b = G.huds[i] && G.huds[i].q('.z-view'); if (b) b.firstChild.textContent = v[1]; };
+G.getViews = i => { const h = G.heroes[i], riding = h && (h.riding || (h.carry && h.state === 'sit')) && settings.ridePov !== false; return riding ? VIEWS.map(v => v[0] === 'follow' ? ['follow', v[1], 'Rider’s eyes', 'Qua mắt người cưỡi'] : v) : VIEWS; };
+G.setView = (i, id) => { const h = G.heroes[i]; if (!h) return; h.view = id; h.manualCamT = 0; const views = G.getViews(i), v = views.find(v => v[0] === id) || views[0]; G.huds[i] && G.huds[i].toast(v[1] + ' ' + T(v[2], v[3])); const b = G.huds[i] && G.huds[i].q('.z-view'); if (b) b.firstChild.textContent = v[1]; };
 G.cycleView = i => { const h = G.heroes[i]; if (!h) return; SFX.tap(); const k = VIEWS.findIndex(v => v[0] === (h.view || 'follow')); G.setView(i, VIEWS[(k + 1) % VIEWS.length][0]); };
 G.zoomBy = (i, f, quiet) => {
   const h = G.heroes[i]; if (!h) return;
@@ -1656,6 +1659,7 @@ const BAT = G.battery = { frameMs: FRAME_MS, titleMs: TITLE_MS, idleMs: IDLE_MS,
   // at most one drawing per cap ms, on any screen (a 120 or 144 Hz screen gets 60 on average, not 72); st keeps `due`
   gate: (st, now, cap) => { if (!cap) return true; if (now < st.due - 2) return false; st.due = Math.max(st.due + cap, now - cap); return true; },
   take: () => { const o = { frames: BAT.frames, work: BAT.work, draws: BAT.draws, ms: BAT.ms, idleFrames: BAT.idleFrames, pr: renderer.getPixelRatio() }; BAT.frames = BAT.work = BAT.draws = BAT.ms = BAT.idleFrames = 0; return o; } };
+document.addEventListener('visibilitychange', () => { if (document.hidden) BAT.lastDrawn = 0; });
 for (const e of ['pointerdown', 'pointermove', 'keydown', 'wheel', 'touchstart']) addEventListener(e, () => { BAT.input = performance.now(); if (BAT.idle) { BAT.idle = false; BAT.due = 0; } }, { capture: true, passive: true });
 // still: every child and their camera moving slower than 10 cm a second (a settled camera keeps creeping by about a
 // centimetre a second, which nobody sees), the same pose, no input, no friend online, nothing on the way
@@ -1681,10 +1685,11 @@ function frame(now) {
   const work0 = performance.now();
   // the 3D world rests while a full-screen game, the storybook or a page that covers it is open (saves battery)
   // (two players: the world rests only when both halves have a window open)
-  if (twoHalves() && playing ? G.halfBusy(0) && G.halfBusy(1) : gameOpen() || document.querySelector<HTMLElement>('.storybook, .theatre.film') || (G.paused && document.querySelector<HTMLElement>('.modal')) || (playing && worldHidden())) return;
+  if (twoHalves() && playing ? G.halfBusy(0) && G.halfBusy(1) : gameOpen() || document.querySelector<HTMLElement>('.storybook, .theatre.film') || (G.paused && document.querySelector<HTMLElement>('.modal')) || (playing && worldHidden())) { BAT.lastDrawn = 0; return; }
   world.update(dt, t);
   if (playing) G.farCull(now); // (round T: small things far from every camera are not drawn)
   if (!playing) {
+    BAT.lastDrawn = 0;
     const a = t * .05;
     titleCam.position.set(PLATEAU.x + Math.cos(a) * 70, 42, PLATEAU.z + Math.sin(a) * 70); titleCam.lookAt(PLATEAU.x, 16, PLATEAU.z); // (round T: round Ông Cú's home)
     world.updateSky(0, titleCam.position);
@@ -1785,8 +1790,9 @@ function frame(now) {
     return markers; };
     G.huds[i].update(dt, h.cam, () => G.fogMapFor(p), markersFor);
   });
-  if (!BAT.idle) { BAT.frames++; BAT.work += performance.now() - work0; BAT.draws += drawn; const gap = now - BAT.lastDrawn; if (gap <= 250) BAT.ms += gap; }
-  BAT.lastDrawn = now;
+  // Slow active frames count too; title, idle, covered and hidden time reset the active interval.
+  if (!BAT.idle && !document.hidden) { BAT.frames++; BAT.work += performance.now() - work0; BAT.draws += drawn; if (BAT.lastDrawn > 0) BAT.ms += Math.max(0, now - BAT.lastDrawn); BAT.lastDrawn = now; }
+  else BAT.lastDrawn = 0;
 }
 
 // ---------- boot ----------
@@ -1882,14 +1888,15 @@ setupTrading(G);
 // villagers the family added in Sparkle Studio (content pack "npcs"): placed where they were put on the map, saying
 // their own lines in both languages
 G.parked = PARKED; // (round T) the family's Studio map content made on an older layout: put aside, never placed
-for (const c of (STUDIO_ON_MAP && Array.isArray(CUSTOM.npcs) ? CUSTOM.npcs : []).slice(0, 60)) {
-  if (!c || !isFinite(c.x) || !isFinite(c.z) || Math.abs(c.x) > HALF - 10 || Math.abs(c.z) > HALF - 10) continue;
+for (const c of (Array.isArray(CUSTOM.npcs) ? CUSTOM.npcs : []).slice(0, 60)) {
+  const position = studioPosition(c, STUDIO_ON_MAP);
+  if (!position || Math.abs(position.x) > HALF - 10 || Math.abs(position.z) > HALF - 10) continue;
   const name = String(c.name || '').trim().slice(0, 40); if (!name) continue;
   const L = c.look || {}, hex = v => typeof v === 'string' && /^#[0-9a-f]{6}$/i.test(v) ? v : null;
   const look = { style: ['dress', 'shirt', 'aodai', 'tunic', 'overalls', 'hoodie'].includes(L.style) ? L.style : 'shirt', color: hex(L.color) || '#5fb0ff', hat: 'none', back: 'none', hair: hex(L.hair) || '#2a1d14', hairStyle: ['buns', 'short', 'long', 'ponytail', 'spiky'].includes(L.hairStyle) ? L.hairStyle : 'short', skin: hex(L.skin) || '#f1c6a4', glider: 0, age: L.age === 'old' || L.age === 'kid' ? L.age : 'adult' };
   const lines = (Array.isArray(c.lines) ? c.lines : []).filter(l => Array.isArray(l) && (l[0] || l[1])).slice(0, 12).map(l => [String(l[0] || l[1]).slice(0, 300), String(l[1] || l[0]).slice(0, 300)]);
   if (c.gender === 'f' || c.gender === 'm') { CUSTOM.genders = { ...(CUSTOM.genders || {}), [name]: c.gender }; setVoiceGenders(CUSTOM.genders); }
-  addNPC({ id: 'fam_' + (c.id || name.replace(/[^\p{L}\p{N}]+/gu, '_')), name, faceName: c.faceName, look, x: +c.x, z: +c.z, face: +c.face || 0, icon: typeof c.icon === 'string' ? c.icon.slice(0, 4) : '💬', talk: () => dialog(name, lines.length ? lines : [['Hello! Nice to see you!', 'Xin chào! Gặp con vui quá!']]) });
+  addNPC({ id: 'fam_' + (c.id || name.replace(/[^\p{L}\p{N}]+/gu, '_')), name, faceName: c.faceName, look, x: position.x, z: position.z, face: +c.face || 0, icon: typeof c.icon === 'string' ? c.icon.slice(0, 4) : '💬', talk: () => dialog(name, lines.length ? lines : [['Hello! Nice to see you!', 'Xin chào! Gặp con vui quá!']]) });
 }
 // each village's games time table (with a countdown board) and its singer; after every host is in place
 G.folkShow = createFolkShow(G, { looks: [kidLook('shirt', '#ff7eb8', '#1d1412', 'buns', 'none'), kidLook('overalls', '#3cc7e8', '#3b2618', 'short', 'cap'), kidLook('dress', '#ffb52e', '#1d1412', 'ponytail', 'flower')] });

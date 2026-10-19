@@ -1,0 +1,764 @@
+
+  ../scratch/r87-size-after/bundle/c-Z7ZPDYLL.js ────────────────── 648.3kb ─ 100.0%
+   ├ ../scratch/r87-size-after/vendor/three.module.js ───────────── 644.9kb ── 99.5%
+   │  └ ../scratch/r87-size-after/js/gfx.js
+   │     └ ../scratch/r87-size-after/js/content/films.js
+   └ ../scratch/r87-size-after/js/gfx.js ──────────────────────────── 3.2kb ─── 0.5%
+      └ ../scratch/r87-size-after/js/content/films.js
+
+  ../scratch/r87-size-after/bundle/c-UZPC5JO6.js ────────────────── 566.9kb ─ 100.0%
+   ├ ../scratch/r87-size-after/js/main.js ───────────────────────── 112.9kb ── 19.9%
+   ├ ../scratch/r87-size-after/js/cities.js ──────────────────────── 46.8kb ─── 8.3%
+   │  └ ../scratch/r87-size-after/js/main.js
+   ├ ../scratch/r87-size-after/js/homes.js ───────────────────────── 28.9kb ─── 5.1%
+   │  └ ../scratch/r87-size-after/js/heritage.js
+   │     └ ../scratch/r87-size-after/js/main.js
+   ├ ../scratch/r87-size-after/js/heritage.js ────────────────────── 27.9kb ─── 4.9%
+   │  └ ../scratch/r87-size-after/js/main.js
+   ├ ../scratch/r87-size-after/js/roads.js ───────────────────────── 27.3kb ─── 4.8%
+   │  └ ../scratch/r87-size-after/js/main.js
+   ├ ../scratch/r87-size-after/js/farm.js ────────────────────────── 26.3kb ─── 4.6%
+   │  └ ../scratch/r87-size-after/js/main.js
+   ├ ../scratch/r87-size-after/js/simple.js ──────────────────────── 19.3kb ─── 3.4%
+   │  └ ../scratch/r87-size-after/js/main.js
+   ├ ../scratch/r87-size-after/js/hud.js ─────────────────────────── 17.5kb ─── 3.1%
+   │  └ ../scratch/r87-size-after/js/main.js
+   ├ ../scratch/r87-size-after/js/traffic.js ─────────────────────── 16.5kb ─── 2.9%
+   │  └ ../scratch/r87-size-after/js/main.js
+   ├ ../scratch/r87-size-after/js/learn.js ───────────────────────── 15.7kb ─── 2.8%
+   │  └ ../scratch/r87-size-after/js/main.js
+   ├ ../scratch/r87-size-after/js/folkshow.js ────────────────────── 13.6kb ─── 2.4%
+   │  └ ../scratch/r87-size-after/js/main.js
+   ├ ../scratch/r87-size-after/js/pets.js ────────────────────────── 13.0kb ─── 2.3%
+   │  └ ../scratch/r87-size-after/js/main.js
+   ├ ../scratch/r87-size-after/js/ferry.js ───────────────────────── 12.6kb ─── 2.2%
+   │  └ ../scratch/r87-size-after/js/main.js
+   ├ ../scratch/r87-size-after/js/vnfun.js ───────────────────────── 12.5kb ─── 2.2%
+   │  └ ../scratch/r87-size-after/js/main.js
+   ├ ../scratch/r87-size-after/js/player.js ──────────────────────── 11.6kb ─── 2.0%
+   │  └ ../scratch/r87-size-after/js/main.js
+   ├ ../scratch/r87-size-after/js/symbols.js ─────────────────────── 10.1kb ─── 1.8%
+   │  └ ../scratch/r87-size-after/js/main.js
+   ├ ../scratch/r87-size-after/js/lotus.js ────────────────────────── 9.9kb ─── 1.7%
+   │  └ ../scratch/r87-size-after/js/main.js
+   ├ ../scratch/r87-size-after/js/asia.js ─────────────────────────── 9.8kb ─── 1.7%
+   │  └ ../scratch/r87-size-after/js/main.js
+   ├ ../scratch/r87-size-after/js/suburbs.js ──────────────────────── 9.2kb ─── 1.6%
+   │  └ ../scratch/r87-size-after/js/main.js
+   ├ ../scratch/r87-size-after/js/games/catalog.js ────────────────── 9.2kb ─── 1.6%
+   │  └ ../scratch/r87-size-after/js/games/all.js
+   │     └ ../scratch/r87-size-after/js/main.js
+   ├ ../scratch/r87-size-after/js/trade.js ────────────────────────── 8.8kb ─── 1.5%
+   │  └ ../scratch/r87-size-after/js/main.js
+   ├ ../scratch/r87-size-after/js/secrets.js ──────────────────────── 8.2kb ─── 1.5%
+   │  └ ../scratch/r87-size-after/js/main.js
+   ├ ../scratch/r87-size-after/js/fun.js ──────────────────────────── 7.8kb ─── 1.4%
+   │  └ ../scratch/r87-size-after/js/main.js
+   ├ ../scratch/r87-size-after/js/regionsites.js ──────────────────── 7.6kb ─── 1.3%
+   │  └ ../scratch/r87-size-after/js/main.js
+   ├ ../scratch/r87-size-after/js/emojiswap.js ────────────────────── 6.7kb ─── 1.2%
+   │  └ ../scratch/r87-size-after/js/main.js
+   ├ ../scratch/r87-size-after/js/chatter.js ──────────────────────── 5.9kb ─── 1.0%
+   │  └ ../scratch/r87-size-after/js/main.js
+   ├ ../scratch/r87-size-after/js/passport.js ─────────────────────── 5.2kb ─── 0.9%
+   │  └ ../scratch/r87-size-after/js/main.js
+   ├ ../scratch/r87-size-after/js/commands.js ─────────────────────── 5.1kb ─── 0.9%
+   │  └ ../scratch/r87-size-after/js/main.js
+   ├ ../scratch/r87-size-after/js/worldedit.js ────────────────────── 5.0kb ─── 0.9%
+   │  └ ../scratch/r87-size-after/js/main.js
+   ├ ../scratch/r87-size-after/js/signposts.js ────────────────────── 4.8kb ─── 0.8%
+   │  └ ../scratch/r87-size-after/js/main.js
+   ├ ../scratch/r87-size-after/js/hawkers.js ──────────────────────── 4.8kb ─── 0.8%
+   │  └ ../scratch/r87-size-after/js/main.js
+   ├ ../scratch/r87-size-after/js/places.js ───────────────────────── 4.7kb ─── 0.8%
+   │  └ ../scratch/r87-size-after/js/main.js
+   ├ ../scratch/r87-size-after/js/weather.js ──────────────────────── 4.4kb ─── 0.8%
+   │  └ ../scratch/r87-size-after/js/main.js
+   ├ ../scratch/r87-size-after/js/seethrough.js ───────────────────── 3.9kb ─── 0.7%
+   │  └ ../scratch/r87-size-after/js/main.js
+   ├ ../scratch/r87-size-after/js/input.js ────────────────────────── 3.6kb ─── 0.6%
+   │  └ ../scratch/r87-size-after/js/main.js
+   ├ ../scratch/r87-size-after/js/twinchests.js ───────────────────── 3.5kb ─── 0.6%
+   │  └ ../scratch/r87-size-after/js/main.js
+   ├ ../scratch/r87-size-after/js/showcase.js ─────────────────────── 3.1kb ─── 0.5%
+   │  └ ../scratch/r87-size-after/js/main.js
+   ├ ../scratch/r87-size-after/js/kite.js ─────────────────────────── 2.6kb ─── 0.5%
+   │  └ ../scratch/r87-size-after/js/main.js
+   ├ ../scratch/r87-size-after/js/reeds.js ────────────────────────── 2.4kb ─── 0.4%
+   │  └ ../scratch/r87-size-after/js/main.js
+   ├ ../scratch/r87-size-after/js/coop.js ─────────────────────────── 2.2kb ─── 0.4%
+   │  └ ../scratch/r87-size-after/js/main.js
+   ├ ../scratch/r87-size-after/js/songs.js ────────────────────────── 2.2kb ─── 0.4%
+   │  └ ../scratch/r87-size-after/js/main.js
+   ├ ../scratch/r87-size-after/js/nametags.js ─────────────────────── 2.0kb ─── 0.3%
+   │  └ ../scratch/r87-size-after/js/main.js
+   ├ ../scratch/r87-size-after/vendor/RoomEnvironment.js ──────────── 1.8kb ─── 0.3%
+   │  └ ../scratch/r87-size-after/js/main.js
+   ├ ../scratch/r87-size-after/js/packbar.js ──────────────────────── 1.6kb ─── 0.3%
+   │  └ ../scratch/r87-size-after/js/main.js
+   ├ ../scratch/r87-size-after/js/roomcode.js ─────────────────────── 1.3kb ─── 0.2%
+   │  └ ../scratch/r87-size-after/js/main.js
+   ├ ../scratch/r87-size-after/js/worldcache.js ──────────────────── 1019b ──── 0.2%
+   │  └ ../scratch/r87-size-after/js/main.js
+   ├ ../scratch/r87-size-after/js/plots.js ────────────────────────── 915b ──── 0.2%
+   │  └ ../scratch/r87-size-after/js/main.js
+   ├ ../scratch/r87-size-after/js/claims.js ───────────────────────── 871b ──── 0.2%
+   │  └ ../scratch/r87-size-after/js/main.js
+   ├ ../scratch/r87-size-after/js/rideview.js ─────────────────────── 805b ──── 0.1%
+   │  └ ../scratch/r87-size-after/js/main.js
+   └ ../scratch/r87-size-after/js/games/all.js ────────────────────── 374b ──── 0.1%
+      └ ../scratch/r87-size-after/js/main.js
+
+  ../scratch/r87-size-after/bundle/c-JD7EDPFA.js ────────────────── 206.7kb ─ 100.0%
+   └ ../scratch/r87-size-after/vendor/anthropic-sdk.mjs ─────────── 206.6kb ─ 100.0%
+
+  ../scratch/r87-size-after/bundle/c-ZVM5WKZ2.js ────────────────── 137.1kb ─ 100.0%
+   └ ../scratch/r87-size-after/js/art.js ────────────────────────── 137.1kb ─ 100.0%
+      └ ../scratch/r87-size-after/js/film.js
+
+  ../scratch/r87-size-after/bundle/c-HGEDQZYW.js ────────────────── 104.3kb ─ 100.0%
+   ├ ../scratch/r87-size-after/js/ui.js ──────────────────────────── 70.2kb ── 67.3%
+   │  └ ../scratch/r87-size-after/js/ui-settings.js
+   ├ ../scratch/r87-size-after/js/gather.js ───────────────────────── 7.9kb ─── 7.6%
+   │  └ ../scratch/r87-size-after/js/main.js
+   ├ ../scratch/r87-size-after/js/icons.js ────────────────────────── 6.3kb ─── 6.0%
+   │  └ ../scratch/r87-size-after/js/main.js
+   ├ ../scratch/r87-size-after/js/content/songs.js ────────────────── 5.1kb ─── 4.9%
+   │  └ ../scratch/r87-size-after/js/parents.js
+   ├ ../scratch/r87-size-after/js/credits.js ──────────────────────── 4.8kb ─── 4.6%
+   │  └ ../scratch/r87-size-after/js/ui.js
+   │     └ ../scratch/r87-size-after/js/ui-settings.js
+   ├ ../scratch/r87-size-after/js/install.js ──────────────────────── 4.2kb ─── 4.0%
+   │  └ ../scratch/r87-size-after/js/ui-settings.js
+   ├ ../scratch/r87-size-after/js/familycards.js ──────────────────── 1.9kb ─── 1.9%
+   │  └ ../scratch/r87-size-after/js/myhouse.js
+   ├ ../scratch/r87-size-after/js/photos.js ───────────────────────── 1.0kb ─── 1.0%
+   │  └ ../scratch/r87-size-after/js/parents.js
+   └ ../scratch/r87-size-after/js/placebook.js ────────────────────── 819b ──── 0.8%
+      └ ../scratch/r87-size-after/js/main.js
+
+  ../scratch/r87-size-after/bundle/c-HQVYMUNW.js ─────────────────── 72.5kb ─ 100.0%
+   ├ ../scratch/r87-size-after/js/world.js ───────────────────────── 57.5kb ── 79.4%
+   ├ ../scratch/r87-size-after/js/houses.js ───────────────────────── 9.5kb ── 13.1%
+   │  └ ../scratch/r87-size-after/js/world.js
+   └ ../scratch/r87-size-after/js/solids.js ───────────────────────── 4.4kb ─── 6.1%
+      └ ../scratch/r87-size-after/js/world.js
+
+  ../scratch/r87-size-after/bundle/c-GFMB6XHK.js ─────────────────── 66.2kb ─ 100.0%
+   └ ../scratch/r87-size-after/js/content/films.js ───────────────── 65.9kb ── 99.5%
+
+  ../scratch/r87-size-after/bundle/c-YFJGT5IB.js ─────────────────── 60.0kb ─ 100.0%
+   ├ ../scratch/r87-size-after/js/ui-settings.js ─────────────────── 47.1kb ── 78.5%
+   ├ ../scratch/r87-size-after/js/extras.js ───────────────────────── 9.1kb ── 15.2%
+   │  └ ../scratch/r87-size-after/js/ui-settings.js
+   └ ../scratch/r87-size-after/js/recorder.js ─────────────────────── 2.3kb ─── 3.9%
+      └ ../scratch/r87-size-after/js/ui-settings.js
+
+  ../scratch/r87-size-after/bundle/c-W7B7RL3S.js ─────────────────── 56.5kb ─ 100.0%
+   ├ ../scratch/r87-size-after/js/regions.js ─────────────────────── 25.7kb ── 45.5%
+   │  └ ../scratch/r87-size-after/js/kidplay.js
+   ├ ../scratch/r87-size-after/js/town.js ────────────────────────── 15.3kb ── 27.1%
+   │  └ ../scratch/r87-size-after/js/main.js
+   ├ ../scratch/r87-size-after/js/realworld.js ───────────────────── 10.4kb ── 18.4%
+   │  └ ../scratch/r87-size-after/js/regions.js
+   │     └ ../scratch/r87-size-after/js/kidplay.js
+   ├ ../scratch/r87-size-after/js/snacks.js ───────────────────────── 2.3kb ─── 4.2%
+   │  └ ../scratch/r87-size-after/js/ui.js
+   │     └ ../scratch/r87-size-after/js/ui-settings.js
+   └ ../scratch/r87-size-after/js/powerlines.js ───────────────────── 1.8kb ─── 3.1%
+      └ ../scratch/r87-size-after/js/main.js
+
+  ../scratch/r87-size-after/bundle/c-SJDBDRPV.js ─────────────────── 45.7kb ─ 100.0%
+   └ ../scratch/r87-size-after/js/film.js ────────────────────────── 45.2kb ── 98.9%
+
+  ../scratch/r87-size-after/bundle/c-RDEMIJFT.js ─────────────────── 44.3kb ─ 100.0%
+   ├ ../scratch/r87-size-after/js/net.js ─────────────────────────── 34.9kb ── 78.6%
+   ├ ../scratch/r87-size-after/js/relay.js ────────────────────────── 5.3kb ── 12.0%
+   │  └ ../scratch/r87-size-after/js/net.js
+   └ ../scratch/r87-size-after/js/netmsg.js ───────────────────────── 4.0kb ─── 8.9%
+      └ ../scratch/r87-size-after/js/net.js
+
+  ../scratch/r87-size-after/bundle/c-7XQNUQ7R.js ─────────────────── 41.3kb ─ 100.0%
+   └ ../scratch/r87-size-after/js/tales-content.js ───────────────── 41.1kb ── 99.7%
+
+  ../scratch/r87-size-after/bundle/c-EW7Q27HN.js ─────────────────── 39.1kb ─ 100.0%
+   ├ ../scratch/r87-size-after/js/games/reading.js ───────────────── 28.1kb ── 71.9%
+   └ ../scratch/r87-size-after/js/content/reading.js ─────────────── 10.5kb ── 26.8%
+      └ ../scratch/r87-size-after/js/games/reading.js
+
+  ../scratch/r87-size-after/bundle/c-T2KAFSWT.js ─────────────────── 35.2kb ─ 100.0%
+   └ ../scratch/r87-size-after/js/howto-data.js ──────────────────── 35.2kb ── 99.9%
+      └ ../scratch/r87-size-after/js/chat-player.js
+
+  ../scratch/r87-size-after/bundle/c-UHFD6UPT.js ─────────────────── 33.2kb ─ 100.0%
+   └ ../scratch/r87-size-after/js/autoplay.js ────────────────────── 32.3kb ── 97.2%
+
+  ../scratch/r87-size-after/bundle/c-UHEKUFN4.js ─────────────────── 30.7kb ─ 100.0%
+   └ ../scratch/r87-size-after/js/content/adventures.js ──────────── 30.5kb ── 99.1%
+
+  ../scratch/r87-size-after/bundle/c-CGTXCUON.js ─────────────────── 29.8kb ─ 100.0%
+   ├ ../scratch/r87-size-after/js/games/money.js ─────────────────── 27.3kb ── 91.6%
+   └ ../scratch/r87-size-after/js/games/moneylogic.js ─────────────── 2.0kb ─── 6.7%
+      └ ../scratch/r87-size-after/js/games/money.js
+
+  ../scratch/r87-size-after/bundle/c-JQMVCMP7.js ─────────────────── 29.8kb ─ 100.0%
+   └ ../scratch/r87-size-after/js/vehicles.js ────────────────────── 29.7kb ── 99.7%
+      └ ../scratch/r87-size-after/js/yard.js
+
+  ../scratch/r87-size-after/bundle/c-OWAESROD.js ─────────────────── 29.1kb ─ 100.0%
+   ├ ../scratch/r87-size-after/js/festivals.js ───────────────────── 26.1kb ── 89.7%
+   │  └ ../scratch/r87-size-after/js/adventure.js
+   └ ../scratch/r87-size-after/js/lunar.js ────────────────────────── 2.4kb ─── 8.4%
+      └ ../scratch/r87-size-after/js/festivals.js
+         └ ../scratch/r87-size-after/js/adventure.js
+
+  ../scratch/r87-size-after/bundle/c-AH7NM7UP.js ─────────────────── 28.9kb ─ 100.0%
+   └ ../scratch/r87-size-after/js/avatar.js ──────────────────────── 28.6kb ── 99.0%
+      └ ../scratch/r87-size-after/js/content/films.js
+
+  ../scratch/r87-size-after/bundle/c-34DKJAQ5.js ─────────────────── 28.4kb ─ 100.0%
+   ├ ../scratch/r87-size-after/js/tester.js ──────────────────────── 24.6kb ── 86.5%
+   ├ ../scratch/r87-size-after/js/tester-detection.js ─────────────── 1.7kb ─── 6.0%
+   │  └ ../scratch/r87-size-after/js/tester.js
+   ├ ../scratch/r87-size-after/js/keepcopy.js ─────────────────────── 809b ──── 2.8%
+   │  └ ../scratch/r87-size-after/js/autoplay.js
+   └ ../scratch/r87-size-after/js/report-outbox.js ────────────────── 687b ──── 2.4%
+      └ ../scratch/r87-size-after/js/tester.js
+
+  ../scratch/r87-size-after/bundle/c-LWFTSH3X.js ─────────────────── 28.2kb ─ 100.0%
+   ├ ../scratch/r87-size-after/js/content/stickers.js ────────────── 25.4kb ── 89.9%
+   │  └ ../scratch/r87-size-after/js/adventure.js
+   └ ../scratch/r87-size-after/js/stickers.js ─────────────────────── 2.7kb ─── 9.5%
+      └ ../scratch/r87-size-after/js/adventure.js
+
+  ../scratch/r87-size-after/bundle/c-L2JDZBLM.js ─────────────────── 27.2kb ─ 100.0%
+   ├ ../scratch/r87-size-after/js/parents.js ─────────────────────── 18.1kb ── 66.4%
+   ├ ../scratch/r87-size-after/js/content/parents.js ──────────────── 5.1kb ── 18.6%
+   │  └ ../scratch/r87-size-after/js/parents.js
+   └ ../scratch/r87-size-after/js/content/familymissions.js ───────── 3.0kb ── 11.1%
+      └ ../scratch/r87-size-after/js/parents.js
+
+  ../scratch/r87-size-after/bundle/c-K4PFB2FD.js ─────────────────── 27.1kb ─ 100.0%
+   ├ ../scratch/r87-size-after/js/content/storyhelp.js ───────────── 14.2kb ── 52.3%
+   │  └ ../scratch/r87-size-after/js/games/storyhelp.js
+   └ ../scratch/r87-size-after/js/games/storyhelp.js ─────────────── 12.4kb ── 45.9%
+
+  ../scratch/r87-size-after/bundle/c-GWU33DCN.js ─────────────────── 22.5kb ─ 100.0%
+   └ ../scratch/r87-size-after/js/audio.js ───────────────────────── 22.3kb ── 99.3%
+      └ ../scratch/r87-size-after/js/content/films.js
+
+  ../scratch/r87-size-after/bundle/c-AVY32ZRO.js ─────────────────── 21.4kb ─ 100.0%
+   └ ../scratch/r87-size-after/js/games/folk.js ──────────────────── 21.1kb ── 98.6%
+
+  ../scratch/r87-size-after/bundle/c-GZ5QTD75.js ─────────────────── 20.6kb ─ 100.0%
+   ├ ../scratch/r87-size-after/js/yard.js ────────────────────────── 13.4kb ── 64.9%
+   └ ../scratch/r87-size-after/js/content/yard.js ─────────────────── 6.7kb ── 32.5%
+      └ ../scratch/r87-size-after/js/yard.js
+
+  ../scratch/r87-size-after/bundle/c-ZSRDR37F.js ─────────────────── 20.1kb ─ 100.0%
+   ├ ../scratch/r87-size-after/js/cartoon.js ─────────────────────── 11.2kb ── 55.7%
+   │  └ ../scratch/r87-size-after/js/howto-player.js
+   ├ ../scratch/r87-size-after/js/tales.js ────────────────────────── 8.3kb ── 41.2%
+   │  └ ../scratch/r87-size-after/js/howto-player.js
+   └ ../scratch/r87-size-after/js/tale-loader.js ──────────────────── 329b ──── 1.6%
+      └ ../scratch/r87-size-after/js/tales.js
+         └ ../scratch/r87-size-after/js/howto-player.js
+
+  ../scratch/r87-size-after/bundle/c-L67S36YF.js ─────────────────── 17.8kb ─ 100.0%
+   └ ../scratch/r87-size-after/js/games/talkgames.js ─────────────── 17.2kb ── 96.7%
+
+  ../scratch/r87-size-after/bundle/c-QXLIPROH.js ─────────────────── 17.7kb ─ 100.0%
+   └ ../scratch/r87-size-after/js/games/folk2.js ─────────────────── 17.2kb ── 96.8%
+
+  ../scratch/r87-size-after/bundle/c-L3CTTXOH.js ─────────────────── 17.7kb ─ 100.0%
+   ├ ../scratch/r87-size-after/js/content/shop.js ─────────────────── 9.7kb ── 54.9%
+   │  └ ../scratch/r87-size-after/js/state.js
+   └ ../scratch/r87-size-after/js/state.js ────────────────────────── 7.6kb ── 43.1%
+
+  ../scratch/r87-size-after/bundle/c-RA7TWXYJ.js ─────────────────── 17.6kb ─ 100.0%
+   └ ../scratch/r87-size-after/js/adventure.js ───────────────────── 16.5kb ── 93.9%
+
+  ../scratch/r87-size-after/bundle/c-MYE4B3LD.js ─────────────────── 17.2kb ─ 100.0%
+   └ ../scratch/r87-size-after/js/animals.js ─────────────────────── 17.1kb ── 99.4%
+      └ ../scratch/r87-size-after/js/surprises.js
+
+  ../scratch/r87-size-after/bundle/c-ULCQE2I7.js ─────────────────── 17.1kb ─ 100.0%
+   ├ ../scratch/r87-size-after/js/games/frame.js ─────────────────── 12.3kb ── 72.0%
+   ├ ../scratch/r87-size-after/js/ads.js ──────────────────────────── 4.0kb ── 23.4%
+   │  └ ../scratch/r87-size-after/js/games/frame.js
+   └ ../scratch/r87-size-after/js/games/playwatch.js ──────────────── 238b ──── 1.4%
+      └ ../scratch/r87-size-after/js/games/frame.js
+
+  ../scratch/r87-size-after/bundle/c-OI4BUSBZ.js ─────────────────── 17.0kb ─ 100.0%
+   └ ../scratch/r87-size-after/js/shop.js ────────────────────────── 16.4kb ── 96.1%
+
+  ../scratch/r87-size-after/bundle/c-HP7E6S62.js ─────────────────── 16.9kb ─ 100.0%
+   ├ ../scratch/r87-size-after/js/voice.js ───────────────────────── 14.0kb ── 83.1%
+   │  └ ../scratch/r87-size-after/js/film.js
+   ├ ../scratch/r87-size-after/js/viwords.js ──────────────────────── 2.0kb ── 11.6%
+   │  └ ../scratch/r87-size-after/js/voice.js
+   │     └ ../scratch/r87-size-after/js/film.js
+   └ ../scratch/r87-size-after/js/packhash.js ─────────────────────── 457b ──── 2.6%
+      └ ../scratch/r87-size-after/js/voice.js
+         └ ../scratch/r87-size-after/js/film.js
+
+  ../scratch/r87-size-after/bundle/c-VR4LBVJJ.js ─────────────────── 16.4kb ─ 100.0%
+   └ ../scratch/r87-size-after/js/content/films/kit.js ───────────── 15.7kb ── 95.8%
+      └ ../scratch/r87-size-after/js/content/films/vusua.js
+
+  ../scratch/r87-size-after/bundle/c-VKECWLHK.js ─────────────────── 16.2kb ─ 100.0%
+   └ ../scratch/r87-size-after/js/content/map.js ─────────────────── 16.0kb ── 98.9%
+      └ ../scratch/r87-size-after/js/world.js
+
+  ../scratch/r87-size-after/bundle/c-APMS4S74.js ─────────────────── 14.6kb ─ 100.0%
+   └ ../scratch/r87-size-after/js/story.js ───────────────────────── 14.3kb ── 98.4%
+      └ ../scratch/r87-size-after/js/chat-player.js
+
+  ../scratch/r87-size-after/bundle/c-N4BH7OA6.js ─────────────────── 14.3kb ─ 100.0%
+   └ ../scratch/r87-size-after/js/content/festcal.js ─────────────── 14.3kb ── 99.7%
+      └ ../scratch/r87-size-after/js/myhouse.js
+
+  ../scratch/r87-size-after/bundle/c-SV3PCKAO.js ─────────────────── 14.3kb ─ 100.0%
+   └ ../scratch/r87-size-after/js/chat-player.js ─────────────────── 13.6kb ── 94.9%
+
+  ../scratch/r87-size-after/bundle/c-3DC5T7TW.js ─────────────────── 14.2kb ─ 100.0%
+   └ ../scratch/r87-size-after/js/content/releases.js ────────────── 14.2kb ── 99.6%
+      └ ../scratch/r87-size-after/js/testerrewards.js
+
+  ../scratch/r87-size-after/bundle/c-CZOCLUAA.js ─────────────────── 14.1kb ─ 100.0%
+   ├ ../scratch/r87-size-after/js/surprises.js ────────────────────── 8.4kb ── 59.8%
+   └ ../scratch/r87-size-after/js/content/surprises.js ────────────── 4.6kb ── 32.6%
+      └ ../scratch/r87-size-after/js/surprises.js
+
+  ../scratch/r87-size-after/bundle/c-TFKSWBGH.js ─────────────────── 14.1kb ─ 100.0%
+   └ ../scratch/r87-size-after/js/games/farmgames.js ─────────────── 13.6kb ── 96.3%
+
+  ../scratch/r87-size-after/bundle/c-4RVLCWP2.js ─────────────────── 13.9kb ─ 100.0%
+   ├ ../scratch/r87-size-after/js/familydevices.js ───────────────── 13.0kb ── 93.8%
+   └ ../scratch/r87-size-after/js/family-backup.js ────────────────── 754b ──── 5.3%
+      └ ../scratch/r87-size-after/js/familydevices.js
+
+  ../scratch/r87-size-after/bundle/c-ZNAN3DTR.js ─────────────────── 13.6kb ─ 100.0%
+   ├ ../scratch/r87-size-after/js/games/tienlen.js ───────────────── 10.1kb ── 74.5%
+   └ ../scratch/r87-size-after/js/games/tienlenrules.js ───────────── 3.0kb ── 22.1%
+      └ ../scratch/r87-size-after/js/games/tienlen.js
+
+  ../scratch/r87-size-after/bundle/c-ATFZDJSX.js ─────────────────── 13.5kb ─ 100.0%
+   ├ ../scratch/r87-size-after/js/content/chapter2text.js ─────────── 9.9kb ── 73.4%
+   │  └ ../scratch/r87-size-after/js/content/chapter2films.js
+   └ ../scratch/r87-size-after/js/content/chapter2props.js ────────── 3.4kb ── 25.3%
+      └ ../scratch/r87-size-after/js/content/chapter2films.js
+
+  ../scratch/r87-size-after/bundle/c-PKCQS73U.js ─────────────────── 13.4kb ─ 100.0%
+   └ ../scratch/r87-size-after/js/lanterns.js ────────────────────── 12.8kb ── 95.3%
+
+  ../scratch/r87-size-after/bundle/c-OWX2S7XY.js ─────────────────── 13.0kb ─ 100.0%
+   └ ../scratch/r87-size-after/js/content/chapter2hanoi.js ───────── 12.3kb ── 95.2%
+
+  ../scratch/r87-size-after/bundle/c-WRJ334SH.js ─────────────────── 12.8kb ─ 100.0%
+   └ ../scratch/r87-size-after/js/games/cities.js ────────────────── 12.4kb ── 96.7%
+
+  ../scratch/r87-size-after/bundle/c-PCNKGEVP.js ─────────────────── 12.4kb ─ 100.0%
+   └ ../scratch/r87-size-after/js/games/vietnam.js ───────────────── 12.0kb ── 96.4%
+
+  ../scratch/r87-size-after/bundle/c-2FNC3WSV.js ─────────────────── 12.2kb ─ 100.0%
+   └ ../scratch/r87-size-after/js/games/more.js ──────────────────── 11.7kb ── 96.0%
+
+  ../scratch/r87-size-after/bundle/c-5MWRVQJZ.js ─────────────────── 12.0kb ─ 100.0%
+   ├ ../scratch/r87-size-after/js/content/chapter3text.js ─────────── 9.4kb ── 78.2%
+   │  └ ../scratch/r87-size-after/js/content/chapter3films.js
+   └ ../scratch/r87-size-after/js/content/chapter3props.js ────────── 2.5kb ── 20.5%
+      └ ../scratch/r87-size-after/js/content/chapter3films.js
+
+  ../scratch/r87-size-after/bundle/c-XBTYOGXI.js ─────────────────── 11.8kb ─ 100.0%
+   ├ ../scratch/r87-size-after/js/content/jobs.js ─────────────────── 7.1kb ── 59.9%
+   │  └ ../scratch/r87-size-after/js/jobs.js
+   └ ../scratch/r87-size-after/js/jobs.js ─────────────────────────── 4.2kb ── 36.0%
+
+  ../scratch/r87-size-after/bundle/c-MWNSOOAU.js ─────────────────── 11.7kb ─ 100.0%
+   ├ ../scratch/r87-size-after/js/boxes.js ────────────────────────── 7.0kb ── 59.7%
+   └ ../scratch/r87-size-after/js/content/boxes.js ────────────────── 4.3kb ── 36.5%
+      └ ../scratch/r87-size-after/js/boxes.js
+
+  ../scratch/r87-size-after/bundle/c-GQC6IRRK.js ─────────────────── 11.5kb ─ 100.0%
+   ├ ../scratch/r87-size-after/js/content/festhunt.js ─────────────── 5.9kb ── 51.4%
+   │  └ ../scratch/r87-size-after/js/festhunt.js
+   └ ../scratch/r87-size-after/js/festhunt.js ─────────────────────── 5.2kb ── 45.0%
+
+  ../scratch/r87-size-after/bundle/c-LF6YYG53.js ─────────────────── 11.0kb ─ 100.0%
+   └ ../scratch/r87-size-after/js/games/thinking.js ──────────────── 10.5kb ── 95.1%
+
+  ../scratch/r87-size-after/bundle/c-SCIHAKLE.js ─────────────────── 10.6kb ─ 100.0%
+   └ ../scratch/r87-size-after/js/hoilang.js ──────────────────────── 9.5kb ── 89.6%
+
+  ../scratch/r87-size-after/bundle/c-6KH4O76S.js ─────────────────── 10.2kb ─ 100.0%
+   └ ../scratch/r87-size-after/js/games/strategy.js ───────────────── 9.8kb ── 96.0%
+
+  ../scratch/r87-size-after/bundle/c-YZYHYB3E.js ─────────────────── 10.0kb ─ 100.0%
+   └ ../scratch/r87-size-after/js/content/chapter3sydney.js ───────── 9.4kb ── 94.2%
+
+  ../scratch/r87-size-after/bundle/c-5PAIRBLZ.js ─────────────────── 10.0kb ─ 100.0%
+   └ ../scratch/r87-size-after/js/players.js ──────────────────────── 9.8kb ── 97.7%
+      └ ../scratch/r87-size-after/js/tester.js
+
+  ../scratch/r87-size-after/bundle/c-6CEIZ2X3.js ──────────────────── 9.7kb ─ 100.0%
+   └ ../scratch/r87-size-after/js/games/bigthinkers.js ────────────── 9.2kb ── 94.9%
+
+  ../scratch/r87-size-after/bundle/c-TQQQALFY.js ──────────────────── 9.6kb ─ 100.0%
+   └ ../scratch/r87-size-after/js/games/asia.js ───────────────────── 9.1kb ── 95.0%
+
+  ../scratch/r87-size-after/bundle/c-EFULYHMY.js ──────────────────── 9.3kb ─ 100.0%
+   └ ../scratch/r87-size-after/js/chat.js ─────────────────────────── 9.2kb ── 98.9%
+      └ ../scratch/r87-size-after/js/chat-player.js
+
+  ../scratch/r87-size-after/bundle/c-ILPERZPK.js ──────────────────── 8.8kb ─ 100.0%
+   └ ../scratch/r87-size-after/js/data.js ─────────────────────────── 8.7kb ── 98.2%
+      └ ../scratch/r87-size-after/js/shop.js
+
+  ../scratch/r87-size-after/bundle/c-XS7GB7GG.js ──────────────────── 8.8kb ─ 100.0%
+   └ ../scratch/r87-size-after/js/howto-player.js ─────────────────── 8.3kb ── 94.4%
+
+  ../scratch/r87-size-after/bundle/c-WQ7BO444.js ──────────────────── 8.7kb ─ 100.0%
+   └ ../scratch/r87-size-after/js/festdecor.js ────────────────────── 8.3kb ── 95.2%
+
+  ../scratch/r87-size-after/bundle/c-7U5WOF5W.js ──────────────────── 8.0kb ─ 100.0%
+   └ ../scratch/r87-size-after/js/kidplay.js ──────────────────────── 7.3kb ── 90.9%
+
+  ../scratch/r87-size-after/bundle/c-7HEZ4XEI.js ──────────────────── 8.0kb ─ 100.0%
+   └ ../scratch/r87-size-after/js/voicepack.js ────────────────────── 7.7kb ── 96.2%
+
+  ../scratch/r87-size-after/bundle/c-D2RLHRJZ.js ──────────────────── 7.9kb ─ 100.0%
+   └ ../scratch/r87-size-after/js/custom.js ───────────────────────── 7.7kb ── 97.2%
+
+  ../scratch/r87-size-after/bundle/c-GXN25XY6.js ──────────────────── 7.4kb ─ 100.0%
+   └ ../scratch/r87-size-after/js/mictest.js ──────────────────────── 6.5kb ── 88.3%
+
+  ../scratch/r87-size-after/bundle/c-HLFEFPT4.js ──────────────────── 7.4kb ─ 100.0%
+   ├ ../scratch/r87-size-after/js/content/villagerlines.js ────────── 5.3kb ── 71.6%
+   │  └ ../scratch/r87-size-after/js/villagertalk.js
+   └ ../scratch/r87-size-after/js/villagertalk.js ─────────────────── 1.7kb ── 22.5%
+
+  ../scratch/r87-size-after/bundle/c-XBVLYPO4.js ──────────────────── 7.3kb ─ 100.0%
+   └ ../scratch/r87-size-after/js/games/learning.js ───────────────── 6.8kb ── 93.6%
+
+  ../scratch/r87-size-after/bundle/c-HH3UKBSQ.js ──────────────────── 7.2kb ─ 100.0%
+   └ ../scratch/r87-size-after/js/myhouse.js ──────────────────────── 6.7kb ── 92.3%
+
+  ../scratch/r87-size-after/bundle/c-J2WZCB7T.js ──────────────────── 7.2kb ─ 100.0%
+   └ ../scratch/r87-size-after/js/words.js ────────────────────────── 7.2kb ── 99.5%
+      └ ../scratch/r87-size-after/js/chat-player.js
+
+  ../scratch/r87-size-after/bundle/c-H3QIAK5E.js ──────────────────── 7.2kb ─ 100.0%
+   └ ../scratch/r87-size-after/js/games/bigthinkers2.js ───────────── 6.7kb ── 93.2%
+
+  ../scratch/r87-size-after/bundle/c-2OC7GT6N.js ──────────────────── 6.7kb ─ 100.0%
+   ├ ../scratch/r87-size-after/js/i18n.js ─────────────────────────── 5.4kb ── 81.0%
+   │  └ ../scratch/r87-size-after/js/film.js
+   └ ../scratch/r87-size-after/js/core/events.js ──────────────────── 1.1kb ── 16.2%
+      └ ../scratch/r87-size-after/js/voicepack.js
+
+  ../scratch/r87-size-after/bundle/c-RBDFNL3Z.js ──────────────────── 6.7kb ─ 100.0%
+   └ ../scratch/r87-size-after/js/wayfind.js ──────────────────────── 6.3kb ── 95.1%
+
+  ../scratch/r87-size-after/bundle/c-OEHQZTYK.js ──────────────────── 6.7kb ─ 100.0%
+   └ ../scratch/r87-size-after/js/content/chapters.js ─────────────── 6.6kb ── 99.5%
+      └ ../scratch/r87-size-after/js/lanterns.js
+
+  ../scratch/r87-size-after/bundle/c-ND7G6G44.js ──────────────────── 6.6kb ─ 100.0%
+   └ ../scratch/r87-size-after/js/talesdata.js ────────────────────── 6.5kb ── 98.7%
+
+  ../scratch/r87-size-after/bundle/c-ANQO63V5.js ──────────────────── 6.1kb ─ 100.0%
+   └ ../scratch/r87-size-after/js/content/films/sodua.js ──────────── 5.6kb ── 91.7%
+
+  ../scratch/r87-size-after/bundle/c-KSCCRREG.js ──────────────────── 5.7kb ─ 100.0%
+   └ ../scratch/r87-size-after/js/content/films/tamcam.js ─────────── 5.2kb ── 91.3%
+
+  ../scratch/r87-size-after/bundle/c-FO7JFMRD.js ──────────────────── 5.7kb ─ 100.0%
+   └ ../scratch/r87-size-after/js/vendors.js ──────────────────────── 5.6kb ── 98.9%
+      └ ../scratch/r87-size-after/js/pricetags.js
+
+  ../scratch/r87-size-after/bundle/c-Q65FXAH4.js ──────────────────── 5.6kb ─ 100.0%
+   └ ../scratch/r87-size-after/js/games/readingmenu.js ────────────── 5.4kb ── 95.8%
+
+  ../scratch/r87-size-after/bundle/c-DYAWSFT7.js ──────────────────── 5.5kb ─ 100.0%
+   └ ../scratch/r87-size-after/js/content/films/rongtien.js ───────── 5.0kb ── 90.8%
+
+  ../scratch/r87-size-after/bundle/c-OKPSMAK5.js ──────────────────── 5.5kb ─ 100.0%
+   └ ../scratch/r87-size-after/js/companion.js ────────────────────── 5.4kb ── 97.8%
+      └ ../scratch/r87-size-after/js/content/films.js
+
+  ../scratch/r87-size-after/bundle/c-XBWFWOLP.js ──────────────────── 5.3kb ─ 100.0%
+   └ ../scratch/r87-size-after/js/testerrewards.js ────────────────── 4.7kb ── 88.6%
+
+  ../scratch/r87-size-after/bundle/c-R6AEZS7X.js ──────────────────── 5.1kb ─ 100.0%
+   └ ../scratch/r87-size-after/js/content/films/chucuoi.js ────────── 4.6kb ── 90.1%
+
+  ../scratch/r87-size-after/bundle/c-JTOCDTIR.js ──────────────────── 5.1kb ─ 100.0%
+   └ ../scratch/r87-size-after/js/content/films/thachsanh.js ──────── 4.6kb ── 90.3%
+
+  ../scratch/r87-size-after/bundle/c-5WQZEOCX.js ──────────────────── 5.0kb ─ 100.0%
+   └ ../scratch/r87-size-after/js/screencapture.js ────────────────── 4.9kb ── 98.5%
+
+  ../scratch/r87-size-after/bundle/main-O7XCHAYX.js ───────────────── 4.9kb ─ 100.0%
+   └ ../scratch/r87-size-after/js/launch.js ───────────────────────── 4.9kb ─ 100.0%
+
+  ../scratch/r87-size-after/bundle/c-2K6NAJ5A.js ──────────────────── 4.9kb ─ 100.0%
+   └ ../scratch/r87-size-after/js/games/music.js ──────────────────── 4.4kb ── 91.0%
+
+  ../scratch/r87-size-after/bundle/c-JF7RMM6H.js ──────────────────── 4.9kb ─ 100.0%
+   └ ../scratch/r87-size-after/js/content/films/quabau.js ─────────── 4.4kb ── 90.5%
+
+  ../scratch/r87-size-after/bundle/c-CJXIJKBS.js ──────────────────── 4.8kb ─ 100.0%
+   └ ../scratch/r87-size-after/js/content/films/greatrace.js ──────── 4.3kb ── 89.1%
+
+  ../scratch/r87-size-after/bundle/c-BROH5DHI.js ──────────────────── 4.8kb ─ 100.0%
+   └ ../scratch/r87-size-after/js/content/films/maliang.js ────────── 4.3kb ── 89.5%
+
+  ../scratch/r87-size-after/bundle/c-BIYLRFB7.js ──────────────────── 4.7kb ─ 100.0%
+   └ ../scratch/r87-size-after/js/content/films/caytre.js ─────────── 4.2kb ── 89.8%
+
+  ../scratch/r87-size-after/bundle/c-KK23U7AZ.js ──────────────────── 4.7kb ─ 100.0%
+   └ ../scratch/r87-size-after/js/content/chapter2films.js ────────── 4.1kb ── 88.3%
+
+  ../scratch/r87-size-after/bundle/c-2UBVAYV2.js ──────────────────── 4.6kb ─ 100.0%
+   └ ../scratch/r87-size-after/js/content/films/nian.js ───────────── 4.1kb ── 89.5%
+
+  ../scratch/r87-size-after/bundle/c-LYZQVLX3.js ──────────────────── 4.5kb ─ 100.0%
+   └ ../scratch/r87-size-after/js/content/films/vusua.js ──────────── 4.0kb ── 89.4%
+
+  ../scratch/r87-size-after/bundle/c-ZN6DN2DZ.js ──────────────────── 4.4kb ─ 100.0%
+   └ ../scratch/r87-size-after/js/content/films/ongtao.js ─────────── 3.9kb ── 88.3%
+
+  ../scratch/r87-size-after/bundle/c-Y65C4KJV.js ──────────────────── 4.3kb ─ 100.0%
+   └ ../scratch/r87-size-after/js/content/activities.js ───────────── 4.1kb ── 95.9%
+      └ ../scratch/r87-size-after/js/games/readingmenu.js
+
+  ../scratch/r87-size-after/bundle/c-4VUQVCLZ.js ──────────────────── 4.3kb ─ 100.0%
+   └ ../scratch/r87-size-after/js/content/films/ganesha.js ────────── 3.8kb ── 88.8%
+
+  ../scratch/r87-size-after/bundle/c-VWY4NH5A.js ──────────────────── 4.2kb ─ 100.0%
+   └ ../scratch/r87-size-after/js/content/films/cockien.js ────────── 3.7kb ── 87.8%
+
+  ../scratch/r87-size-after/bundle/c-4C64BIML.js ──────────────────── 4.1kb ─ 100.0%
+   └ ../scratch/r87-size-after/js/content/films/dotkangaroo.js ────── 3.6kb ── 88.1%
+
+  ../scratch/r87-size-after/bundle/c-4QJ35NZV.js ──────────────────── 4.1kb ─ 100.0%
+   └ ../scratch/r87-size-after/js/content/films/weaver.js ─────────── 3.6kb ── 88.1%
+
+  ../scratch/r87-size-after/bundle/c-7B73CR7M.js ──────────────────── 4.0kb ─ 100.0%
+   └ ../scratch/r87-size-after/js/content/films/emu.js ────────────── 3.6kb ── 89.0%
+
+  ../scratch/r87-size-after/bundle/c-R7BKSQPK.js ──────────────────── 4.0kb ─ 100.0%
+   └ ../scratch/r87-size-after/js/report.js ───────────────────────── 3.7kb ── 91.6%
+      └ ../scratch/r87-size-after/js/ui-settings.js
+
+  ../scratch/r87-size-after/bundle/c-XUEHDO7G.js ──────────────────── 4.0kb ─ 100.0%
+   └ ../scratch/r87-size-after/js/content/tester.js ───────────────── 3.9kb ── 97.5%
+      └ ../scratch/r87-size-after/js/testerrewards.js
+
+  ../scratch/r87-size-after/bundle/c-5BP3NAX6.js ──────────────────── 4.0kb ─ 100.0%
+   ├ ../scratch/r87-size-after/js/content/owllessons.js ───────────── 2.8kb ── 68.9%
+   │  └ ../scratch/r87-size-after/js/owlguide.js
+   └ ../scratch/r87-size-after/js/owlguide.js ─────────────────────── 933b ─── 22.7%
+
+  ../scratch/r87-size-after/bundle/c-F53OCVXN.js ──────────────────── 3.9kb ─ 100.0%
+   └ ../scratch/r87-size-after/js/popups.js ───────────────────────── 3.6kb ── 91.3%
+      └ ../scratch/r87-size-after/js/ui-settings.js
+
+  ../scratch/r87-size-after/bundle/c-VGTSB7ZS.js ──────────────────── 3.9kb ─ 100.0%
+   └ ../scratch/r87-size-after/js/content/films/baluoiriu.js ──────── 3.5kb ── 88.7%
+
+  ../scratch/r87-size-after/bundle/c-X2CI4OZ2.js ──────────────────── 3.9kb ─ 100.0%
+   └ ../scratch/r87-size-after/js/content/films/rainbowserpent.js ─── 3.4kb ── 87.4%
+
+  ../scratch/r87-size-after/bundle/c-RK74LOE7.js ──────────────────── 3.9kb ─ 100.0%
+   └ ../scratch/r87-size-after/js/content/films/magicpudding.js ───── 3.4kb ── 87.6%
+
+  ../scratch/r87-size-after/bundle/c-CKQG7LP4.js ──────────────────── 3.8kb ─ 100.0%
+   └ ../scratch/r87-size-after/js/content/films/kongrong.js ───────── 3.4kb ── 87.9%
+
+  ../scratch/r87-size-after/bundle/c-BDJ6RG5R.js ──────────────────── 3.7kb ─ 100.0%
+   └ ../scratch/r87-size-after/js/content/films/elephantmice.js ───── 3.3kb ── 87.6%
+
+  ../scratch/r87-size-after/bundle/c-OB5WBVPX.js ──────────────────── 3.7kb ─ 100.0%
+   └ ../scratch/r87-size-after/js/content/films/birdcolours.js ────── 3.2kb ── 87.6%
+
+  ../scratch/r87-size-after/bundle/c-ZCBHEBW7.js ──────────────────── 3.6kb ─ 100.0%
+   └ ../scratch/r87-size-after/js/content/films/cachep.js ─────────── 3.2kb ── 87.6%
+
+  ../scratch/r87-size-after/bundle/c-MRPMYHOR.js ──────────────────── 3.6kb ─ 100.0%
+   └ ../scratch/r87-size-after/js/soundsheet.js ───────────────────── 3.4kb ── 93.4%
+
+  ../scratch/r87-size-after/bundle/c-2GET7RHX.js ──────────────────── 3.6kb ─ 100.0%
+   └ ../scratch/r87-size-after/js/content/films/nhacmeo.js ────────── 3.1kb ── 86.9%
+
+  ../scratch/r87-size-after/bundle/c-2FYUVJU6.js ──────────────────── 3.5kb ─ 100.0%
+   └ ../scratch/r87-size-after/js/content/films/thayboi.js ────────── 3.1kb ── 87.3%
+
+  ../scratch/r87-size-after/bundle/c-FEMKJ7WB.js ──────────────────── 3.5kb ─ 100.0%
+   └ ../scratch/r87-size-after/js/content/films/crow.js ───────────── 3.0kb ── 86.7%
+
+  ../scratch/r87-size-after/bundle/c-CXVO7ABQ.js ──────────────────── 3.5kb ─ 100.0%
+   └ ../scratch/r87-size-after/js/content/films/bluejackal.js ─────── 3.0kb ── 85.8%
+
+  ../scratch/r87-size-after/bundle/c-QNYP2DOR.js ──────────────────── 3.4kb ─ 100.0%
+   └ ../scratch/r87-size-after/js/content/film-looks.js ───────────── 3.4kb ── 99.3%
+      └ ../scratch/r87-size-after/js/content/films.js
+
+  ../scratch/r87-size-after/bundle/c-TB5FIKIH.js ──────────────────── 3.4kb ─ 100.0%
+   └ ../scratch/r87-size-after/js/content/films/monkey.js ─────────── 2.9kb ── 86.3%
+
+  ../scratch/r87-size-after/bundle/c-B7TRNBN6.js ──────────────────── 3.3kb ─ 100.0%
+   └ ../scratch/r87-size-after/js/content/films/lionrabbit.js ─────── 2.9kb ── 86.0%
+
+  ../scratch/r87-size-after/bundle/c-Y547JOAS.js ──────────────────── 3.3kb ─ 100.0%
+   └ ../scratch/r87-size-after/js/netgames.js ─────────────────────── 3.2kb ── 97.8%
+      └ ../scratch/r87-size-after/js/games/more.js
+
+  ../scratch/r87-size-after/bundle/c-BXXO66QA.js ──────────────────── 3.2kb ─ 100.0%
+   └ ../scratch/r87-size-after/js/content/chapter3films.js ────────── 2.7kb ── 83.5%
+
+  ../scratch/r87-size-after/bundle/c-IX4Q5CON.js ──────────────────── 3.1kb ─ 100.0%
+   └ ../scratch/r87-size-after/js/dayplan.js ──────────────────────── 2.8kb ── 91.6%
+
+  ../scratch/r87-size-after/bundle/c-UEXWI5GP.js ──────────────────── 3.1kb ─ 100.0%
+   └ ../scratch/r87-size-after/js/stickerfx.js ────────────────────── 2.7kb ── 88.1%
+
+  ../scratch/r87-size-after/bundle/c-QQOFZQPE.js ──────────────────── 3.1kb ─ 100.0%
+   └ ../scratch/r87-size-after/js/content/films/tiddalik.js ───────── 2.6kb ── 85.0%
+
+  ../scratch/r87-size-after/bundle/c-BAUN3M3R.js ──────────────────── 3.1kb ─ 100.0%
+   └ ../scratch/r87-size-after/js/content/films/sontinh.js ────────── 2.6kb ── 84.1%
+
+  ../scratch/r87-size-after/bundle/c-TODJJ3ND.js ──────────────────── 3.0kb ─ 100.0%
+   └ ../scratch/r87-size-after/js/content/films/change.js ─────────── 2.6kb ── 83.7%
+
+  ../scratch/r87-size-after/bundle/c-O6CFCSHK.js ──────────────────── 2.9kb ─ 100.0%
+   └ ../scratch/r87-size-after/js/animalhomes.js ──────────────────── 2.6kb ── 89.8%
+
+  ../scratch/r87-size-after/bundle/c-6SK6Y34C.js ──────────────────── 2.9kb ─ 100.0%
+   └ ../scratch/r87-size-after/js/feel.js ─────────────────────────── 2.7kb ── 93.5%
+      └ ../scratch/r87-size-after/js/adventure.js
+
+  ../scratch/r87-size-after/bundle/c-ZNZOJXA3.js ──────────────────── 2.9kb ─ 100.0%
+   └ ../scratch/r87-size-after/js/content/hoilang.js ──────────────── 2.8kb ── 97.5%
+      └ ../scratch/r87-size-after/js/surprises.js
+
+  ../scratch/r87-size-after/bundle/c-3YQNB7VM.js ──────────────────── 2.6kb ─ 100.0%
+   └ ../scratch/r87-size-after/js/games/market.js ─────────────────── 2.1kb ── 82.0%
+
+  ../scratch/r87-size-after/bundle/c-J6ZJ62JJ.js ──────────────────── 2.4kb ─ 100.0%
+   └ ../scratch/r87-size-after/js/content/autoplay.js ─────────────── 2.2kb ── 95.0%
+
+  ../scratch/r87-size-after/bundle/c-S6D6FQHV.js ──────────────────── 2.2kb ─ 100.0%
+   └ ../scratch/r87-size-after/js/games/learning-meta.js ──────────── 2.2kb ── 95.9%
+      └ ../scratch/r87-size-after/js/games/bigthinkers2.js
+
+  ../scratch/r87-size-after/bundle/c-J5FXAD3T.js ──────────────────── 2.1kb ─ 100.0%
+   └ ../scratch/r87-size-after/js/dinh.js ─────────────────────────── 2.0kb ── 96.0%
+      └ ../scratch/r87-size-after/js/content/films.js
+
+  ../scratch/r87-size-after/bundle/c-AW3RXCVE.js ──────────────────── 2.1kb ─ 100.0%
+   ├ ../scratch/r87-size-after/js/util.js ─────────────────────────── 1.1kb ── 52.9%
+   │  └ ../scratch/r87-size-after/js/film.js
+   ├ ../scratch/r87-size-after/js/core/rng.js ─────────────────────── 621b ─── 29.5%
+   │  └ ../scratch/r87-size-after/js/games/tienlen.js
+   └ ../scratch/r87-size-after/js/core/geo.js ─────────────────────── 241b ─── 11.5%
+      └ ../scratch/r87-size-after/js/util.js
+         └ ../scratch/r87-size-after/js/film.js
+
+  ../scratch/r87-size-after/bundle/c-QGXZSLGI.js ──────────────────── 2.0kb ─ 100.0%
+   └ ../scratch/r87-size-after/js/scrollhelp.js ───────────────────── 2.0kb ── 96.3%
+
+  ../scratch/r87-size-after/bundle/c-KTCFKZQC.js ──────────────────── 2.0kb ─ 100.0%
+   └ ../scratch/r87-size-after/js/money.js ────────────────────────── 1.9kb ── 95.4%
+      └ ../scratch/r87-size-after/js/ui-settings.js
+
+  ../scratch/r87-size-after/bundle/c-IFMK5DYI.js ──────────────────── 2.0kb ─ 100.0%
+   └ ../scratch/r87-size-after/js/words2.js ───────────────────────── 2.0kb ── 99.2%
+      └ ../scratch/r87-size-after/js/games/asia.js
+
+  ../scratch/r87-size-after/bundle/c-NE75PSTT.js ──────────────────── 1.9kb ─ 100.0%
+   └ ../scratch/r87-size-after/js/pricetags.js ────────────────────── 1.6kb ── 84.6%
+
+  ../scratch/r87-size-after/bundle/c-LT5SZ6A3.js ──────────────────── 1.8kb ─ 100.0%
+   └ ../scratch/r87-size-after/js/chipinfo.js ─────────────────────── 1.4kb ── 82.3%
+
+  ../scratch/r87-size-after/bundle/c-JKXPBUEB.js ──────────────────── 1.7kb ─ 100.0%
+   └ ../scratch/r87-size-after/js/voice-index.js ──────────────────── 1.7kb ── 98.3%
+      └ ../scratch/r87-size-after/js/voicepack.js
+
+  ../scratch/r87-size-after/bundle/c-6MMC5OZV.js ──────────────────── 1.6kb ─ 100.0%
+   └ ../scratch/r87-size-after/js/openspot.js ─────────────────────── 1.5kb ── 93.4%
+      └ ../scratch/r87-size-after/js/lanterns.js
+
+  ../scratch/r87-size-after/bundle/world-2ZUAZHUL.js ──────────────── 1.6kb ─ 100.0%
+
+  ../scratch/r87-size-after/bundle/c-B7RSCKTH.js ──────────────────── 1.4kb ─ 100.0%
+   └ ../scratch/r87-size-after/js/content/talefilms.js ────────────── 1.3kb ── 93.1%
+
+  ../scratch/r87-size-after/bundle/c-CBM2UIJM.js ──────────────────── 1.3kb ─ 100.0%
+   └ ../scratch/r87-size-after/js/handpad.js ──────────────────────── 1.2kb ── 93.9%
+      └ ../scratch/r87-size-after/js/lanterns.js
+
+  ../scratch/r87-size-after/bundle/c-CFNOMVWA.js ──────────────────── 1.3kb ─ 100.0%
+   └ ../scratch/r87-size-after/js/listen.js ───────────────────────── 1.1kb ── 90.5%
+      └ ../scratch/r87-size-after/js/chat-player.js
+
+  ../scratch/r87-size-after/bundle/c-VQHJPKKS.js ──────────────────── 896b ── 100.0%
+
+  ../scratch/r87-size-after/bundle/state-IMMDRN4F.js ──────────────── 720b ── 100.0%
+
+  ../scratch/r87-size-after/bundle/c-6QHHKYKC.js ──────────────────── 718b ── 100.0%
+
+  ../scratch/r87-size-after/bundle/c-C4GJQ7YX.js ──────────────────── 660b ── 100.0%
+
+  ../scratch/r87-size-after/bundle/c-F6OB53Z3.js ──────────────────── 658b ── 100.0%
+   └ ../scratch/r87-size-after/js/core/ids.js ─────────────────────── 640b ─── 97.3%
+      └ ../scratch/r87-size-after/js/adventure.js
+
+  ../scratch/r87-size-after/bundle/c-LTC43UT4.js ──────────────────── 603b ── 100.0%
+   └ ../scratch/r87-size-after/js/content/devname.js ──────────────── 587b ─── 97.3%
+      └ ../scratch/r87-size-after/js/ui-settings.js
+
+  ../scratch/r87-size-after/bundle/custom-GYX23SSU.js ─────────────── 602b ── 100.0%
+
+  ../scratch/r87-size-after/bundle/games-frame-JPKS2XYQ.js ────────── 589b ── 100.0%
+
+  ../scratch/r87-size-after/bundle/c-C5VVLPC7.js ──────────────────── 578b ── 100.0%
+   └ ../scratch/r87-size-after/js/games/registry.js ───────────────── 548b ─── 94.8%
+      └ ../scratch/r87-size-after/js/games/frame.js
+
+  ../scratch/r87-size-after/bundle/c-5YL6QC6F.js ──────────────────── 504b ── 100.0%
+   ├ ../scratch/r87-size-after/js/howto.js ────────────────────────── 393b ─── 78.0%
+   │  └ ../scratch/r87-size-after/js/games/frame.js
+   └ ../scratch/r87-size-after/js/howto-registry.js ─────────────────── 9b ──── 1.8%
+      └ ../scratch/r87-size-after/js/howto.js
+         └ ../scratch/r87-size-after/js/games/frame.js
+
+  ../scratch/r87-size-after/bundle/c-N6G6HPFT.js ──────────────────── 481b ── 100.0%
+
+  ../scratch/r87-size-after/bundle/c-66RWE3VD.js ──────────────────── 462b ── 100.0%
+
+  ../scratch/r87-size-after/bundle/c-I6RGJ7FI.js ──────────────────── 425b ── 100.0%
+
+  ../scratch/r87-size-after/bundle/c-PJZNBKR6.js ──────────────────── 425b ── 100.0%
+
+  ../scratch/r87-size-after/bundle/c-LC7YOLT7.js ──────────────────── 422b ── 100.0%
+
+  ../scratch/r87-size-after/bundle/c-DHGCYEOW.js ──────────────────── 419b ── 100.0%
+   └ ../scratch/r87-size-after/js/explain.js ──────────────────────── 295b ─── 70.4%
+      └ ../scratch/r87-size-after/js/kidplay.js
+
+  ../scratch/r87-size-after/bundle/c-S7VGDD7M.js ──────────────────── 391b ── 100.0%
+   └ ../scratch/r87-size-after/js/testergate.js ───────────────────── 256b ─── 65.5%
+
+  ../scratch/r87-size-after/bundle/c-ZCJSMCTN.js ──────────────────── 334b ── 100.0%
+
+  ../scratch/r87-size-after/bundle/c-DE5SG3ZW.js ──────────────────── 274b ── 100.0%
+
+  ../scratch/r87-size-after/bundle/c-HLEE6MC3.js ──────────────────── 273b ── 100.0%
+
+  ../scratch/r87-size-after/bundle/c-CNC2XRYK.js ──────────────────── 152b ── 100.0%
+
+  ../scratch/r87-size-after/bundle/c-VHNSBD2M.js ──────────────────── 106b ── 100.0%
