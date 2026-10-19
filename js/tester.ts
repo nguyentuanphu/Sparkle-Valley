@@ -29,14 +29,35 @@ import { easyName } from './content/devname.js';
 import { unreachableControl, activeReportPanel, observeGameOpen } from './tester-detection.js';
 import { readReportQueue, persistReportQueue } from './report-outbox.js';
 
+import type { SvMain } from './main.js';
+import type { ReportEntry } from './report-outbox.js';
+type Where = { area: string; place: string; game: string; window: string; x: number; z: number };
+type Problem = { k: string; title: string; status?: string; fixedIn?: string; n?: number; auto?: string; where?: Where };
+type TesterStatus = { open?: Problem[]; mine?: Problem[]; retest?: Problem[]; reports?: number; helped?: number };
+type TesterGame = Pick<SvMain, 'heroes' | 'huds' | 'paused' | 'renderer' | 'regionOf'> & {
+  playGame?: SvMain['playGame'] & { __tester?: boolean };
+  tester?: TesterApi;
+  autoplay?: { running(): boolean; attach?(body: HTMLElement, close: () => void): void; detach?(): void; stop?(): void; start?(items: unknown, speed: string): void; open?(): void };
+  testerRewards?: { apply(status: TesterStatus): void; unmount(): void; corner(): void };
+};
+export type TesterApi = { level: string; openPanel: typeof openPanel; autoReport: typeof autoReport; refresh: typeof refresh; retest: typeof retest; nightly: typeof nightly; settings: typeof settingsRows; status(): TesterStatus | null; unmount(): void };
+type ReportPanel = HTMLElement & { close(): void; selectTab?(tab: string): void };
+declare global {
+  interface Window { __svTesterURL?: string }
+  interface Navigator { deviceMemory?: number; getBattery?(): Promise<{ charging: boolean }> }
+}
+const sayLine = (pair: readonly string[]) => say(pair[0], pair[1]);
+
 const KEY = { acc: 'sv2_tester', out: 'sv2_tester_out', st: 'sv2_tester_status', seen: 'sv2_tester_seen', ap: 'sv2_tester_ap', delivery: 'sv2_report_delivery', copy: 'sv2_tester_copy' };
-const get = (k, d) => { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } };
+const get = <V>(k: string, d: V): V => { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } };
 const put = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch (e) { return false; } };
 const URL_ = () => window.__svTesterURL || 'api/tester';
 const me = () => { try { return localStorage.getItem('sv2_playerid') || ''; } catch (e) { return ''; } };
 const L = pair => T(pair[0], pair[1]);
 
-let G = null, level = '', live = false, offs = [], log = [], errors = [], want = null, lastGame = '', status = get(KEY.st, null), panelOpening = false;
+let G: TesterGame | null = null, level = '', live = false;
+const offs: (() => void)[] = [], log: [number, string, string][] = [], errors: string[] = [];
+let want: (() => void) | null = null, lastGame = '', status: TesterStatus | null = get(KEY.st, null), panelOpening = false;
 const sent = new Map(), counts = new Map(), reporting = new Map();
 let automaticPicture = null;
 // A detector scan can report several buttons. Share its composed-screen capture so
@@ -46,7 +67,7 @@ const autoShot = () => automaticPicture || (automaticPicture = shot().finally(()
 // ---------- what happened in the last 30 seconds ----------
 const note = (k, s) => { const t = Date.now(); log.push([t, k, String(s || '').replace(/\s+/g, ' ').slice(0, 120)]); while (log.length && (t - log[0][0] > C.LIMITS.replay * 1000 || log.length > 400)) log.shift(); };
 const labelOf = n => { const b = n && n.closest && n.closest('button, [role=button], a, .hcard, .sp-stop, .sp-catcard, .chip'); if (!b) return n && n.tagName ? n.tagName.toLowerCase() : ''; return (b.getAttribute('aria-label') || b.textContent || b.className || '').trim().slice(0, 40); };
-const topWindow = () => { const w = [...document.querySelectorAll('.modal, .gl, .theatre, .storybook, .dialog')].filter(x => x.offsetParent || getComputedStyle(x).position === 'fixed').pop(); if (!w) return ''; const h = w.querySelector('h2, h3, .gl-title, .dname, b'); return (w.className.split(' ').slice(0, 2).join(' ') + (h ? ': ' + h.textContent.trim() : '')).slice(0, 80); };
+const topWindow = () => { const w = [...document.querySelectorAll<HTMLElement>('.modal, .gl, .theatre, .storybook, .dialog')].filter(x => x.offsetParent || getComputedStyle(x).position === 'fixed').pop(); if (!w) return ''; const h = w.querySelector('h2, h3, .gl-title, .dname, b'); return (w.className.split(' ').slice(0, 2).join(' ') + (h ? ': ' + h.textContent.trim() : '')).slice(0, 80); };
 const whereNow = () => { const h = G && G.heroes && G.heroes[0], open = document.querySelector('.gl'); return { area: String((G && G.regionOf && G.regionOf[0]) || 'valley'), place: '', game: open ? lastGame : '', window: topWindow(), x: h ? Math.round(h.pos.x) : 0, z: h ? Math.round(h.pos.z) : 0 }; };
 const playersNow = () => (profiles || []).slice(0, 8).map(p => ({ name: nm(p.name || ''), age: p.age || '', coins: farm ? farm.coins : 0, stars: p.stars ? Object.keys(p.stars).length : 0, level: p.difficulty || '' }));
 const osOf = (ua = navigator.userAgent) => /iPhone|iPod/.test(ua) ? 'iOS' : /iPad/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1) ? 'iPadOS' : /Android/.test(ua) ? 'Android' : /Windows/.test(ua) ? 'Windows' : /Mac/.test(ua) ? 'macOS' : 'other';
@@ -103,7 +124,7 @@ const body = (kind, extra) => ({ id: me(), b: BUILD, kind, where: whereNow(), er
 
 // the game reports by itself (the same thing at the same place once in 10 minutes, counted meanwhile)
 // (more: extra fields; more.log, the auto play check's last steps, goes before the tester's own log)
-export async function autoReport(kind, detail, where, more = {}) {
+export async function autoReport(kind: string, detail: string, where?: Where, more: Record<string, unknown> = {}) {
   if (!live) return; const w = where || whereNow(), k = C.keyOf(kind, detail, w.game || w.window || w.area);
   counts.set(k, (counts.get(k) || 0) + 1); const last = sent.get(k);
   if (last && Date.now() - last.at < C.LIMITS.sameAgain) return last.id;
@@ -121,31 +142,33 @@ export async function autoReport(kind, detail, where, more = {}) {
 
 // ---------- watching for problems ----------
 function watch() {
-  const on = (t, k, f, o) => { t.addEventListener(k, f, o); offs.push(() => t.removeEventListener(k, f, o)); };
+  const on = (t: EventTarget, k: string, f: EventListener, o: boolean | AddEventListenerOptions = false) => { t.addEventListener(k, f, o); offs.push(() => t.removeEventListener(k, f, o)); };
   // errors in the game's own code
-  const err = (msg, file, line) => { const f = String(file || '').split('/').pop().split('?')[0]; if (f && !/\.m?js$/.test(f)) return; const s = `${String(msg || 'error').slice(0, 120)} @ ${f || '?'}:${line || 0}`; errors.push(s); if (errors.length > C.LIMITS.errors) errors.shift(); note('error', s); autoReport('error', s); };
-  on(window, 'error', e => err(e.message, e.filename, e.lineno));
-  on(window, 'unhandledrejection', e => { const r = e.reason, m = /\/([\w.-]+\.m?js):(\d+)/.exec(String(r && r.stack || '')); err(r && r.message || String(r), m ? m[1] : 'promise.js', m ? m[2] : 0); });
+  const err = (msg: string, file = '', line: number | string = 0) => { const f = String(file || '').split('/').pop().split('?')[0]; if (f && !/\.m?js$/.test(f)) return; const s = `${String(msg || 'error').slice(0, 120)} @ ${f || '?'}:${line || 0}`; errors.push(s); if (errors.length > C.LIMITS.errors) errors.shift(); note('error', s); autoReport('error', s); };
+  on(window, 'error', (e: ErrorEvent) => err(e.message, e.filename, e.lineno));
+  on(window, 'unhandledrejection', (e: PromiseRejectionEvent) => { const r = e.reason, m = /\/([\w.-]+\.m?js):(\d+)/.exec(String(r && r.stack || '')); err(r && r.message || String(r), m ? m[1] : 'promise.js', m ? m[2] : 0); });
   // taps, and windows that do not close
-  on(document, 'pointerdown', e => note('tap', `${labelOf(e.target)} @${Math.round(e.clientX)},${Math.round(e.clientY)}`), true);
-  on(document, 'click', e => {
+  on(document, 'pointerdown', (e: PointerEvent) => note('tap', `${labelOf(e.target)} @${Math.round(e.clientX)},${Math.round(e.clientY)}`), true);
+  on(document, 'click', (e: MouseEvent) => {
+    if (!(e.target instanceof Element)) return;
     const b = e.target.closest && e.target.closest('.x, .gl-x, [data-a=close], .close, #qDone'); if (!b) return;
-    const box = b.closest('.modal, .gl, .theatre, .storybook'); if (!box) return; const what = labelOf(b) + ' ' + (box.className || '').split(' ').slice(0, 2).join(' ');
+    const box = b.closest<HTMLElement>('.modal, .gl, .theatre, .storybook'); if (!box) return; const what = labelOf(b) + ' ' + (box.className || '').split(' ').slice(0, 2).join(' ');
     setTimeout(() => { if (document.contains(box) && !box.classList.contains('out') && box.offsetParent !== null) autoReport('noclose', what); }, C.LIMITS.closeWait * 1000);
   }, true);
   // windows opening and closing
-  const mo = new MutationObserver(list => { for (const r of list) { r.addedNodes.forEach(n => n.classList && /\b(modal|gl|theatre|storybook|dialog)\b/.test(n.className) && note('open', (n.className + ' ' + ((n.querySelector && n.querySelector('h2, .dname, .gl-title')) || {}).textContent).slice(0, 80))); r.removedNodes.forEach(n => n.classList && /\b(modal|gl|theatre|storybook)\b/.test(n.className) && note('close', n.className.slice(0, 40))); } });
+  const mo = new MutationObserver(list => { for (const r of list) { r.addedNodes.forEach(n => n instanceof Element && n.classList && /\b(modal|gl|theatre|storybook|dialog)\b/.test(n.className) && note('open', (n.className + ' ' + ((n.querySelector && n.querySelector('h2, .dname, .gl-title')) || {}).textContent).slice(0, 80))); r.removedNodes.forEach(n => n instanceof Element && n.classList && /\b(modal|gl|theatre|storybook)\b/.test(n.className) && note('close', n.className.slice(0, 40))); } });
   mo.observe(document.body, { childList: true }); offs.push(() => mo.disconnect());
   // games that do not open
   if (G.playGame && !G.playGame.__tester) {
-    const pg = G.playGame, pending = new Set();
-    G.playGame = Object.assign(function (i, id, ...a) {
+    const pg = G.playGame, pending = new Set<() => void>();
+    G.playGame = Object.assign(function (this: TesterGame, ...args: Parameters<NonNullable<TesterGame['playGame']>>) {
+      const [i, id] = args;
       const requested = String(id || ''); lastGame = requested; note('game', requested);
       // The game rejects a second launch while another activity is open: not a failed open.
       const cancel = document.querySelector('.gl:not(.out)') ? null : observeGameOpen(requested, () => { if (live) autoReport('noopen', requested); }, {wait:C.LIMITS.openWait * 1000});
       if (cancel) pending.add(cancel);
       const timer = setTimeout(() => { if (cancel) pending.delete(cancel); }, C.LIMITS.openWait * 1000 + 10);
-      try { return pg.call(this, i, id, ...a); } catch (error) { cancel?.(); pending.delete(cancel); clearTimeout(timer); throw error; }
+      try { return pg.apply(this, args); } catch (error) { cancel?.(); pending.delete(cancel); clearTimeout(timer); throw error; }
     }, { __tester:true });
     offs.push(() => { pending.forEach(cancel => cancel()); pending.clear(); G.playGame = pg; });
   }
@@ -157,7 +180,8 @@ function watch() {
   // stopped: the game's own code running long (a long task), or the browser not drawing while the window was resized,
   // left or hidden. The report itself and how reports are grouped are unchanged.
   const longs = [], winAt = []; try { const po = new PerformanceObserver(l => { for (const e of l.getEntries()) { longs.push([e.startTime, e.duration]); if (longs.length > 20) longs.shift(); } }); po.observe({ type: 'longtask' }); offs.push(() => po.disconnect()); } catch (e) { }
-  for (const [t, k] of [[window, 'resize'], [window, 'blur'], [window, 'focus'], [document, 'visibilitychange']]) on(t, k, () => { winAt.push([performance.now(), k]); if (winAt.length > 20) winAt.shift(); });
+  const windowEvents: [EventTarget, string][] = [[window, 'resize'], [window, 'blur'], [window, 'focus'], [document, 'visibilitychange']];
+  for (const [t, k] of windowEvents) on(t, k, () => { winAt.push([performance.now(), k]); if (winAt.length > 20) winAt.shift(); });
   const why = (from, to) => { const ran = longs.filter(([a, d]) => a + d > from && a < to).reduce((m, [, d]) => Math.max(m, d), 0), seen = [...new Set(winAt.filter(([a]) => a > from - 500 && a < to).map(([, k]) => k))];
     return `longest script ${Math.round(ran)} ms; window: ${seen.join(', ') || 'no change'}; focus ${document.hasFocus() ? 'yes' : 'no'}`; };
   const tick = t => { if (!live) return; const gap = t - lastF; if (gap > C.LIMITS.freeze * 1000 && document.visibilityState === 'visible' && performance.now() - mounted > 15000) { note('freeze', why(lastF, t)); autoReport('freeze', `${(gap / 1000).toFixed(1)} s`); }
@@ -186,12 +210,12 @@ let mounted = 0;
 // ---------- the picture of the 3D view, right after a frame ----------
 function hookRender() {
   const R = G.renderer; if (!R || R.render.__tester) return; const orig = R.render;
-  R.render = Object.assign(function (...a) { const out = orig.apply(this, a); if (want) { const w = want; want = null; w(); } return out; }, { __tester: true });
+  R.render = Object.assign(function (this: NonNullable<TesterGame['renderer']>, ...a: Parameters<typeof orig>) { const out = orig.apply(this, a); if (want) { const w = want; want = null; w(); } return out; }, { __tester: true });
   offs.push(() => { R.render = orig; });
 }
 
 // ---------- the ladybird and the tester mark ----------
-const paintCount = () => { const n = queue().length, fixed = fixedToSee().length; document.querySelectorAll('.z-lb').forEach(b => { b.querySelector('.lb-n').textContent = n ? String(n) : ''; b.querySelector('.lb-n').hidden = !n; b.querySelector('.lb-ok').hidden = !fixed; }); };
+const paintCount = () => { const n = queue().length, fixed = fixedToSee().length; document.querySelectorAll('.z-lb').forEach(b => { b.querySelector<HTMLElement>('.lb-n').textContent = n ? String(n) : ''; b.querySelector<HTMLElement>('.lb-n').hidden = !n; b.querySelector<HTMLElement>('.lb-ok').hidden = !fixed; }); };
 const fixedToSee = () => { const seen = get(KEY.seen, {}); return ((status && status.mine) || []).filter(p => ['fixed', 'confirmed'].includes(p.status) && !seen[p.k]); };
 function addUI() {
   // (each player's HUD gets the mark under its clock and, at the ladybird level, the ladybird with the zoom buttons; also
@@ -209,7 +233,7 @@ function addUI() {
     z.appendChild(b); offs.push(() => b.remove()); paintCount();
   });
   ensure(); const ev = setInterval(ensure, 1000); offs.push(() => clearInterval(ev));
-  const key = e => { if ((e.key === 'l' || e.key === 'L') && !e.target.closest('input, textarea') && !document.querySelector('.modal.tpanel')) openPanel(0); };
+  const key = e => { if ((e.key === 'l' || e.key === 'L') && !e.target.closest('input, textarea') && !document.querySelector<ReportPanel>('.modal.tpanel')) openPanel(0); };
   addEventListener('keydown', key); offs.push(() => removeEventListener('keydown', key));
   paintCount();
 }
@@ -218,14 +242,14 @@ function toast(s) { const t = el('div', 'testertoast', esc(s)); document.body.ap
 
 // the panel: the picture is taken first, then a kind, a spoken or typed note, Send; or "Already reported → add to it"
 export async function openPanel(i = 0, initialTab = 'tester') {
-  const existing=document.querySelector('.modal.tpanel');
+  const existing=document.querySelector<ReportPanel>('.modal.tpanel');
   if(existing){existing.selectTab?.(initialTab);return existing;}
   if (!live || panelOpening) return;
   panelOpening=true; let pic0,scenePic;
   try {pic0=await shot();scenePic=await shot(true);} finally {panelOpening=false;}
   if(!live)return;
   // Capture what the reporter saw, then clear competing control trays for the form.
-  document.querySelector('.audio-tray')?.close?.();
+  document.querySelector<HTMLElement & { close?(): void }>('.audio-tray')?.close?.();
   document.querySelectorAll('.zoomer.open').forEach(x=>x.classList.remove('open'));
   const where=whereNow();
   const was = G.paused; G.paused = true; SFX.tap && SFX.tap();
@@ -266,7 +290,7 @@ export async function openPanel(i = 0, initialTab = 'tester') {
   card.querySelector('.tp-retry').onclick = () => flush();
   card.querySelectorAll('.tp-k').forEach(b => b.onclick = () => { kind = b.dataset.k; card.querySelectorAll('.tp-k').forEach(x => { x.classList.toggle('on', x === b); x.setAttribute('aria-pressed', x === b); }); SFX.tap && SFX.tap(); });
   const mic = card.querySelector('.tp-mic'); if (mic) mic.onclick = async () => { mic.disabled = true; const heard = await listen({ onPartial: t => { ta.value = t; } }); mic.disabled = false; if (heard && heard[0] !== '\u0000') { ta.value = (ta.value && ta.value !== heard ? ta.value + ' ' : '') + heard; spoken = true; } };
-  const send = join => { if(!enqueue(body(kind, { note: ta.value.trim(), spoken, shot: selectedShot, where, join: join || '' })))return; close(); toast(join ? L(C.TESTER_LINES.already) : L(C.TESTER_LINES.waiting)); say(...(join ? C.TESTER_LINES.already : C.TESTER_LINES.waiting)); };
+  const send = join => { if(!enqueue(body(kind, { note: ta.value.trim(), spoken, shot: selectedShot, where, join: join || '' })))return; close(); toast(join ? L(C.TESTER_LINES.already) : L(C.TESTER_LINES.waiting)); sayLine(join ? C.TESTER_LINES.already : C.TESTER_LINES.waiting); };
   card.querySelector('.tp-send').onclick = () => send('');
   card.querySelectorAll('[data-join]').forEach(b => b.onclick = () => send(b.dataset.join));
   return m;
@@ -298,7 +322,7 @@ async function retest() {
     const tag = 'rt:' + p.k + ':' + BUILD; if (done[tag]) continue;
     if (G.paused || document.querySelector('.gl, .modal, .theatre, .storybook')) return; // (only when the child is free)
     const game = p.where && p.where.game, before = errors.length; let again = false;
-    if (game && G.playGame) { G.playGame(0, game, 'replay'); await new Promise(r => setTimeout(r, 8000)); again = !document.querySelector('.gl') || errors.length > before; document.querySelector('.gl .gl-x')?.click(); }
+    if (game && G.playGame) { G.playGame(0, game, 'replay'); await new Promise(r => setTimeout(r, 8000)); again = !document.querySelector('.gl') || errors.length > before; document.querySelector<HTMLElement>('.gl .gl-x')?.click(); }
     else if (p.auto === 'error') { await new Promise(r => setTimeout(r, 8000)); again = errors.slice(before).some(e => p.title.includes(e.split(' @ ')[0].slice(0, 40))); }
     else continue; // (a problem that cannot be replayed by itself waits for the tester's Yes or Still wrong)
     done[tag]=1;put(KEY.seen,done);tell({ k: p.k, fixed: !again }); note('retest', p.k + (again ? ' came back' : ' fixed'));
@@ -307,7 +331,7 @@ async function retest() {
 
 // ---------- the auto play check by itself, on a new version (at night or while charging) ----------
 async function nightly() {
-  const ap = get(KEY.ap, {}); const rep = get('sv2_autoplay_report', null);
+  const ap = get<{ sent?: number; ran?: string }>(KEY.ap, {}); const rep = get('sv2_autoplay_report', null);
   // Recover legacy reports into the same receipt-backed outbox as a current run.
   if (rep && rep.build && rep.at && !rep.reportIds?.length && ap.sent !== rep.at) {
     const result = await sendAutoplayReport(rep);
@@ -331,7 +355,7 @@ function agreement() {
     <p>${L(A.intro)}</p><ul class="tg-list">${A.points.map(p => `<li>${esc(L(p))}</li>`).join('')}</ul>
     <div class="actions"><button class="btn primary tg-yes">${L(A.accept)}</button><button class="btn tg-no">${L(A.later)}</button></div>`);
   const card = m.querySelector('.card');
-  card.querySelector('.tg-yes').onclick = () => { put(KEY.acc, { at: Date.now(), b: BUILD }); takeCopy(KEY.copy); m.close(); tell({ accepted: true, dev: { label: '' } }); start(); say(...C.TESTER_LINES.welcome); };
+  card.querySelector('.tg-yes').onclick = () => { put(KEY.acc, { at: Date.now(), b: BUILD }); takeCopy(KEY.copy); m.close(); tell({ accepted: true, dev: { label: '' } }); start(); sayLine(C.TESTER_LINES.welcome); };
   card.querySelector('.tg-no').onclick = () => { m.close(); };
 }
 // the Settings card (js/ui.js openQuick) shows a Tester section on a tester device
@@ -345,7 +369,7 @@ export function settingsRows(box, redraw) {
       : T('Coins and game progress return to the saved starting point when tester mode ends, including manual play. Clothes, badges, stickers and grown-up settings stay.', 'Xu và tiến bộ trở về điểm đã lưu khi thôi làm người thử, kể cả chơi bằng tay. Quần áo, huy hiệu, nhãn dán và cài đặt người lớn vẫn giữ.');
   // (owner, 13 Oct AEDT: "tidy up the tester section ... tidier and smarter design") one card: who this device is, the
   // reports as three chips, three big tiles, and "Stop being a tester" held down on its own at the bottom
-  const tile = (k, ic, en, vi, sub) => `<button class="tst-tile" data-t="${k}"><span class="tst-ic">${pic(ic)}</span><b>${T(en, vi)}</b>${sub ? `<small>${sub}</small>` : ''}</button>`;
+  const tile = (k, ic, en, vi, sub = '') => `<button class="tst-tile" data-t="${k}"><span class="tst-ic">${pic(ic)}</span><b>${T(en, vi)}</b>${sub ? `<small>${sub}</small>` : ''}</button>`;
   box.innerHTML = `<div class="qs-sec qs-tester">${on ? `
     <div class="tst-head"><span class="tst-lb">${pic('🐞')}</span><div><b>${T('You are a tester', 'Con là người thử')}</b><small>${esc(BUILD)}${me() ? ' · ' + esc(easyName(me(), settings.lang)) : ''}</small></div></div>
     <div class="tst-stats"><span class="tst-chip"><b>${st.reports || 0}</b>${T('sent', 'đã gửi')}</span><span class="tst-chip ok"><b>${st.helped || 0}</b>${T('helped fix', 'giúp sửa')}</span>${q ? `<span class="tst-chip wait"><b>${q}</b>${T('waiting to send', 'chờ gửi')}</span>` : ''}</div>
@@ -354,7 +378,7 @@ export function settingsRows(box, redraw) {
     <p class="note">${retention}</p>` : `
     <div class="tst-head"><span class="tst-lb">${pic('🐞')}</span><div><b>${T('Sparkle Lab', 'Phòng thử Sparkle')}</b><small>${T('Help find problems: report what looks wrong, and earn badges.', 'Giúp tìm lỗi: báo những gì không ổn, và nhận huy hiệu.')}</small></div></div>
     <button class="btn primary" data-t="join">${T('Become a tester', 'Làm người thử')}</button>`}</div>`;
-  const act = { join: () => { const a = get(KEY.acc, {}); delete a.stopped; put(KEY.acc, a); agreement(); },
+  const act = { join: () => { const a = get<{ stopped?: number }>(KEY.acc, {}); delete a.stopped; put(KEY.acc, a); agreement(); },
     stop: () => { put(KEY.acc, { ...get(KEY.acc, {}), stopped: Date.now() }); if (G.autoplay && G.autoplay.stop) G.autoplay.stop(); stop(); putBack(); redraw && redraw(); },
     mine: () => showMine(), corner: () => G.testerRewards && G.testerRewards.corner(),
     ap: async () => { if (!G.autoplay) { const m = await import('./autoplay.js'); m.mountAutoplay(G); } if (G.autoplay && G.autoplay.open) G.autoplay.open(); } };
@@ -392,7 +416,7 @@ function putBack() {
 function stop() { live = false; offs.splice(0).forEach(f => { try { f(); } catch (e) { } }); setPeeks([]); if (G.testerRewards) G.testerRewards.unmount(); }
 
 // js/testergate.js: this device is a tester at this level ('' = no longer)
-export function mountTester(game, lv) {
+export function mountTester(game: TesterGame, lv: string) {
   G = game; level = lv;
   G.tester = { level, openPanel, autoReport, refresh, retest, nightly, settings: settingsRows, status: () => status, unmount: () => { stop(); delete G.tester; } };
   // (the agreement waits until a child is in the valley, not over the title screen)

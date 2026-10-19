@@ -69,11 +69,15 @@ marketing/source/runvalley.log
 /js/popups.js
 /js/recorder.js
 /js/relay.js
+/js/report-outbox.js
 /js/rideview.js
 /js/roomcode.js
+/js/screencapture.js
 /js/shop.js
 /js/state.js
 /js/studio-position.js
+/js/tester-detection.js
+/js/tester.js
 /js/trade.js
 /js/ui-settings.js
 /js/ui.js

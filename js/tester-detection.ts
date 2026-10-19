@@ -1,7 +1,7 @@
 // @ts-check
 // Reporting observations only: never changes game state or disables real failures.
 /** @param {Element} control @param {Element | null} top */
-export function unreachableControl(control, top = null) {
+export function unreachableControl(control: Element, top: Element | null = null) {
   if (top && !top.contains(control)) return false; // a covered/background panel
   const doc = control.ownerDocument, view = doc.defaultView;
   if (!view || !control.getClientRects().length) return false;
@@ -25,7 +25,7 @@ export function unreachableControl(control, top = null) {
 }
 
 /** @param {Document} doc */
-export function activeReportPanel(doc) {
+export function activeReportPanel(doc: Document) {
   const view = doc.defaultView;
   return [...doc.querySelectorAll('.modal:not(.out), .gl:not(.out), .dialog:not(.out), .wardrobe, .audio-tray, .apbox:not(.embedded)')]
     .filter(x => x.getClientRects().length && !x.hasAttribute('hidden'))
@@ -39,13 +39,14 @@ export function activeReportPanel(doc) {
  * @param {() => void} fail
  * @param {{doc?: Document, wait?: number}} options
  */
-export function observeGameOpen(gameId, fail, { doc = document, wait = 3000 } = {}) {
+export function observeGameOpen(gameId: string, fail: () => void, { doc = document, wait = 3000 }: { doc?: Document; wait?: number } = {}) {
   const existing = new Set(doc.querySelectorAll('.gl'));
   let opened = false, done = false;
-  const matches = (/** @type {Element} */ node) => !existing.has(node) && node.matches('.gl') && node.getAttribute('data-game-id') === gameId;
-  const scan = (/** @type {Node} */ node) => {
-    if (node.nodeType !== 1) return;
-    const element = /** @type {Element} */ (node);
+  const matches = (node: Element) => !existing.has(node) && node.matches('.gl') && node.getAttribute('data-game-id') === gameId;
+  const scan = (node: Node) => {
+    const isElement = (value: Node): value is Element => value.nodeType === 1;
+    if (!isElement(node)) return;
+    const element = node;
     if (matches(element) || [...element.querySelectorAll('.gl')].some(matches)) opened = true;
   };
   const Observer = doc.defaultView?.MutationObserver;
