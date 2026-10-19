@@ -25,6 +25,13 @@ const GAME_MUSIC = {
 };
 const PRIZES = ['🦄', '🦖', '🚀', '🧸', '🎈', '🍭', '🪁', '🐬', '🌈', '👑', '🎨', '🛼', '🪀', '🍦', '🐼'];
 
+import type { Profile, Difficulty } from '../../types/save.js';
+export type GameResult = { won: boolean; stars?: number; next?: 'next' | 'again' | 'stop'; restart?: Difficulty; [key: string]: unknown };
+type WinExtra = Partial<GameResult> & { title?: string; titleVi?: string };
+export type GameOnline = { mine: number; names: string[]; seed?: string; size?: number; move(n: number, value: number): void; onMove?(listener: (seat: number, n: number, value: number) => void): void; next?(n: number, seat: number): Promise<unknown>; all?(n: number): Promise<unknown[]> };
+export type GameOptions = { players: Profile[]; level?: number; style?: string; partnerName?: string | null; little?: boolean; strong?: boolean; nextId?: string | null; online?: GameOnline | null; levelPick?: { value: Difficulty } | null };
+type Cleanup = { onCleanup?(callback: () => void): void };
+
 let current = null;
 export const gameOpen = () => !!current;
 // the auto play check's view of the game (js/games/playwatch.js)
@@ -37,11 +44,11 @@ export { playWatch };
 const LEVELS = [['easy', 'Easy', 'Dễ'], ['medium', 'Medium', 'Vừa'], ['hard', 'Hard', 'Khó']];
 // (r79 learning, owner 16 Oct AEDT, I1) the level a learning game moved to, kept for "Play again" of the same game only
 let carry = null;
-export function openGame(id, { players, level = 1, style = 'shrine', partnerName = null, little = true, strong = false, nextId = null, online = null, levelPick = null }) {
+export function openGame(id: string, { players, level = 1, style = 'shrine', partnerName = null, little = true, strong = false, nextId = null, online = null, levelPick = null }: GameOptions): Promise<GameResult> {
   const def = GAMES[id]; if (!def) return Promise.resolve({ won: false });
   const nextName = nextId && GAMES[nextId] ? GAMES[nextId].name() : '';
   if (current) current.close(false);
-  return new Promise(resolve => {
+  return new Promise<GameResult>(resolve => {
     const layer = el('div', 'gl gl-' + style + (little ? ' little' : ''));
     layer.dataset.gameId = id;
     // (owner, 16 Oct) Studio can hide the game's question line on screen; the game still says it aloud. Its space
@@ -105,7 +112,7 @@ export function openGame(id, { players, level = 1, style = 'shrine', partnerName
       wrong(e, en = 'Try again!', vi = 'Thử lại nhé!') { tell('wrong', e); SFX.no(); hideHand(); streak = 0; misses++; run = 0; if (++roundMisses >= 2) pending = -1; if (e) { e.classList.remove('wrong'); void e.offsetWidth; e.classList.add('wrong'); } mascot('hmm', T('Hmm… try again!', 'Ừm… thử lại nhé!')); if (en !== null) say(en, vi); },
       praise() { const p = [['Great job!', 'Giỏi quá!'], ['Well done!', 'Làm tốt lắm!'], ['Yes! Clever!', 'Đúng rồi! Thông minh quá!'], ['Super!', 'Tuyệt vời!'], ['You got it!', 'Con làm được rồi!']]; const [e, v] = p[Math.floor(Math.random() * p.length)]; say(e, v); mascot('cheer', T(e, v)); },
       get closed() { return closed; },
-      async win(extra = {}) {
+      async win(extra: WinExtra = {}) {
         if (closed) return;
         tell('win'); SFX.fanfare();
         // 1 to 3 stars (little ones always get 3), then a treasure chest pops open with a surprise
@@ -121,7 +128,7 @@ export function openGame(id, { players, level = 1, style = 'shrine', partnerName
         // then the child chooses: the next game, this one again, or stop (after a long wait: stop)
         setTimeout(() => c.classList.add('ask'), 1600);
         // tapping anywhere outside the two buttons finishes (there is no Done button any more)
-        const next = await new Promise(r => { let t = 0, fin = false; const done = k => { if (fin) return; fin = true; clearTimeout(t); removeEventListener('pointerdown', out, true); r(k); }; const out = e => { if (e.target.closest && e.target.closest('.gl-nx, .gl-ad')) return; if (!layer.contains(e.target)) return; /* (audit: the other child's half keeps its taps) */ e.stopPropagation(); e.preventDefault(); SFX.tap(); done('stop'); }; t = setTimeout(() => done('stop'), 30000); setTimeout(() => { if (!fin) addEventListener('pointerdown', out, true); }, 400); c.querySelectorAll('.gl-nx').forEach(b => { b.onclick = e => { e.stopPropagation(); SFX.tap(); done(b.dataset.n); }; }); });
+        const next = await new Promise(r => { let t: ReturnType<typeof setTimeout> | 0 = 0, fin = false; const done = k => { if (fin) return; fin = true; clearTimeout(t); removeEventListener('pointerdown', out, true); r(k); }; const out = e => { if (e.target.closest && e.target.closest('.gl-nx, .gl-ad')) return; if (!layer.contains(e.target)) return; /* (audit: the other child's half keeps its taps) */ e.stopPropagation(); e.preventDefault(); SFX.tap(); done('stop'); }; t = setTimeout(() => done('stop'), 30000); setTimeout(() => { if (!fin) addEventListener('pointerdown', out, true); }, 400); c.querySelectorAll('.gl-nx').forEach(b => { b.onclick = e => { e.stopPropagation(); SFX.tap(); done(b.dataset.n); }; }); });
         if (next === 'again' && def.learn) carry = { id, shift: Math.max(-1, Math.min(1, shift + pending)) };
         finish(true, Object.assign({ stars: n, next }, extra));
       }
@@ -175,7 +182,7 @@ export function openGame(id, { players, level = 1, style = 'shrine', partnerName
       online.onMove && online.onMove((s, n, mv) => { if (s === online.mine) return; if (mv >= 5000) { if (!done.includes(s)) done.push(s); score[s] = mv - 5000; if (done.length === 1 && !closed) mascot('cheer', T(`${online.names[s]} finished!`, `${online.names[s]} xong rồi!`)); } else score[s] = Math.max(score[s], mv); draw(); });
       const right0 = api.right, win0 = api.win;
       api.right = e => { right0(e); score[online.mine]++; draw(); send(Math.min(4999, score[online.mine])); };
-      api.win = (extra = {}) => { done.push(online.mine); draw(); send(5000 + Math.min(4999, score[online.mine])); const first = done[0] === online.mine, title = first ? T('You finished first!', 'Con xong đầu tiên!') : T(`You finished! ${online.names[done[0]]} was first.`, `Con xong rồi! ${online.names[done[0]]} xong trước.`); return win0(Object.assign({}, extra, { title, titleVi: title })); };
+      api.win = (extra: WinExtra = {}) => { done.push(online.mine); draw(); send(5000 + Math.min(4999, score[online.mine])); const first = done[0] === online.mine, title = first ? T('You finished first!', 'Con xong đầu tiên!') : T(`You finished! ${online.names[done[0]]} was first.`, `Con xong rồi! ${online.names[done[0]]} xong trước.`); return win0(Object.assign({}, extra, { title, titleVi: title })); };
     }
     // three right in a row: a combo with extra stars
     function combo(k) {
@@ -192,9 +199,10 @@ export function openGame(id, { players, level = 1, style = 'shrine', partnerName
     // Ông Cú cheers in the corner; every right answer sends a star flying to the star counter.
     let stars = 0;
     const mascotEl = layer.querySelector('.mascot'), bubbleEl = layer.querySelector('.mascot-say'), starEl = layer.querySelector('.starbox b');
+    let mascotTimer: ReturnType<typeof setTimeout> | 0 = 0;
     function mascot(kind, text) {
       mascotEl.classList.remove('cheer', 'hmm'); void mascotEl.offsetWidth; mascotEl.classList.add(kind);
-      if (text) { bubbleEl.textContent = text; bubbleEl.classList.add('on'); clearTimeout(mascot._t); mascot._t = setTimeout(() => bubbleEl.classList.remove('on'), 1400); }
+      if (text) { bubbleEl.textContent = text; bubbleEl.classList.add('on'); clearTimeout(mascotTimer); mascotTimer = setTimeout(() => bubbleEl.classList.remove('on'), 1400); }
     }
     function reward(e) {
       const r = e && e.getBoundingClientRect ? e.getBoundingClientRect() : { left: innerWidth / 2, top: innerHeight / 2, width: 0, height: 0 };
@@ -207,7 +215,7 @@ export function openGame(id, { players, level = 1, style = 'shrine', partnerName
       const lines = [['Yay!', 'Hoan hô!'], ['Great!', 'Giỏi quá!'], ['Wow!', 'Oa!'], ['Clever!', 'Thông minh!'], ['Yes!', 'Đúng rồi!']];
       const l = lines[Math.floor(Math.random() * lines.length)]; mascot('cheer', T(l[0], l[1]));
     }
-    function finish(won, extra = {}) {
+    function finish(won: boolean, extra: Partial<GameResult> = {}) {
       if (closed) return; closed = true; current = null;
       cleanups.forEach(f => { try { f(); } catch (e) { } });
       layer.classList.add('out'); setTimeout(() => layer.remove(), 300);
@@ -241,19 +249,22 @@ export function burstConfetti(parent) {
 }
 
 // Helper: wait for one of the given elements to be tapped. Returns the element.
-export function tapOne(els, api) {
-  return new Promise(res => {
-    const h = e => { els.forEach(x => x.removeEventListener('click', h)); res(e.currentTarget); };
-    // Lightweight callers/test fixtures can omit cleanup; real game frames provide it.
-    if (typeof api?.onCleanup === 'function') api.onCleanup(() => { els.forEach(x => x.removeEventListener('click', h)); res(null); });
-    els.forEach(x => x.addEventListener('click', h));
+export function tapOne<E extends EventTarget>(els: E[], api?: Cleanup): Promise<E | null> {
+  return new Promise(resolve => {
+    const handlers = new Map<E, EventListener>();
+    const done = (element: E | null) => { for (const [target, handler] of handlers) target.removeEventListener('click', handler); resolve(element); };
+    if (typeof api?.onCleanup === 'function') api.onCleanup(() => done(null));
+    for (const element of els) {
+      if (handlers.has(element)) continue;
+      const handler = () => done(element); handlers.set(element, handler); element.addEventListener('click', handler);
+    }
   });
 }
 // Keep asking until the right one is tapped. check(el) -> boolean.
 // Little ones (under 5) who wait 10 seconds, or miss twice, see the right answer wiggle gently.
 export const HINT_AFTER = 10000;
-export async function untilRight(api, els, check) {
-  let misses = 0, t = 0;
+export async function untilRight<E extends Element>(api, els: E[], check: (element: E) => boolean): Promise<E | null> {
+  let misses = 0; let t: ReturnType<typeof setTimeout> | 0 = 0;
   const hint = () => { const r = els.find(x => check(x)); if (r && !api.closed) r.classList.add('hint'); };
   const arm = () => { clearTimeout(t); if (api.little) t = setTimeout(hint, misses >= 2 ? 0 : HINT_AFTER); };
   try {
@@ -266,9 +277,9 @@ export async function untilRight(api, els, check) {
     }
   } finally { clearTimeout(t); if (playWatch.ask && playWatch.ask.els === els) playWatch.ask = null; }
 }
-export function choiceButtons(api, items, render, cls = 'choice') {
+export function choiceButtons<V>(api: { stage: Element }, items: V[], render: (value: V) => string, cls = 'choice'): (HTMLButtonElement & { _v: V })[] {
   const row = el('div', 'choices');
-  const els = items.map(it => { const b = el('button', cls); b.innerHTML = render(it); b._v = it; row.appendChild(b); return b; });
+  const els = items.map(it => { const button: HTMLButtonElement = el('button', cls); const b = Object.assign(button, { _v: it }); b.innerHTML = render(it); row.appendChild(b); return b; });
   api.stage.appendChild(row);
   return els;
 }

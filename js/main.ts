@@ -172,7 +172,7 @@ type SvWalkClose = HTMLElement & { _from?: { x: number, z: number }[], _autoClos
 type SvPerson = { av: { root: THREE.Object3D, anim?(st: string, t: number, sp: number): void }, tag: THREE.Object3D, pos: THREE.Vector3, yaw: number };
 type SvFriend = SvPerson & { id: string, name: string, st: string, look: Record<string, unknown>, photoURL: string, [k: string]: unknown };
 /** a friend's game played online: who sits where, and which seat is mine (js/netgames.ts) */
-type SvOnline = { names: string[], mine: number, [k: string]: unknown };
+type SvOnline = import('./games/frame.js').GameOnline;
 /** something in the valley a child can walk up to and use (a person, a game, a door…) */
 interface SvItem { id?: string, x: number, z: number, r?: number, icon?: string, bubble?: string, slot?: string, auto?: boolean,
   y?: number, label?: () => string, short?: () => string, visible?: (h?: SvHeroT) => boolean, act(h: SvHeroT, game?: SvGame): void | Promise<unknown>, npc?: unknown, st?: unknown, [k: string]: unknown }

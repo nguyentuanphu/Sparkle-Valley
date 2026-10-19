@@ -233,7 +233,7 @@ register({
     for (let r = 0; r < rounds; r++) {
       api.dots(rounds, r); api.stage.innerHTML = '';
       const court = el('div', 'hop'); api.stage.appendChild(court);
-      const sq = {};
+      const sq: Record<number, HTMLButtonElement & { _n: number }> = {};
       LAYOUT.slice().reverse().forEach(row => { const rr = el('div', 'hop-row'); row.forEach(n => { const b = el('button', 'hop-sq', `<b>${n}</b>`); b._n = n; sq[n] = b; rr.appendChild(b); }); court.appendChild(rr); });
       const stone = 1 + Math.floor(Math.random() * N);
       await wait(400); api.sfx.whoosh();
