@@ -1,0 +1,13 @@
+{
+  "runtimeCommit": "50c1a344",
+  "bytes": 266930863,
+  "sha256": "1798a644a50befd8d8b934994ea9d0d6f16a0c5947d8ac5b4f779e673adeaac5",
+  "archiveIntegrity": "pass",
+  "offlineFiles": 199,
+  "missingOfflineFiles": [],
+  "animalMp3s": 10,
+  "version": "sv-2026-10-18-r87",
+  "bundle": "pass",
+  "mainGraphRawMB": 2.078,
+  "mainGraphGzipEstimateKiB": 702
+}

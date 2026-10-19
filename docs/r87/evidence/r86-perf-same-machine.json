@@ -1,0 +1,1 @@
+{"perf":{"ok":false,"note":"{\"over\":[\"PERF-001 worldMs 10659 > 6600\"],\"got\":{\"startMB\":2.611916,\"worldMs\":10659,\"drawCalls\":364,\"triangles\":726891,\"drawCallsHome\":460,\"frames\":6,\"texturePx\":1024,\"heapGrowMB\":0,\"domGrow\":2,\"games\":10},\"errs\":[]}"}}

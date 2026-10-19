@@ -1,0 +1,93 @@
+{
+  "scope": "fresh contexts, unpacked world-build time; same content, ABBA order; not the cached perf/startup verdict",
+  "rows": [
+    {
+      "label": "r87",
+      "trial": 0,
+      "build": "r87",
+      "map": "painted",
+      "steps": {
+        "start": 873,
+        "world": 6204,
+        "people": 6500,
+        "town": 7305,
+        "roads": 8315,
+        "pretraffic": 9030,
+        "traffic": 9042,
+        "things": 11098,
+        "wideland": 11481,
+        "levelled": 11783,
+        "roadside": 12533,
+        "solids": 12547,
+        "ready": 12993,
+        "shaders": 14737
+      }
+    },
+    {
+      "label": "r86",
+      "trial": 0,
+      "build": "r86",
+      "map": "painted",
+      "steps": {
+        "start": 903,
+        "world": 5933,
+        "people": 6170,
+        "town": 6891,
+        "roads": 7856,
+        "pretraffic": 10582,
+        "traffic": 10597,
+        "things": 17330,
+        "wideland": 17683,
+        "levelled": 17995,
+        "roadside": 18836,
+        "solids": 18876,
+        "ready": 20004,
+        "shaders": 21842
+      }
+    },
+    {
+      "label": "r86",
+      "trial": 1,
+      "build": "r86",
+      "map": "painted",
+      "steps": {
+        "start": 844,
+        "world": 4584,
+        "people": 4827,
+        "town": 5787,
+        "roads": 7111,
+        "pretraffic": 8044,
+        "traffic": 8059,
+        "things": 10164,
+        "wideland": 10438,
+        "levelled": 10719,
+        "roadside": 11268,
+        "solids": 11314,
+        "ready": 11706,
+        "shaders": 12979
+      }
+    },
+    {
+      "label": "r87",
+      "trial": 1,
+      "build": "r87",
+      "map": "painted",
+      "steps": {
+        "start": 894,
+        "world": 5788,
+        "people": 5973,
+        "town": 6517,
+        "roads": 7339,
+        "pretraffic": 7965,
+        "traffic": 7980,
+        "things": 9982,
+        "wideland": 10259,
+        "levelled": 10551,
+        "roadside": 11064,
+        "solids": 11073,
+        "ready": 11402,
+        "shaders": 12635
+      }
+    }
+  ]
+}
