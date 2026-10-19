@@ -22,3 +22,12 @@ Finish reporting evidence and push a draft review checkpoint. Then convert the s
 - Final phone/short/landscape/tablet/computer and expanded-picture images inspected. Before/after images, pixel evidence and results saved under docs/repair-reporting-20261019/.
 - Completed receipt batches refresh server report status. No raw captures go to a live backend during tests; fixtures use synthetic identities and intercepted endpoints.
 - Related suite: 6/6 pass. Final focused suite: 2/2 pass. Full GitHub suite remains required. No runtime/deployment version assigned; pending owner version pop-up remains unanswered.
+
+## Batch 2: game completion and quest/audio investigation
+
+- Shared frame claim ecb3b70d; unchanged rename 0f4c56e8; typed game/result/online and choice-button contracts 4f61a7b7. Type checking reaches zero before changing completion. Existing hopscotch map annotated as a dependency. Browser build now includes 57 TypeScript sources.
+- Implemented, not yet verified: world/NPC/shrine completions return after the celebration; Play/Pad/Simple retain choices. Difficulty restart retains the shrine origin and its orb; Next retains Simple origin. Closing a celebration cancels its listeners/timers and cannot give a second result.
+- New gameflow check uses actual counting/number-game answers and the real shrine, Play menu and Simple road. First run passed shrine/two-player/folk assertions but left an earned storybook in front of the Replay button. Second run fixed the book path but raced a self-dismissing reward. Both runs failed; neither is counted as a pass. The fixture now uses real book controls and waits for timed rewards; third run in progress.
+- Read #361/#362/#363/#365 in full. Source investigation found autoplay does not see handpad rope controls; Cô Tam's quest target remains at her after the lesson starts; its retry limit also counts legitimate intermediate actions as failed attempts. These are hypotheses to reproduce before repair.
+- Vietnamese leaf-found, frog and rope lines have both recordings. Fixed companion name “Rồng con” is absent from the VI manifest/files (and EN use of that Vietnamese name is absent). Actual playback will be checked before accepting the missing-voice fix. No local Azure credential; use the existing isolated GitHub recording workflow after committing the source/line list.
+- Reporting full GitHub run 39237648036 on 7c28d21a remains in progress. No new version or deployment is assumed.
