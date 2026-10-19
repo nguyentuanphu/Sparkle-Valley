@@ -91,3 +91,7 @@ The handbook's hard rules still hold: bilingual with `T()`, no phone emoji (draw
 - GU-4 Same kit pieces, calmer: fewer colours, text 15-17 px, buttons at least 44 px.
 - GU-5 A change saves at once and shows a small "Saved" tick.
 - GU-6 A new setting goes into an existing section; a new section needs the owner's yes.
+
+## Status reconciliation, 20 October 2026 AEDT
+
+The wider audit found no later recorded blanket approval for the existing-screen restyle. Selected r79 fixes and new Sticker/Adventure screens were delivered; that does not approve every mockup rule. Keep the fixed-window requirement and all existing HUD functions while preparing the proposal for review. The separate ten drawing games remain missing helper work. [Expanded drawing/design audit](../pending-audit-20261020/drawings-and-design.md). No redesign is implemented by this note.

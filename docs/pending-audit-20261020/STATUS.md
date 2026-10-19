@@ -4,6 +4,8 @@ Audit: 20 October 2026 AEDT. Runtime work remains paused at the owner's request.
 
 **Live: r87**, main `de8cc0ed`; live service worker independently checked as `sv-2026-10-18-r87`. **Saved candidate: r88**, `work/bugs-typescript-20261019`, runtime head `2e5e09e0`, [draft PR #400](https://github.com/nguyentuanphu/Sparkle-Valley/pull/400). The owner already chose r88 and approved the combined bug/TypeScript plan. The audit is saved separately on `docs/pending-audit-20261020` so it does not restart the candidate's current full suite.
 
+**Expanded drawing/design audit (20 October 2026, 7:18 AM AEDT):** the earlier list omitted a separate **UI-redesign approval**, the full **T5/T6 visual/animal stages**, broad **acted/interactive how-to rollout**, illustrated-handbook freshness and a **stale standalone Studio download in Drive**. [Drawings, sources, exact gaps and approval scope](drawings-and-design.md). These are distinct from the ten missing drawing games.
+
 ## Scope and limits
 
 - Reconciled the board, Release decisions, r87/r88 handoffs, combined plan, original 59-point owner repair and ten extensions, earlier task/round briefs, feature rollout schedule, relevant current source and helper-branch notes.
@@ -17,6 +19,10 @@ Audit: 20 October 2026 AEDT. Runtime work remains paused at the owner's request.
 
 | Work | Actual state / remaining action | Is new owner implementation approval required? |
 | --- | --- | --- |
+| **UI redesign drawings** | Fourteen canvas boards/comparisons exist. Full existing-screen restyle remains marked owner review; partial r79 fixes and new Sticker/Adventure screens already shipped. Resolve omitted HUD controls and the bounce-vs-fixed-window conflict before a concrete implementation plan. | **Yes: full existing-screen restyle still needs recorded owner approval.** |
+| **T5 world art / T6 roaming animals** | Approved concept/prototypes and partial live work exist, but no complete asset/species delivery and visual acceptance ledger. Keep houses/towns/landmarks/characters/animals/trees and extended animal behaviours explicit. | Direction already approved; scoped implementation/verification remains, not a new choice of map concepts. |
+| **Full How to play film/demo coverage** | Four acted guides and two real-game demos exist; broader original guide rollout remains partial. Not the same as the delivered story films. | Retain approved direction; select/review remaining content batches concretely. |
+| **Standalone Drive Studio executable** | Drive file is 86,414,336 bytes from 12 Oct; published r87 is 93,811,712 bytes from 19 Oct. Update/verify the intended standalone download; no file changed in this audit. | Maintenance, not new design approval. |
 | r88 reporting and game completion, #372/#375 plus 23 offscreen issues | Source/evidence saved in PR400. Reporting checkpoint passed 223/223; completion checkpoint passed 222/225. Preserve receipt-backed retries, full-frame capture and source-aware completion. Resolve failed checks, then device/release retests. | No: combined plan approved. Deployment is separate. |
 | CI failures and unreliable retries | Known red on aff79ee3: gameflow, gamewinlayout and testerreport, all still red after retry. ownerfamily and filmmusic passed only on retry. Latest gameflow phase diagnostics are not rechecked; latest local testerreport fails a different panel-visibility wait. Investigate old-freeze selection/cooldown, stale-token/poll race and async theatre readiness without weakening assertions. The unrepaired new gate baseline can also fail the new full run; do not assume only the earlier three failures remain. | No. These are engineering/verification work. |
 | Lantern/turtle quests and companion voices, #361–#363/#365 | Rope, turtle progress/retry and deferred-film fixes have a 464 s focused pass. Six clips integrated. Later scoped-dialogue-plan changes and stronger other-child-plan guard are not browser-retested. Related checks 7/8; original whole-autoplay shrine approach remains to rerun after the footprint change. | No. |
@@ -56,6 +62,7 @@ These are documented later extensions, not hidden current bugs or a promise that
 
 | Item | Required input / approval | Current position |
 | --- | --- | --- |
+| **UI redesign drawings** | Review/approve the complete existing-screen restyle, including retained HUD controls. Reconcile fixed-window rules first. | Separate from ten drawing games; repository and Drive README still explicitly mark owner review. See drawings-and-design.md. |
 | r88 deployment | The round's explicit yes, deploy after a complete reviewable report/zip. | Not approved and not ready to ask. r87 approval does not carry forward. |
 | Family-device general rollout | Confirm whether the required two-device production test/design review was completed and whether the live on-switch reflects the owner's choice. | Already on in the public live configuration; acceptance history is missing. No switch mutation made. |
 | Road appearance #34 | Visual confirmation that the shipped palettes/kerbs meet Concept D, or specific remaining differences. | Code shipped in r85/r87; issue still open. This is acceptance, not another approval to fix the approved bug. |

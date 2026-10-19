@@ -1,0 +1,20 @@
+{
+  "driveChecked": true,
+  "uiReadmeConfirmsOwnerReview": true,
+  "matchingDrawingPackageFound": false,
+  "driveStudio": {
+    "bytes": 86414336,
+    "modifiedUTC": "2026-10-12T00:48:32.502Z"
+  },
+  "publishedR87Studio": {
+    "bytes": 93811712,
+    "sha256": "6d29b06846b6f21c06fd996770ed0e67f759fa3bf5b2933671c8c666f4923e6d"
+  },
+  "privateClaudeArtifactContentRetrieved": false,
+  "notes": [
+    "Drive project root, mirror branch folders, UI redesign folder and standalone Studio folder inspected.",
+    "Targeted drawing-games/Drawings/ec932129 filename search returned no matches; this is not a complete read of every Drive file.",
+    "Claude artifact URLs returned their application shell only; repository copies are the readable design sources.",
+    "No Drive files, feature settings or runtime source changed."
+  ]
+}

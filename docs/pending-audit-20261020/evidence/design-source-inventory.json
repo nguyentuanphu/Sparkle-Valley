@@ -1,0 +1,236 @@
+{
+  "sourceFiles": [
+    {
+      "path": "docs/ui-redesign-20261016/README.md",
+      "bytes": 7063
+    },
+    {
+      "path": "docs/ui-redesign-20261016/canvas/Adventure.dc.html",
+      "bytes": 8656
+    },
+    {
+      "path": "docs/ui-redesign-20261016/canvas/Bag.dc.html",
+      "bytes": 6162
+    },
+    {
+      "path": "docs/ui-redesign-20261016/canvas/CmpAdventure.dc.html",
+      "bytes": 4932
+    },
+    {
+      "path": "docs/ui-redesign-20261016/canvas/CmpBag.dc.html",
+      "bytes": 5060
+    },
+    {
+      "path": "docs/ui-redesign-20261016/canvas/CmpGrownups.dc.html",
+      "bytes": 5009
+    },
+    {
+      "path": "docs/ui-redesign-20261016/canvas/CmpHUD.dc.html",
+      "bytes": 5149
+    },
+    {
+      "path": "docs/ui-redesign-20261016/canvas/CmpMirror.dc.html",
+      "bytes": 4891
+    },
+    {
+      "path": "docs/ui-redesign-20261016/canvas/CmpRules.dc.html",
+      "bytes": 6418
+    },
+    {
+      "path": "docs/ui-redesign-20261016/canvas/CmpStickers.dc.html",
+      "bytes": 4918
+    },
+    {
+      "path": "docs/ui-redesign-20261016/canvas/Grownups.dc.html",
+      "bytes": 9267
+    },
+    {
+      "path": "docs/ui-redesign-20261016/canvas/HUD.dc.html",
+      "bytes": 11090
+    },
+    {
+      "path": "docs/ui-redesign-20261016/canvas/Main.dc.html",
+      "bytes": 8983
+    },
+    {
+      "path": "docs/ui-redesign-20261016/canvas/Mirror.dc.html",
+      "bytes": 6835
+    },
+    {
+      "path": "docs/ui-redesign-20261016/canvas/Stickers.dc.html",
+      "bytes": 7669
+    },
+    {
+      "path": "docs/ui-redesign-20261016/canvas/canvas.json",
+      "bytes": 2370
+    },
+    {
+      "path": "docs/ui-redesign-20261016/now/computer-grownups.png",
+      "bytes": 359721
+    },
+    {
+      "path": "docs/ui-redesign-20261016/now/phone-album.png",
+      "bytes": 106053
+    },
+    {
+      "path": "docs/ui-redesign-20261016/now/phone-bag.png",
+      "bytes": 134841
+    },
+    {
+      "path": "docs/ui-redesign-20261016/now/phone-hud.png",
+      "bytes": 216217
+    },
+    {
+      "path": "docs/ui-redesign-20261016/now/phone-log.png",
+      "bytes": 150343
+    },
+    {
+      "path": "docs/ui-redesign-20261016/now/phone-wardrobe.png",
+      "bytes": 134607
+    },
+    {
+      "path": "docs/concept-d/art-animals.jpg",
+      "bytes": 30912
+    },
+    {
+      "path": "docs/concept-d/art-character.jpg",
+      "bytes": 29946
+    },
+    {
+      "path": "docs/concept-d/art-sydney.jpg",
+      "bytes": 47846
+    },
+    {
+      "path": "docs/concept-d/art-town-street.jpg",
+      "bytes": 52176
+    },
+    {
+      "path": "docs/concept-d/art-trees-bamboo.jpg",
+      "bytes": 23816
+    },
+    {
+      "path": "docs/concept-d/art-village-houses.jpg",
+      "bytes": 43591
+    },
+    {
+      "path": "docs/concept-d/bike-after.jpg",
+      "bytes": 61187
+    },
+    {
+      "path": "docs/concept-d/bike-before.jpg",
+      "bytes": 59963
+    },
+    {
+      "path": "docs/concept-d/face-all.jpg",
+      "bytes": 130517
+    },
+    {
+      "path": "docs/concept-d/index.html",
+      "bytes": 150641
+    },
+    {
+      "path": "docs/concept-d/now-air.jpg",
+      "bytes": 152186
+    },
+    {
+      "path": "docs/concept-d/now-bridge-dragon.jpg",
+      "bytes": 53708
+    },
+    {
+      "path": "docs/concept-d/now-dirt-village.jpg",
+      "bytes": 66434
+    },
+    {
+      "path": "docs/concept-d/now-lake-ferry.jpg",
+      "bytes": 46991
+    },
+    {
+      "path": "docs/concept-d/now-map.jpg",
+      "bytes": 68467
+    },
+    {
+      "path": "docs/concept-d/now-river.jpg",
+      "bytes": 58576
+    },
+    {
+      "path": "docs/concept-d/now-road-junction.jpg",
+      "bytes": 63339
+    },
+    {
+      "path": "docs/concept-d/now-road-town.jpg",
+      "bytes": 83589
+    },
+    {
+      "path": "docs/concept-d/poles-off.jpg",
+      "bytes": 49002
+    },
+    {
+      "path": "docs/concept-d/poles-on.jpg",
+      "bytes": 52143
+    },
+    {
+      "path": "docs/concept-d/proto-animals.jpg",
+      "bytes": 43470
+    },
+    {
+      "path": "docs/concept-d/proto-scene.jpg",
+      "bytes": 82106
+    },
+    {
+      "path": "docs/concept-d/proto-trees.jpg",
+      "bytes": 50445
+    },
+    {
+      "path": "docs/concept-d/story-howto-2.jpg",
+      "bytes": 27530
+    },
+    {
+      "path": "docs/concept-d/story-prologue.jpg",
+      "bytes": 24592
+    },
+    {
+      "path": "docs/concept-d/story-tale-1.jpg",
+      "bytes": 43889
+    },
+    {
+      "path": "docs/concept-d/story-tale-2.jpg",
+      "bytes": 35397
+    },
+    {
+      "path": "docs/concept-d/wires.jpg",
+      "bytes": 90679
+    },
+    {
+      "path": "tools/art-proto/index.html",
+      "bytes": 341
+    },
+    {
+      "path": "tools/art-proto/proto.mjs",
+      "bytes": 15104
+    },
+    {
+      "path": "tools/art-proto/vehicles.html",
+      "bytes": 598
+    },
+    {
+      "path": "tools/art-proto/vehicles.mjs",
+      "bytes": 4494
+    }
+  ],
+  "uiCanvasHtmlCount": 14,
+  "corePlanLaterStages": [
+    "T5: art direction place by place, with a speed check after each.",
+    "T6: riding and roaming animals: zones from map.js, no dangerous animals near paths."
+  ],
+  "currentActedGuides": [
+    "oanquan",
+    "counting",
+    "marbles",
+    "memory"
+  ],
+  "currentRealGameDemos": [
+    "marbles",
+    "memory"
+  ],
+  "verificationScope": "Static source/document/Drive audit, not new runtime or complete model-by-model visual acceptance."
+}
