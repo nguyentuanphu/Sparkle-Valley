@@ -1,3 +1,5 @@
+import type { StoryChapter, StoryStep, StoryCurrent, StoryActions, LanternProgress } from '../types/story.js';
+import type { Profile } from '../types/save.js';
 // Đèn Lồng Thung Lũng, the main story (round R): runs the chapters in js/content/chapters.js. The child's goal is the
 // first step not yet done in the first chapter Studio has released (switches story_<chapter>); when none is open the
 // valley's old adventure list (js/data.js QUESTS) is the goal as before. Progress: profile.lanterns =
@@ -26,16 +28,16 @@ const V = VILLAGE;
 // schedules it in Studio, owner 10 Oct)
 // (batch rollout) a chapter held back or switched off stays open for a child who already played some of it
 const released = ch => keptOn('story_' + ch.id, undefined, (RELEASES.find(r => r.id === 'story_' + ch.id) || { def: true }).def);
-const st = p => { const s = p.lanterns = p.lanterns && typeof p.lanterns === 'object' ? p.lanterns : {}; s.done = s.done || {}; s.chapters = s.chapters || {}; return s; };
+const st = (p: Profile): LanternProgress => { const s = p.lanterns = p.lanterns && typeof p.lanterns === 'object' ? p.lanterns : {}; s.done = s.done || {}; s.chapters = s.chapters || {}; return s; };
 const unnamed = s => String(s).replace(/,?\s*\{name\}/g, '');
 const big = p => p.age === 'big';
 const chOf = id => (CHAPTERS.find(c => c.steps.some(s => s.id === id)) || {}).id; // (a step's chapter)
 // the game a step waits for: an under-5 plays the one made for them (A11Y-006)
-const gamesOf = (p, s) => (!big(p) && s.gameLittle) || s.game || [];
+const gamesOf = (p: Profile, s: StoryStep) => (!big(p) && s.gameLittle) || s.game || [];
 const fill = (s, p) => String(s).replace(/\{name\}/g, p.name || '').replace(/\{companion\}/g, COMPANIONS[st(p).companion || 'firefly'].name);
 
 export function createLanterns(G, { dialog, say, reward, save, openTheatre }) {
-  const mods = {}, loadingCh = {}; // (each later chapter's places, built when needed: loadCh below)
+  const mods: Record<string, ReturnType<typeof import('./content/chapter2hanoi.js').create>> = {}, loadingCh = {}; // (each later chapter's places, built when needed: loadCh below)
   const { scene, world } = G;
   const stepDone = (p, s) => {
     const L = st(p);
@@ -45,7 +47,7 @@ export function createLanterns(G, { dialog, say, reward, save, openTheatre }) {
     return false;
   };
   // the step a child is on (null when every released chapter is done, or the next chapter is not out yet)
-  function current(p) {
+  function current(p: Profile): StoryCurrent | null {
     for (const ch of CHAPTERS) {
       if (!released(ch)) return null;
       for (const s of ch.steps) if (!stepDone(p, s)) return { ch, s };
@@ -99,7 +101,7 @@ export function createLanterns(G, { dialog, say, reward, save, openTheatre }) {
 
   // ---------- something to do on each step (Studio switch storyActions, owner 9 Oct) ----------
   const actions = () => featureOn('storyActions', true);
-  const A = p => { const L = st(p); L.act = L.act || {}; return L.act; };
+  const A = (p: Profile): StoryActions => { const L = st(p); L.act = L.act || {}; return L.act; };
   // each chapter's landmark: where the lantern is found, where it is hung (and the rope), its lights, and what follows
   const places = {
     ch1: { front, lanternAt, rope: { x: dinhAt[0] + Math.sin(face) * 3.1, z: dinhAt[1] + Math.cos(face) * 3.1, y0: heightAt(front[0], front[1]) + .5, y1: dinh.position.y + 3 }, paint: on => setLit(on) }
@@ -118,7 +120,7 @@ export function createLanterns(G, { dialog, say, reward, save, openTheatre }) {
   }).catch(e => { loadingCh[id] = null; console.warn('chapter', id, e); }));
   const wanted = id => released({ id }) && G.heroes.some(h => st(h.profile).done[LATER[id][2]]);
   const onStreet = (x, z) => Object.values(mods).some(M => M.onStreet && M.onStreet(x, z, 1));
-  const catching = s => actions() && !!(s.ribbons || s.lights);
+  const catching = (s: StoryStep) => actions() && !!(s.ribbons || s.lights);
   // wind ribbons on the way into the village (chapter 1) and lantern lights on the way to Hà Nội (chapter 2): walk
   // through them or tap them
   const ribbonStep = CHAPTERS.flatMap(c => c.steps).find(s => s.ribbons);
@@ -205,7 +207,7 @@ export function createLanterns(G, { dialog, say, reward, save, openTheatre }) {
 
   // ---------- buttons the story puts in the valley (only for the child on that step) ----------
   // (chapter 1's now; each later chapter's when its file brings its steps: loadCh)
-  const addButtons = ch => { for (const s of ch.steps) {
+  const addButtons = (ch: StoryChapter) => { for (const s of ch.steps) {
     if (s.talk) {
       // (no spot yet: no position, so the button is never in reach)
       const near = () => { const q = spots[s.at] && spots[s.at](); return q || { x: NaN, z: NaN }; };
@@ -306,7 +308,7 @@ export function createLanterns(G, { dialog, say, reward, save, openTheatre }) {
 
   // the quest the game's goal bar, arrow, Pad and Simple screen show
   // (an under-5 is told the little ones' version when a step has one)
-  const asQuest = (p, c) => { const tale = (!big(p) && c.s.taleLittle) || c.s.tale;
+  const asQuest = (p: Profile, c: StoryCurrent) => { const tale = (!big(p) && c.s.taleLittle) || c.s.tale;
     return { id: 'L_' + c.s.id, icon: c.s.icon, story: true, title: () => fill(actions() && !big(p) && c.s.actL_en ? T(c.s.actL_en, c.s.actL_vi) : actions() && c.s.act_en ? T(c.s.act_en, c.s.act_vi) : T(c.s.en, c.s.vi), p),
       tale: tale ? [tale[0], fill(tale[1], p), tale[2], tale[3]] : null, target: () => (catching(c.s) && ribbonsLeft(p, c.s)[0]) || (spots[c.s.at] && spots[c.s.at](p)) }; };
   return {

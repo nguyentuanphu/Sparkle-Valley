@@ -22,12 +22,15 @@ import { sendAutoplayReport, reportDelivery, reportingState, retryReports } from
 import { AP_GROUPS, apSpeed, apGameSeconds, AP_SPEEDS, AP_OPEN_WAIT, AP_RIGHT, AP_STUCK, AP_PATH, AP_TRAIL, AP_QUESTS, apGroupOf, revertOf } from './content/autoplay.js';
 
 const REPORT = 'sv2_autoplay_report', UI = 'sv2_autoplay_ui', RUNCOPY = 'sv2_autoplay_copy', OLD_BACKUP = 'sv2_autoplay_backup';
-const wait = ms => new Promise(r => setTimeout(r, ms));
+type ProblemNote = (message: string, help?: boolean) => void;
+type AutoplayStep = { g: string; key: string; name(): string; fn: (note: ProblemNote, out?: AutoplayResult[]) => Promise<string | void>; many?: boolean };
+type AutoplayResult = { g: string; key: string; name: string; ok: boolean; skipped?: boolean; problems: string[]; notes: string[]; said?: string; secs?: number; fps?: number | null };
+const wait = (ms: number) => new Promise(r => setTimeout(r, ms));
 const get = (k, d) => { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } };
 const put = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { } };
 const STOP = new Error('stop'), SKIP = new Error('skip');
 const rnd = (a, b) => a + Math.random() * (b - a), any = list => list[Math.floor(Math.random() * list.length)];
-let G = null, root = null, run = null, ui = null, errSink = null, finger = null, trail = [], btnTimer = 0, hostClose = null;
+let G = null, root = null, run = null, ui = null, errSink = null, finger = null, trail = [], btnTimer: ReturnType<typeof setInterval> | 0 = 0, hostClose = null;
 
 export function mountAutoplay(game) {
   if (root) return;
@@ -63,7 +66,7 @@ export function unmount() {
 function oldPutBack() {
   let b = null; try { b = JSON.parse(localStorage.getItem(OLD_BACKUP) || 'null'); } catch (e) { b = null; }
   localStorage.removeItem(OLD_BACKUP);
-  if (b && b.o) { for (const [k, v] of Object.entries(b.o)) if (/^sv2_(profiles|farm)$/.test(k)) localStorage.setItem(k, v); }
+  if (b && b.o) { for (const [k, v] of Object.entries(b.o)) if (/^sv2_(profiles|farm)$/.test(k)) localStorage.setItem(k, String(v)); }
   const set = Storage.prototype.setItem; Storage.prototype.setItem = function (k, v) { if (/^sv2_(profiles|farm)$/.test(k)) return; return set.call(this, k, v); };
   location.reload();
 }
@@ -86,8 +89,8 @@ function buttons() {
 }
 
 // ---------- what to check ----------
-function steps(all) {
-  const on = new Set(all ? AP_GROUPS.map(g => g.key) : ui.groups), S = [], add = (g, key, name, fn, many) => { if (on.has(g)) S.push({ g, key, name, fn, many }); };
+function steps(all = false): AutoplayStep[] {
+  const on = new Set(all ? AP_GROUPS.map(g => g.key) : ui.groups), S: AutoplayStep[] = [], add = (g: string, key: string, name: () => string, fn: AutoplayStep['fn'], many = false) => { if (on.has(g)) S.push({ g, key, name, fn, many }); };
   add('quests', 'quests', () => T('Follow the quests', 'Làm theo nhiệm vụ'), doQuests, true);
   for (const id of Object.keys(GAMES)) add('games', 'game:' + id, () => (GAMES[id].name ? GAMES[id].name() : id), note => doGame(id, note));
   for (const F of FESTCAL) add('festivals', 'fest:' + F.id, () => T(F.en, F.vi), note => doFestival(F, note));
@@ -103,7 +106,7 @@ function steps(all) {
 // ---------- waiting like a person ----------
 const hero = () => G.heroes && G.heroes[0];
 const sp = () => apSpeed(run.speed);
-const think = () => rnd(...sp().think);
+const think = () => rnd(sp().think[0], sp().think[1]);
 // a moment that can be paused, skipped or stopped
 async function hold(sec) { const end = Date.now() + sec * 1000; while (Date.now() < end || run.paused) { if (run.stop) throw STOP; if (run.skip) { run.skip = false; throw SKIP; } await wait(100); } }
 async function until(test, sec) { const end = Date.now() + sec * 1000; while (Date.now() < end) { if (run.stop) throw STOP; if (run.skip) { run.skip = false; throw SKIP; } if (test()) return true; await wait(100); } return !!test(); }
@@ -252,7 +255,7 @@ async function walkTo(x, z, speed = 'watch') {
 
 // ---------- whatever is open on the screen, done like a child ----------
 const OPEN = '.reward, .storybook, .dialog, .gl, .theatre, .songs, .modal, .pad';
-const topOpen = () => [...document.querySelectorAll(OPEN)].filter(e => !(root && root.contains(e)) && !e.classList.contains('out') && shown(e)).pop();
+const topOpen = () => [...document.querySelectorAll<HTMLElement>(OPEN)].filter(e => !(root && root.contains(e)) && !e.classList.contains('out') && shown(e)).pop();
 async function settle(secs, note = () => { }) {
   const end = Date.now() + secs * 1000;
   while (Date.now() < end) {
@@ -270,7 +273,7 @@ async function settle(secs, note = () => { }) {
 async function closeAll() {
   for (let k = 0; k < 4; k++) {
     const w = topOpen(); if (!w) break;
-    const x = w.querySelector('.gl-x, .th-x, .sg-x, .x, [data-a=close], .close, .sb-skip');
+    const x = w.querySelector<HTMLElement>('.gl-x, .th-x, .sg-x, .x, [data-a=close], .close, .sb-skip');
     if (x && shown(x)) { step_('close', label(w).slice(0, 30)); x.click(); await wait(350); }
     else if (w.matches('.dialog, .reward, .storybook')) { w.click(); await wait(300); }
     else break;
@@ -288,9 +291,10 @@ function targets(stage) {
   const btn = e => e.matches('button, [role=button]');
   return list.filter(e => shown(e) && !e.closest('.gl-head') && !(btn(e) ? list.some(o => o !== e && e.contains(o) && btn(o)) : list.some(o => o !== e && o.contains(e) && btn(o))));
 }
-async function playGame(note) {
+type PlayResult = { won?: boolean; rights?: number; wrongs?: number; taps?: number; cant?: boolean };
+async function playGame(note): Promise<PlayResult> {
   const gl = document.querySelector('.gl'); if (!gl) return {};
-  const s = sp(), stage = gl.querySelector('.gl-stage') || gl, tried = new Set(), r = { won: false, rights: 0, wrongs: 0, taps: 0 };
+  const s = sp(), stage = gl.querySelector('.gl-stage') || gl, tried = new Set(), r: PlayResult = { won: false, rights: 0, wrongs: 0, taps: 0 };
   let last = Date.now();
   playWatch.on = k => { last = Date.now(); if (k === 'right') r.rights++; if (k === 'wrong') r.wrongs++; if (k === 'win') r.won = true; };
   const mo = new MutationObserver(() => { last = Date.now(); }); mo.observe(stage, { childList: true, subtree: true, attributes: true, characterData: true });
@@ -404,7 +408,7 @@ async function doQuests(note, out) {
   const h = hero(); let lastId = null, tries = 0; run.quest = true;
   try { await questLoop(h, out); } finally { if (run) run.quest = false; }
 }
-async function questLoop(h, out) {
+async function questLoop(h, out: AutoplayResult[]) {
   let lastId = null, tries = 0;
   for (let n = 0; n < AP_QUESTS.max; n++) {
     const q = G.currentQuest && G.currentQuest(h.profile); if (!q) { step_('quest', T('every quest done', 'xong mọi nhiệm vụ')); break; }
@@ -428,8 +432,8 @@ async function questOnce(q, note) {
 }
 
 // ---------- one step: its problems, missing recordings and frame rate ----------
-async function one(s) {
-  const problems = [], notes = [], note = (m, help) => (help ? notes : problems).push(m), errs = errSink = [], miss0 = new Set(voiceMisses().map(m => m[0] + '|' + m[1]));
+async function one(s: AutoplayStep): Promise<AutoplayResult> {
+  const problems = [], notes = [], note = (m, help = false) => (help ? notes : problems).push(m), errs = errSink = [], miss0 = new Set(voiceMisses().map(m => m[0] + '|' + m[1]));
   let frames = 0, on = true; const count = () => { if (!on) return; frames++; requestAnimationFrame(count); }; requestAnimationFrame(count);
   const t0 = performance.now(); let skipped = false, said = '';
   let nm = s.key; try { nm = s.name(); } catch (e) { }
@@ -444,7 +448,7 @@ async function one(s) {
   return { g: s.g, key: s.key, name: nm, ok: !problems.length && !skipped, skipped, problems, notes, said, secs: Math.round(secs * 10) / 10, fps };
 }
 // a problem to Studio's tester inbox, now, with a picture and the last steps (only on a tester device)
-function send(g, detail, at) {
+function send(g, detail, at?) {
   const h = hero(); import('./tester.js').then(m => m.autoReport && m.autoReport('autoplay', String(detail).slice(0, 200),
     { area: String((G.regionOf && G.regionOf[0]) || 'valley'), place: '', game: /^game:/.test((run && run.list[run.i] || {}).key || '') ? run.list[run.i].key.slice(5) : '', window: 'autoplay ' + g, x: at ? at.x : h ? Math.round(h.pos.x) : 0, z: at ? at.z : h ? Math.round(h.pos.z) : 0 },
     { log: trailLog() })).catch(() => { });
@@ -454,7 +458,7 @@ function neverTired() { const h = hero(); if (h) { h.stamina = h.staminaMax; h.e
 // is this device a tester? (then the progress stays until they stop being one, unless Studio says otherwise)
 const tester = () => { const a = get('sv2_tester', null); return !!(a && a.at && !a.stopped); };
 
-async function start(only) {
+async function start(only?: string[]) {
   const h = hero(); if (!h || run) return;
   const list = only ? steps(true).filter(s => only.includes(s.key)) : steps(); if (!list.length) return;
   const perRun = !tester() || revertOf(liveRule('tester'), localStorage.getItem('sv2_playerid') || '') === 'autoplay';

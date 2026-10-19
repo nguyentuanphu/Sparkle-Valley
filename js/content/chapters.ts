@@ -1,3 +1,4 @@
+import type { StoryChapter, StoryTale, StoryPair } from '../../types/story.js';
 // Đèn Lồng Thung Lũng (The Valley Lanterns): the main story (round R, approved by the owner on 9 Oct; the plan is in
 // docs/cores/STORY.md). The night before the great lantern festival, the grumpy cloud Mây Cau Có blew the valley's
 // lanterns far away; with a companion, the child brings them home one region at a time. Each chapter is a list of
@@ -22,7 +23,7 @@
 // then the game), job (help someone with the hand controls), lesson (Cô Tam's lesson: count the stone turtles) and
 // clues: n (spots by the lake to look at; an under-5's companion lights the way to the right one). Its places are built
 // by js/content/chapter2hanoi.js; its words by js/content/chapter2text.js; its festival film is in js/content/chapter2films.js.
-export const CHAPTERS = [
+export const CHAPTERS: StoryChapter[] = [
   { id: 'prologue', en: 'The Lanterns Blow Away', vi: 'Đèn Lồng Bay Mất', steps: [
     { id: 'p_owl', icon: '🦉', en: 'Talk to Ông Cú', vi: 'Nói chuyện với Ông Cú', at: 'owl', owl: true }
   ] },
@@ -55,7 +56,7 @@ export const CHAPTERS = [
 ];
 
 // The story films (played in the tale theatre, scripts in js/content/films.js; {name} = the child)
-export const STORY_TALES = {
+export const STORY_TALES: Record<string, StoryTale> = {
   lantern_prologue: { id: 'lantern_prologue', flag: '🏮', title: ['The Lanterns Blow Away', 'Đèn Lồng Bay Mất'], pages: [
     ['🏮🌳', 'The night before the great lantern festival, the magic lanterns of Sparkle Valley glowed on the old banyan tree.', 'Đêm trước lễ hội đèn lồng lớn, những chiếc đèn lồng thần kỳ của Thung Lũng Lấp Lánh sáng rực trên cây đa cổ thụ.'],
     ['☁️💨🏮', 'Whoosh! Mây Cau Có huffed and puffed, and the wind carried every lantern far away, over Vietnam and Australia.', 'Vù vù! Đám mây khó tính Mây Cau Có phồng má thổi mạnh, gió cuốn hết đèn lồng bay thật xa, qua Việt Nam và nước Úc.'],
@@ -71,7 +72,7 @@ export const COMPANIONS = {
 };
 
 // what is said during the story's actions ([en, vi]; no names, so the recordings fit every child)
-export const STORY_LINES = {
+export const STORY_LINES: Record<string, StoryPair> = {
   ribbon: ['You caught a wind ribbon!', 'Con bắt được một dải lụa gió!'],
   ribbonsAll: ['All the wind ribbons! The wind is showing us the way to Lotus Village.', 'Đủ hết dải lụa gió rồi! Gió đang chỉ đường cho mình đến Làng Sen.'],
   leafFrog: ['Just a little frog! Try another leaf.', 'Chỉ là một chú ếch nhỏ! Con thử lá khác nhé.'],

@@ -46,3 +46,5 @@ Finish reporting evidence and push a draft review checkpoint. Then convert the s
 
 - Owner explicitly chose r88; version sources updated together. Live remains r87.
 - New storyquestflow baseline failed as intended: actual Vietnamese leaf/carry playback reports missing “Rồng con”; rope autoplay reports success without hanging; both three-turtle and five-turtle runs stop incomplete after three attempts. Actual action-path observations saved under docs/repair-story-quests-20261019/evidence/before/. New check/type plumbing passes TypeScript checking; no production quest fix yet.
+
+- Story/autoplay sources renamed unchanged in a784383f. Shared chapter/step/tale/action/context and autoplay step/result contracts now pass the existing light type configuration with zero errors before behaviour edits. Five additional game sources are TypeScript (60 TS / 197 JS); browser build has 62 sources. Legacy loose root objects and full strict coverage remain later work.

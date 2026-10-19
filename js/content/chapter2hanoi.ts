@@ -1,3 +1,4 @@
+import type { StoryContext } from '../../types/story.js';
 // Chapter 2 of the lantern story, Hà Nội (Play core, owner's go 10 Oct): the places and things js/lanterns.js needs.
 // Nothing here moves the map (CLAUDE.md, helper rule 4): everything stands round places already there (the Thê Húc
 // bridge by Hồ Gươm from js/regionsites.js, Văn Miếu and Bà Lan's bún chả stall in Hà Nội) on free ground found with
@@ -27,7 +28,7 @@ const PARADE_KIDS = [['dress', '#ff7eb8', 'buns'], ['shirt', '#3b6fe0', 'short']
 const STAR_COLORS = ['#ff4a3a', '#ffd23f', '#ff7eb8', '#ff4a3a', '#5fd3ff', '#ffb020'];
 
 // ctx: { current(p) → { ch, s }, isOn(p, id), A(p) (the step actions' memory), st(p), say, save, big(p) }
-export function createHanoi(G, ctx) {
+export function createHanoi(G, ctx: StoryContext) {
   const { scene, world } = G, { say, save, A, isOn, st, big } = ctx;
   const city = CITIES.find(c => c.id === 'hanoi');
   const lm = (G.LANDMARKS || []).find(l => l.id === 'thehuc');
@@ -108,7 +109,7 @@ export function createHanoi(G, ctx) {
   const bun = G.interactables.find(i => i.id === 'v_k_bunca');
   const jobAt = spotNear(bun ? bun.x : city.x + 8, bun ? bun.z : city.z, 8, .8, [city.x + 7, city.z - 1], 2.5);
   const people = [['teo', 'Tèo', teoAt[0], teoAt[1]], ['tam', 'Cô Tam', tamAt[0], tamAt[1]], ['nam', 'Bà Năm', namAt.x, namAt.z]].map(([id, name, x, z]) => {
-    const A_ = nameAvatar(buildAvatar(LOOKS[id], null), name);
+    const A_ = nameAvatar(buildAvatar(LOOKS[id], null), name, true, undefined);
     A_.root.position.set(x, heightAt(x, z), z); A_.root.rotation.y = id === 'nam' ? Math.atan2(mx - x, mz - z) + Math.PI : Math.atan2(city.x - x, city.z - z) || 0; if (id === 'teo') A_.root.scale.setScalar(.82);
     A_.root.visible = false; A_.root.userData.noSolid = true; scene.add(A_.root);
     return { id, name, x, z, A: A_ };
@@ -140,7 +141,7 @@ export function createHanoi(G, ctx) {
   const startParade = () => { paradeUntil = performance.now() / 1000 + 80; say(...STORY_LINES.parade); };
 
   // ---------- the bonus secret for big kids: a golden turtle comes up once ----------
-  const gold = buildStoneTurtle(); gold.children[0].material = new THREE.MeshToonMaterial({ color: '#ffcf3a', emissive: '#7a5200', emissiveIntensity: .5 }); gold.userData.noSolid = true; gold.visible = false; scene.add(gold);
+  const gold = buildStoneTurtle(); const goldBody = gold.children[0]; if (goldBody instanceof THREE.Mesh) goldBody.material = new THREE.MeshToonMaterial({ color: '#ffcf3a', emissive: '#7a5200', emissiveIntensity: .5 }); gold.userData.noSolid = true; gold.visible = false; scene.add(gold);
   const goldAt = W(0, -3.2); gold.position.set(goldAt.x, by - .3, goldAt.z); gold.rotation.y = rot;
   const secretFor = p => big(p) && st(p).chapters.ch2 && !(st(p).secret || {}).ch2;
 
@@ -157,7 +158,7 @@ export function createHanoi(G, ctx) {
     // (only its own lead: chapter 3 leads the same companion later)
     for (const h of G.heroes) if (isOn(h.profile, 'c2_find') || ctx.companions().of(h)?.lead?.c2) ctx.companions().lead(h, isOn(h.profile, 'c2_find') && !big(h.profile) && !clueFound(h.profile) ? { x: lanternAt.x, y: heightAt(lanternAt.x, lanternAt.z) + 1.8, z: lanternAt.z, c2: true } : null);
     if (mist.visible) mist.children.forEach((m, i) => { m.position.y = 1.4 + (i % 3) * .7 + Math.sin(t * .6 + i) * .15; });
-    if (lights.visible) lights.children.forEach((l, i) => { if (l.geometry && l.geometry.type === 'SphereGeometry') l.scale.setScalar(1 + Math.sin(t * 3 + i) * .08); });
+    if (lights.visible) lights.children.forEach((l, i) => { if (l instanceof THREE.Mesh && l.geometry.type === 'SphereGeometry') l.scale.setScalar(1 + Math.sin(t * 3 + i) * .08); });
     // the parade walks round the lake, star lanterns bobbing
     const going = t > 0 && performance.now() / 1000 < paradeUntil && path.length > 4;
     parade.forEach((k, i) => {
@@ -205,15 +206,15 @@ export function createHanoi(G, ctx) {
   }
 
   // Bà Lan's bún chả: hold the fan until the grill is ready, then carry three bowls to the tables
-  async function job() {
+  async function job(_h?) {
     G.paused = false;
     let p = pad(`<p>${T(...STORY_LINES.fan)}</p><button class="hp-big hp-pedal" data-hp="fan">${pic('🔥')}</button><div class="hp-bar"><i></i></div>`);
     say(...STORY_LINES.fan);
     const fan = holdable(p.querySelector('[data-hp=fan]')); let u = 0;
-    try { await frames(dt => { if (fan.down) u = Math.min(1, u + dt * .45); p.querySelector('.hp-bar i').style.width = (u * 100) + '%'; return u >= 1; }, p); } finally { p.remove(); }
+    try { await frames(dt => { if (fan.down) u = Math.min(1, u + dt * .45); p.querySelector<HTMLElement>('.hp-bar i').style.width = (u * 100) + '%'; return u >= 1; }, p); } finally { p.remove(); }
     p = pad(`<p>${T(...STORY_LINES.grilled)}</p><button class="hp-big" data-hp="bowl">${pic('🍲')}</button><div class="hp-count">${'<i></i>'.repeat(3)}</div>`);
     say(...STORY_LINES.grilled);
-    try { await until(new Promise(res => { let n = 0; p.querySelector('[data-hp=bowl]').onclick = () => { n++; const d = p.querySelectorAll('.hp-count i'); if (d[n - 1]) d[n - 1].className = 'on'; say(...STORY_LINES.bowl); if (n >= 3) setTimeout(res, 300); }; }), p); } finally { p.remove(); }
+    try { await until(new Promise(res => { let n = 0; p.querySelector<HTMLButtonElement>('[data-hp=bowl]').onclick = () => { n++; const d = p.querySelectorAll('.hp-count i'); if (d[n - 1]) d[n - 1].className = 'on'; say(...STORY_LINES.bowl); if (n >= 3) setTimeout(res, 300); }; }), p); } finally { p.remove(); }
     say(...STORY_LINES.jobDone);
   }
 

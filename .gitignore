@@ -35,11 +35,15 @@ marketing/source/runvalley.log
 # --- made by tools/build.mts from .ts files (never committed; do not edit by hand) ---
 /js/adventure.js
 /js/audio.js
+/js/autoplay.js
 /js/avatar.js
 /js/build.js
 /js/chat-player.js
 /js/chat.js
 /js/claims.js
+/js/content/chapter2hanoi.js
+/js/content/chapter2text.js
+/js/content/chapters.js
 /js/content/releases.js
 /js/content/storyhelp.js
 /js/family-backup.js
@@ -57,6 +61,7 @@ marketing/source/runvalley.log
 /js/howto.js
 /js/install.js
 /js/keepcopy.js
+/js/lanterns.js
 /js/main.js
 /js/mictest.js
 /js/net.js

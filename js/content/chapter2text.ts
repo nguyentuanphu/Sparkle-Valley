@@ -1,3 +1,4 @@
+import type { StoryChapter, StoryStep, StoryTalk, StoryPair, StoryTale } from '../../types/story.js';
 // The words of the lantern story's chapter 2, Hà Nội (Play core, 10 Oct): what each step says, the lines said while
 // the child does things, the numbers for counting and the festival film's words. Kept out of js/content/chapters.js
 // (which holds the chapter's steps) so the valley's start-up download stays small (PERF-001): js/lanterns.js loads this
@@ -7,7 +8,7 @@ import { CHAPTERS, STORY_LINES, STORY_TALES } from './chapters.js';
 
 // each step's words: tale [art, who, en, vi] (told when it starts; taleLittle for an under-5), the goal shown while doing
 // it (act_*, actL_* for an under-5), Tèo's challenge lines, and the talks
-export const STEP_WORDS = {
+export const STEP_WORDS: Record<string, Partial<Omit<StoryStep, 'talk'>> & { talk?: Partial<StoryTalk> }> = {
   c2_fly: { tale: ['🦉🏮', 'Ông Cú', 'Hoo hoo! One lantern flew north, all the way to Hà Nội. Trung Thu, the Mid-Autumn festival, is coming, and Hà Nội needs its lantern back. Follow the little lights!', 'Hu hu! Một chiếc đèn lồng bay về phía bắc, tận Hà Nội. Sắp đến Trung Thu rồi, Hà Nội đang cần đèn lồng. Con đi theo những đốm sáng nhỏ nhé!'], act_en: 'Follow the 3 lantern lights to Hà Nội', act_vi: 'Đi theo 3 đốm đèn lồng đến Hà Nội' },
   c2_tam: { tale: ['👩‍🏫🏮', 'Cô Tam', 'You made it to Hà Nội! I am at Văn Miếu with my class. Come and say hello!', 'Con đến Hà Nội rồi! Cô đang ở Văn Miếu với lớp. Lại đây chào cô nhé!'], talk: { lines: [['Welcome to Hà Nội, {name}! I brought my class to see Văn Miếu, the oldest school in Vietnam.', 'Chào mừng con đến Hà Nội, {name}! Cô đưa lớp ra thăm Văn Miếu, ngôi trường xưa nhất Việt Nam.'], ['Last night a red lantern floated over Hồ Gươm, the lake with the red bridge.', 'Đêm qua có một chiếc đèn lồng đỏ bay lơ lửng trên Hồ Gươm, cái hồ có cây cầu đỏ.'], ['And look who came for the holidays: Tèo! He says he knows where it went.', 'Mà con xem ai ra đây chơi kìa: Tèo đó! Bạn ấy bảo biết đèn lồng bay đi đâu.']], short: [['Welcome to Hà Nội! A red lantern floated over Hồ Gươm. Tèo is here too, ask him!', 'Chào mừng con đến Hà Nội! Có đèn lồng đỏ bay trên Hồ Gươm. Tèo cũng ở đây, con hỏi bạn ấy nhé!']] } },
   c2_teo: { tale: ['🧒🪨', 'Tèo', 'Hey, it is me, Tèo! I came to Hà Nội for Trung Thu. I am the best player here. Bet you cannot beat me!', 'Ê, tớ Tèo đây! Tớ ra Hà Nội chơi Trung Thu. Ở đây tớ chơi giỏi nhất đó. Cá là bạn không thắng nổi tớ!'], taleLittle: ['🧒🏮', 'Tèo', 'Hello! I am Tèo. I came to Hà Nội for Trung Thu. Come and play with me!', 'Chào bạn! Tớ là Tèo. Tớ ra Hà Nội chơi Trung Thu. Lại đây chơi với tớ nào!'], act_en: 'Beat Tèo at Ô ăn quan', act_vi: 'Thắng Tèo một ván Ô ăn quan', actL_en: 'Play Oẳn tù tì with Tèo', actL_vi: 'Chơi Oẳn tù tì với Tèo', challenge: { big: ['I am the Ô ăn quan champion of Hà Nội! Beat me and I will tell you where the lantern went.', 'Tớ là vô địch Ô ăn quan của Hà Nội đó! Thắng tớ thì tớ chỉ chỗ đèn lồng cho.'], little: ['Oẳn tù tì! Rock, paper, scissors! Play with me and I will tell you a secret.', 'Oẳn tù tì, ra cái gì ra cái này! Chơi với tớ rồi tớ kể bí mật cho.'] } },
@@ -17,7 +18,7 @@ export const STEP_WORDS = {
   c2_find: { tale: ['👵🐢', 'Bà Năm', 'The golden turtle keeps lost things safe in Hồ Gươm. Look for the lantern where the old turtle rests, by the lake!', 'Rùa Vàng giữ gìn những thứ bị lạc ở Hồ Gươm. Con tìm đèn lồng ở chỗ chú rùa già nghỉ, bên bờ hồ nhé!'], taleLittle: ['✨🏮', 'Bà Năm', 'Your friend has learned a new trick: it can light the way! Follow its light to the lantern.', 'Bạn đồng hành của con vừa học được trò mới: soi đường! Con đi theo ánh sáng của bạn ấy đến chỗ đèn lồng nhé.'], act_en: 'Look by Hồ Gươm: where does the old turtle rest?', act_vi: 'Tìm bên Hồ Gươm: chú rùa già nghỉ ở đâu?', actL_en: 'Follow your friend\'s light to the lantern', actL_vi: 'Đi theo ánh sáng của bạn đồng hành đến đèn lồng' },
   c2_hang: { tale: ['🏮✨', '{companion}', 'We found it! Cầu Thê Húc is sleeping in the mist. Let us hang the lantern and wake it up for Trung Thu!', 'Tìm thấy rồi! Cầu Thê Húc đang ngủ trong sương. Mình treo đèn lồng lên để đánh thức cây cầu đón Trung Thu nhé!'] }
 };
-export const LINES = {
+export const LINES: Record<string, StoryPair> = {
   light: ['You found a lantern light!', 'Con tìm được một đốm đèn lồng!'],
   lightsAll: ['All the lights! They are showing us the way to Hà Nội.', 'Đủ hết đốm sáng rồi! Các đốm sáng đang chỉ đường cho mình đến Hà Nội.'],
   fan: ['Hold the fan button to fan the grill!', 'Giữ nút quạt để quạt bếp than nhé!'],
@@ -37,13 +38,13 @@ export const LINES = {
   secret: ['A golden turtle! It only comes up for very kind helpers. Here is a sticker for your book.', 'Rùa Vàng kìa! Rùa chỉ nổi lên chào những bạn tốt bụng thôi. Tặng con một hình dán nhé.']
 };
 // numbers for counting, said in both languages
-export const COUNT = [['One', 'Một'], ['Two', 'Hai'], ['Three', 'Ba'], ['Four', 'Bốn'], ['Five', 'Năm']];
-export const TALE = { id: 'lantern_ch2', flag: '🏮', title: ['The Lantern of Hà Nội', 'Đèn Lồng Hà Nội'], pages: [
+export const COUNT: StoryPair[] = [['One', 'Một'], ['Two', 'Hai'], ['Three', 'Ba'], ['Four', 'Bốn'], ['Five', 'Năm']];
+export const TALE: StoryTale = { id: 'lantern_ch2', flag: '🏮', title: ['The Lantern of Hà Nội', 'Đèn Lồng Hà Nội'], pages: [
     ['🌉🏮', 'Up went the lantern on Cầu Thê Húc. The mist lifted, and the red bridge glowed over Hồ Gươm like a ribbon of light.', 'Chiếc đèn lồng được treo lên Cầu Thê Húc. Sương tan, cây cầu đỏ rực sáng trên Hồ Gươm như một dải lụa ánh sáng.'],
     ['🌕⭐🦁', 'It was Trung Thu! Children carried star lanterns round the lake, the lion danced to the drums, and everyone shared mooncakes under the full moon.', 'Trung Thu đến rồi! Các bạn nhỏ rước đèn ông sao quanh hồ, múa lân theo tiếng trống, và mọi người cùng ăn bánh trung thu dưới trăng rằm.']] };
 
 // the chapter's steps (in order after the chapter before, before the one after if that came first)
-export const CHAPTER = { id: 'ch2', en: 'Hà Nội', vi: 'Hà Nội', landmark: 'thehuc', keepsake: 'lantern_ch2', reward: 40, trick: 'light', steps: [
+export const CHAPTER: StoryChapter = { id: 'ch2', en: 'Hà Nội', vi: 'Hà Nội', landmark: 'thehuc', keepsake: 'lantern_ch2', reward: 40, trick: 'light', steps: [
     { id: 'c2_fly', icon: '🏮', en: 'Fly to Hà Nội with your friend', vi: 'Cùng bạn đồng hành bay đến Hà Nội', at: 'hanoi', visit: 'hanoi', lights: 3 },
     { id: 'c2_tam', icon: '👩‍🏫', en: 'Say hello to Cô Tam at Văn Miếu', vi: 'Chào Cô Tam ở Văn Miếu', at: 'tam2', big: true, talk: { who: 'Cô Tam', label: ['Say hello', 'Chào cô'] } },
     { id: 'c2_teo', icon: '🧒', en: 'Take up Tèo\'s challenge', vi: 'Nhận lời thách đấu của Tèo', at: 'teo2', game: ['oanquan'], gameLittle: ['oantuti'], challenge: {} },
