@@ -1,3 +1,5 @@
+import type { SvMain } from './main.js';
+export type SolidStats = { meshes: number; cells: number; ms: number; work: number; cached: boolean };
 // The solid map: nobody walks through houses, walls, fences, rocks, kiosks, statues or furniture.
 // Once the valley is built, every still object is sliced at a child's body height (from 35 cm to 1.6 m above the
 // ground under it) and the places where its surfaces cross that slice are marked solid on a 0.5 m grid. Gaps that
@@ -14,33 +16,33 @@ import { MAP_VERSION, WORLD } from './content/map.js';
 // pack (moved or added buildings change it)
 const SIG = (() => { let h = 0; const t = JSON.stringify(CUSTOM || {}); for (let i = 0; i < t.length; i++) h = (h * 31 + t.charCodeAt(i)) | 0; return BUILD + '_' + MAP_VERSION + '_' + (h >>> 0).toString(36); })();
 const CELL = .5, HALF = WORLD.size / 2, N = Math.round(HALF * 2 / CELL), LO = .35, HI = 1.6;
-export function buildSolids(G) {
+export function buildSolids(G: SvMain): Promise<SolidStats> {
   const { scene, world: W } = G, grid = new Uint8Array(N * N);
-  const idx = (x, z) => { const i = Math.floor((x + HALF) / CELL), j = Math.floor((z + HALF) / CELL); return i < 0 || j < 0 || i >= N || j >= N ? -1 : j * N + i; };
+  const idx = (x: number, z: number) => { const i = Math.floor((x + HALF) / CELL), j = Math.floor((z + HALF) / CELL); return i < 0 || j < 0 || i >= N || j >= N ? -1 : j * N + i; };
   // (audit, 9 Oct) things that come and go are marked noSolid where they are made (a building removed in Studio, the yard's
   // coach and house): the map is the same for every child and every screen, so it can't follow what is shown now
-  const skipTree = o => { for (let p = o; p && p !== scene; p = p.parent) { const u = p.userData || {}; if (u.avatar || u.road || u.walk || u.moving || u.noSolid) return true; } return false; };
-  const boats = new Set(); ((G.ferries && G.ferries.ferries) || []).forEach(F => F.model.traverse(o => boats.add(o)));
+  const skipTree = (o: THREE.Object3D) => { for (let p = o; p && p !== scene; p = p.parent) { const u = p.userData || {}; if (u.avatar || u.road || u.walk || u.moving || u.noSolid) return true; } return false; };
+  const boats = new Set<THREE.Object3D>(); ((G.ferries && G.ferries.ferries) || []).forEach(F => F.model.traverse(o => boats.add(o)));
   // which meshes are still: their place now and a moment later
-  const cand = [];
+  const cand: { o: THREE.Mesh; m0: THREE.Matrix4 }[] = [];
   scene.updateMatrixWorld(true);
   scene.traverse(o => {
-    if (!o.isMesh || !o.visible || o === W.terrain || o.userData.outline || boats.has(o) || skipTree(o)) return;
+    if (!(o instanceof THREE.Mesh) || !o.visible || o === W.terrain || o.userData.outline || boats.has(o) || skipTree(o)) return;
     const m = o.material; if (!m || (Array.isArray(m) ? m.some(x => x.transparent) : m.transparent)) return; // glass, water, verges, sprites
     const g = o.geometry; if (!g || !g.attributes.position) return; if (!g.boundingBox) g.computeBoundingBox();
-    if (o.isInstancedMesh && g.boundingBox.max.y - g.boundingBox.min.y < 1.4) return; // grass and flowers
+    if (o instanceof THREE.InstancedMesh && g.boundingBox.max.y - g.boundingBox.min.y < 1.4) return; // grass and flowers
     cand.push({ o, m0: o.matrixWorld.clone() });
   });
   // (the second look waits until the valley has been drawn for a few frames, so things that walk or drive have moved and
   // are left out: round R, the title shows before the first frame)
-  return new Promise(resolve => (G.firstFrames || Promise.resolve()).then(() => setTimeout(() => {
+  return new Promise<SolidStats>(resolve => (G.firstFrames || Promise.resolve()).then(() => setTimeout(() => {
     const t0 = performance.now(); scene.updateMatrixWorld(true);
     const still = cand.filter(c => c.o.parent && c.o.matrixWorld.equals(c.m0)).map(c => c.o);
     const gcache = new Float32Array(N * N).fill(NaN), ground = (x, z) => { const k = idx(x, z); if (k < 0) return W.groundAt(x, z); let g = gcache[k]; if (g !== g) g = gcache[k] = W.groundAt(Math.floor((x + HALF) / CELL) * CELL - HALF + CELL / 2, Math.floor((z + HALF) / CELL) * CELL - HALF + CELL / 2); return g; };
     const plat = W.platforms || [], onPlatSide = (x, z, y) => plat.some(p => !p.tower && x > p.x0 - .4 && x < p.x1 + .4 && z > p.z0 - .4 && z < p.z1 + .4 && y <= p.y + .08 && (!p.r || Math.hypot(x - p.cx, z - p.cz) < p.r + .4));
     const a = new THREE.Vector3(), b = new THREE.Vector3(), c = new THREE.Vector3(), m4 = new THREE.Matrix4(), mi = new THREE.Matrix4();
     let marked = 0;
-    const tri = (A, B, C) => {
+    const tri = (A: THREE.Vector3, B: THREE.Vector3, C: THREE.Vector3) => {
       // only triangles that reach into the body-height slice somewhere near them
       const ymin = Math.min(A.y, B.y, C.y), ymax = Math.max(A.y, B.y, C.y);
       const gx = (A.x + B.x + C.x) / 3, gz = (A.z + B.z + C.z) / 3, g0 = ground(gx, gz);
@@ -65,9 +67,9 @@ export function buildSolids(G) {
       const s0 = performance.now(), until = s0 + Math.min(120, Math.max(12, lastEnd ? (s0 - lastEnd) * .25 : 12));
       while (oi < still.length && performance.now() < until) {
         const o = still[oi++], g = o.geometry, pos = g.attributes.position, ix = g.index, count = ix ? ix.count : pos.count;
-        const reps = o.isInstancedMesh ? o.count : 1;
+        const reps = o instanceof THREE.InstancedMesh ? o.count : 1;
         for (let r = 0; r < reps; r++) {
-          if (o.isInstancedMesh) { o.getMatrixAt(r, mi); m4.multiplyMatrices(o.matrixWorld, mi); } else m4.copy(o.matrixWorld);
+          if (o instanceof THREE.InstancedMesh) { o.getMatrixAt(r, mi); m4.multiplyMatrices(o.matrixWorld, mi); } else m4.copy(o.matrixWorld);
           for (let t = 0; t < count; t += 3) {
             const i0 = ix ? ix.getX(t) : t, i1 = ix ? ix.getX(t + 1) : t + 1, i2 = ix ? ix.getX(t + 2) : t + 2;
             a.fromBufferAttribute(pos, i0).applyMatrix4(m4); b.fromBufferAttribute(pos, i1).applyMatrix4(m4); c.fromBufferAttribute(pos, i2).applyMatrix4(m4);
@@ -83,7 +85,7 @@ export function buildSolids(G) {
       done(false);
     };
     step();
-    function done(fromCache) {
+    function done(fromCache: boolean) {
     W.solid = grid; W.solidGround = ground; W.solidAt = (x, z) => { const k = idx(x, z); return k >= 0 && grid[k] === 1; };
     // anything you tap that now stands inside something solid reaches out to the nearest open ground
     for (const it of G.interactables) {
@@ -97,7 +99,7 @@ export function buildSolids(G) {
   }, 1200)));
 }
 // push a body of radius r out of solid cells (used by world.collide)
-export function pushOutOfSolids(W, pos, r) {
+export function pushOutOfSolids(W: Pick<ReturnType<typeof import('./world.js').createWorld>, 'solid' | 'solidGround'>, pos: { x: number; y?: number; z: number }, r: number) {
   if (!W.solid) return;
   if (pos.y != null && pos.y > W.solidGround(pos.x, pos.z) + 1.2) return; // up in the air (gliding, a tower top, a room upstairs)
   for (let pass = 0; pass < 2; pass++) {
