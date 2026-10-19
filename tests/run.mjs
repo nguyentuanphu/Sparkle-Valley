@@ -6202,6 +6202,8 @@ await check('reportingflow', async () => {
 await check('gameflow', async () => (await import('./game-flow.mts')).gameFlowCheck(b));
 await check('gamewinlayout', async () => (await import('./game-win-layout.mts')).gameWinLayoutCheck(b));
 await check('storyquestflow', async () => (await import('./story-quest-flow.mts')).storyQuestFlowCheck(b));
+await check('gateview', async () => (await import('./gate-view.mts')).gateViewCheck(b));
+await check('autoplayshrine', async () => (await import('./autoplay-shrine.mts')).autoplayShrineCheck(b));
 
 await check('reportstorage', async () => {
   const {execFileSync}=await import('node:child_process');
