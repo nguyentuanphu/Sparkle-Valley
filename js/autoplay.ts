@@ -279,7 +279,7 @@ async function settle(secs, note: ProblemNote = () => { }) {
       return;
     }
     if (w.matches('.dialog')) {
-      const ch = [...w.querySelectorAll('.dch')].filter(shown), planned = ch.length && playWatch.plan?.();
+      const ch = [...w.querySelectorAll('.dch')].filter(shown), planned = ch.length && G.lanterns?.dialogChoice();
       await tap(planned && ch.includes(planned) ? planned : ch.length ? ch[0] : w.querySelector('.dtext') || w, note); continue;
     }
     if (w.matches('.storybook')) { const g = w.querySelector('.qt-go'); await tap(shown(g) ? g : w.querySelector('.sb-art') || w, note); continue; }

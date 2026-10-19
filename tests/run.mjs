@@ -1398,11 +1398,13 @@ await check('testerreport', async () => {
   await P.page.evaluate(() => __sv.playGame(0, 'no-such-game-for-the-tester-check'));
   if (!await wait(x => x && x.auto === 'noopen' && /no-such-game/.test(x.detail), 9000)) out.push('a game that did not open was not reported');
   await P.page.waitForFunction(() => performance.now() > 0, null); await P.page.waitForTimeout(Math.max(0, 16000 - await P.page.evaluate(() => performance.now())));
+  const earlierFreezes = got.filter(x => x && x.auto === 'freeze');
   await P.page.evaluate(() => new Promise(r => requestAnimationFrame(() => { const t = performance.now(); while (performance.now() - t < 2600) { } r(); })));
   { const fz = await wait(x => x && x.auto === 'freeze', 6000); if (!fz) out.push('a frozen screen was not reported');
     // (#261) the report says the game's own code ran long (this freeze is a 2.6 s script), not only that frames stopped
     else { const why = JSON.stringify(fz.log || []).match(/longest script (\d+) ms/); // (the browser may measure the 2.6 s script a little shorter: GitHub saw 1912 ms; over a second is the script)
-      if (!why || +why[1] < 1000) out.push('the freeze report does not say a long script caused it: ' + (why ? why[0] : 'no note')); } }
+      if (!why || +why[1] < 1000) out.push('the freeze report does not say a long script caused it: ' + (why ? why[0] : 'no note') + '; earlier freeze reports: ' + earlierFreezes.length); }
+    fs.writeFileSync('out/tester-freeze-observation.json', JSON.stringify({ earlier: earlierFreezes, all: got.filter(x => x && x.auto === 'freeze') }, null, 2)); }
   // the ladybird: tap
   await clear(P.page); const n0 = got.length;
   await P.page.locator('.hud .z-lb').first().dispatchEvent('pointerdown'); await P.page.locator('.hud .z-lb').first().dispatchEvent('pointerup');

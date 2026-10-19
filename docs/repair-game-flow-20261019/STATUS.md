@@ -18,3 +18,12 @@ Screenshot review also found that a celebration could put Replay below a short s
 - Physical iOS and perceptual sound verification remain separate. GitHub's full suite is still required for the final combined head. The reporting checkpoint run 39237648036 passed 223/223 with no failed/repeated checks; AI review 39237648251 did not finish and is not a pass.
 
 Before/after layout observations and pictures are in evidence/. This is a working checkpoint, not a release approval request.
+
+
+## GitHub result and pause, 20 October 2026 AEDT
+
+Full run 39244377795 on aff79ee3 finishes 222/225: gameflow times out on a locator after 30 s; gamewinlayout clips the VI phone-split finish instruction; testerreport reports only about 220 ms of script time instead of the injected long task. All three remain red after standalone retries. ownerfamily and filmmusic pass only on retry and still need cause investigation. Parsed results are in evidence/github-summary.json.
+
+The latest local reproduction passes gamewinlayout 10/10 in 31 s, but testerreport fails an 8 s report-panel visibility wait. This does not clear the GitHub failures. New geometry/font measurements and freeze observations are saved under docs/r88-pause/evidence/. Gameflow now saves phase/state/failure-image diagnostics; those latest additions have not been rechecked or browser-run. No assertion or wait budget was weakened. AI review did not finish; its wrapper is not an approval.
+
+Owner requested stop and upload all current work. PR #400 remains draft; no r88 zip, final verification or deployment approval. [Complete handoff](../cores/tasks/r88-paused-handoff-20261019.md).

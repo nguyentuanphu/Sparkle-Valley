@@ -29,5 +29,5 @@ export interface StoryContext {
   say: typeof import('../js/voice.js').say; save(): void; dialog: typeof import('../js/popups.js').dialog;
   reward: typeof import('../js/popups.js').reward; actions(): boolean; finish(h: StoryHero, id: string): void;
   companions(): ReturnType<typeof import('../js/companion.js').createCompanions>;
-  plan: typeof import('../js/games/playwatch.js').setPlan;
+  plan(choose: () => Element | null | undefined): () => void;
 }

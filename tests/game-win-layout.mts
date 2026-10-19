@@ -35,7 +35,8 @@ export async function gameWinLayoutCheck(browser: Browser): Promise<string> {
         const result = await page.evaluate(() => {
           const pane = document.querySelector('.gl').getBoundingClientRect(), buttons = [...document.querySelectorAll<HTMLButtonElement>('.gl-nx')];
           const instruction = document.querySelector('.gl-tapout').getBoundingClientRect();
-          return { fits: buttons.length === 2 && buttons.every(b => { const r = b.getBoundingClientRect(); return r.left >= pane.left && r.right <= pane.right && r.top >= pane.top && r.bottom <= pane.bottom; }), instruction: instruction.top >= pane.top && instruction.bottom <= pane.bottom, targets: buttons.every(b => { const r = b.getBoundingClientRect(); return r.width >= 64 && r.height >= 64; }), hit: buttons.every(b => { const r = b.getBoundingClientRect(); return b.contains(document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2)); }) };
+          const style = getComputedStyle(document.querySelector('.gl-tapout'));
+          return { fits: buttons.length === 2 && buttons.every(b => { const r = b.getBoundingClientRect(); return r.left >= pane.left && r.right <= pane.right && r.top >= pane.top && r.bottom <= pane.bottom; }), instruction: instruction.top >= pane.top && instruction.bottom <= pane.bottom, targets: buttons.every(b => { const r = b.getBoundingClientRect(); return r.width >= 64 && r.height >= 64; }), hit: buttons.every(b => { const r = b.getBoundingClientRect(); return b.contains(document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2)); }), geometry: { pane: pane.toJSON(), instruction: instruction.toJSON(), font: style.font, lineHeight: style.lineHeight, fontStatus: document.fonts.status } };
         });
         results.push({ name, lang, ...result });
         if (lang === 'vi') await page.screenshot({ path: `${dir}/${name}.png` });

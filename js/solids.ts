@@ -98,6 +98,20 @@ export function buildSolids(G: SvMain): Promise<SolidStats> {
     }
   }, 1200)));
 }
+// Query the same circle/cell footprint used below. A few point samples miss the corners of solid cells,
+// so a path can otherwise be planned through a place the child's body cannot occupy.
+export function solidCircleHit(W: { solid?: Uint8Array }, x: number, z: number, r = .45): boolean {
+  if (!W.solid) return false;
+  const i0 = Math.floor((x - r + HALF) / CELL), i1 = Math.floor((x + r + HALF) / CELL), j0 = Math.floor((z - r + HALF) / CELL), j1 = Math.floor((z + r + HALF) / CELL);
+  for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) {
+    if (i < 0 || j < 0 || i >= N || j >= N || !W.solid[j * N + i]) continue;
+    const x0 = i * CELL - HALF, z0 = j * CELL - HALF;
+    const dx = x - Math.max(x0, Math.min(x, x0 + CELL)), dz = z - Math.max(z0, Math.min(z, z0 + CELL));
+    if (dx * dx + dz * dz < r * r) return true;
+  }
+  return false;
+}
+
 // push a body of radius r out of solid cells (used by world.collide)
 export function pushOutOfSolids(W: Pick<ReturnType<typeof import('./world.js').createWorld>, 'solid' | 'solidGround'>, pos: { x: number; y?: number; z: number }, r: number) {
   if (!W.solid) return;

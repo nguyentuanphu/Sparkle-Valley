@@ -104,6 +104,11 @@ export async function storyQuestFlowCheck(browser: Browser): Promise<string> {
     await clear(P.page);
     const turtles: object[] = [];
     for (const age of ['little', 'big'] as const) {
+      const gamePlanGuard = age === 'big' ? await P.page.evaluateHandle(async () => {
+        const url = '/js/games/playwatch.js', PW: typeof import('../js/games/playwatch.js') = await import(url);
+        const sentinel = () => null, cleanup = PW.setPlan(sentinel, 7);
+        return () => { const intact = PW.playWatch.plan === sentinel && PW.playWatch.maxActions === 7; cleanup(); return intact; };
+      }) : null;
       await P.page.evaluate(async age => {
         const G = window.__sv, L = G.lanterns, h = G.heroes[0]; if (!L) throw Error('story unavailable');
         await L.loadHanoi();
@@ -114,6 +119,7 @@ export async function storyQuestFlowCheck(browser: Browser): Promise<string> {
         const target = G.questTarget(h); await G.landBy(h, target.x, target.z);
       }, age);
       const result = await runUntil(P.page, 'c2_vanmieu', ['quests']);
+      if (gamePlanGuard) { assert.ok(await gamePlanGuard.evaluate(check => check()), 'story dialogue replaced another game plan'); await gamePlanGuard.dispose(); }
       turtles.push({ age, ...result }); fs.writeFileSync(dir + '/turtles.json', JSON.stringify(turtles, null, 2));
       await closeResults(P.page);
       await clear(P.page);
@@ -130,9 +136,11 @@ export async function storyQuestFlowCheck(browser: Browser): Promise<string> {
           const G = window.__sv, h = G.heroes[0], s = '/js/state.js', state: typeof import('../js/state.js') = await import(s);
           const u = '/js/content/chapters.js', { CHAPTERS }: typeof import('../js/content/chapters.js') = await import(u);
           state.settings.lang = lang;
+          const i18n = '/js/i18n.js', { applyLang }: typeof import('../js/i18n.js') = await import(i18n); applyLang();
           const steps = CHAPTERS.flatMap(ch => ch.steps), end = steps.findIndex(step => step.id === 'c1_hang');
           h.profile.lanterns = { companion: 'dragon', done: Object.fromEntries(steps.slice(0, end).map(step => [step.id, true])), chapters: {}, carrying: 'ch1', act: {} };
           const it = G.interactables.find(it => it.id === 'story_c1_hang'); if (!it) throw Error('rope activity unavailable');
+          await G.landBy(h, it.x, it.z);
           void it.act(h, G);
         }, lang);
         await P.page.locator('.handpad [data-hp=rope]').waitFor();

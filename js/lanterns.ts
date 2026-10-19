@@ -22,7 +22,6 @@ import { buildDinh, buildLantern } from './dinh.js';
 import { createCompanions } from './companion.js';
 import { openSpot } from './openspot.js';
 import { pad, frames, slot, QUIT } from './handpad.js';
-import { setPlan } from './games/playwatch.js';
 
 const V = VILLAGE;
 // (each chapter's switch starts as its default in js/content/releases.js: chapter 2 is off until an admin switches it on or
@@ -38,6 +37,8 @@ const gamesOf = (p: Profile, s: StoryStep) => (!big(p) && s.gameLittle) || s.gam
 const fill = (s, p) => String(s).replace(/\{name\}/g, p.name || '').replace(/\{companion\}/g, COMPANIONS[st(p).companion || 'firefly'].name);
 
 export function createLanterns(G, { dialog, say, reward, save, openTheatre }) {
+  let choicePlan: (() => Element | null | undefined) | null = null;
+  const plan = (next: NonNullable<typeof choicePlan>) => { choicePlan = next; return () => { if (choicePlan === next) choicePlan = null; }; };
   const mods: Record<string, ReturnType<typeof import('./content/chapter2hanoi.js').create>> = {}, loadingCh = {}; // (each later chapter's places, built when needed: loadCh below)
   const { scene, world } = G;
   const stepDone = (p, s) => {
@@ -113,7 +114,7 @@ export function createLanterns(G, { dialog, say, reward, save, openTheatre }) {
   const LATER = { ch2: [() => import('./content/chapter2hanoi.js'), () => import('./content/chapter2films.js'), 'c1_find'],
     ch3: [() => import('./content/chapter3sydney.js'), () => import('./content/chapter3films.js'), 'c2_find'] };
   const loadCh = id => loadingCh[id] || (loadingCh[id] = LATER[id][0]().then(M => {
-    const P = mods[id] = M.create(G, { current, isOn, A, st, big, gamesOf, say, save, dialog, reward, actions, plan: setPlan, finish: (h, id) => finish(h, id), companions: () => companions });
+    const P = mods[id] = M.create(G, { current, isOn, A, st, big, gamesOf, say, save, dialog, reward, actions, plan, finish: (h, id) => finish(h, id), companions: () => companions });
     Object.assign(spots, P.spots); G.landmarksStory[id] = { x: P.front[0], z: P.front[1] }; addButtons(CHAPTERS.find(c => c.id === id));
     places[id] = { front: P.front, lanternAt: P.lanternAt, rope: P.rope, paint: P.paint, after: () => P.startParade(), film: LATER[id][1], revealed: P.revealed };
     for (const rs of CHAPTERS.find(c => c.id === id).steps.filter(s => s.lights)) addCatchers(rs);
@@ -321,6 +322,7 @@ export function createLanterns(G, { dialog, say, reward, save, openTheatre }) {
         return 0;
       }, target: () => (catching(c.s) && ribbonsLeft(p, c.s)[0]) || (spots[c.s.at] && spots[c.s.at](p)) }; };
   return {
+    dialogChoice: () => choicePlan?.() || null,
     busy: (p: Profile) => hanging.has(p),
     quest: p => { const c = current(p); return c ? asQuest(p, c) : null; },
     // the old "talk to Ông Cú" opens the story's prologue instead (once)

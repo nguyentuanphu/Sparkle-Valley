@@ -27,3 +27,12 @@ The final storyquestflow run passes in 464 s. VI lotus-leaf/carry narration repo
 These layout fixtures change the active language directly, so some pre-existing HUD labels retain the previous language; this is a fixture limitation, not evidence of a production language-switch defect. They exercise the panel at the existing chapter-two scene after the lesson, rather than claiming a physical trip back to the đình. The actual completion test above does land by the chapter-one target. No claim of 64 px Later controls is made: the existing hand-panel close is 44 px, a general under-5 UI follow-up.
 
 Two repaired-run attempts: the first exposed the late-theatre lifecycle bug and failed; the corrected second run passed. Existing regression checks are running separately. Evidence is under evidence/after/, and six-file codec/signal measurements are in evidence/voice-files.json. GitHub still must validate the final combined head.
+
+
+## Owner-requested pause, 20 October 2026 AEDT
+
+Related regressions finished 7/8: voicecover, story, chapter2, arch, rules, types and ownerautoplaynavigation pass; existing autoplay fails approaching the counting shrine. The later footprint probe passes, but the whole-autoplay regression has not been rerun. See the shrine evidence and pause handoff.
+
+A subsequent review replaced the game's shared playWatch plan with a story-owned dialogue choice plan and strengthened the older-child regression to preserve a separate game's plan. Type checking passed after the source edits; the updated actual-path story test has not run. Screenshot fixtures now call applyLang and land by the actual rope target, but the saved passing images precede these fixture improvements. The 464 s pass above applies to the earlier repaired behaviour, not this latest untested follow-up.
+
+Six-file codec/signal measurements are saved in evidence/voice-files.json. There is no perceptual listening verification. Full GitHub validation of the paused combined head remains pending; the owner asked to stop and upload rather than continue testing. [Complete handoff](../cores/tasks/r88-paused-handoff-20261019.md).

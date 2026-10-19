@@ -1,0 +1,6 @@
+build: 63 TypeScript files, 0 made
+only: autoplayshrine
+1 checks: group 1 1 (~1 min)
+[1] PASS autoplayshrine (79s) actual autoplay enters and wins the counting shrine from the stalled plateau approach; planner positions agree with real child collisions
+
+1/1 checks passed in 1 min (1 at a time)

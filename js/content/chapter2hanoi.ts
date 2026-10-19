@@ -192,7 +192,7 @@ export function createHanoi(G, ctx: StoryContext) {
       if (!big(p)) { await ctx.dialog('Cô Tam', [STORY_LINES.countLittle]); ctx.finish(h, 'c2_vanmieu'); return; }
       for (let tries = 0; tries < 4; tries++) {
         // Offer the real answer button to autoplay; it still has to choose it through the visible dialogue.
-        const unplan = ctx.plan(() => [...document.querySelectorAll('.dialog:not(.out) .dch')].find(b => b.textContent?.trim() === String(nTurtles(p))), 1);
+        const unplan = ctx.plan(() => [...document.querySelectorAll('.dialog:not(.out) .dch')].find(b => b.textContent?.trim() === String(nTurtles(p))));
         let k: number;
         try { k = await ctx.dialog('Cô Tam', [STORY_LINES.countAsk], [['3', '3'], ['5', '5'], ['7', '7']]); } finally { unplan(); }
         if (k < 0) break; // (walked away: the turtles wait to be counted again)

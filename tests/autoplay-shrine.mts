@@ -16,9 +16,10 @@ export async function autoplayShrineCheck(browser: Browser): Promise<string> {
   try {
     await clear(P.page); await noWelcome(P.page);
     await P.page.waitForFunction(() => !!window.__sv.autoplay, null, { timeout: 30000 });
-    const footprint = await P.page.evaluate(() => {
+    const footprint = await P.page.evaluate(async () => {
       const G = window.__sv, h = G.heroes[0], mismatch: { x: number; z: number; moved: number }[] = [];
       if (!G.goodSpot) throw Error('walkability query unavailable');
+      if (!G.solidsReady) throw Error('solid-grid readiness unavailable'); await G.solidsReady;
       for (let x = 27; x <= 29; x += .2) for (let z = -84; z <= -82; z += .2) {
         if (!G.goodSpot(x, z)) continue;
         const p = h.pos.clone().set(x, h.world.groundAt(x, z), z); h.world.collide(p, .45);
@@ -27,12 +28,18 @@ export async function autoplayShrineCheck(browser: Browser): Promise<string> {
       return mismatch;
     });
     fs.writeFileSync(`${dir}/footprint.json`, JSON.stringify(footprint, null, 2));
-    await P.page.evaluate(async () => {
+    const setup = await P.page.evaluate(async () => {
       const G = window.__sv, h = G.heroes[0], api = G.autoplay;
       if (!api || typeof api.start !== 'function') throw Error('autoplay unavailable');
-      h.place(28, -83); G.paused = false;
+      const target = G.gameSpot?.('counting'); if (!target || !G.clearSpot) throw Error('counting shrine unavailable');
+      const [x, z] = G.clearSpot(28, target.z + Math.max(10, (target.r || 0) + 4));
+      h.place(x, z); h.goal = null; h.goalAct = null; G.paused = false;
+      const setup = { x, z, target: { x: target.x, z: target.z, r: target.r }, distance: Math.hypot(x - target.x, z - target.z) };
       void api.start(['game:counting'], 'fast');
+      return setup;
     });
+    fs.writeFileSync(`${dir}/setup.json`, JSON.stringify(setup, null, 2));
+    assert.ok(setup.distance > (setup.target.r || 0) + 1, 'fixture must start outside the shrine interaction range');
     await P.page.waitForFunction(() => !window.__sv.autoplay.running(), null, { timeout: 120000 });
     const result = await P.page.evaluate(() => {
       const api = window.__sv.autoplay;
@@ -45,6 +52,7 @@ export async function autoplayShrineCheck(browser: Browser): Promise<string> {
     const row = result.report.done?.[0];
     assert.ok(row && row.key === 'game:counting' && row.problems.every((problem: string) => /^slow:/.test(problem)), JSON.stringify(result));
     assert.match(row.said, /won/); assert.deepEqual(P.errors, []);
+    assert.ok(result.trail.some((step: [number, string, string]) => step[1] === 'walk'), 'shrine approach did not exercise actual walking');
     return 'actual autoplay enters and wins the counting shrine from the stalled plateau approach; planner positions agree with real child collisions';
   } finally { await P.ctx.close(); }
 }
