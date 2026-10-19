@@ -104,7 +104,7 @@ register({
     while (!api.closed) {
       const ready = await loadAnimalCalls(); if (api.closed) return; if (ready) break;
       status.textContent = T('Animal sounds are not saved yet. Connect to the internet and try again.', 'Chưa lưu được tiếng các con vật. Kết nối mạng rồi thử lại nhé.');
-      const retry = el('button', 'choice animal-retry', '↻ ' + T('Try again', 'Thử lại')); retry.style.minWidth = retry.style.minHeight = '64px'; loading.append(retry);
+      const retry = el('button', 'btn big primary animal-retry', '↻ ' + T('Try again', 'Thử lại')); retry.style.minWidth = retry.style.minHeight = '64px'; loading.append(retry);
       await new Promise<void>(resolve => { retry.onclick = () => resolve(); api.onCleanup(resolve); }); retry.remove();
       status.textContent = T('Getting animal sounds ready…', 'Đang chuẩn bị tiếng các con vật…');
     }

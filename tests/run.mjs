@@ -1578,6 +1578,10 @@ await check('festhunt', async () => {
   // draws only the nearest patches, within a budget (PERF-003); and the festival hunt: five things hidden in every
   // festival's first place in its last week and on its day, the fifth giving a keepsake and the Passport badge.
   const P = await open(b, { w: 1180, h: 820 }); await clear(P.page);
+  // A full-suite share can cross midnight. Keep the one-day festival fixtures
+  // on their original day while real timers continue running normally.
+  const festivalDay = new Date(); festivalDay.setHours(12, 0, 0, 0);
+  await P.page.clock.setFixedTime(festivalDay);
   const r = await P.page.evaluate(async () => {
     const G = __sv, W = await import('/js/world.js'), C = (await import('/js/custom.js')).CUSTOM, { FESTCAL } = await import('/js/content/festcal.js'), { HUNT } = await import('/js/content/festhunt.js');
     const wait = ms => new Promise(r => setTimeout(r, ms)), out = { bad: [] }, bad = out.bad;
@@ -5382,16 +5386,18 @@ await check('startup', async () => {
     const read = async () => { await page.waitForFunction(() => window.__sv && __sv.bootTimes, null, { timeout: 300000 }); await page.waitForTimeout(1000);
       return page.evaluate(() => { const end = __sv.bootTimes.start + __sv.bootTimes.ready, fr = __st.frames.filter(t => t <= end); let gap = 0; for (let i = 1; i < fr.length; i++) gap = Math.max(gap, fr[i] - fr[i - 1]);
         const all = performance.getEntriesByType('resource').concat(performance.getEntriesByType('navigation'));
-        return { kb: Math.round(all.reduce((a, e) => a + (e.transferSize || 0), 0) / 1024), title: __st.title, ready: end, freeze: gap, steps: __sv.bootTimes }; }); };
+        return { kb: Math.round(all.reduce((a, e) => a + (e.transferSize || 0), 0) / 1024), title: __st.title, ready: end, freeze: gap, steps: __sv.bootTimes, resources: all.filter(e => e.transferSize > 0).map(e => ({ path: new URL(e.name).pathname, transferred: e.transferSize, encoded: e.encodedBodySize })).sort((a, b) => b.transferred - a.transferred) }; }); };
     await page.goto(S.url); const first = await read();
-    await page.waitForFunction(async () => !!(await navigator.serviceWorker.getRegistration())?.active, null, { timeout: 300000 }); await page.waitForTimeout(2000);
+    await page.waitForFunction(async () => !!(await navigator.serviceWorker.getRegistration())?.active, null, { timeout: 300000 }); await page.waitForTimeout(4000);
+    const mutedIndexLoads = await page.evaluate(() => performance.getEntriesByType('resource').filter(e => /\/voices\/manifest[^/]*\.json/.test(new URL(e.name).pathname)).map(e => new URL(e.name).pathname));
     await page.reload(); const second = await read();
+    fs.writeFileSync('out/startup-resources.json', JSON.stringify({ first: first.resources, second: second.resources }, null, 2));
     await ctx.close();
     const got = { firstKB: first.kb, firstTitleMs: first.title, firstReadyMs: first.ready, secondReadyMs: second.ready, secondFreezeMs: second.freeze, secondKB: second.kb }, over = [];
     for (const [k, B] of Object.entries(base)) { if (k.startsWith('/') || B.max === undefined) continue; const lim = k.endsWith('KB') ? B.max * 1.03 : B.max * speed * 1.25; if (!(got[k] <= lim)) over.push(`${B.rule} ${k} ${got[k]} > ${k.endsWith('KB') ? B.max : `${B.max} x ${speed.toFixed(2)} (machine speed) = ${Math.round(B.max * speed)}`}`); }
     // the slowest building steps on the second start, for the report (G.bootTimes: ms since the game's code began)
     const st = Object.entries(second.steps).filter(([k]) => k !== 'start').sort((x, y) => x[1] - y[1]), slow = st.map(([k, v], i) => [k, v - (i ? st[i - 1][1] : 0)]).sort((x, y) => y[1] - x[1]).slice(0, 4).map(([k, v]) => `${k} ${(v / 1000).toFixed(1)} s`);
-    ok(!over.length && !errs.length, JSON.stringify({ over, got, machineMs: Math.round(machineMs), speed: +speed.toFixed(2), slowest: slow, firstSteps: first.steps, secondSteps: second.steps, errs }));
+    ok(!over.length && !errs.length && !mutedIndexLoads.length, JSON.stringify({ over, got, mutedIndexLoads, machineMs: Math.round(machineMs), speed: +speed.toFixed(2), slowest: slow, firstSteps: first.steps, secondSteps: second.steps, errs }));
     return `machine ${Math.round(machineMs)} ms (x${speed.toFixed(2)} of the reference); tablet speed: first start ${first.kb} KB, title ${(first.title / 1000).toFixed(1)} s, valley ready ${(first.ready / 1000).toFixed(1)} s; second start ${second.kb} KB from the network, ready ${(second.ready / 1000).toFixed(1)} s, longest freeze ${(second.freeze / 1000).toFixed(1)} s; slowest steps ${slow.join(', ')}`;
   } finally { S.close(); }
 });

@@ -18,7 +18,7 @@
 // or Tricky (a sand timer for 5 and over, a bonus only). Kept in profile.adventure. Loaded by js/hud.js once.
 import { THREE, sprite } from './gfx.js';
 import { T } from './i18n.js';
-import { say } from './voice.js';
+import { say, onSpeaking } from './voice.js';
 import { SFX } from './audio.js';
 import { pic } from './art.js';
 import { el, esc, dist2 } from './util.js';
@@ -45,6 +45,7 @@ const sayL = l => l && say(l[0], l[1]);
 export function createAdventure(G) {
   if (G.adventure) return G.adventure;
   const { scene, world } = G;
+  let speechBusy = false; onSpeaking(n => { speechBusy = n > 0; });
   const on = () => settings.dailyAdventure !== false && (G.keep ? G.keep('adventure') : featureOn('adventure', true));
   const big = h => h.profile.age === 'big';
   const tricky = h => big(h) && settings.advLevel === 'tricky';   // never for under-5s (ADV-5)
@@ -215,7 +216,7 @@ export function createAdventure(G) {
   { const prev = G.onCooked; G.onCooked = (h, rc) => { if (prev) prev(h, rc); const s = h && on() && step(h); if (s && s.kind === 'cook') next(h); }; }
 
   // the chest waits until the child is free: no game, film, story, speech box or other window open
-  const busy = () => G.paused || gameOpen() || !!document.querySelector('.dialog, .chatbox, .modal, .reward, .howto, .theatre, .storybook, .songs, .resttime, .dancebreak, .bedtime');
+  const busy = () => speechBusy || G.paused || gameOpen() || !!document.querySelector('.dialog, .chatbox, .modal, .reward, .howto, .theatre, .storybook, .songs, .resttime, .dancebreak, .bedtime');
   const waitFree = () => new Promise<void>(res => { const t = () => busy() ? setTimeout(t, 400) : res(); t(); });
   // ---------- the end: the chest (D6), the stamp and the week chest (D10) ----------
   async function finish(h) {
@@ -387,10 +388,11 @@ export function createAdventure(G) {
       if (busy()) continue;
       const pending = pendingSteps.get(h);
       if (pending) {
-        pendingSteps.delete(h);
-        if (pending.day === r.day && pending.id === r.id && pending.step === r.step && !r.done) {
-          G.toast(h, '✨ ' + tt(pending.lines[0])); pending.lines.forEach(sayL); continue;
+        if (pending.day === r.day && pending.id === r.id && pending.step === r.step && !r.done && pending.lines.length) {
+          const line = pending.lines.shift(); if (!pending.lines.length) pendingSteps.delete(h);
+          G.toast(h, '✨ ' + tt(line)); sayL(line); continue;
         }
+        pendingSteps.delete(h);
       }
       const line = rememberLine(r, r.day);
       if (line) { r.told = r.day; saveProfiles(); G.toast(h, tt(line)); sayL(line); }

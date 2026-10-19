@@ -9,10 +9,12 @@ export async function musicAudioCheck(browser: Browser): Promise<string> {
       AudioParam.prototype.setValueAtTime=function(value:number,time:number){scheduled.set(this,value);return set.call(this,value,time);};
       OscillatorNode.prototype.start=function(...args:Parameters<OscillatorNode['start']>){log.starts++;log.frequencies.push(scheduled.get(this.frequency)??this.frequency.value);return start.apply(this,args);};return log;
     });
-    await P.page.evaluate(()=>{void window.__sv.playGame(0,'music','replay');});await P.page.locator('.mc-pad').first().waitFor();
+    await P.page.evaluate(()=>{window.__sv.heroes[0].profile.age='little';void window.__sv.playGame(0,'music','replay');});await P.page.locator('.mc-pad').first().waitFor();
     if(await P.page.locator('.mc-tab').count()!==4)throw Error('Not all four instruments available');
     for(let instrument=0;instrument<4;instrument++){
       await P.page.locator('.mc-tab').nth(instrument).click();
+      const targets=await P.page.locator('.mc-pad,.mc-row button,.mc-tab').evaluateAll(bs=>bs.map(b=>{const r=b.getBoundingClientRect();return {w:r.width,h:r.height};}));
+      if(targets.some(r=>r.w<64||r.h<64))throw Error('Small music targets: '+JSON.stringify({instrument,targets}));
       for(let note=0;note<8;note++){
         const before=await audio.evaluate(l=>l.starts);
         await P.page.locator('.mc-pad').nth(note).dispatchEvent('pointerdown');
@@ -36,6 +38,6 @@ export async function musicAudioCheck(browser: Browser): Promise<string> {
     const closing=await audio.evaluate(l=>l.starts);await P.page.waitForTimeout(1000);
     if(await audio.evaluate(l=>l.starts)!==closing)throw Error('Tune schedules notes after game closes');
     await audio.dispose();if(P.errors.length)throw Error(P.errors.join(' | '));
-    return '4 instruments × 8 pads produce valid frequencies; recorded notes replay once, repeated taps/tab changes cannot overlap tunes, close cancels future notes';
+    return '4 instruments × 8 pads have 64 px targets and produce valid frequencies; recorded notes replay once, repeated taps/tab changes cannot overlap tunes, close cancels future notes';
   } finally {await P.ctx.close();}
 }

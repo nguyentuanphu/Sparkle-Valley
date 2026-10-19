@@ -15,11 +15,11 @@ const familyRoute = async ctx => ctx.route('**/api/family-devices/*', async r =>
 fs.mkdirSync('out/owner-round',{recursive:true});
 const browser=await launch();
 const stage = label => console.log('Family fixture: '+label);
-async function panel(page) { await clear(page); await page.evaluate(async()=>{const U=await import('/js/ui.js'); U.openGrownups();}); await page.locator('[data-sec="familydevices"] > summary').click(); }
+async function panel(page) { await clear(page); await page.evaluate(async()=>{const U=await import('/js/ui.js'); await U.openGrownups();}); await page.locator('[data-sec="familydevices"] > summary').click(); }
 try {
  // switched off (the default): no family section in Grown-ups and no device contacts the family service
  { const calls=[]; const off=await open(browser,{w:390,h:844,touch:true}); off.page.on('request',q=>{if(q.url().includes('/api/family-devices/'))calls.push(q.url());});
-   await clear(off.page); await off.page.evaluate(async()=>{const U=await import('/js/ui.js'); U.openGrownups();}); await off.page.waitForTimeout(2500);
+   await clear(off.page); await off.page.evaluate(async()=>{const U=await import('/js/ui.js'); await U.openGrownups();}); await off.page.waitForTimeout(2500);
    assert.equal(await off.page.locator('[data-sec="familydevices"]').count(),0,'the family trial must be hidden while switched off'); assert.deepEqual(calls,[],'no family service calls while switched off');
    assert.deepEqual(off.errors,[]); await off.ctx.close(); stage('switched off: hidden, no service calls'); }
  const a=await open(browser,{w:390,h:844,touch:true,route}); await panel(a.page);
@@ -51,9 +51,18 @@ try {
  await b.ctx.setOffline(true); await b.page.evaluate(()=>{globalThis.__svFamilyPhotos={};}); await b.page.evaluate(async()=>{await (await import('/js/familydevices.js')).refreshDevicePhotos({force:true});});
  assert.ok(await b.page.evaluate(id=>globalThis.__svFamilyPhotos?.[id]?.image.startsWith('blob:'),npc));
  await panel(b.page); const backup=b.page.waitForEvent('download'); await b.page.click('.fd-offlinebackup'); const file=await (await backup).path(); const photos=JSON.parse(fs.readFileSync(file)); assert.ok(photos.photos[npc].image.startsWith('data:image/jpeg;'));stage('cold offline cache and backup verified');
- await b.ctx.setOffline(false); const connection=await b.page.evaluate(()=>JSON.parse(localStorage.getItem('sv2_familydevice'))); const status=await familyAction(store,'status',{},connection.token); const own=status.devices.find(d=>d.label==='Replacement tablet');
- await a.page.locator(`[data-device="${own.id}"]`).click();stage('replacement device revoked');
- await b.page.evaluate(async()=>{try {await (await import('/js/familydevices.js')).refreshDevicePhotos({force:true});} catch(e){if(!e.message.includes('403')) throw e;}});
+ await b.ctx.setOffline(false);
+ let releaseManifest, startedManifest;
+ const manifestStarted=new Promise(resolve=>{startedManifest=resolve;}), manifestRelease=new Promise(resolve=>{releaseManifest=resolve;});
+ const holdManifest=async r=>{startedManifest();await manifestRelease;await r.fallback();};
+ await b.ctx.route('**/api/family-devices/manifest',holdManifest);
+ await b.page.evaluate(()=>{window.__revokedFamilyRefresh=import('/js/familydevices.js').then(m=>m.refreshDevicePhotos({force:true})).catch(e=>{if(!e.message.includes('403'))throw e;});});
+ await Promise.race([manifestStarted,new Promise((_,reject)=>setTimeout(()=>reject(new Error('Revocation manifest fixture did not start')),30000))]);
+ const connection=await b.page.evaluate(()=>JSON.parse(localStorage.getItem('sv2_familydevice'))); const status=await familyAction(store,'status',{},connection.token); const own=status.devices.find(d=>d.label==='Replacement tablet');
+ const revoked=a.page.waitForResponse(r=>r.url().endsWith('/api/family-devices/remove') && r.request().method()==='POST');
+ await a.page.locator(`[data-device="${own.id}"]`).click();assert.equal((await revoked).status(),200);stage('replacement device revoked');
+ releaseManifest();await b.page.evaluate(()=>window.__revokedFamilyRefresh);
+ await b.ctx.unroute('**/api/family-devices/manifest',holdManifest);
  assert.deepEqual(await b.page.evaluate(()=>Object.keys(globalThis.__svFamilyPhotos)),[]); assert.equal(await b.page.evaluate(()=>localStorage.getItem('sv2_familyphotos')),null);
  assert.ok(await b.page.evaluate(()=>localStorage.getItem('sv2_familydevice')===null),'revoked connection must allow setup, joining or recovery again');
  await panel(b.page);await b.page.waitForSelector('.fd-create');

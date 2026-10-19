@@ -58,7 +58,8 @@ export async function soundGamesCheck(browser: Browser): Promise<string> {
     await clear(Q.page);await noWelcome(Q.page);await Q.page.evaluate(()=>{void window.__sv.playGame(0,'animalsounds','replay');});
     await Q.page.locator('.animal-retry').waitFor();
     const retry=await Q.page.locator('.animal-retry').boundingBox();
-    if(!retry||retry.width<64||retry.height<64||await Q.page.locator('.bigplay').count())throw Error('missing recording did not hold quiz with an accessible retry');
+    const retryFits=await Q.page.locator('.animal-retry').evaluate(b=>b.scrollWidth<=b.clientWidth+2&&b.scrollHeight<=b.clientHeight+2);
+    if(!retry||retry.width<64||retry.height<64||!retryFits||await Q.page.locator('.bigplay').count())throw Error('missing recording did not hold quiz with an accessible retry');
     failPig=false;await Q.page.locator('.animal-retry').click();await Q.page.locator('.bigplay').waitFor();
     await Q.page.locator('.gl-x').click();await Q.page.locator('.gl').waitFor({state:'detached'});
     const order=await Q.page.evaluateHandle(async()=>{

@@ -1100,6 +1100,15 @@ body.calm .reward .rbig { animation-duration: 1.6s; }
 .mc-pads:not(.drums) .mc-pad:nth-child(1) { --h: 45%; } .mc-pads:not(.drums) .mc-pad:nth-child(2) { --h: 38%; } .mc-pads:not(.drums) .mc-pad:nth-child(3) { --h: 31%; } .mc-pads:not(.drums) .mc-pad:nth-child(4) { --h: 24%; } .mc-pads:not(.drums) .mc-pad:nth-child(5) { --h: 17%; } .mc-pads:not(.drums) .mc-pad:nth-child(6) { --h: 11%; } .mc-pads:not(.drums) .mc-pad:nth-child(7) { --h: 5%; }
 .mc-pad.hit { animation: mc-hit .3s ease-out; }
 @keyframes mc-hit { from { transform: scale(.88); filter: brightness(1.4); } to { transform: none; } }
+/* Keep all eight note targets usable on phones and in narrow split-screen panels. */
+.gl[data-game-id="music"] .gl-stage { container-type: inline-size; }
+.gl[data-game-id="music"] .mc-pads { width: min(100%, 800px); grid-template-columns: repeat(8, minmax(64px, 1fr)); }
+.gl[data-game-id="music"] .mc-pads.drums { grid-template-columns: repeat(4, minmax(64px, 1fr)); }
+.gl[data-game-id="music"] .mc-pad { min-width: 64px; min-height: 64px; }
+.gl.little[data-game-id="music"] .mc-row button { min-width: 64px; min-height: 64px; }
+@container (max-width: 600px) {
+  .gl[data-game-id="music"] .mc-pads:not(.drums) { grid-template-columns: repeat(4, minmax(64px, 1fr)); height: 220px; min-height: 220px; }
+}
 .mc-row { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; align-items: center; margin-top: 14px; }
 .mc-info { font-weight: 700; min-width: 40px; }
 .talelist { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }

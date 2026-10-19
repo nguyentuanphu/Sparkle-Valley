@@ -1659,6 +1659,7 @@ const BAT = G.battery = { frameMs: FRAME_MS, titleMs: TITLE_MS, idleMs: IDLE_MS,
   // at most one drawing per cap ms, on any screen (a 120 or 144 Hz screen gets 60 on average, not 72); st keeps `due`
   gate: (st, now, cap) => { if (!cap) return true; if (now < st.due - 2) return false; st.due = Math.max(st.due + cap, now - cap); return true; },
   take: () => { const o = { frames: BAT.frames, work: BAT.work, draws: BAT.draws, ms: BAT.ms, idleFrames: BAT.idleFrames, pr: renderer.getPixelRatio() }; BAT.frames = BAT.work = BAT.draws = BAT.ms = BAT.idleFrames = 0; return o; } };
+document.addEventListener('visibilitychange', () => { if (document.hidden) BAT.lastDrawn = 0; });
 for (const e of ['pointerdown', 'pointermove', 'keydown', 'wheel', 'touchstart']) addEventListener(e, () => { BAT.input = performance.now(); if (BAT.idle) { BAT.idle = false; BAT.due = 0; } }, { capture: true, passive: true });
 // still: every child and their camera moving slower than 10 cm a second (a settled camera keeps creeping by about a
 // centimetre a second, which nobody sees), the same pose, no input, no friend online, nothing on the way
@@ -1684,10 +1685,11 @@ function frame(now) {
   const work0 = performance.now();
   // the 3D world rests while a full-screen game, the storybook or a page that covers it is open (saves battery)
   // (two players: the world rests only when both halves have a window open)
-  if (twoHalves() && playing ? G.halfBusy(0) && G.halfBusy(1) : gameOpen() || document.querySelector<HTMLElement>('.storybook, .theatre.film') || (G.paused && document.querySelector<HTMLElement>('.modal')) || (playing && worldHidden())) return;
+  if (twoHalves() && playing ? G.halfBusy(0) && G.halfBusy(1) : gameOpen() || document.querySelector<HTMLElement>('.storybook, .theatre.film') || (G.paused && document.querySelector<HTMLElement>('.modal')) || (playing && worldHidden())) { BAT.lastDrawn = 0; return; }
   world.update(dt, t);
   if (playing) G.farCull(now); // (round T: small things far from every camera are not drawn)
   if (!playing) {
+    BAT.lastDrawn = 0;
     const a = t * .05;
     titleCam.position.set(PLATEAU.x + Math.cos(a) * 70, 42, PLATEAU.z + Math.sin(a) * 70); titleCam.lookAt(PLATEAU.x, 16, PLATEAU.z); // (round T: round Ông Cú's home)
     world.updateSky(0, titleCam.position);
@@ -1788,8 +1790,9 @@ function frame(now) {
     return markers; };
     G.huds[i].update(dt, h.cam, () => G.fogMapFor(p), markersFor);
   });
-  if (!BAT.idle) { BAT.frames++; BAT.work += performance.now() - work0; BAT.draws += drawn; const gap = now - BAT.lastDrawn; if (gap <= 250) BAT.ms += gap; }
-  BAT.lastDrawn = now;
+  // Slow active frames count too; title, idle, covered and hidden time reset the active interval.
+  if (!BAT.idle && !document.hidden) { BAT.frames++; BAT.work += performance.now() - work0; BAT.draws += drawn; if (BAT.lastDrawn > 0) BAT.ms += Math.max(0, now - BAT.lastDrawn); BAT.lastDrawn = now; }
+  else BAT.lastDrawn = 0;
 }
 
 // ---------- boot ----------
