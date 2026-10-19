@@ -1,6 +1,6 @@
 # Approved bug fixes and TypeScript migration — progress
 
-Owner approved the combined plan on 19 October 2026 AEDT. Release works alone on work/bugs-typescript-20261019; live remains r87. The next version choice is pending in a pop-up; no new deployment is approved. Plan: ../plans/bugs-typescript-20261019.md.
+Owner approved the combined plan on 19 October 2026 AEDT. Release works alone on work/bugs-typescript-20261019; live remains r87. Owner explicitly chose r88 in the version pop-up on 19 October 2026 AEDT; no r88 deployment is approved. Plan: ../plans/bugs-typescript-20261019.md.
 
 ## Batch 1: reporting
 
@@ -41,3 +41,8 @@ Finish reporting evidence and push a draft review checkpoint. Then convert the s
 - Five new-check development runs failed on fixture setup/actions/waits; final fixture clicks earned rewards through their normal handler instead of imposing an unrelated six-second self-dismiss wait. No established test or speed budget was weakened. Full GitHub verification of this navigation head is next.
 - Reporting checkpoint 7c28d21a full run 39237648036 passed 223/223. Parsed complete logs show 223 distinct successes, zero failures and zero repeated checks. AI review 39237648251 did not finish.
 - Companion-name recordings: initial workflow 39242804191 generated six clips and passed coverage, but artifact delivery was forbidden here. Existing save-to-release-branch mode on isolated release/voice-companions-20261019 was used in run 39243323431; generated commit 21d37dfc. All six MP3s decode, are non-silent, last 1.584–1.836 s and peak below 0.61. Retrieved through Git to scratch; not integrated yet, pending actual before/after quest playback verification. No perceptual listening claim.
+
+### r88 quest/audio baseline
+
+- Owner explicitly chose r88; version sources updated together. Live remains r87.
+- New storyquestflow baseline failed as intended: actual Vietnamese leaf/carry playback reports missing “Rồng con”; rope autoplay reports success without hanging; both three-turtle and five-turtle runs stop incomplete after three attempts. Actual action-path observations saved under docs/repair-story-quests-20261019/evidence/before/. New check/type plumbing passes TypeScript checking; no production quest fix yet.
