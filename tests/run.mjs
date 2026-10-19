@@ -6199,6 +6199,9 @@ await check('reportingflow', async () => {
   return reportingFlowCheck(b);
 });
 
+await check('gameflow', async () => (await import('./game-flow.mts')).gameFlowCheck(b));
+await check('gamewinlayout', async () => (await import('./game-win-layout.mts')).gameWinLayoutCheck(b));
+
 await check('reportstorage', async () => {
   const {execFileSync}=await import('node:child_process');
   return execFileSync(process.execPath,['owner-report-storage.mjs'],{encoding:'utf8',timeout:60000}).trim();

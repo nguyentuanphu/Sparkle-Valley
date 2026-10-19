@@ -281,17 +281,12 @@ What may leave the device:
 - **What it got right that we had missed:** the road grade numbers disagreed (10/14 % rule vs 12.5/15.5 % allowed by `roadshape`). Settled in round 30: 8 % / 12 %, enforced exactly.
 - **Lesson:** an outside review of documents is useful for finding gaps, but every item must be checked against the code before work is planned.
 
-**14.2 Full TypeScript: no. Types in comments: yes, for risky code (§13.7).**
-- **The goal is right:** catch wrong names, missing fields and wrong kinds of values early.
-- **What a build step would cost.** Real TypeScript must be converted before the browser can run it. Today files go straight from GitHub to Netlify to the phone. A build step would mean:
-  - every change converted before testing or deploying;
-  - Sparkle Studio and its exe need the converter too;
-  - Netlify must run a build;
-  - more for AI chats to break;
-  - the file on the phone is no longer exactly the file in the repo, which makes iPhone debugging harder.
-- **Choice:** plain JavaScript with `// @ts-check` + JSDoc type comments. The editor or a test checks types; the browser runs the file unchanged.
-- **Where:** only where mistakes are expensive: saves, network messages, the Studio engine, and the new architecture core (L0–L3).
-- **Trade-off:** a little weaker than full TypeScript and wordier, which is why it is an owner decision.
+**14.2 TypeScript completion: approved, in progress (owner, 19 October 2026 AEDT).**
+- The owner approved the [combined bug-fix and TypeScript plan](plans/bugs-typescript-20261019.md). This supersedes the earlier choice to keep plain JavaScript with JSDoc in risky modules.
+- Convert remaining first-party game, world, content, UI, Studio, tooling, tests and marketing sources in bounded batches. Fix reported bugs in the affected subsystem first. Make an unchanged-content rename commit before type or behaviour edits.
+- The existing browser build converts TypeScript to the JavaScript paths loaded by the browser and service worker. Build before checks or packages; include converted sources in explicit type-check configurations. Preserve IDs, saves, map coordinates, rules and EN/VI.
+- Syntax conversion and full strict checking are separate deliverables. Do not hide errors with broad any types, suppressions or unchecked casts. Keep runtime validation at persistence and network boundaries. Add coverage/inventory ratchets as described in the plan.
+- Generated JavaScript, reviewed vendor code, HTML/CSS, media and appropriate shell/Python scripts retain their normal formats. Approval of migration does not choose a version or approve deployment.
 
 **14.3 "No analytics": the owner chose an anonymous counter; we built it to the spirit of the advice.**
 - The advice is a sound default for a children's game, but the owner asked to know how many children play (round 29) and chose option B (round 30). Following the assessment literally would overrule the owner.

@@ -502,14 +502,15 @@ async function playGame(i: number, id: string, source: string, shrine?: (typeof 
   const p = h.profile, diff = (p.gameDiff && p.gameDiff[id]) || p.difficulty || 'easy', level = Math.min(5, (p.levels[id] || 1) + { easy: 0, medium: 1, hard: 2 }[diff]);
   const little = G.heroes.some(x => x.profile.age !== 'big'), strong = !little && diff !== 'easy';
   if (source === 'shrine') { SFX.secret(); say('A shrine! Let’s solve the puzzle.', 'Một ngôi đền! Cùng giải câu đố nào.'); await wait(600); }
-  const nextId = nextGameAfter(id);
+  const completion = source === 'hub' || source === 'pad' || source === 'simple' ? 'choose' : 'return';
+  const nextId = completion === 'choose' ? nextGameAfter(id) : null;
   // events alongside today's calls (architecture step 1): the activity, by id, and who plays it
   const actId = makeId('act', id, String(++G.actCount)), playerIds = players.map(q => makeId('player', q.id || 'guest'));
   events.emit('ActivityStarted', { activityId: actId, kind: 'game', defId: makeId('game', id), players: playerIds, source });
-  const res = await openGame(id, { players, level, little, strong, nextId, style: source === 'folk' || id === 'market' ? 'village' : 'shrine', levelPick: { value: diff } });
+  const res = await openGame(id, { players, level, little, strong, nextId, completion, style: source === 'folk' || id === 'market' ? 'village' : 'shrine', levelPick: { value: diff } });
   G.paused = false;
   // another level chosen inside the game: remember it for this game and start again
-  if (res.restart) { events.emit('ActivityAbandoned', { activityId: actId, reason: 'level' }); p.gameDiff = { ...(p.gameDiff || {}), [id]: res.restart }; save(); return playGame(i, id, source === 'shrine' ? 'replay' : source, shrine); }
+  if (res.restart) { events.emit('ActivityAbandoned', { activityId: actId, reason: 'level' }); p.gameDiff = { ...(p.gameDiff || {}), [id]: res.restart }; save(); return playGame(i, id, source, shrine); }
   if (res.won) events.emit('ActivityCompleted', { activityId: actId, defId: makeId('game', id), players: playerIds, result: { won: true, stars: res.stars || 0, level } });
   else events.emit('ActivityAbandoned', { activityId: actId, reason: 'left' });
   // (r79, owner point 7) a game opened from Play goes back to Play, one opened from the Pad's Games page back to that page;
@@ -517,7 +518,7 @@ async function playGame(i: number, id: string, source: string, shrine?: (typeof 
   const back = () => { if (source === 'hub') G.openGamesHub(i); else if (source === 'pad') G.openPad(i, 'games'); };
   if (!res.won) { back(); return; }
   // after the rewards: straight on to the next game, or this one again, if the child chose that
-  const then = () => { if (res.next === 'next' && nextId) playGame(i, nextId, source === 'hub' || source === 'pad' ? source : 'replay'); else if (res.next === 'again') playGame(i, id, source === 'shrine' ? 'replay' : source, shrine); else back(); };
+  const then = () => { if (res.next === 'next' && nextId) return playGame(i, nextId, source); if (res.next === 'again') return playGame(i, id, source, shrine); back(); };
   // winning Kite Flying earns the whistling kite (diều sáo), which then flies above you everywhere
   if (id === 'kite' && !p.kite) {
     p.kite = true; p.kiteOn = true; save(); G.kites.sync();

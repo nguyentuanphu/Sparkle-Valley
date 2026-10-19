@@ -2869,6 +2869,18 @@ body:has(.modal:not(.out), .gl, .wardrobe, .audio-tray, .dialog:not(.out), .stor
 .gl-win { background: rgba(28, 14, 44, .78); -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px); }
 .gl-win > p:not(.gl-tapout) { background: rgba(28, 14, 44, .55); border-radius: 18px; padding: 4px 18px; }
 .gl-win .gl-tapout { background: rgba(28, 14, 44, .55); border-radius: 12px; padding: 2px 12px; }
+/* Celebration controls fit the actual game pane, including a short split-screen half. */
+.gl-win { container-type: size; box-sizing: border-box; padding: 8px; gap: 2px; justify-content: flex-start; overflow-y: auto; }
+.gl-win > * { flex-shrink: 0; }
+.gl-win .gl-stars { margin-top: auto; font-size: clamp(24px, 9cqh, 90px); line-height: 1; }
+.gl-win .gl-chest { font-size: clamp(32px, 13cqh, 120px); height: 1.1em; }
+.gl-win > p:not(.gl-tapout) { font-size: clamp(20px, 6.5cqh, 54px); line-height: 1.2; }
+.gl-win .gl-next { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); box-sizing: border-box; max-width: 100%; margin-top: 4px; transform: none; }
+.gl-win .gl-nx { min-width: 64px; max-width: none; min-height: 44px; }
+.gl.little .gl-win .gl-nx { min-height: 64px; }
+.gl-win .gl-nx span { width: clamp(32px, 8cqh, 54px); height: clamp(32px, 8cqh, 54px); }
+.gl-win .gl-tapout { margin: 0; font-size: 15px; line-height: 1.2; }
+.gl-win > :last-child { margin-bottom: auto; }
 /* (I4) the new skill sticker under "You did it!" */
 .gl-skill { display: inline-flex; align-items: center; gap: 8px; margin-top: 8px; background: #fff6e4; color: #3b2a4f; border-radius: 16px; padding: 6px 14px; font-size: 18px; box-shadow: 0 4px 0 rgba(0, 0, 0, .2); }
 .gl-skill .art { width: 44px; height: 44px; }

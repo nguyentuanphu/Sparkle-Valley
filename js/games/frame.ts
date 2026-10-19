@@ -29,7 +29,7 @@ import type { Profile, Difficulty } from '../../types/save.js';
 export type GameResult = { won: boolean; stars?: number; next?: 'next' | 'again' | 'stop'; restart?: Difficulty; [key: string]: unknown };
 type WinExtra = Partial<GameResult> & { title?: string; titleVi?: string };
 export type GameOnline = { mine: number; names: string[]; seed?: string; size?: number; move(n: number, value: number): void; onMove?(listener: (seat: number, n: number, value: number) => void): void; next?(n: number, seat: number): Promise<unknown>; all?(n: number): Promise<unknown[]> };
-export type GameOptions = { players: Profile[]; level?: number; style?: string; partnerName?: string | null; little?: boolean; strong?: boolean; nextId?: string | null; online?: GameOnline | null; levelPick?: { value: Difficulty } | null };
+export type GameOptions = { players: Profile[]; level?: number; style?: string; partnerName?: string | null; little?: boolean; strong?: boolean; nextId?: string | null; completion?: 'choose' | 'return'; online?: GameOnline | null; levelPick?: { value: Difficulty } | null };
 type Cleanup = { onCleanup?(callback: () => void): void };
 
 let current = null;
@@ -44,7 +44,7 @@ export { playWatch };
 const LEVELS = [['easy', 'Easy', 'Dễ'], ['medium', 'Medium', 'Vừa'], ['hard', 'Hard', 'Khó']];
 // (r79 learning, owner 16 Oct AEDT, I1) the level a learning game moved to, kept for "Play again" of the same game only
 let carry = null;
-export function openGame(id: string, { players, level = 1, style = 'shrine', partnerName = null, little = true, strong = false, nextId = null, online = null, levelPick = null }: GameOptions): Promise<GameResult> {
+export function openGame(id: string, { players, level = 1, style = 'shrine', partnerName = null, little = true, strong = false, nextId = null, completion = 'choose', online = null, levelPick = null }: GameOptions): Promise<GameResult> {
   const def = GAMES[id]; if (!def) return Promise.resolve({ won: false });
   const nextName = nextId && GAMES[nextId] ? GAMES[nextId].name() : '';
   if (current) current.close(false);
@@ -81,7 +81,7 @@ export function openGame(id: string, { players, level = 1, style = 'shrine', par
       help.style.setProperty('--gl-guide-height', Math.max(before, help.offsetHeight) + 'px');
     };
     const cleanups = [];
-    let closed = false;
+    let closed = false, winning = false;
     const prevMusic = Music.key; Music.play(GAME_MUSIC[id] || 'think');
     const api = {
       stage, level, players, two: players.length > 1, partnerName, T, el, online,
@@ -113,22 +113,41 @@ export function openGame(id: string, { players, level = 1, style = 'shrine', par
       praise() { const p = [['Great job!', 'Giỏi quá!'], ['Well done!', 'Làm tốt lắm!'], ['Yes! Clever!', 'Đúng rồi! Thông minh quá!'], ['Super!', 'Tuyệt vời!'], ['You got it!', 'Con làm được rồi!']]; const [e, v] = p[Math.floor(Math.random() * p.length)]; say(e, v); mascot('cheer', T(e, v)); },
       get closed() { return closed; },
       async win(extra: WinExtra = {}) {
-        if (closed) return;
+        if (closed || winning) return; winning = true;
         tell('win'); SFX.fanfare();
         // 1 to 3 stars (little ones always get 3), then a treasure chest pops open with a surprise
         const n = little ? 3 : misses <= 1 ? 3 : misses <= 4 ? 2 : 1, prize = PRIZES[Math.floor(Math.random() * PRIZES.length)];
         // (r79 learning, I4) finishing Hard in a reasoning game gives its skill sticker for the sticker book, once
         const skill = skillSticker();
-        const c = el('div', 'gl-win', `<div class="gl-stars">${[0, 1, 2].map(k => `<i class="${k < n ? 'on' : ''}" style="--d:${k * .25}s">⭐</i>`).join('')}</div>
+        const c: HTMLDivElement = el('div', 'gl-win', `<div class="gl-stars">${[0, 1, 2].map(k => `<i class="${k < n ? 'on' : ''}" style="--d:${k * .25}s">⭐</i>`).join('')}</div>
           <div class="gl-chest"><span class="lid">🎁</span><span class="prize">${prize}</span></div><p>${esc(extra.title || T('You did it!', 'Con làm được rồi!'))}</p>${skill ? `<div class="gl-skill">${pic(skill.key)}<b>${esc(T('New sticker:', 'Hình dán mới:'))} ${esc(T(skill.en, skill.vi))}</b></div>` : ''}
-          <div class="gl-next">${nextName ? `<button class="gl-nx go" data-n="next"><span>${pic('▶️')}</span><b>${T('Next game', 'Trò tiếp theo')}</b><small>${esc(nextName)}</small></button>` : ''}<button class="gl-nx again" data-n="again"><span>${pic('🔁')}</span><b>${T('Play again', 'Chơi lại')}</b></button></div><p class="gl-tapout">${T('Tap anywhere else to finish', 'Chạm chỗ khác để kết thúc')}</p>`);
+          ${completion === 'choose' ? `<div class="gl-next">${nextName ? `<button class="gl-nx go" data-n="next"><span>${pic('▶️')}</span><b>${T('Next game', 'Trò tiếp theo')}</b><small>${esc(nextName)}</small></button>` : ''}<button class="gl-nx again" data-n="again"><span>${pic('🔁')}</span><b>${T('Play again', 'Chơi lại')}</b></button></div><p class="gl-tapout">${T('Tap anywhere else to finish', 'Chạm chỗ khác để kết thúc')}</p>` : ''}`);
         layer.appendChild(c); { const ad = gameEndAd(); if (ad) c.appendChild(ad); } say(extra.title || 'You did it!', extra.titleVi || 'Con làm được rồi!');
         burstConfetti(layer);
-        setTimeout(() => { c.querySelector('.gl-chest').classList.add('open'); SFX.coin(); }, 1100);
-        // then the child chooses: the next game, this one again, or stop (after a long wait: stop)
-        setTimeout(() => c.classList.add('ask'), 1600);
-        // tapping anywhere outside the two buttons finishes (there is no Done button any more)
-        const next = await new Promise(r => { let t: ReturnType<typeof setTimeout> | 0 = 0, fin = false; const done = k => { if (fin) return; fin = true; clearTimeout(t); removeEventListener('pointerdown', out, true); r(k); }; const out = e => { if (e.target.closest && e.target.closest('.gl-nx, .gl-ad')) return; if (!layer.contains(e.target)) return; /* (audit: the other child's half keeps its taps) */ e.stopPropagation(); e.preventDefault(); SFX.tap(); done('stop'); }; t = setTimeout(() => done('stop'), 30000); setTimeout(() => { if (!fin) addEventListener('pointerdown', out, true); }, 400); c.querySelectorAll('.gl-nx').forEach(b => { b.onclick = e => { e.stopPropagation(); SFX.tap(); done(b.dataset.n); }; }); });
+        const chestTimer = setTimeout(() => { c.querySelector('.gl-chest').classList.add('open'); SFX.coin(); }, 1100);
+        cleanups.push(() => clearTimeout(chestTimer));
+        // World activities return after the celebration. Play and Simple keep their choices.
+        const next = await new Promise<NonNullable<GameResult['next']>>(resolveNext => {
+          let fin = false;
+          const done = (choice: NonNullable<GameResult['next']>) => {
+            if (fin) return; fin = true;
+            clearTimeout(endTimer); clearTimeout(askTimer); clearTimeout(tapTimer);
+            removeEventListener('pointerdown', out, true); resolveNext(choice);
+          };
+          const out = (event: PointerEvent) => {
+            if (!(event.target instanceof Element) || event.target.closest('.gl-nx, .gl-ad') || !layer.contains(event.target)) return;
+            event.stopPropagation(); event.preventDefault(); SFX.tap(); done('stop');
+          };
+          const choose = completion === 'choose';
+          const endTimer = setTimeout(() => done('stop'), choose ? 30000 : 1600);
+          const askTimer = choose ? setTimeout(() => c.classList.add('ask'), 1600) : 0;
+          const tapTimer = choose ? setTimeout(() => { if (!fin) addEventListener('pointerdown', out, true); }, 400) : 0;
+          cleanups.push(() => done('stop'));
+          c.querySelectorAll<HTMLButtonElement>('.gl-nx').forEach(button => {
+            button.onclick = event => { event.stopPropagation(); SFX.tap(); done(button.dataset.n === 'next' ? 'next' : 'again'); };
+          });
+        });
+        if (closed) return;
         if (next === 'again' && def.learn) carry = { id, shift: Math.max(-1, Math.min(1, shift + pending)) };
         finish(true, Object.assign({ stars: n, next }, extra));
       }
