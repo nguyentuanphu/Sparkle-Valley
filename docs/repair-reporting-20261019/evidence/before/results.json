@@ -1,0 +1,134 @@
+{
+  "out": [
+    {
+      "size": [
+        430,
+        873
+      ],
+      "card": {
+        "x": 14,
+        "y": 116.5,
+        "w": 402,
+        "h": 640,
+        "scroll": 640,
+        "client": 640
+      },
+      "body": {
+        "x": 32,
+        "y": 242.5,
+        "w": 366,
+        "h": 440,
+        "scroll": 550,
+        "client": 440
+      },
+      "send": {
+        "x": 32,
+        "y": 694.5,
+        "w": 72,
+        "h": 44,
+        "scroll": 44,
+        "client": 44
+      },
+      "close": {
+        "x": 356,
+        "y": 128.5,
+        "w": 48,
+        "h": 48,
+        "scroll": 48,
+        "client": 48
+      },
+      "status": "2 reports queued. Sent reports are in My reports."
+    },
+    {
+      "size": [
+        430,
+        517
+      ],
+      "card": {
+        "x": 14,
+        "y": 14,
+        "w": 402,
+        "h": 489,
+        "scroll": 489,
+        "client": 489
+      },
+      "body": {
+        "x": 32,
+        "y": 140,
+        "w": 366,
+        "h": 289,
+        "scroll": 513,
+        "client": 289
+      },
+      "send": {
+        "x": 32,
+        "y": 441,
+        "w": 72,
+        "h": 44,
+        "scroll": 44,
+        "client": 44
+      },
+      "close": {
+        "x": 356,
+        "y": 26,
+        "w": 48,
+        "h": 48,
+        "scroll": 48,
+        "client": 48
+      },
+      "status": "2 reports queued. Sent reports are in My reports."
+    },
+    {
+      "size": [
+        873,
+        430
+      ],
+      "card": {
+        "x": 156.5,
+        "y": 14,
+        "w": 560,
+        "h": 402,
+        "scroll": 402,
+        "client": 402
+      },
+      "body": {
+        "x": 174.5,
+        "y": 140,
+        "w": 524,
+        "h": 202,
+        "scroll": 426,
+        "client": 202
+      },
+      "send": {
+        "x": 174.5,
+        "y": 354,
+        "w": 72,
+        "h": 44,
+        "scroll": 44,
+        "client": 44
+      },
+      "close": {
+        "x": 656.5,
+        "y": 26,
+        "w": 48,
+        "h": 48,
+        "scroll": 48,
+        "client": 48
+      },
+      "status": "2 reports queued. Sent reports are in My reports."
+    },
+    {
+      "retryButton": "Retry queued reports",
+      "status": "2 reports queued. Sent reports are in My reports.",
+      "queue": {
+        "enabled": true,
+        "queued": 1,
+        "sending": true
+      },
+      "delivery": {
+        "state": "queued"
+      }
+    }
+  ],
+  "errors": []
+}

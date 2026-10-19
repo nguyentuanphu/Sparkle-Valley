@@ -1,0 +1,338 @@
+[
+  {
+    "name": "small",
+    "lang": "en",
+    "sceneLit": true,
+    "card": {
+      "x": 14,
+      "y": 14,
+      "w": 292,
+      "h": 612
+    },
+    "send": {
+      "x": 32,
+      "y": 544,
+      "w": 96,
+      "h": 64
+    },
+    "close": {
+      "x": 230,
+      "y": 26,
+      "w": 64,
+      "h": 64
+    },
+    "bodyHeight": 344,
+    "overflowX": false,
+    "minTargets": true,
+    "sendAccessible": true,
+    "lost": []
+  },
+  {
+    "name": "small",
+    "lang": "vi",
+    "sceneLit": true,
+    "card": {
+      "x": 14,
+      "y": 14,
+      "w": 292,
+      "h": 612
+    },
+    "send": {
+      "x": 32,
+      "y": 544,
+      "w": 96,
+      "h": 64
+    },
+    "close": {
+      "x": 230,
+      "y": 26,
+      "w": 64,
+      "h": 64
+    },
+    "bodyHeight": 348,
+    "overflowX": false,
+    "minTargets": true,
+    "sendAccessible": true,
+    "lost": []
+  },
+  {
+    "name": "phone",
+    "lang": "en",
+    "sceneLit": true,
+    "card": {
+      "x": 14,
+      "y": 14,
+      "w": 402,
+      "h": 845
+    },
+    "send": {
+      "x": 32,
+      "y": 777,
+      "w": 96,
+      "h": 64
+    },
+    "close": {
+      "x": 340,
+      "y": 26,
+      "w": 64,
+      "h": 64
+    },
+    "bodyHeight": 581,
+    "overflowX": false,
+    "minTargets": true,
+    "sendAccessible": true,
+    "lost": []
+  },
+  {
+    "name": "phone",
+    "lang": "vi",
+    "sceneLit": true,
+    "card": {
+      "x": 14,
+      "y": 14,
+      "w": 402,
+      "h": 845
+    },
+    "send": {
+      "x": 32,
+      "y": 777,
+      "w": 96,
+      "h": 64
+    },
+    "close": {
+      "x": 340,
+      "y": 26,
+      "w": 64,
+      "h": 64
+    },
+    "bodyHeight": 581,
+    "overflowX": false,
+    "minTargets": true,
+    "sendAccessible": true,
+    "lost": []
+  },
+  {
+    "name": "phone-short",
+    "lang": "en",
+    "sceneLit": true,
+    "card": {
+      "x": 14,
+      "y": 14,
+      "w": 402,
+      "h": 489
+    },
+    "send": {
+      "x": 26,
+      "y": 427,
+      "w": 96,
+      "h": 64
+    },
+    "close": {
+      "x": 340,
+      "y": 26,
+      "w": 64,
+      "h": 64
+    },
+    "bodyHeight": 249,
+    "overflowX": false,
+    "minTargets": true,
+    "sendAccessible": true,
+    "lost": []
+  },
+  {
+    "name": "phone-short",
+    "lang": "vi",
+    "sceneLit": true,
+    "card": {
+      "x": 14,
+      "y": 14,
+      "w": 402,
+      "h": 489
+    },
+    "send": {
+      "x": 26,
+      "y": 427,
+      "w": 96,
+      "h": 64
+    },
+    "close": {
+      "x": 340,
+      "y": 26,
+      "w": 64,
+      "h": 64
+    },
+    "bodyHeight": 249,
+    "overflowX": false,
+    "minTargets": true,
+    "sendAccessible": true,
+    "lost": []
+  },
+  {
+    "name": "landscape",
+    "lang": "en",
+    "sceneLit": true,
+    "card": {
+      "x": 56.5,
+      "y": 14,
+      "w": 760,
+      "h": 402
+    },
+    "send": {
+      "x": 68.5,
+      "y": 340,
+      "w": 96,
+      "h": 64
+    },
+    "close": {
+      "x": 740.5,
+      "y": 26,
+      "w": 64,
+      "h": 64
+    },
+    "bodyHeight": 162,
+    "overflowX": false,
+    "minTargets": true,
+    "sendAccessible": true,
+    "lost": []
+  },
+  {
+    "name": "landscape",
+    "lang": "vi",
+    "sceneLit": true,
+    "card": {
+      "x": 56.5,
+      "y": 14,
+      "w": 760,
+      "h": 402
+    },
+    "send": {
+      "x": 68.5,
+      "y": 340,
+      "w": 96,
+      "h": 64
+    },
+    "close": {
+      "x": 740.5,
+      "y": 26,
+      "w": 64,
+      "h": 64
+    },
+    "bodyHeight": 162,
+    "overflowX": false,
+    "minTargets": true,
+    "sendAccessible": true,
+    "lost": []
+  },
+  {
+    "name": "tablet",
+    "lang": "en",
+    "sceneLit": true,
+    "card": {
+      "x": 30,
+      "y": 140,
+      "w": 760,
+      "h": 900
+    },
+    "send": {
+      "x": 48,
+      "y": 958,
+      "w": 96,
+      "h": 64
+    },
+    "close": {
+      "x": 714,
+      "y": 152,
+      "w": 64,
+      "h": 64
+    },
+    "bodyHeight": 636,
+    "overflowX": false,
+    "minTargets": true,
+    "sendAccessible": true,
+    "lost": []
+  },
+  {
+    "name": "tablet",
+    "lang": "vi",
+    "sceneLit": true,
+    "card": {
+      "x": 30,
+      "y": 140,
+      "w": 760,
+      "h": 900
+    },
+    "send": {
+      "x": 48,
+      "y": 958,
+      "w": 96,
+      "h": 64
+    },
+    "close": {
+      "x": 714,
+      "y": 152,
+      "w": 64,
+      "h": 64
+    },
+    "bodyHeight": 636,
+    "overflowX": false,
+    "minTargets": true,
+    "sendAccessible": true,
+    "lost": []
+  },
+  {
+    "name": "computer",
+    "lang": "en",
+    "sceneLit": true,
+    "card": {
+      "x": 260,
+      "y": 14,
+      "w": 760,
+      "h": 772
+    },
+    "send": {
+      "x": 278,
+      "y": 724,
+      "w": 72,
+      "h": 44
+    },
+    "close": {
+      "x": 960,
+      "y": 26,
+      "w": 48,
+      "h": 48
+    },
+    "bodyHeight": 572,
+    "overflowX": false,
+    "minTargets": true,
+    "sendAccessible": true,
+    "lost": []
+  },
+  {
+    "name": "computer",
+    "lang": "vi",
+    "sceneLit": true,
+    "card": {
+      "x": 260,
+      "y": 14,
+      "w": 760,
+      "h": 772
+    },
+    "send": {
+      "x": 278,
+      "y": 723,
+      "w": 63,
+      "h": 45
+    },
+    "close": {
+      "x": 960,
+      "y": 26,
+      "w": 48,
+      "h": 48
+    },
+    "bodyHeight": 565,
+    "overflowX": false,
+    "minTargets": true,
+    "sendAccessible": true,
+    "lost": []
+  }
+]

@@ -9,6 +9,7 @@ async function clone(n, world) {
   if (n.nodeType === Node.TEXT_NODE) return document.createTextNode(n.textContent);
   if (n.nodeType !== Node.ELEMENT_NODE || /SCRIPT|STYLE|LINK|NOSCRIPT/.test(n.tagName) || (!n.closest('svg') && !visible(n))) return document.createTextNode('');
   let c;
+  if (n instanceof HTMLCanvasElement && n.closest('#stage') && world) { const hidden = document.createElement('div'); const style = getComputedStyle(n); for (const key of style) hidden.style.setProperty(key, style.getPropertyValue(key)); hidden.style.visibility = 'hidden'; return hidden; }
   if (n instanceof HTMLCanvasElement) { c = document.createElement('img'); try { c.src = (n.closest('#stage') && world ? world : n).toDataURL(); } catch { c.src = ''; } }
   else c = n.cloneNode(false);
   const s = getComputedStyle(n); for (const key of s) c.style.setProperty(key, s.getPropertyValue(key));
@@ -56,12 +57,18 @@ export async function captureScreen(source, { sceneOnly = false } = {}) {
   if (sceneOnly) { if (source) g.drawImage(source, 0, 0, c.width, c.height); }
   else {
     try {
-      const body = await clone(document.body, source); body.style.margin = '0'; body.style.width = innerWidth + 'px'; body.style.height = innerHeight + 'px';
+      const body = await clone(document.body, source); body.style.background = 'transparent'; body.style.margin = '0'; body.style.width = innerWidth + 'px'; body.style.height = innerHeight + 'px';
       const html = new XMLSerializer().serializeToString(body);
       const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${innerWidth}" height="${innerHeight}"><foreignObject width="100%" height="100%">${html}</foreignObject></svg>`;
-      const i = await image('data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg)); g.drawImage(i, 0, 0, c.width, c.height); c.toDataURL();
-      // Safari may decode a foreignObject as transparent without throwing.
-      if (!g.getImageData(0, 0, 1, 1).data[3]) await fallback(c, source);
+      // Keep the captured world outside foreignObject: Safari can omit nested images
+      // while still painting an opaque body background and the interface controls.
+      const i = await image('data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg));
+      const overlay = document.createElement('canvas'); overlay.width = c.width; overlay.height = c.height;
+      const ink = overlay.getContext('2d'); ink.drawImage(i, 0, 0, c.width, c.height);
+      const pixels = ink.getImageData(0, 0, overlay.width, overlay.height).data;
+      let visibleInk = false; for (let p = 3; p < pixels.length; p += 64) if (pixels[p]) { visibleInk = true; break; }
+      if (visibleInk) { if (source) g.drawImage(source, 0, 0, c.width, c.height); g.drawImage(overlay, 0, 0); }
+      else await fallback(c, source);
     } catch { c.width = c.width; await fallback(c, source); }
   }
   let shot = c.toDataURL('image/jpeg', .65); if (shot.length > 180000) shot = c.toDataURL('image/jpeg', .35); if (shot.length > 180000) { const small = document.createElement('canvas'); small.width = c.width / 2; small.height = c.height / 2; small.getContext('2d').drawImage(c, 0, 0, small.width, small.height); shot = small.toDataURL('image/jpeg', .5); } return shot;

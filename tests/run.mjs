@@ -6194,6 +6194,11 @@ await check('reportdetectors', async () => {
   return 'scroll/background/hidden controls excluded; real offscreen and failed opens retained; successful quick close and cancellation do not report';
 });
 
+await check('reportingflow', async () => {
+  const { reportingFlowCheck } = await import('./reporting-flow.mts');
+  return reportingFlowCheck(b);
+});
+
 await check('reportstorage', async () => {
   const {execFileSync}=await import('node:child_process');
   return execFileSync(process.execPath,['owner-report-storage.mjs'],{encoding:'utf8',timeout:60000}).trim();

@@ -57,7 +57,8 @@ const L = pair => T(pair[0], pair[1]);
 
 let G: TesterGame | null = null, level = '', live = false;
 const offs: (() => void)[] = [], log: [number, string, string][] = [], errors: string[] = [];
-let want: (() => void) | null = null, lastGame = '', status: TesterStatus | null = get(KEY.st, null), panelOpening = false;
+const want = new Set<(source: HTMLCanvasElement) => void>();
+let lastGame = '', status: TesterStatus | null = get(KEY.st, null), panelOpening = false;
 const sent = new Map(), counts = new Map(), reporting = new Map();
 let automaticPicture = null;
 // A detector scan can report several buttons. Share its composed-screen capture so
@@ -78,10 +79,24 @@ const devNow = () => ({ os: osOf(), br: brOf(), sc: `${innerWidth}x${innerHeight
 // ---------- the picture of the screen ----------
 // (the 3D view keeps no picture between frames, so it is copied right after the next frame is drawn; the window on top
 // is written underneath as words)
-async function grab(sceneOnly = false) {
-  try { const src = G.renderer?.domElement, copy = document.createElement('canvas'); if (src) { copy.width = src.width; copy.height = src.height; copy.getContext('2d').drawImage(src,0,0); } const m = await import('./screencapture.js'); return await m.captureScreen(copy, { sceneOnly }); } catch { return ''; }
+function copyFrame(): HTMLCanvasElement {
+  const src = G.renderer?.domElement, copy = document.createElement('canvas');
+  if (src?.width && src.height) { copy.width = src.width; copy.height = src.height; try { copy.getContext('2d').drawImage(src, 0, 0); } catch { /* the context may be lost while a report opens */ } }
+  return copy;
 }
-const shot = (sceneOnly = false) => new Promise(res => { let done = false; const fin = async () => { if (done) return; done = true; want = null; res(await grab(sceneOnly)); }; want = fin; setTimeout(fin, 400); });
+function framePicture<R>(capture: (source: HTMLCanvasElement) => Promise<R>, fallback: R): Promise<R> {
+  return new Promise(resolve => {
+    let done = false;
+    const finish = (source: HTMLCanvasElement) => { if (done) return; done = true; want.delete(finish); clearTimeout(timer); capture(source).then(resolve, () => resolve(fallback)); };
+    const timer = setTimeout(() => finish(copyFrame()), 1500);
+    want.add(finish);
+  });
+}
+const shot = (sceneOnly = false) => framePicture(async source => { const m = await import('./screencapture.js'); return m.captureScreen(source, { sceneOnly }); }, '');
+const shotPair = () => framePicture(async source => {
+  const m = await import('./screencapture.js');
+  return { full: await m.captureScreen(source), scene: await m.captureScreen(source, { sceneOnly: true }) };
+}, { full: '', scene: '' });
 
 // ---------- sending ----------
 const clientId = () => [...crypto.getRandomValues(new Uint8Array(16))].map(n => n.toString(16).padStart(2, '0')).join('');
@@ -99,27 +114,67 @@ export async function sendAutoplayReport(rep) {
   for (const d of rep.done || []) if (d.problems?.length) { const id = await autoReport('autoplay', `${d.name || d.key}: ${d.problems.join('; ')}`.slice(0, 200), { area: 'autoplay', place: '', game: d.g === 'games' ? d.key : '', window: d.g || '', x: 0, z: 0 }); if (id) ids.push(id);else failed=true; }
   return { state: failed?'storage-failed':ids.length ? 'queued' : 'no-problems', ids };
 }
-let flushing = false;
-async function flush() {
-  if (flushing || !live || navigator.onLine === false) return;
-  queue();if(queueStorageError)return;flushing = true;
-  // (14 Oct AEDT) the list is read again after each send and only the report just sent is taken off: a report made
-  // while another was being sent (an error just as a "slow" report went) used to be lost when the old list was kept
-  try {
-    const attempted = new Set();
-    while (true) {
+type FlushSummary = { state: 'disabled' | 'offline' | 'empty' | 'sent' | 'retry' | 'storage'; sent: number; queued: number };
+const REPORT_TIMEOUT_MS = 15000;
+const offline = () => navigator.onLine === false;
+let flushing = false, flushJob: Promise<FlushSummary> | null = null;
+let lastFlush: FlushSummary | null = null;
+function flush(): Promise<FlushSummary> {
+  if (flushJob) return flushJob;
+  const result = (state: FlushSummary['state'], sent = 0): FlushSummary => ({ state, sent, queued: queue().length });
+  if (!live || navigator.onLine === false) {
+    lastFlush = result(live ? 'offline' : 'disabled');
+    dispatchEvent(new Event('sv-report-queue'));
+    return Promise.resolve(lastFlush);
+  }
+  const rows = queue();
+  if (queueStorageError || !rows.length) {
+    lastFlush = result(queueStorageError ? 'storage' : 'empty');
+    dispatchEvent(new Event('sv-report-queue'));
+    return Promise.resolve(lastFlush);
+  }
+  flushing = true;
+  flushJob = Promise.resolve().then(async () => {
+    let sent = 0;
+    const attempted = new Set<string>();
+    while (live && navigator.onLine !== false) {
       const r = queue().find(row => !attempted.has(row.clientId));
-      if (!r) break;
+      if (!r) return result(sent ? 'sent' : 'empty', sent);
       attempted.add(r.clientId);
-      delivery(r.clientId, { state: 'sending' }); let res = null; try { res = await fetch(URL_(), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(r) }); } catch (e) { delivery(r.clientId, { state: 'retry' }); break; }
-      if (!res.ok) { delivery(r.clientId, { state: 'retry', status: res.status }); if ([400,413].includes(res.status)) continue; break; }
-      let receipt; try { receipt = await res.json(); } catch { delivery(r.clientId, { state: 'retry' }); break; }
-      if (!receipt.ok || !receipt.rid) { delivery(r.clientId, { state: 'retry' }); break; }
-      delivery(r.clientId, { state: 'sent', rid: receipt.rid, problem: receipt.k });
-      const q = queue(), k = q.findIndex(x => x.clientId === r.clientId); if (k >= 0) { q.splice(k, 1); keep(q); } // only acknowledged reports leave the durable queue
+      delivery(r.clientId, { state: 'sending' });
+      const abort = new AbortController(), timer = setTimeout(() => abort.abort(), REPORT_TIMEOUT_MS);
+      try {
+        const res = await fetch(URL_(), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(r), signal: abort.signal });
+        if (!res.ok) {
+          delivery(r.clientId, { state: 'retry', status: res.status });
+          if ([400, 413].includes(res.status)) continue;
+          return result('retry', sent);
+        }
+        const receipt: unknown = await res.json();
+        if (!receipt || typeof receipt !== 'object' || !('ok' in receipt) || receipt.ok !== true || !('rid' in receipt) || typeof receipt.rid !== 'string' || !receipt.rid) {
+          delivery(r.clientId, { state: 'retry' }); return result('retry', sent);
+        }
+        delivery(r.clientId, { state: 'sent', rid: receipt.rid, problem: 'k' in receipt && typeof receipt.k === 'string' ? receipt.k : '' });
+        sent++;
+        // Re-read after the receipt: reports queued during a request remain intact.
+        const q = queue(), k = q.findIndex(x => x.clientId === r.clientId);
+        if (k >= 0) { q.splice(k, 1); if (!keep(q)) return result('storage', sent); }
+        paintCount();
+      } catch {
+        delivery(r.clientId, { state: 'retry' }); return result(offline() ? 'offline' : 'retry', sent);
+      } finally { clearTimeout(timer); }
     }
-  } finally { flushing = false; paintCount(); }
+    return result(live ? 'offline' : 'disabled', sent);
+  }).then(result => {
+    // A rejected individual report must stay visible even if later reports were sent.
+    lastFlush = result.queued && (result.state === 'sent' || result.state === 'empty') ? { ...result, state: 'retry' } : result;
+    if (result.sent) void refresh();
+    return lastFlush;
+  }).finally(() => { flushing = false; flushJob = null; paintCount(); dispatchEvent(new Event('sv-report-queue')); });
+  dispatchEvent(new Event('sv-report-queue'));
+  return flushJob;
 }
+
 const body = (kind, extra) => ({ id: me(), b: BUILD, kind, where: whereNow(), errors: errors.slice(-C.LIMITS.errors), log: log.map(([t, k, s]) => [Math.round((t - Date.now()) / 100) / 10, k, s]), dev: devNow(), players: playersNow(), at: Date.now(), ...extra });
 
 // the game reports by itself (the same thing at the same place once in 10 minutes, counted meanwhile)
@@ -210,12 +265,22 @@ let mounted = 0;
 // ---------- the picture of the 3D view, right after a frame ----------
 function hookRender() {
   const R = G.renderer; if (!R || R.render.__tester) return; const orig = R.render;
-  R.render = Object.assign(function (this: NonNullable<TesterGame['renderer']>, ...a: Parameters<typeof orig>) { const out = orig.apply(this, a); if (want) { const w = want; want = null; w(); } return out; }, { __tester: true });
+  let waitingForFrameEnd = false;
+  R.render = Object.assign(function (this: NonNullable<TesterGame['renderer']>, ...a: Parameters<typeof orig>) {
+    const out = orig.apply(this, a);
+    // Portrait previews render offscreen; split-screen worlds need both passes.
+    // Copy after the complete frame, before the browser clears its drawing buffer.
+    if (want.size && R.getRenderTarget() === null && !waitingForFrameEnd) {
+      waitingForFrameEnd = true;
+      queueMicrotask(() => { waitingForFrameEnd = false; if (want.size) { const source = copyFrame(); for (const receive of [...want]) receive(source); } });
+    }
+    return out;
+  }, { __tester: true });
   offs.push(() => { R.render = orig; });
 }
 
 // ---------- the ladybird and the tester mark ----------
-const paintCount = () => { const n = queue().length, fixed = fixedToSee().length; document.querySelectorAll('.z-lb').forEach(b => { b.querySelector<HTMLElement>('.lb-n').textContent = n ? String(n) : ''; b.querySelector<HTMLElement>('.lb-n').hidden = !n; b.querySelector<HTMLElement>('.lb-ok').hidden = !fixed; }); };
+const paintCount = () => { dispatchEvent(new Event('sv-report-queue')); const n = queue().length, fixed = fixedToSee().length; document.querySelectorAll('.z-lb').forEach(b => { b.querySelector<HTMLElement>('.lb-n').textContent = n ? String(n) : ''; b.querySelector<HTMLElement>('.lb-n').hidden = !n; b.querySelector<HTMLElement>('.lb-ok').hidden = !fixed; }); };
 const fixedToSee = () => { const seen = get(KEY.seen, {}); return ((status && status.mine) || []).filter(p => ['fixed', 'confirmed'].includes(p.status) && !seen[p.k]); };
 function addUI() {
   // (each player's HUD gets the mark under its clock and, at the ladybird level, the ladybird with the zoom buttons; also
@@ -240,13 +305,27 @@ function addUI() {
 async function quickReport() { SFX.tap && SFX.tap(); const s = await shot(); enqueue(body('broken', { note: T('Quick report: something was wrong just now', 'Báo nhanh: vừa có gì đó không ổn'), detail: 'quick', shot: s })); toast(L(C.TESTER_LINES.waiting)); }
 function toast(s) { const t = el('div', 'testertoast', esc(s)); document.body.appendChild(t); setTimeout(() => t.classList.add('out'), 2200); setTimeout(() => t.remove(), 2600); }
 
+function bindReportViewport(panel: HTMLElement) {
+  const viewport = visualViewport;
+  const sync = () => {
+    panel.style.setProperty('--report-height', `${viewport?.height || innerHeight}px`);
+    panel.style.setProperty('--report-width', `${viewport?.width || innerWidth}px`);
+    panel.style.setProperty('--report-left', `${viewport?.offsetLeft || 0}px`);
+    panel.style.setProperty('--report-top', `${viewport?.offsetTop || 0}px`);
+  };
+  sync(); addEventListener('resize', sync); viewport?.addEventListener('resize', sync); viewport?.addEventListener('scroll', sync);
+  const observer = new MutationObserver(() => { if (!panel.isConnected) clean(); });
+  const clean = () => { removeEventListener('resize', sync); viewport?.removeEventListener('resize', sync); viewport?.removeEventListener('scroll', sync); observer.disconnect(); };
+  observer.observe(document.body, { childList: true }); panel.addEventListener('sv-modal-close', clean, { once: true });
+}
+
 // the panel: the picture is taken first, then a kind, a spoken or typed note, Send; or "Already reported → add to it"
 export async function openPanel(i = 0, initialTab = 'tester') {
   const existing=document.querySelector<ReportPanel>('.modal.tpanel');
   if(existing){existing.selectTab?.(initialTab);return existing;}
   if (!live || panelOpening) return;
   panelOpening=true; let pic0,scenePic;
-  try {pic0=await shot();scenePic=await shot(true);} finally {panelOpening=false;}
+  try { const pictures = await shotPair(); pic0 = pictures.full; scenePic = pictures.scene; } finally {panelOpening=false;}
   if(!live)return;
   // Capture what the reporter saw, then clear competing control trays for the form.
   document.querySelector<HTMLElement & { close?(): void }>('.audio-tray')?.close?.();
@@ -255,15 +334,17 @@ export async function openPanel(i = 0, initialTab = 'tester') {
   const was = G.paused; G.paused = true; SFX.tap && SFX.tap();
   const near = ((status && status.open) || []).filter(p => p.where && ((where.game && p.where.game === where.game) || (where.window && p.where.window === where.window) || (!where.game && !where.window && p.where.area === where.area && Math.hypot((p.where.x || 0) - where.x, (p.where.z || 0) - where.z) < 25))).slice(0, 3);
   let kind = 'broken', spoken = false, selectedShot = pic0;
-  const m = modal('tpanel', `<div class="tp-head"><span class="tp-lb">${pic('🐞')}</span><h2>${T('Report a problem', 'Báo lỗi')}</h2><button class="x" aria-label="${T('Close', 'Đóng')}">✕</button></div>
-    <div class="actions"><button class="btn tp-retry">${T('Retry queued reports', 'Gửi lại báo cáo đang chờ')}</button></div><p class="note" role="status">${T(`${queue().length} reports queued. Sent reports are in My reports.`, `${queue().length} báo cáo đang chờ. Báo cáo đã gửi nằm trong Báo cáo của tôi.`)}</p>
-    <label class="tog"><input type="checkbox" class="tp-full" checked> ${T('Include the complete interface', 'Kèm toàn bộ giao diện')}</label><img class="tp-shot" alt="" src="${pic0}">
+  const m: ReportPanel = modal('tpanel reporting-form' + (G.heroes[i]?.profile.age === 'little' ? ' little' : ''), `<div class="tp-head"><span class="tp-lb">${pic('🐞')}</span><h2>${T('Report a problem', 'Báo lỗi')}</h2><button class="x" aria-label="${T('Close', 'Đóng')}">✕</button></div>
+    <div class="actions"><button class="btn tp-retry">${T('Retry queued reports', 'Gửi lại báo cáo đang chờ')}</button></div><p class="note tp-delivery" role="status" aria-live="polite">${T(`${queue().length} reports queued. Sent reports are in My reports.`, `${queue().length} báo cáo đang chờ. Báo cáo đã gửi nằm trong Báo cáo của tôi.`)}</p>
+    <label class="tog"><input type="checkbox" class="tp-full" checked> ${T('Include the complete interface', 'Kèm toàn bộ giao diện')}</label><button class="tp-picture-open" type="button" aria-label="${T('View captured picture', 'Xem ảnh đã chụp')}"><img class="tp-shot" alt="" src="${pic0}"><span>${T('View captured picture', 'Xem ảnh đã chụp')}</span></button>
     ${near.length ? `<div class="tp-near"><b>${T('Already reported here', 'Đã có người báo ở đây')}</b>${near.map(p => `<div class="tp-old"><span>${esc(p.title)} <small>· ${p.n}×</small></span><button class="btn" data-join="${esc(p.k)}">${T('Same problem: add to it', 'Cùng lỗi: báo thêm')}</button></div>`).join('')}</div>` : ''}
     <div class="tp-kinds">${C.KINDS.map(k => `<button class="tp-k ${k.id === kind ? 'on' : ''}" data-k="${k.id}" aria-pressed="${k.id === kind}">${pic(k.icon)}<span>${T(k.en, k.vi)}</span></button>`).join('')}</div>
     <div class="tp-note"><textarea maxlength="600" rows="3" placeholder="${T('What happened? What did you expect?', 'Chuyện gì xảy ra? Bạn mong điều gì?')}"></textarea>${canListen() ? `<button class="btn tp-mic" aria-label="${T('Say it', 'Nói')}">${pic('🎤')} ${T('Say it', 'Nói')}</button>` : ''}</div>
     <div class="actions"><button class="btn primary tp-send">${T('Send', 'Gửi')}</button></div>`);
-  const card = m.querySelector('.card'), ta = card.querySelector('textarea');
-  card.querySelector('.tp-full').onchange = e => { selectedShot = e.target.checked ? pic0 : scenePic; card.querySelector('.tp-shot').src = selectedShot; };
+  bindReportViewport(m);
+  const card = m.querySelector<HTMLElement>('.card'), ta = card.querySelector<HTMLTextAreaElement>('textarea');
+  const full = card.querySelector<HTMLInputElement>('.tp-full');
+  full.onchange = () => { selectedShot = full.checked ? pic0 : scenePic; card.querySelector<HTMLImageElement>('.tp-shot').src = selectedShot; };
   const reportBody = el('div','testing-report'), autoBody = el('div','testing-auto');
   const head = card.querySelector('.tp-head');
   [...card.children].filter(child => child !== head).forEach(child => reportBody.appendChild(child));
@@ -273,7 +354,7 @@ export async function openPanel(i = 0, initialTab = 'tester') {
   const reportActions=reportBody.querySelector('.tp-send').closest('.actions');reportActions.classList.add('testing-actions');
   card.append(tabs,reportBody,autoBody,reportActions);
   const close = () => { G.autoplay?.detach?.(); m.close(); G.paused = was; };
-  card.querySelector('.x').onclick = close;
+  card.querySelector<HTMLButtonElement>('.x').onclick = close;
   const selectTab = tab => {
     reportBody.hidden=tab!=='tester'; autoBody.hidden=tab!=='autoplay';reportActions.hidden=tab!=='tester';
     head.querySelector('h2').textContent=tab==='tester'?T('Report a problem','Báo lỗi'):T('Auto play','Tự chơi');
@@ -287,12 +368,35 @@ export async function openPanel(i = 0, initialTab = 'tester') {
   tabs.onkeydown=e=>{if(['ArrowLeft','ArrowRight','Home','End'].includes(e.key)){e.preventDefault();const next=e.key==='Home'?'tester':e.key==='End'?'autoplay':reportBody.hidden?'tester':'autoplay';selectTab(next);tabs.querySelector(`[data-test-tab="${next}"]`).focus();}};
   m.selectTab=selectTab;
   selectTab(initialTab);
-  card.querySelector('.tp-retry').onclick = () => flush();
-  card.querySelectorAll('.tp-k').forEach(b => b.onclick = () => { kind = b.dataset.k; card.querySelectorAll('.tp-k').forEach(x => { x.classList.toggle('on', x === b); x.setAttribute('aria-pressed', x === b); }); SFX.tap && SFX.tap(); });
-  const mic = card.querySelector('.tp-mic'); if (mic) mic.onclick = async () => { mic.disabled = true; const heard = await listen({ onPartial: t => { ta.value = t; } }); mic.disabled = false; if (heard && heard[0] !== '\u0000') { ta.value = (ta.value && ta.value !== heard ? ta.value + ' ' : '') + heard; spoken = true; } };
+  const retry = card.querySelector<HTMLButtonElement>('.tp-retry'), deliveryStatus = card.querySelector<HTMLElement>('.tp-delivery');
+  const paintDelivery = () => {
+    const n = queue().length;
+    retry.disabled = flushing;
+    retry.textContent = flushing ? T('Sending…', 'Đang gửi…') : T('Retry queued reports', 'Gửi lại báo cáo đang chờ');
+    deliveryStatus.textContent = queueStorageError ? T('Could not read saved reports. Your draft stays here.', 'Chưa đọc được báo cáo đã lưu. Nội dung đang viết vẫn ở đây.')
+      : navigator.onLine === false ? T(`${n} reports saved on this device. They will send when online.`, `${n} báo cáo đã lưu trên máy này. Báo cáo sẽ gửi khi có mạng.`)
+      : flushing ? T(`Sending saved reports. ${n} waiting.`, `Đang gửi báo cáo đã lưu. Còn ${n} báo cáo.`)
+      : n ? T(`${n} reports still waiting. Try again.`, `${n} báo cáo còn đang chờ. Thử gửi lại nhé.`)
+      : lastFlush?.sent ? T(`Reports sent: ${lastFlush.sent}. Nothing waiting.`, `Đã gửi ${lastFlush.sent} báo cáo. Không còn báo cáo chờ.`)
+      : T('No reports waiting to send. Sent reports are in My reports.', 'Không có báo cáo chờ gửi. Báo cáo đã gửi nằm trong Báo cáo của tôi.');
+  };
+  const cleanDelivery = () => { for (const event of ['sv-report-queue', 'sv-report-delivery', 'online', 'offline']) removeEventListener(event, paintDelivery); removed.disconnect(); };
+  const removed = new MutationObserver(() => { if (!m.isConnected) cleanDelivery(); });
+  removed.observe(document.body, { childList: true });
+  for (const event of ['sv-report-queue', 'sv-report-delivery', 'online', 'offline']) addEventListener(event, paintDelivery);
+  m.addEventListener('sv-modal-close', cleanDelivery, { once: true });
+  retry.onclick = async () => { const result = await flush(); if (!result.queued && !result.sent) toast(T('No reports waiting to send.', 'Không có báo cáo chờ gửi.')); };
+  card.querySelector<HTMLButtonElement>('.tp-picture-open').onclick = () => {
+    const picture: ReportPanel = modal('tp-picture' + (m.classList.contains('little') ? ' little' : ''), `<div class="tp-head"><h2>${T('Captured picture', 'Ảnh đã chụp')}</h2><button class="x" aria-label="${T('Close', 'Đóng')}">✕</button></div><div class="tp-picture-body"><img alt="${T('Captured game picture', 'Ảnh trò chơi đã chụp')}" src="${selectedShot}"></div>`);
+    bindReportViewport(picture);
+    picture.querySelector<HTMLButtonElement>('.x').onclick = () => { picture.close(); card.querySelector<HTMLButtonElement>('.tp-picture-open').focus(); };
+  };
+  paintDelivery();
+  card.querySelectorAll<HTMLButtonElement>('.tp-k').forEach(b => b.onclick = () => { kind = b.dataset.k; card.querySelectorAll<HTMLButtonElement>('.tp-k').forEach(x => { x.classList.toggle('on', x === b); x.setAttribute('aria-pressed', String(x === b)); }); SFX.tap && SFX.tap(); });
+  const mic = card.querySelector<HTMLButtonElement>('.tp-mic'); if (mic) mic.onclick = async () => { mic.disabled = true; const heard = await listen({ onPartial: t => { ta.value = t; } }); mic.disabled = false; if (heard && heard[0] !== '\u0000') { ta.value = (ta.value && ta.value !== heard ? ta.value + ' ' : '') + heard; spoken = true; } };
   const send = join => { if(!enqueue(body(kind, { note: ta.value.trim(), spoken, shot: selectedShot, where, join: join || '' })))return; close(); toast(join ? L(C.TESTER_LINES.already) : L(C.TESTER_LINES.waiting)); sayLine(join ? C.TESTER_LINES.already : C.TESTER_LINES.waiting); };
-  card.querySelector('.tp-send').onclick = () => send('');
-  card.querySelectorAll('[data-join]').forEach(b => b.onclick = () => send(b.dataset.join));
+  card.querySelector<HTMLButtonElement>('.tp-send').onclick = () => send('');
+  card.querySelectorAll<HTMLButtonElement>('[data-join]').forEach(b => b.onclick = () => send(b.dataset.join));
   return m;
 }
 // "Fixed in rNN: please check" with Yes, fixed / Still wrong
