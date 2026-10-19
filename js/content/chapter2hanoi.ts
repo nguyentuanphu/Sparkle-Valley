@@ -191,7 +191,10 @@ export function createHanoi(G, ctx: StoryContext) {
     try {
       if (!big(p)) { await ctx.dialog('Cô Tam', [STORY_LINES.countLittle]); ctx.finish(h, 'c2_vanmieu'); return; }
       for (let tries = 0; tries < 4; tries++) {
-        const k = await ctx.dialog('Cô Tam', [STORY_LINES.countAsk], [['3', '3'], ['5', '5'], ['7', '7']]);
+        // Offer the real answer button to autoplay; it still has to choose it through the visible dialogue.
+        const unplan = ctx.plan(() => [...document.querySelectorAll('.dialog:not(.out) .dch')].find(b => b.textContent?.trim() === String(nTurtles(p))), 1);
+        let k: number;
+        try { k = await ctx.dialog('Cô Tam', [STORY_LINES.countAsk], [['3', '3'], ['5', '5'], ['7', '7']]); } finally { unplan(); }
         if (k < 0) break; // (walked away: the turtles wait to be counted again)
         if (k === 1) { await ctx.dialog('Cô Tam', [STORY_LINES.word]); ctx.finish(h, 'c2_vanmieu'); return; }
         await ctx.dialog('Cô Tam', [STORY_LINES.countAgain]);
@@ -221,7 +224,11 @@ export function createHanoi(G, ctx: StoryContext) {
   const spots = {
     hanoi: () => { const g = (city.gates || [])[1]; return g ? { x: g[0] - 4, z: g[1] } : { x: city.x0 - 4, z: city.z }; },
     teo2: () => ({ x: teoAt[0], z: teoAt[1] }),
-    tam2: () => ({ x: tamAt[0], z: tamAt[1] }),
+    tam2: p => {
+      const h = p && G.heroes.find(h => h.profile === p), left = p && lessonOn(p) ? turtles.filter(t => t.k < nTurtles(p) && !counted(p).includes(t.k)) : [];
+      const next = h && left.length ? left.sort((a, b) => Math.hypot(a.x - h.pos.x, a.z - h.pos.z) - Math.hypot(b.x - h.pos.x, b.z - h.pos.z))[0] : left[0];
+      return next ? { x: next.x, z: next.z } : { x: tamAt[0], z: tamAt[1] };
+    },
     nam2: () => ({ x: namAt.x, z: namAt.z }),
     bunca: () => ({ x: jobAt[0], z: jobAt[1] }),
     // (a big kid is pointed at the lake and reads the clue; an under-5 is pointed at the right spot)

@@ -1,6 +1,6 @@
 # Game completion repair — 19 October 2026 AEDT
 
-Approved combined plan: ../plans/bugs-typescript-20261019.md. Branch work/bugs-typescript-20261019, draft PR #400. Live remains r87; the next version and deployment remain unapproved.
+Approved combined plan: ../plans/bugs-typescript-20261019.md. Branch work/bugs-typescript-20261019, draft PR #400. Live remains r87; owner has since chosen r88; r88 deployment remains unapproved.
 
 ## Change
 

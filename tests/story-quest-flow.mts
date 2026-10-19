@@ -30,12 +30,12 @@ export async function storyQuestFlowCheck(browser: Browser): Promise<string> {
   const live = { releases: { autoplay: { on: true, devices: ['storyflow001'] }, tester: { on: true, devices: ['storyflow001'], revert: 'keep' }, story_ch2: { on: true } }, festivals: {} };
   const P = await open(browser, { w: 430, h: 873, touch: true, lang: 'vi',
     pre: () => {
-      localStorage.setItem('sv2_playerid', 'storyflow001'); localStorage.setItem('sv2_tester', JSON.stringify({ at: 1, b: 'r87' }));
+      localStorage.setItem('sv2_playerid', 'storyflow001'); localStorage.setItem('sv2_tester', JSON.stringify({ at: 1, b: 'r88' }));
       // End notifications are shortened, but every requested MP3 must still fetch and decode.
       speechSynthesis.speak = utterance => { setTimeout(() => utterance.onend?.(new SpeechSynthesisEvent('end', { utterance })), 10); };
       const start = AudioBufferSourceNode.prototype.start;
       AudioBufferSourceNode.prototype.start = function (...args: Parameters<AudioBufferSourceNode['start']>) {
-        if (this.buffer?.length > 1) setTimeout(() => this.onended?.(new Event('ended')), 30);
+        if (this.buffer?.length > 1) setTimeout(() => { this.onended?.(new Event('ended')); dispatchEvent(new Event('sv-test-recording-end')); }, 30);
         return start.apply(this, args);
       };
     },
@@ -45,6 +45,8 @@ export async function storyQuestFlowCheck(browser: Browser): Promise<string> {
       await ctx.route('**/api/tester**', route => route.fulfill({ json: { ok: true, rid: 'synthetic-story-receipt', mine: [], open: [] } }));
     }
   });
+  const requested = new Set<string>();
+  P.page.on('request', request => { const path = new URL(request.url()).pathname.slice(1); if (path.startsWith('voices/') && path.endsWith('.mp3')) requested.add(path); });
   try {
     await clear(P.page); await noWelcome(P.page);
     await P.page.waitForFunction(() => !!window.__sv.autoplay, null, { timeout: 30000 });
@@ -73,8 +75,23 @@ export async function storyQuestFlowCheck(browser: Browser): Promise<string> {
       }
       const found = G.interactables.find(it => it.id === 'story_c1_find'); if (!found) throw Error('lantern missing');
       await heard(() => { void found.act(h, G); });
-      const missing = V.voiceMisses(); state.settings.voice = false; V.hush(); G.paused = false;
-      return { lifted, missing, carrying: h.profile.lanterns.carrying, current: G.currentQuest(h.profile)?.id };
+      // Exercise all six new files through the game's voice player as well as the actual VI quest narration above.
+      const clips: string[] = [];
+      for (const [lang, text] of [['en', 'Rồng con'], ['en', 'Lấp Lánh'], ['vi', 'Rồng con']] as const) {
+        state.settings.lang = lang;
+        for (const [slot, speaker] of [['f', 'Cô Tam'], ['m', 'Ông Cú']] as const) {
+          V.setSpeaker(speaker);
+          // sayIn intentionally keeps this exact fixed name; full EN narration translates it via swapNames.
+          await new Promise<void>((resolve, reject) => {
+            const done = () => { clearTimeout(timer); resolve(); };
+            const timer = setTimeout(() => { removeEventListener('sv-test-recording-end', done); reject(Error('fixed companion clip did not decode/play')); }, 10000);
+            addEventListener('sv-test-recording-end', done, { once: true }); V.sayIn(lang, text);
+          });
+          clips.push(V.packUrl(lang, text, slot));
+        }
+      }
+      const missing = V.voiceMisses(); V.setSpeaker(null); state.settings.lang = 'vi'; state.settings.voice = false; V.hush(); G.paused = false;
+      return { lifted, missing, clips, carrying: h.profile.lanterns.carrying, current: G.currentQuest(h.profile)?.id };
     });
     fs.writeFileSync(dir + '/voice.json', JSON.stringify(voices, null, 2));
     assert.equal(voices.carrying, 'ch1'); assert.equal(voices.current, 'L_c1_hang');
@@ -102,8 +119,34 @@ export async function storyQuestFlowCheck(browser: Browser): Promise<string> {
       await clear(P.page);
     }
     assert.equal(voices.missing.length, 0, 'actual lotus-leaf/carry narration used unrecorded speech: ' + JSON.stringify(voices.missing));
+    assert.equal(voices.clips.length, 6); assert.ok(voices.clips.every(path => requested.has(path)), 'a new companion clip did not reach the real voice player: ' + JSON.stringify({ clips: voices.clips, requested: [...requested] }));
     assert.ok(hang.complete && hang.stopped, 'rope autoplay failed: ' + JSON.stringify(hang));
     assert.ok(turtles.every(result => 'complete' in result && result.complete && 'stopped' in result && result.stopped), 'turtle autoplay failed: ' + JSON.stringify(turtles));
+    // Actual rope panel, including Later cancellation, at all three device sizes in both languages.
+    for (const [name, w, h] of [['phone', 430, 873], ['tablet', 820, 1180], ['computer', 1180, 820]] as const) {
+      await P.page.setViewportSize({ width: w, height: h });
+      for (const lang of ['en', 'vi'] as const) {
+        await P.page.evaluate(async lang => {
+          const G = window.__sv, h = G.heroes[0], s = '/js/state.js', state: typeof import('../js/state.js') = await import(s);
+          const u = '/js/content/chapters.js', { CHAPTERS }: typeof import('../js/content/chapters.js') = await import(u);
+          state.settings.lang = lang;
+          const steps = CHAPTERS.flatMap(ch => ch.steps), end = steps.findIndex(step => step.id === 'c1_hang');
+          h.profile.lanterns = { companion: 'dragon', done: Object.fromEntries(steps.slice(0, end).map(step => [step.id, true])), chapters: {}, carrying: 'ch1', act: {} };
+          const it = G.interactables.find(it => it.id === 'story_c1_hang'); if (!it) throw Error('rope activity unavailable');
+          void it.act(h, G);
+        }, lang);
+        await P.page.locator('.handpad [data-hp=rope]').waitFor();
+        const layout = await P.page.evaluate(() => ['.handpad .hp-x', '.handpad [data-hp=rope]'].map(selector => {
+          const e = document.querySelector(selector); if (!e) throw Error('hand control missing');
+          const r = e.getBoundingClientRect(), top = document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2);
+          return { selector, visible: r.x >= 0 && r.y >= 0 && r.right <= innerWidth && r.bottom <= innerHeight, hittable: top === e || e.contains(top) };
+        }));
+        assert.ok(layout.every(item => item.visible && item.hittable), JSON.stringify({ name, lang, layout }));
+        await P.page.screenshot({ path: `${dir}/${name}-${lang}.png` });
+        await P.page.locator('.handpad .hp-x').click(); await P.page.locator('.handpad').waitFor({ state: 'detached' });
+        assert.equal(await P.page.evaluate(() => !!window.__sv.heroes[0].profile.lanterns.done.c1_hang), false, 'Later incorrectly earned a lantern');
+      }
+    }
     assert.deepEqual(P.errors, []);
     return 'actual VI leaf/carry narration uses recordings; rope drag hangs chapter-one lantern; under-5 three-turtle and older-child five-turtle quests finish through legal autoplay controls';
   } finally { await P.ctx.close(); }

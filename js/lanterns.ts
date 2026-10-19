@@ -22,6 +22,7 @@ import { buildDinh, buildLantern } from './dinh.js';
 import { createCompanions } from './companion.js';
 import { openSpot } from './openspot.js';
 import { pad, frames, slot, QUIT } from './handpad.js';
+import { setPlan } from './games/playwatch.js';
 
 const V = VILLAGE;
 // (each chapter's switch starts as its default in js/content/releases.js: chapter 2 is off until an admin switches it on or
@@ -112,7 +113,7 @@ export function createLanterns(G, { dialog, say, reward, save, openTheatre }) {
   const LATER = { ch2: [() => import('./content/chapter2hanoi.js'), () => import('./content/chapter2films.js'), 'c1_find'],
     ch3: [() => import('./content/chapter3sydney.js'), () => import('./content/chapter3films.js'), 'c2_find'] };
   const loadCh = id => loadingCh[id] || (loadingCh[id] = LATER[id][0]().then(M => {
-    const P = mods[id] = M.create(G, { current, isOn, A, st, big, gamesOf, say, save, dialog, reward, actions, finish: (h, id) => finish(h, id), companions: () => companions });
+    const P = mods[id] = M.create(G, { current, isOn, A, st, big, gamesOf, say, save, dialog, reward, actions, plan: setPlan, finish: (h, id) => finish(h, id), companions: () => companions });
     Object.assign(spots, P.spots); G.landmarksStory[id] = { x: P.front[0], z: P.front[1] }; addButtons(CHAPTERS.find(c => c.id === id));
     places[id] = { front: P.front, lanternAt: P.lanternAt, rope: P.rope, paint: P.paint, after: () => P.startParade(), film: LATER[id][1], revealed: P.revealed };
     for (const rs of CHAPTERS.find(c => c.id === id).steps.filter(s => s.lights)) addCatchers(rs);
@@ -310,8 +311,17 @@ export function createLanterns(G, { dialog, say, reward, save, openTheatre }) {
   // (an under-5 is told the little ones' version when a step has one)
   const asQuest = (p: Profile, c: StoryCurrent) => { const tale = (!big(p) && c.s.taleLittle) || c.s.tale;
     return { id: 'L_' + c.s.id, icon: c.s.icon, story: true, title: () => fill(actions() && !big(p) && c.s.actL_en ? T(c.s.actL_en, c.s.actL_vi) : actions() && c.s.act_en ? T(c.s.act_en, c.s.act_vi) : T(c.s.en, c.s.vi), p),
-      tale: tale ? [tale[0], fill(tale[1], p), tale[2], tale[3]] : null, target: () => (catching(c.s) && ribbonsLeft(p, c.s)[0]) || (spots[c.s.at] && spots[c.s.at](p)) }; };
+      tale: tale ? [tale[0], fill(tale[1], p), tale[2], tale[3]] : null,
+      // Successful intermediate actions count as progress, while a genuinely stalled quest keeps its retry limit.
+      progress: () => { const a = A(p), s = c.s;
+        if (s.lesson) return Number(!!a.lesson) + (a.counted || []).length;
+        if (s.leaves) return (a.lifted || []).length + Number(!!a.found);
+        if (s.ribbons || s.lights) return (a[rkey(s)] || []).length;
+        if (s.clues) return s.id === 'c3_find' ? (a.looked3 || []).length + Number(!!a.clue3) : (a.looked || []).length + Number(!!a.clue);
+        return 0;
+      }, target: () => (catching(c.s) && ribbonsLeft(p, c.s)[0]) || (spots[c.s.at] && spots[c.s.at](p)) }; };
   return {
+    busy: (p: Profile) => hanging.has(p),
     quest: p => { const c = current(p); return c ? asQuest(p, c) : null; },
     // the old "talk to Ông Cú" opens the story's prologue instead (once)
     owl: async h => { const c = current(h.profile); if (c && c.s.owl) { await prologue(h); return true; } return false; },

@@ -1,0 +1,68 @@
+{
+  "target": {
+    "x": 190.51364923966074,
+    "z": -67.94409264493744
+  },
+  "complete": true,
+  "stopped": true,
+  "trail": [
+    [
+      1792410123010,
+      "start",
+      "Treo đèn lồng"
+    ],
+    [
+      1792410123015,
+      "tap",
+      "Treo đèn lồng"
+    ],
+    [
+      1792410125707,
+      "drag",
+      ""
+    ],
+    [
+      1792410134995,
+      "page",
+      "1"
+    ],
+    [
+      1792410161873,
+      "page",
+      "2"
+    ],
+    [
+      1792410208806,
+      "close",
+      "Đèn Lồng Làng Sen Bỏ qua✕ Đêm "
+    ]
+  ],
+  "report": {
+    "at": "2026-10-19T11:43:30.810Z",
+    "build": "r88",
+    "speed": "x5",
+    "total": 1,
+    "done": [
+      {
+        "g": "things",
+        "key": "tap:story_c1_hang",
+        "name": "Treo đèn lồng",
+        "ok": false,
+        "skipped": false,
+        "problems": [
+          "truyện dừng ở trang 2",
+          "cần giúp: tự chơi chưa làm xong hoạt động trong truyện này"
+        ],
+        "notes": [],
+        "said": "",
+        "secs": 85.8,
+        "fps": 5
+      }
+    ],
+    "perRun": false,
+    "reportIds": [
+      "44d3830158f945e136a8ab099864d5f9"
+    ],
+    "reportState": "queued"
+  }
+}

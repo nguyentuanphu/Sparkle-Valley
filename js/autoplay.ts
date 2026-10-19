@@ -254,18 +254,34 @@ async function walkTo(x, z, speed = 'watch') {
 }
 
 // ---------- whatever is open on the screen, done like a child ----------
-const OPEN = '.reward, .storybook, .dialog, .gl, .theatre, .songs, .modal, .pad';
+const OPEN = '.reward, .storybook, .dialog, .gl, .theatre, .songs, .modal, .pad, .handpad';
 const topOpen = () => [...document.querySelectorAll<HTMLElement>(OPEN)].filter(e => !(root && root.contains(e)) && !e.classList.contains('out') && shown(e)).pop();
-async function settle(secs, note = () => { }) {
+async function settle(secs, note: ProblemNote = () => { }) {
   const end = Date.now() + secs * 1000;
   while (Date.now() < end) {
-    const w = topOpen(); if (!w) return;
+    const w = topOpen();
+    // A rope can finish before the chapter's deferred theatre has opened. Wait for that same activity,
+    // rather than declaring success in the gap and leaving its film in front of the next quest.
+    if (!w) { if (G.lanterns?.busy(hero()?.profile)) { await hold(.1); continue; } return; }
     await hold(think());
     if (!w.isConnected) continue;
     if (w.matches('.gl')) { await playGame(note); continue; }
     if (w.matches('.theatre')) { await readTale(note); continue; }
     if (w.matches('.reward')) { await tap(w, note); continue; }
-    if (w.matches('.dialog')) { const ch = [...w.querySelectorAll('.dch')].filter(shown); await tap(ch.length ? ch[0] : w.querySelector('.dtext') || w, note); continue; }
+    if (w.matches('.handpad')) {
+      const rope = w.querySelector<HTMLElement>('[data-hp=rope]');
+      if (rope && shown(rope)) {
+        const r = rope.getBoundingClientRect(), x = r.left + r.width / 2;
+        await swipe(x, r.top + r.height * .1, x, r.top + r.height * .97);
+        await until(() => !w.isConnected, 2); continue;
+      }
+      note(T('help: auto play could not work out these hand controls', 'cần giúp: tự chơi chưa biết dùng bảng điều khiển này'));
+      return;
+    }
+    if (w.matches('.dialog')) {
+      const ch = [...w.querySelectorAll('.dch')].filter(shown), planned = ch.length && playWatch.plan?.();
+      await tap(planned && ch.includes(planned) ? planned : ch.length ? ch[0] : w.querySelector('.dtext') || w, note); continue;
+    }
     if (w.matches('.storybook')) { const g = w.querySelector('.qt-go'); await tap(shown(g) ? g : w.querySelector('.sb-art') || w, note); continue; }
     return; // (a menu, the shop, the songs: left for the step to look at and close)
   }
@@ -273,7 +289,7 @@ async function settle(secs, note = () => { }) {
 async function closeAll() {
   for (let k = 0; k < 4; k++) {
     const w = topOpen(); if (!w) break;
-    const x = w.querySelector<HTMLElement>('.gl-x, .th-x, .sg-x, .x, [data-a=close], .close, .sb-skip');
+    const x = w.querySelector<HTMLElement>('.gl-x, .th-x, .sg-x, .hp-x, .x, [data-a=close], .close, .sb-skip');
     if (x && shown(x)) { step_('close', label(w).slice(0, 30)); x.click(); await wait(350); }
     else if (w.matches('.dialog, .reward, .storybook')) { w.click(); await wait(300); }
     else break;
@@ -392,6 +408,7 @@ async function doTap(it, note) {
   step_('tap', (typeof it.label === 'function' ? it.label() : it.id) || it.id); G.goAndDo(h, it);
   await hold(.6); await until(() => !h.goal, 6); await hold(.4);
   await settle(sp().talk + 30, note);
+  if (G.lanterns?.busy(h.profile)) note(T('help: auto play could not finish this story activity', 'cần giúp: tự chơi chưa làm xong hoạt động trong truyện này'));
   const w = topOpen(); if (w) { await hold(sp().talk); offScreen(w, note); }
 }
 async function doOpen(open, note) { await closeAll(); open(); if (!await until(() => topOpen(), AP_OPEN_WAIT)) { note(T('did not open', 'không mở được')); return; } await hold(sp().talk); offScreen(topOpen(), note); }
@@ -409,13 +426,17 @@ async function doQuests(note, out) {
   try { await questLoop(h, out); } finally { if (run) run.quest = false; }
 }
 async function questLoop(h, out: AutoplayResult[]) {
-  let lastId = null, tries = 0;
+  let lastId = null, tries = 0, lastProgress = 0;
   for (let n = 0; n < AP_QUESTS.max; n++) {
     const q = G.currentQuest && G.currentQuest(h.profile); if (!q) { step_('quest', T('every quest done', 'xong mọi nhiệm vụ')); break; }
-    if (q.id === lastId) { if (++tries >= AP_QUESTS.tries) { out.at(-1).problems.push(T('help: auto play could not finish this quest', 'cần giúp: tự chơi chưa làm xong nhiệm vụ này')); out.at(-1).ok = false; break; } }
-    else { lastId = q.id; tries = 0; }
+    const same = q.id === lastId, progress = q.progress?.() || 0;
+    if (same) {
+      if (progress > lastProgress) tries = 0;
+      else if (++tries >= AP_QUESTS.tries) { out.at(-1).problems.push(T('help: auto play could not finish this quest', 'cần giúp: tự chơi chưa làm xong nhiệm vụ này')); out.at(-1).ok = false; break; }
+    } else { lastId = q.id; tries = 0; }
+    lastProgress = progress;
     const r = await one({ g: 'quests', key: 'quest:' + q.id, name: () => q.title(), fn: nt => questOnce(q, nt) });
-    if (tries) { const l = out.at(-1); l.secs += r.secs; l.problems.push(...r.problems); l.ok = l.ok && r.ok; if (r.said) l.said = r.said; } else out.push(r);
+    if (same) { const l = out.at(-1); l.secs += r.secs; l.problems.push(...r.problems); l.notes.push(...r.notes); l.ok = l.ok && r.ok; if (r.said) l.said = r.said; } else out.push(r);
     if (run) { run.qname = r.name; draw(); }
   }
 }
@@ -442,7 +463,7 @@ async function one(s: AutoplayStep): Promise<AutoplayResult> {
   on = false; errSink = null;
   const secs = (performance.now() - t0) / 1000, fps = secs > .5 ? Math.round(frames / secs) : null;
   for (const e of [...new Set(errs)].slice(0, 3)) note(T('error: ', 'lỗi: ') + e);
-  for (const m of voiceMisses()) if (!miss0.has(m[0] + '|' + m[1])) note(T('no recording: ', 'chưa thu âm: ') + String(m[0]).slice(0, 80));
+  for (const m of voiceMisses()) if (!miss0.has(m[0] + '|' + m[1])) note(T('no recording: ', 'chưa thu âm: ') + (m[0] + ': ' + m[1]).slice(0, 120));
   if ((!sp().rate || sp().rate === 1) && fps != null && fps < 20) note(T(`slow: ${fps} frames a second`, `chậm: ${fps} khung hình mỗi giây`));
   for (const p of problems) if (!/^(stuck|bị kẹt)/.test(p)) send(s.g, `${nm}: ${p}`); // (being stuck was sent when it happened)
   return { g: s.g, key: s.key, name: nm, ok: !problems.length && !skipped, skipped, problems, notes, said, secs: Math.round(secs * 10) / 10, fps };

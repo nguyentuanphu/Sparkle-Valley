@@ -2,6 +2,8 @@
 
 Prepared 19 October 2026 AEDT, from live r87/main de8cc0ed. Owner requested a combined plan. This document proposes work; it does not choose the next version number or approve deployment. Release works alone under the standing owner instruction.
 
+Implementation approved by the owner on 19 October 2026 AEDT. The owner subsequently chose r88 for the next reviewed release batch. Work progresses in the ledger at ../cores/tasks/bugs-typescript-progress-20261019.md; r88 deployment remains unapproved.
+
 ## Current position
 
 - GitHub has 46 open bug issues, including 23 offscreen reports; 34 are marked robot-stuck. All latest submitted reports identify r86. No issue was filed after the verified r87 deployment at the time of this audit. This does not establish that reports are fixed or that Studio has no unprocessed reports.
