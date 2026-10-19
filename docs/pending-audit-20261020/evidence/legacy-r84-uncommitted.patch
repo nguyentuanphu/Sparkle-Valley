@@ -1,0 +1,115 @@
+diff --git a/js/ferry.js b/js/ferry.js
+index 6691c336..d24ea91a 100644
+--- a/js/ferry.js
++++ b/js/ferry.js
+@@ -59,7 +59,8 @@ export function createFerries(G) {
+     // and comes down in steps to the water, never below the ground under it, so no pier hangs under a high bank
+     const dx = ex - sx, dz = ez - sz, L = Math.hypot(dx, dz), a = Math.atan2(dx, dz), y0 = WATER + .6, parts = [], ux = dx / L, uz = dz / L;
+     const ks = []; for (let k = 0; k < L - .45; k += .55) ks.push(k); ks.push(L);
+-    const ys = []; ks.forEach((k, i) => ys.push(Math.max(y0, i ? ys[i - 1] - .88 : heightAt(sx, sz), heightAt(sx + ux * k, sz + uz * k) + .02)));   // (steps of at most 0.88 m from the bank's edge: a child steps up 1.2 m)
++    // The plank's top is 7 cm above its reference height below: leave only 2 cm above the bank, not 9 cm at the road.
++    const ys = []; ks.forEach((k, i) => ys.push(Math.max(y0, i ? ys[i - 1] - .88 : heightAt(sx, sz) - .05, heightAt(sx + ux * k, sz + uz * k) - .05)));   // (steps of at most 0.88 m from the bank's edge: a child steps up 1.2 m)
+     const y = ys[ys.length - 1];
+     ks.forEach((k, i) => { const t = Math.max(.14, ys[i] - (ys[i + 1] ?? ys[i]) + .14); parts.push(P(B(2.6, t, .5), i % 2 ? '#a87a4a' : '#b88a5a', [0, ys[i] - y - t / 2 + .07, k])); });   // (a step is solid down to the next one)
+     ks.forEach((k, i) => { if (i % 4 && i < ks.length - 1) return; const h = ys[i] - WATER + 1.7; [-1.2, 1.2].forEach(x => parts.push(P(C(.13, .13, h, 6), '#7a5236', [x, ys[i] - y - h / 2 + .1, k]))); });
+diff --git a/js/tester.js b/js/tester.js
+index 0787df53..7000dd35 100644
+--- a/js/tester.js
++++ b/js/tester.js
+@@ -146,11 +146,16 @@ function watch() {
+   // (#261, a 3.4 s freeze on Windows Chrome that a probe could not reproduce) each freeze report says why the frames
+   // stopped: the game's own code running long (a long task), or the browser not drawing while the window was resized,
+   // left or hidden. The report itself and how reports are grouped are unchanged.
+-  const longs = [], winAt = []; try { const po = new PerformanceObserver(l => { for (const e of l.getEntries()) { longs.push([e.startTime, e.duration]); if (longs.length > 20) longs.shift(); } }); po.observe({ type: 'longtask' }); offs.push(() => po.disconnect()); } catch (e) { }
++  const longs = [], winAt = []; let longObserver;
++  const keepLongs = entries => { for (const e of entries) { longs.push([e.startTime, e.duration]); if (longs.length > 20) longs.shift(); } };
++  try { longObserver = new PerformanceObserver(l => keepLongs(l.getEntries())); longObserver.observe({ type: 'longtask' }); offs.push(() => longObserver.disconnect()); } catch (e) { }
+   for (const [t, k] of [[window, 'resize'], [window, 'blur'], [window, 'focus'], [document, 'visibilitychange']]) on(t, k, () => { winAt.push([performance.now(), k]); if (winAt.length > 20) winAt.shift(); });
+   const why = (from, to) => { const ran = longs.filter(([a, d]) => a + d > from && a < to).reduce((m, [, d]) => Math.max(m, d), 0), seen = [...new Set(winAt.filter(([a]) => a > from - 500 && a < to).map(([, k]) => k))];
+     return `longest script ${Math.round(ran)} ms; window: ${seen.join(', ') || 'no change'}; focus ${document.hasFocus() ? 'yes' : 'no'}`; };
+-  const tick = t => { if (!live) return; const gap = t - lastF; if (gap > C.LIMITS.freeze * 1000 && document.visibilityState === 'visible' && performance.now() - mounted > 15000) { note('freeze', why(lastF, t)); autoReport('freeze', `${(gap / 1000).toFixed(1)} s`); }
++  const tick = t => { if (!live) return; const gap = t - lastF; if (gap > C.LIMITS.freeze * 1000 && document.visibilityState === 'visible' && performance.now() - mounted > 15000) {
++      // Long tasks are delivered after the rendering task. Reporting inside rAF could miss the script that froze it.
++      const from = lastF; setTimeout(() => { if (!live) return; if (longObserver) keepLongs(longObserver.takeRecords()); note('freeze', why(from, t)); autoReport('freeze', `${(gap / 1000).toFixed(1)} s`); }, 0);
++    }
+     lastF = t; frames++; if (t - since > C.LIMITS.slowFor * 1000) { fpsNow = frames * 1000 / (t - since); if (fpsNow < C.LIMITS.slowFps && document.visibilityState === 'visible' && performance.now() - mounted > 15000) autoReport('slow', `${Math.round(fpsNow)} frames a second`); frames = 0; since = t; }
+     raf = requestAnimationFrame(tick); };
+   raf = requestAnimationFrame(tick); offs.push(() => cancelAnimationFrame(raf));
+diff --git a/tests/check-times.json b/tests/check-times.json
+index 099218d2..a5fa8e59 100644
+--- a/tests/check-times.json
++++ b/tests/check-times.json
+@@ -6,7 +6,7 @@
+ "autoplay":279,
+ "bagitems":74,
+ "battery":93,
+-"boats":41,
++"boats":48,
+ "boot":119,
+ "boxes":54,
+ "bridges":30,
+@@ -30,7 +30,7 @@
+ "familynote":27,
+ "familyphotos":79,
+ "features":45,
+-"feel":92,
++"feel":113,
+ "festcal":50,
+ "festhunt":70,
+ "festivals":53,
+@@ -55,7 +55,7 @@
+ "hubmap":37,
+ "iphone":42,
+ "jobs":50,
+-"joins":40,
++"joins":48,
+ "kidplay":58,
+ "knock":203,
+ "language":31,
+@@ -144,7 +144,7 @@
+ "r79hudtrays":193,
+ "r79learning":565,
+ "rain":41,
+-"reading":1302,
++"reading":1961,
+ "realphotos":34,
+ "regions":40,
+ "report":35,
+@@ -183,7 +183,7 @@
+ "tradeclothes":43,
+ "two-players":64,
+ "types":9,
+-"unit":11,
++"unit":23,
+ "validate":30,
+ "vehicles":44,
+ "village":46,
+diff --git a/tests/run.mjs b/tests/run.mjs
+index 82156ae9..63fe9c8a 100644
+--- a/tests/run.mjs
++++ b/tests/run.mjs
+@@ -1393,8 +1393,13 @@ await check('testerreport', async () => {
+   await P.page.evaluate(() => { setTimeout(() => { throw new Error('tester check boom'); }, 0); });
+   const e = await wait(x => x && x.kind === 'auto' && x.auto === 'error' && /tester check boom/.test(x.detail));
+   if (!e || !/^data:image\/jpeg;base64,/.test(e.shot || '') || !(e.log && e.log.length) || !e.players.length || !e.players[0].name || !e.dev || !e.b) out.push('the error report has no picture, steps, players or device: ' + JSON.stringify(e && { shot: (e.shot || '').slice(0, 30), log: e.log && e.log.length, players: e.players, dev: e.dev, b: e.b }));
+-  await P.page.evaluate(() => __sv.playGame(0, 'no-such-game-for-the-tester-check'));
+-  if (!await wait(x => x && x.auto === 'noopen' && /no-such-game/.test(x.detail), 9000)) out.push('a game that did not open was not reported');
++  const requestedAt = await P.page.evaluate(() => { const at = Date.now(); __sv.playGame(0, 'no-such-game-for-the-tester-check'); return at; });
++  // Detection keeps its 9 s budget; composing the screenshot on a slow renderer can deliver it later (11.7 s here).
++  const unopened = await wait(x => x && x.auto === 'noopen' && /no-such-game/.test(x.detail), 30000);
++  if (!unopened) out.push('a game that did not open was not reported: ' + JSON.stringify({ received: got.map(x => [x?.auto, x?.detail]), queued: await P.page.evaluate(() => JSON.parse(localStorage.getItem('sv2_tester_out') || '[]').map(x => [x.auto, x.detail])) }));
++  else { const event = unopened.log?.findLast(row => row[1] === 'report' && row[2] === 'noopen no-such-game-for-the-tester-check');
++    const detectedMs = event ? unopened.at + event[0] * 1000 - requestedAt : Infinity;
++    if (detectedMs < -100 || detectedMs > 9000) out.push('the missing game was not detected within 9 s: ' + detectedMs + ' ms'); }
+   await P.page.waitForFunction(() => performance.now() > 0, null); await P.page.waitForTimeout(Math.max(0, 16000 - await P.page.evaluate(() => performance.now())));
+   await P.page.evaluate(() => new Promise(r => requestAnimationFrame(() => { const t = performance.now(); while (performance.now() - t < 2600) { } r(); })));
+   { const fz = await wait(x => x && x.auto === 'freeze', 6000); if (!fz) out.push('a frozen screen was not reported');
+@@ -6271,6 +6276,8 @@ await check('feel', async () => {
+   const notes = [];
+   for (const [tag, w, h, touch] of [['computer', 1180, 760, false], ['phone', 390, 844, true]]) {
+     const P = await open(b, { w, h, touch, settings: { sound: true, calm: false } });
++    // The welcome sticker has its own flying reward after seven seconds: it is not one of this check's earned coins.
++    await noWelcome(P.page);
+     const r = await P.page.evaluate(async () => {
+       const A = await import('/js/audio.js'), S = await import('/js/state.js'), U = await import('/js/popups.js');
+       let osc = 0; const make = AudioContext.prototype.createOscillator; AudioContext.prototype.createOscillator = function () { osc++; return make.call(this); };

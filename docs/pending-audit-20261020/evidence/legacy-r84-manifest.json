@@ -1,0 +1,98 @@
+{
+  "source": "/workspace/Sparkle-Valley",
+  "branch": "release/r84",
+  "head": "ae59fdd4",
+  "patchSha256": "d74540d479cc05a47ae9bede3959f44940566d7e94284df3261a3b82341c7e24",
+  "untrackedEvidence": [
+    {
+      "path": "computer-en-games.png",
+      "bytes": 607110,
+      "sha256": "95b9aa9598996219563872e04536ba191a2a1fcb2de37e85e0efd2389702c539"
+    },
+    {
+      "path": "computer-en-grownups.png",
+      "bytes": 499717,
+      "sha256": "44e6e046de2851de5bed853aebef5203637da8533897f8693a6851059901d3c4"
+    },
+    {
+      "path": "computer-en-valley.png",
+      "bytes": 678418,
+      "sha256": "6b7247c4cb2f99e07bf03c905d3388e5436f77f2cd49b7e92f24c5e648bf7e31"
+    },
+    {
+      "path": "computer-vi-games.png",
+      "bytes": 596170,
+      "sha256": "8c6105284fbc4e88ab5da7938a45fe00fd3bf254f81c5fd64b483feac8c87db6"
+    },
+    {
+      "path": "computer-vi-grownups.png",
+      "bytes": 489888,
+      "sha256": "156f6ae3bbae60ba97bbbd35210f600195f85642357ea5495d6aa4218e0c2b65"
+    },
+    {
+      "path": "computer-vi-valley.png",
+      "bytes": 683871,
+      "sha256": "84beafe46d1e6b4c7415b4018f3be7a3ede352b6e29f8a2bf6e3664e1aa2b17c"
+    },
+    {
+      "path": "phone-en-games.png",
+      "bytes": 230864,
+      "sha256": "85af855d09affb2e15d1c5f28ee417c688a93299a99ee0ec6a889d6e8415a5c2"
+    },
+    {
+      "path": "phone-en-grownups.png",
+      "bytes": 119852,
+      "sha256": "a19fd7427de2c7c45ea687f652d4d71fd168bf2660fd983dbf1fc28b403c7a07"
+    },
+    {
+      "path": "phone-en-valley.png",
+      "bytes": 254713,
+      "sha256": "a11822acf47d4a47ad9551709860f79a834b94154c9841e1bf2e6973b7c2d4cd"
+    },
+    {
+      "path": "phone-vi-games.png",
+      "bytes": 228745,
+      "sha256": "5f7f144a946affc52f4ba3006cca1d2276d990ecf5286d7ab93c651e89229961"
+    },
+    {
+      "path": "phone-vi-grownups.png",
+      "bytes": 113994,
+      "sha256": "64945e69a80426f80cef51e6a12b462b01edec2db2b2d350087c9a1c0a2ccbff"
+    },
+    {
+      "path": "phone-vi-valley.png",
+      "bytes": 258892,
+      "sha256": "ba0a3134db08b78cd401d061a51d10bede189e9f88ed954d81a6af4f29a46cc0"
+    },
+    {
+      "path": "tablet-en-games.png",
+      "bytes": 550594,
+      "sha256": "b7ea822d6b303ad5afaca536d1783e7a09c184d22bff047af6ecb07731feda9f"
+    },
+    {
+      "path": "tablet-en-grownups.png",
+      "bytes": 387032,
+      "sha256": "da719ef2377bbd8c027c1c589b0e75c75f36c45cb30d2db6e25b50bc24ae61f3"
+    },
+    {
+      "path": "tablet-en-valley.png",
+      "bytes": 576275,
+      "sha256": "ee6c7a8204c5104ec836e2d9b9858fb639ff79def39805aee0aa174170faf0c8"
+    },
+    {
+      "path": "tablet-vi-games.png",
+      "bytes": 549697,
+      "sha256": "7dc75d64bdfa7c2b40d1e834d8a3cdd5efde7f31dae74be8b0cf2e939f3f40d4"
+    },
+    {
+      "path": "tablet-vi-grownups.png",
+      "bytes": 395964,
+      "sha256": "6b42c5c4e6e2d5c3fb4d36f03bcf28c55339f9b729fceabeee5e698efc03c5ea"
+    },
+    {
+      "path": "tablet-vi-valley.png",
+      "bytes": 591198,
+      "sha256": "0fe523bc3613f3d64c3b6fd59149c48e8549b6eae1dc1052b99871ca8f20b6a9"
+    }
+  ]
+}

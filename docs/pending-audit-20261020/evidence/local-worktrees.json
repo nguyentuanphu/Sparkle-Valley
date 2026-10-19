@@ -1,0 +1,30 @@
+[
+  {
+    "repo": "/workspace/Sparkle-Valley",
+    "branch": "release/r84",
+    "head": "ae59fdd4",
+    "status": "M js/ferry.js\n M js/tester.js\n M tests/check-times.json\n M tests/run.mjs\n?? docs/owner-repair-20261014/evidence/r84-release/",
+    "drawing_commit_present": null
+  },
+  {
+    "repo": "/workspace/Sparkle-Valley-main",
+    "branch": "",
+    "head": "73cb0d53",
+    "status": "",
+    "drawing_commit_present": null
+  },
+  {
+    "repo": "/workspace/Sparkle-Valley-r86-speed",
+    "branch": "",
+    "head": "b37a52de",
+    "status": "",
+    "drawing_commit_present": null
+  },
+  {
+    "repo": "/workspace/Sparkle-Valley-r87",
+    "branch": "work/bugs-typescript-20261019",
+    "head": "2e5e09e0",
+    "status": "",
+    "drawing_commit_present": null
+  }
+]

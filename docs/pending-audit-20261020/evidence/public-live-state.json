@@ -1,0 +1,10 @@
+{
+  "auditedAtAEDT": "20 October 2026, 6:53 AM AEDT",
+  "url": "https://sparklevalley.au/api/live",
+  "serviceWorkerVersion": "sv-2026-10-18-r87",
+  "familyDevices": {
+    "on": true
+  },
+  "sourceDefault": false,
+  "note": "Public on-state is observed. This does not establish who enabled it or whether owner-device verification is complete."
+}

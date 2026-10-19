@@ -6,6 +6,8 @@
 A bilingual (English / Tiếng Việt) 3D open-world browser game for the owner's children, aged 2–8.
 
 **Latest work checkpoint (20 Oct 2026 AEDT):** owner requested stop and upload. r88 is saved as unfinished work in draft PR #400; r87 remains live. Read [the paused handoff](docs/cores/tasks/r88-paused-handoff-20261019.md) before resuming. No r88 deployment is approved.
+
+**Historical audit (20 Oct 2026 AEDT):** [complete pending work and owner inputs](docs/pending-audit-20261020/STATUS.md), saved on `docs/pending-audit-20261020`, adds the unintegrated 30-house catalogue, Windows marker defect, older feature backlog and r87 iPhone film reports. Check it before treating old board holds as new approval requests. Code work remains paused.
 **Sổ tay artifact (round R, owner):** the picture handbook of the whole game, from A to Z (story, principles, hard rules, every place, house, person, animal, vehicle, food, game, story and festival, drawn with the valley's own pictures): https://claude.ai/artifact/CZX3LQ8mB8X6PbmkQ8VZxB. Update it at the end of every round with what was added (the generator reads the game's own data: keep its sections in step).
 
 Attach this file at the start of a new chat, with **`docs/SO-TAY-THIET-KE.md` (Sổ tay thiết kế, the design handbook)**, which holds every design, data, safety and release rule in one place, and **`docs/ARCHITECTURE.md`**, the authoritative architecture contract: layers, systems, entity model, ids, events, lifecycle, the SYSTEM-NNN hard rules, tests, the module audit and the migration plan. Read both before changing code. Code: **https://github.com/nguyentuanphu/Sparkle-Valley** (work on a `claude/…` branch, merged into `main` by pull request).
