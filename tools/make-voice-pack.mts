@@ -26,6 +26,7 @@
 // Keep the key secret: it is only used for this run and is never written into the game.
 import fs from 'fs';
 import path from 'path';
+import { fileURLToPath } from 'url';
 import manifests from './voice-manifests.cts';
 import { collectLines, collectTemplates, partText, NUMBERS, areaOfLine, areaOfFile, readWhere, GROUPS, dynamicSays, corePri, nonCoreArea } from './voice-lines.mts';
 // (TypeScript sees nothing of a CommonJS file's module.exports: checked once here, then it has its own type)
@@ -39,7 +40,7 @@ const { LEARN } = await import('../js/words2.js');
 const { packHash, lineHash } = await import('../js/packhash.js');
 const { viRuns, mixed, mixedSsml } = await import('../js/viwords.js');
 
-const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..');
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const arg = <D = undefined,>(k: string, d?: D): string | D => { const i = process.argv.indexOf('--' + k); return i > 0 ? process.argv[i + 1] : d; };
 const flag = k => process.argv.includes('--' + k);
 const ENGINE = arg('engine', 'eleven');
