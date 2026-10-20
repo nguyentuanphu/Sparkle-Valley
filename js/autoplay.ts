@@ -18,10 +18,11 @@ import { settings } from './state.js';
 import { BUILD } from './build.js';
 import { pic } from './art.js';
 import { takeCopy, putCopyBack, hasCopy } from './keepcopy.js';
-import { sendAutoplayReport, reportDelivery, reportingState, retryReports } from './tester.js';
+import { sendAutoplayReport, reportDelivery, reportingState, retryReports, quickReport } from './tester.js';
 import { AP_GROUPS, apSpeed, apGameSeconds, AP_SPEEDS, AP_OPEN_WAIT, AP_RIGHT, AP_STUCK, AP_PATH, AP_TRAIL, AP_QUESTS, apGroupOf, revertOf } from './content/autoplay.js';
 
 const REPORT = 'sv2_autoplay_report', UI = 'sv2_autoplay_ui', RUNCOPY = 'sv2_autoplay_copy', OLD_BACKUP = 'sv2_autoplay_backup';
+const SPEED_ORDER = ['watch', 'fast', 'x1', 'x2', 'x3', 'x5'];
 type ProblemNote = (message: string, help?: boolean) => void;
 type AutoplayStep = { g: string; key: string; name(): string; fn: (note: ProblemNote, out?: AutoplayResult[]) => Promise<string | void>; many?: boolean };
 type AutoplayResult = { g: string; key: string; name: string; ok: boolean; skipped?: boolean; problems: string[]; notes: string[]; said?: string; secs?: number; fps?: number | null };
@@ -30,7 +31,7 @@ const get = (k, d) => { try { const v = localStorage.getItem(k); return v == nul
 const put = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { } };
 const STOP = new Error('stop'), SKIP = new Error('skip');
 const rnd = (a, b) => a + Math.random() * (b - a), any = list => list[Math.floor(Math.random() * list.length)];
-let G = null, root = null, run = null, ui = null, errSink = null, finger = null, trail = [], btnTimer: ReturnType<typeof setInterval> | 0 = 0, hostClose = null;
+let G = null, root = null, run = null, ui = null, errSink = null, finger = null, trail = [], btnTimer: ReturnType<typeof setInterval> | 0 = 0, hostClose = null, floatBar: HTMLDivElement | null = null;
 
 export function mountAutoplay(game) {
   if (root) return;
@@ -58,6 +59,7 @@ export function mountAutoplay(game) {
 }
 export function unmount() {
   if (run) run.stop = true; clearInterval(btnTimer);
+  removeFloatBar();
   if (root) root.remove(); if (finger) finger.remove(); root = finger = null; hostClose = null;
   document.querySelectorAll('.zoomer .z-ap').forEach(b => b.remove());
   if (G) delete G.autoplay;
@@ -86,6 +88,7 @@ function buttons() {
     b.classList.toggle('on', !!run); b.classList.toggle('paused', !!(run && run.paused));
     const n = b.querySelector('.ap-n'); n.hidden = !run; if (run) n.textContent = `${Math.min(run.i + 1, run.list.length)}/${run.list.length}`;
   }
+  if (run) updateFloatBar();
 }
 
 // ---------- what to check ----------
@@ -106,7 +109,45 @@ function steps(all = false): AutoplayStep[] {
 // ---------- waiting like a person ----------
 const hero = () => G.heroes && G.heroes[0];
 const sp = () => apSpeed(run.speed);
-const think = () => rnd(sp().think[0], sp().think[1]);
+type Competence = '1' | '2' | 'max';
+type PlayProfile = 'chaos-toddler' | 'gentle-explorer';
+let competence: Competence = '2', playProfile: PlayProfile = 'gentle-explorer';
+const competenceRate = (): number => competence === 'max' ? 1 : competence === '1' ? .5 : AP_RIGHT;
+const think = (): number => rnd(sp().think[0], sp().think[1]) * (playProfile === 'gentle-explorer' ? 1.25 : .65);
+function removeFloatBar(): void { floatBar?.remove(); floatBar = null; }
+function updateFloatBar(): void {
+  if (!run || !root) { removeFloatBar(); return; }
+  if (!floatBar) {
+    const bar = document.createElement('div'); floatBar = bar;
+    bar.className = 'ap-float'; bar.setAttribute('role', 'group'); bar.setAttribute('aria-label', T('Autoplay controls', 'Điều khiển tự chơi'));
+    for (const action of ['pause', 'stop', 'competence', 'profile', 'bug'] as const) {
+      const button = document.createElement('button'); button.type = 'button'; button.dataset.control = action;
+      button.onclick = () => {
+        if (!run) return;
+        if (action === 'pause') run.paused = !run.paused;
+        if (action === 'stop') run.stop = true;
+        if (action === 'competence') competence = competence === '1' ? '2' : competence === '2' ? 'max' : '1';
+        if (action === 'profile') playProfile = playProfile === 'chaos-toddler' ? 'gentle-explorer' : 'chaos-toddler';
+        if (action === 'bug') void quickReport(JSON.stringify({ source: 'autoplay', competence, profile: playProfile, step: run.list[run.i]?.key, log: trailLog() })).catch(() => { button.textContent = T('Retry report', 'Thử báo lại'); });
+        updateFloatBar(); buttons();
+      };
+      bar.appendChild(button);
+    }
+    for (const event of ['pointerdown', 'pointerup', 'keydown', 'keyup']) bar.addEventListener(event, e => e.stopPropagation());
+    document.body.appendChild(bar);
+  }
+  const labels: Record<string, string> = {
+    pause: run.paused ? T('Resume', 'Tiếp tục') : T('Pause', 'Tạm dừng'), stop: T('Stop', 'Dừng'),
+    competence: competence === 'max' ? T('Max', 'Tối đa') : T(`Level ${competence}`, `Mức ${competence}`),
+    profile: playProfile === 'chaos-toddler' ? T('Chaos toddler', 'Bé tinh nghịch') : T('Gentle explorer', 'Bé khám phá'), bug: T('Report bug', 'Báo lỗi')
+  };
+  for (const button of Array.from(floatBar.querySelectorAll('button')) as HTMLButtonElement[]) {
+    const action = button.dataset.control || ''; button.textContent = labels[action];
+    button.setAttribute('aria-label', action === 'competence' ? T('Competence: ', 'Năng lực: ') + labels[action] : action === 'profile' ? T('Profile: ', 'Cách chơi: ') + labels[action] : labels[action]);
+    if (action === 'pause') button.setAttribute('aria-pressed', String(run.paused));
+    if (action === 'bug') button.disabled = !reportingState().enabled;
+  }
+}
 // a moment that can be paused, skipped or stopped
 async function hold(sec) { const end = Date.now() + sec * 1000; while (Date.now() < end || run.paused) { if (run.stop) throw STOP; if (run.skip) { run.skip = false; throw SKIP; } await wait(100); } }
 async function until(test, sec) { const end = Date.now() + sec * 1000; while (Date.now() < end) { if (run.stop) throw STOP; if (run.skip) { run.skip = false; throw SKIP; } if (test()) return true; await wait(100); } return !!test(); }
@@ -328,7 +369,7 @@ async function playGame(note): Promise<PlayResult> {
       const ask = playWatch.ask; let pick = null;
       if (ask && ask.els.some(shown)) {
         const right = ask.els.find(e => shown(e) && ask.check(e)), wrong = ask.els.filter(e => shown(e) && !ask.check(e) && !tried.has(e));
-        pick = right && (Math.random() < AP_RIGHT || !wrong.length) ? right : any(wrong);
+        pick = right && (Math.random() < competenceRate() || !wrong.length) ? right : any(wrong);
       } else if (playWatch.plan) {
         pick = playWatch.plan();
         if (!pick || !shown(pick) || pick.disabled) {
@@ -487,10 +528,10 @@ async function start(only?: string[]) {
   const counted = settings.countPlayers; settings.countPlayers = false; // (not counted in the players report)
   run = { speed: ui.speed, list, i: 0, done: [], paused: false, skip: false, stop: false, started: Date.now(), perRun };
   trail = []; if (hostClose) hostClose(); ui.open = false; put(UI, ui); // close the shared shell; the run continues
-  const keep = setInterval(neverTired, 200); draw(); buttons();
+    const keep = setInterval(neverTired, 200); draw(); buttons(); updateFloatBar();
   try {
     for (; run.i < list.length; run.i++) {
-      draw(); buttons(); const s = list[run.i];
+        draw(); buttons(); updateFloatBar(); const s = list[run.i];
       if (s.many) await s.fn(null, run.done); else run.done.push(await one(s));
       put(REPORT, report());
     }
@@ -503,7 +544,7 @@ async function start(only?: string[]) {
   if (perRun) putCopyBack(RUNCOPY, G);
   const finalReport = report(); const result = await sendAutoplayReport(finalReport);
   put(REPORT, { ...finalReport, reportIds: result.ids, reportState: result.state });
-  run = null; ui.open = false; put(UI, ui); draw(); buttons();
+  run = null; removeFloatBar(); ui.open = false; put(UI, ui); draw(); buttons();
   G.autoplay?.open(); // results return to the same ladybird tab on tester devices
 }
 const report = () => ({ at: new Date().toISOString(), build: BUILD, speed: run.speed, total: run.list.length, done: run.done, perRun: run.perRun });
@@ -534,7 +575,22 @@ function style() {
 .zoomer .z-ap.on{box-shadow:0 0 0 4px #2bb673,var(--shadow);animation:apPulse 1.6s ease-in-out infinite}.zoomer .z-ap.on.paused{box-shadow:0 0 0 4px #ffb52e,var(--shadow);animation:none}
 .zoomer .z-ap .ap-n{position:absolute;bottom:-6px;left:50%;transform:translateX(-50%);font:700 11px/1 system-ui,sans-serif;font-style:normal;background:#2bb673;color:#fff;border-radius:999px;padding:3px 6px;white-space:nowrap}
 @keyframes apPulse{50%{transform:scale(1.06)}}
-@media (prefers-reduced-motion:reduce){.zoomer .z-ap.on{animation:none}.apfinger{transition-duration:0s!important}}`;
+@media (prefers-reduced-motion:reduce){.zoomer .z-ap.on{animation:none}.apfinger{transition-duration:0s!important}}
+
+/* Floating autoplay control bar - stays visible during runs */
+.ap-float{position:fixed;z-index:99998;left:50%;bottom:16px;transform:translateX(-50%);display:flex;gap:8px;padding:8px 12px;background:rgba(107,79,216,.95);color:#fff;border-radius:999px;box-shadow:0 4px 20px rgba(0,0,0,.3);backdrop-filter:blur(8px);font:600 14px/1 var(--font);touch-action:manipulation}
+.ap-float[hidden]{display:none}
+.ap-float button{min-width:64px;min-height:64px;border-radius:16px;border:0;padding:8px 12px;font:inherit;cursor:pointer;background:rgba(255,255,255,.15);color:#fff;display:flex;align-items:center;justify-content:center;gap:6px;transition:background .15s,transform .1s}
+.ap-float button:hover,.ap-float button:focus{background:rgba(255,255,255,.3);outline:none}
+.ap-float button:active{transform:scale(.96)}
+.ap-float button.primary{background:#2bb673}
+.ap-float button.danger{background:#e8505b}
+.ap-float button.warning{background:#ffb52e}
+.ap-float .ap-float-speed{display:flex;align-items:center;gap:6px;padding:0 8px;background:rgba(255,255,255,.1);border-radius:999px;font-size:13px;min-width:0}
+.ap-float .ap-float-speed span{white-space:nowrap}
+.ap-float{box-sizing:border-box;max-width:calc(100vw - 24px);flex-wrap:wrap;justify-content:center;border-radius:20px}.ap-float button{flex-shrink:0}.ap-float button:focus-visible{outline:3px solid #fff;outline-offset:2px}
+@media (max-width:480px){.ap-float{bottom:12px;padding:6px 8px;gap:6px}.ap-float button{min-width:64px;min-height:64px;padding:6px 8px;font-size:13px}.ap-float .ap-float-speed{padding:0 6px;font-size:12px}}
+@media (prefers-reduced-motion:reduce){.ap-float button{transition:none}}`;
   document.head.appendChild(s);
 }
 function place() { /* fixed shell: legacy drag coordinates are deliberately ignored */ }

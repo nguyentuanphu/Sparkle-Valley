@@ -302,7 +302,13 @@ function addUI() {
   addEventListener('keydown', key); offs.push(() => removeEventListener('keydown', key));
   paintCount();
 }
-async function quickReport() { SFX.tap && SFX.tap(); const s = await shot(); enqueue(body('broken', { note: T('Quick report: something was wrong just now', 'Báo nhanh: vừa có gì đó không ổn'), detail: 'quick', shot: s })); toast(L(C.TESTER_LINES.waiting)); }
+export async function quickReport(detail: string = 'quick'): Promise<void> {
+  SFX.tap && SFX.tap();
+  const snapshot = body('broken', { note: T('Quick report: something was wrong just now', 'Báo nhanh: vừa có gì đó không ổn'), detail });
+  const s = await shot();
+  enqueue({ ...snapshot, shot: s });
+  toast(L(C.TESTER_LINES.waiting));
+}
 function toast(s) { const t = el('div', 'testertoast', esc(s)); document.body.appendChild(t); setTimeout(() => t.classList.add('out'), 2200); setTimeout(() => t.remove(), 2600); }
 
 function bindReportViewport(panel: HTMLElement) {
