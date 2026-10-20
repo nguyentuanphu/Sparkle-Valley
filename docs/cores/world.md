@@ -48,3 +48,11 @@ z; `bridgeAt`, `bridgeBox`, `waterAt`, `waterDist` in `js/world.js` work for any
   the rainbow lotus floats on Lotus Village's lotus pond; at most one in the valley at a time, removed when found.
 - (owner, 10 Oct AEST) Asphalt roads are 6.4 m wide (rule R1 / ROAD-001, was 5.2 m), from the Concept D drawings; `ROAD_WIDTH` in `js/content/map.js`.
 - (owner, 10 Oct AEST) The Concept D map in `docs/concept-d/index.html` is the approved valley; Round T places every town, river, bridge and road where it shows them.
+- (owner, 19 Oct AEDT) Work for #369 gate view occlusion and streaming proceeds on branch `core/world` (worktree `D:\WorkSpace\Sparkle-Valley.worktrees\world`), preserving world coordinates, colliders, and camera restoration.
+- (owner, 19 Oct AEDT) Allowed minimal Windows runner fix in `tests/suite.mjs` using `fileURLToPath` for absolute path resolution.
+
+## Progress notes
+- **20 Oct 2026 AEDT (Single Unified Round):**
+  - **Gate #369 Camera Occlusion:** Hanoi gate view obstruction resolved. Gate signs tagged with `userData.camOccluder = true` in `js/roads.ts`, and `js/seethrough.ts` updated to track active original materials in an `originals` WeakMap so raycast-faded meshes are correctly refreshed and restored without collider or geometry degradation.
+  - **Checks:** `gateview` (pass, 53s), `camera` (pass, 77s, 215/220 clear), `phone` (pass, 188s across phone, tablet, computer).
+  - **Bug #86 (Village Well):** Completed architectural audit of village well mesh, interaction triggers, and memory spikes for Core-Play. The well 3D geometry in `js/lotus.js` is static and merged with zero runtime heap growth. The reported iOS Safari reload is a WebKit Jetsam/OOM crash caused by simultaneous Web Audio buffer decoding, speech synthesis, modal DOM storybook layout (`showQuestTale()`), and camera transitions during the `c1_well` quest step. Detailed guidance documented for Core-Play.

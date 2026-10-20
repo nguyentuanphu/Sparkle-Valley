@@ -253,6 +253,7 @@ function gateSign(text, w, h, bg = '#c62828', fg = '#ffe27a') {
   const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; if (typeof text !== 'string') onLang(() => { draw(); t.needsUpdate = true; });
   const m = new THREE.MeshBasicMaterial({ map: t }), grp = new THREE.Group();
   const a = new THREE.Mesh(new THREE.PlaneGeometry(w, h), m), b = new THREE.Mesh(new THREE.PlaneGeometry(w, h), m); b.rotation.y = Math.PI; a.position.z = .13; b.position.z = -.13;
+  a.userData.camOccluder = b.userData.camOccluder = true;
   grp.add(a, b); return grp;
 }
 
@@ -272,7 +273,7 @@ export function goldenGate(scene, world, x, z, rot, text, span = 8) {
   // the roof curls up at both ends, like a temple roof
   for (const s of [-1, 1]) parts.push(P(new THREE.ConeGeometry(.35, 1.4, 6), gold, [s * (hs + 1.4), H + 1.3, 0], [0, 0, s * -.9]));
   parts.push(P(new THREE.BoxGeometry(span * .55, .5, .9), red, [0, H + 1.35, 0]), P(new THREE.SphereGeometry(.5, 10, 8), '#ff5a3a', [0, H + 1.85, 0]));
-  const m = new THREE.Mesh(merge(parts), toonVC()); m.position.set(x, heightAt(x, z) - .1, z); m.rotation.y = rot; m.castShadow = true; m.userData.noCam = true; scene.add(m); outline(m, .025, '#6a4a10');
+  const m = new THREE.Mesh(merge(parts), toonVC()); m.position.set(x, heightAt(x, z) - .1, z); m.rotation.y = rot; m.castShadow = true; scene.add(m); outline(m, .025, '#6a4a10');
   const sg = gateSign(text, span - .6, 1.5, red, '#ffe27a'); sg.position.set(0, H - .7, 0); m.add(sg);
   // pillars are solid; you walk between them
   for (const s of [-1, 1]) world.colliders.push({ x: x + Math.cos(rot) * s * hs, z: z - Math.sin(rot) * s * hs, r: .9 });
@@ -359,7 +360,7 @@ export const GATE_STYLE = { hanoi: 'ohquan', bacninh: 'kinhbac', danang: 'golden
 export function localGate(scene, world, x, z, rot, text, style, span = 7.5) {
   const make = STYLES[style]; if (!make) return goldenGate(scene, world, x, z, rot, text, span);
   const hs = span / 2, g = make(hs);
-  const m = new THREE.Mesh(merge(g.parts), toonVC()); m.position.set(x, heightAt(x, z) - .1, z); m.rotation.y = rot; m.castShadow = true; m.userData.noCam = true; scene.add(m); outline(m, .022, '#4a3a2a');
+  const m = new THREE.Mesh(merge(g.parts), toonVC()); m.position.set(x, heightAt(x, z) - .1, z); m.rotation.y = rot; m.castShadow = true; scene.add(m); outline(m, .022, '#4a3a2a');
   const sg = gateSign(text, g.sign.w, g.sign.h, g.sign.bg, g.sign.fg); sg.position.set(0, g.sign.y, 0); m.add(sg);
   for (const s of [-1, 1]) world.colliders.push({ x: x + Math.cos(rot) * s * g.posts, z: z - Math.sin(rot) * s * g.posts, r: g.postR || .8 });
   return m;
