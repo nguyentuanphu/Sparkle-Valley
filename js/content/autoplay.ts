@@ -98,50 +98,31 @@ export function apGameSeconds(speed, maxActions = 0, multiplier = 1) {
   return Math.max(base, Math.min(600, Math.ceil(actions * (speed.think[1] + speed.finger / 1000 + .05) + 12)));
 }
 
-/** @typedef {'chaos-toddler' | 'gentle-explorer' | 'max-competence'} AutoplayProfile */
-export const AUTOPLAY_PROFILES = /** @type {const} */ (['chaos-toddler', 'gentle-explorer', 'max-competence']);
+export type AutoplayProfile = 'chaos-toddler' | 'gentle-explorer' | 'max-competence';
+export const AUTOPLAY_PROFILES: readonly AutoplayProfile[] = ['chaos-toddler', 'gentle-explorer', 'max-competence'] as const;
 
-/** @returns {AutoplayProfile} */
-export function autoplayProfileFromEnv() {
+export function autoplayProfileFromEnv(): AutoplayProfile {
   let saved = '';
   try { saved = localStorage.getItem('sv2_autoplay_profile') || ''; } catch { /* storage can be unavailable */ }
   const value = new URLSearchParams(globalThis.location?.search || '').get('autoplayProfile') || saved;
-  return AUTOPLAY_PROFILES.includes(/** @type {AutoplayProfile} */ (value)) ? /** @type {AutoplayProfile} */ (value) : 'gentle-explorer';
+  return (AUTOPLAY_PROFILES as readonly string[]).includes(value) ? (value as AutoplayProfile) : 'gentle-explorer';
 }
 
-/**
- * @typedef {'tap' | 'spam' | 'drag' | 'drop-outside' | 'wander'} AutoplayAction
- * @param {AutoplayProfile} profile
- * @param {() => number} [random]
- * @returns {AutoplayAction}
- */
-export function childAction(profile, random = Math.random) {
+export type AutoplayAction = 'tap' | 'spam' | 'drag' | 'drop-outside' | 'wander';
+
+export function childAction(profile: AutoplayProfile, random: () => number = Math.random): AutoplayAction {
   if (profile === 'max-competence') return 'tap';
   const n = random();
   if (profile === 'gentle-explorer') return n < .65 ? 'wander' : 'tap';
   return n < .3 ? 'spam' : n < .55 ? 'drag' : n < .8 ? 'drop-outside' : 'tap';
 }
 
-/**
- * @template T
- * @param {T[]} choices
- * @param {(choice: T) => number} score
- * @returns {T | null}
- */
-export function optimalAutoplayChoice(choices, score) {
+export function optimalAutoplayChoice<T>(choices: T[], score: (choice: T) => number): T | null {
   if (!choices.length) return null;
   return choices.reduce((best, choice) => score(choice) > score(best) ? choice : best);
 }
 
-/**
- * @template T
- * @param {T[]} choices
- * @param {AutoplayProfile} profile
- * @param {(choice: T) => number} score
- * @param {() => number} [random]
- * @returns {T | null}
- */
-export function stochasticAutoplayChoice(choices, profile, score, random = Math.random) {
+export function stochasticAutoplayChoice<T>(choices: T[], profile: AutoplayProfile, score: (choice: T) => number, random: () => number = Math.random): T | null {
   if (!choices.length) return null;
   if (profile === 'max-competence') return optimalAutoplayChoice(choices, score);
   if (profile === 'chaos-toddler') return choices[Math.floor(random() * choices.length)];

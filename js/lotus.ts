@@ -24,8 +24,8 @@ export function createLotus(G, { say, toast }) {
   const { scene, world } = G, mat = toonVC();
   const put = (parts, x, z, rot = 0, dy = 0, edge = true) => { const m = new THREE.Mesh(merge(parts), mat); m.position.set(x, heightAt(x, z) + dy, z); m.rotation.y = rot; m.castShadow = true; scene.add(m); if (edge) outline(m, .02, '#3a2a20'); return m; };
   const thing = (id, x, z, r, icon, label, act) => G.interactables.push({ id, x, z, r, icon, label, act });
-  const lines = {};
-  const talk = (h, key) => { const [en, vi] = lines[key]; say(en, vi); if (h && toast) toast(h, T(en, vi)); };
+  const lines: Record<string, [string, string]> = {};
+  const talk = (h: any, key: string) => { const line = lines[key]; if (!line) return; say(line[0], line[1]); if (h && toast) toast(h, T(line[0], line[1])); };
 
   // ---------- the village well ----------
   {
@@ -44,15 +44,16 @@ export function createLotus(G, { say, toast }) {
     world.colliders.push({ x, z, r: 1.3 });
     let dip = 0, wellBusyUntil = 0;
     world.updaters.push(dt => { if (dip > 0) { dip = Math.max(0, dip - dt); bucket.position.y = y0 - Math.sin((1 - dip / 2.4) * Math.PI) * 1.1; } });
-    lines.well = ['The village well! Long ago everyone came here for water, and to chat with their neighbours.', 'Giếng nước của làng đó! Ngày xưa ai cũng ra đây lấy nước và trò chuyện với hàng xóm.'];
+    const wellLine: [string, string] = ['The village well! Long ago everyone came here for water, and to chat with their neighbours.', 'Giếng nước của làng đó! Ngày xưa ai cũng ra đây lấy nước và trò chuyện với hàng xóm.'];
+    lines.well = wellLine;
     thing('lv_well', x + 1.6, z + .6, 2.6, '🪣', () => T('The village well', 'Giếng nước của làng'), h => {
       const now = Date.now(); if (now < wellBusyUntil) return;
       wellBusyUntil = now + 3200; dip = 2.4;
       // iOS WebKit can terminate the page when Web Audio, speech and the quest story allocate together.
-      if (h && toast) toast(h, T(...lines.well));
+      if (h && toast) toast(h, T(wellLine[0], wellLine[1]));
       setTimeout(() => { try { SFX.splash(); } catch (e) { } }, 800);
       setTimeout(() => {
-        if (!document.querySelector('.storybook, .dialog, .modal, .reward')) { try { say(...lines.well); } catch (e) { } }
+        if (!document.querySelector('.storybook, .dialog, .modal, .reward')) { try { say(wellLine[0], wellLine[1]); } catch (e) { } }
       }, 3000);
     });
   }
@@ -116,7 +117,7 @@ export function createLotus(G, { say, toast }) {
     lines[key] = line;
     m.userData.react = h => { sound(); a.wait = 2.5; G.fx && G.fx(m.position.x, m.position.y + 1, m.position.z, '💛'); talk(h, key); };
   };
-  [[-13, -22], [-15, -21], [-12, -20.5], [-14.5, -23]].forEach((p, i) => addAnimal('chicken', at(...p), 2.6, .5, () => SFX.cluck(), 'hen', ['A hen! Cluck, cluck! She is looking for seeds.', 'Con gà mái! Cục ta cục tác! Nó đang tìm hạt thóc.']));
+  [[-13, -22], [-15, -21], [-12, -20.5], [-14.5, -23]].forEach((p, i) => addAnimal('chicken', at(p[0], p[1]), 2.6, .5, () => SFX.cluck(), 'hen', ['A hen! Cluck, cluck! She is looking for seeds.', 'Con gà mái! Cục ta cục tác! Nó đang tìm hạt thóc.']));
   addAnimal('puppy', at(22, 6), 3, .9, () => SFX.woof(), 'dog', ['The village dog! Woof woof! He is happy to see you.', 'Chú chó của làng! Gâu gâu! Nó vui khi gặp con.']);
   world.updaters.push((dt, t) => {
     if (!G.heroes.some(h => Math.abs(h.pos.x - V.x) < 70 && Math.abs(h.pos.z - V.z) < 70)) return; // nobody is near: they rest

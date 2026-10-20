@@ -106,6 +106,7 @@ marketing/source/runvalley.log
 /js/chat-player.js
 /js/chat.js
 /js/claims.js
+/js/content/autoplay.js
 /js/content/chapter2hanoi.js
 /js/content/chapter2text.js
 /js/content/chapters.js
@@ -127,6 +128,7 @@ marketing/source/runvalley.log
 /js/install.js
 /js/keepcopy.js
 /js/lanterns.js
+/js/lotus.js
 /js/main.js
 /js/mictest.js
 /js/net.js
