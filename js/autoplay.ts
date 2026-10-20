@@ -31,13 +31,16 @@ const put = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catc
 const STOP = new Error('stop'), SKIP = new Error('skip');
 const rnd = (a, b) => a + Math.random() * (b - a), any = list => list[Math.floor(Math.random() * list.length)];
 let G = null, root = null, run = null, ui = null, errSink = null, finger = null, trail = [], btnTimer: ReturnType<typeof setInterval> | 0 = 0, hostClose = null;
+let selectedProfile: AutoplayProfile = 'gentle-explorer';
 
 export function mountAutoplay(game) {
   if (root) return;
   G = game;
   if (localStorage.getItem(OLD_BACKUP)) { oldPutBack(); return; } // (a check from before 13 Oct that never finished)
   if (hasCopy(RUNCOPY)) putCopyBack(RUNCOPY, G); // a run that never ended (the page was closed): its progress goes back
-  ui = Object.assign({ open: false, groups: AP_GROUPS.filter(g => g.key !== 'quests').map(g => g.key), speed: 'fast', x: null, y: null, q: '' }, get(UI, {}));
+  selectedProfile = autoplayProfileFromEnv();
+  ui = Object.assign({ open: false, groups: AP_GROUPS.filter(g => g.key !== 'quests').map(g => g.key), speed: 'fast', x: null, y: null, q: '', profile: selectedProfile }, get(UI, {}));
+  selectedProfile = (AUTOPLAY_PROFILES as readonly string[]).includes(ui.profile) ? ui.profile : selectedProfile;
   const devicePolicy = liveRule('tester')?.policies?.[localStorage.getItem('sv2_playerid') || '']; if (devicePolicy?.speed && AP_SPEEDS[devicePolicy.speed]) ui.speed = devicePolicy.speed;
   if (!AP_SPEEDS[ui.speed]) ui.speed = 'x1';
   root = el('div', 'apbox'); root.setAttribute('role', 'dialog'); root.setAttribute('aria-label', T('Auto play check', 'Tự chơi để kiểm tra'));
@@ -48,6 +51,8 @@ export function mountAutoplay(game) {
   const ce = console.error; console.error = (...a) => { if (errSink) errSink.push(a.map(String).join(' ').slice(0, 200)); ce.apply(console, a); };
   btnTimer = setInterval(buttons, 1000); buttons();
   G.autoplay = { unmount, running: () => !!run, trail: () => trail.slice(),
+    profile: () => selectedProfile,
+    setProfile: (p: AutoplayProfile) => { if ((AUTOPLAY_PROFILES as readonly string[]).includes(p)) { selectedProfile = p; ui.profile = p; put(UI, ui); draw(); } },
     walkTo: (x, z, speed) => walkTo(x, z, speed),
     // (tests: a button with something on top; outside a run it borrows a short one)
     tapFor: async (b, note) => { const had = run; if (!run) run = { speed: 'fast', list: [], i: 0, done: [], paused: false, skip: false, stop: false }; try { return await tap(b, note); } finally { if (!had) run = null; } },
@@ -307,6 +312,26 @@ function targets(stage) {
   const btn = e => e.matches('button, [role=button]');
   return list.filter(e => shown(e) && !e.closest('.gl-head') && !(btn(e) ? list.some(o => o !== e && e.contains(o) && btn(o)) : list.some(o => o !== e && o.contains(e) && btn(o))));
 }
+export type AutoplayProfile = 'chaos-toddler' | 'gentle-explorer' | 'max-competence';
+export const AUTOPLAY_PROFILES: readonly AutoplayProfile[] = ['chaos-toddler', 'gentle-explorer', 'max-competence'];
+export function autoplayProfileFromEnv(): AutoplayProfile {
+  const value = new URLSearchParams(location.search).get('autoplayProfile') || localStorage.getItem('sv2_autoplay_profile') || '';
+  return (AUTOPLAY_PROFILES as readonly string[]).includes(value) ? value as AutoplayProfile : 'gentle-explorer';
+}
+
+export function optimalAutoplayChoice<T>(choices: T[], score: (choice: T) => number): T | null {
+  if (!choices.length) return null;
+  return choices.reduce((best, choice) => score(choice) > score(best) ? choice : best);
+}
+
+export function stochasticAutoplayChoice<T>(choices: T[], profile: AutoplayProfile, score: (choice: T) => number, random = Math.random): T | null {
+  if (!choices.length) return null;
+  if (profile === 'max-competence') return optimalAutoplayChoice(choices, score);
+  if (profile === 'chaos-toddler') return choices[Math.floor(random() * choices.length)];
+  const best = optimalAutoplayChoice(choices, score);
+  return random() < .8 ? best : choices[Math.floor(random() * choices.length)];
+}
+
 type PlayResult = { won?: boolean; rights?: number; wrongs?: number; taps?: number; cant?: boolean };
 async function playGame(note): Promise<PlayResult> {
   const gl = document.querySelector('.gl'); if (!gl) return {};
@@ -328,7 +353,14 @@ async function playGame(note): Promise<PlayResult> {
       const ask = playWatch.ask; let pick = null;
       if (ask && ask.els.some(shown)) {
         const right = ask.els.find(e => shown(e) && ask.check(e)), wrong = ask.els.filter(e => shown(e) && !ask.check(e) && !tried.has(e));
-        pick = right && (Math.random() < AP_RIGHT || !wrong.length) ? right : any(wrong);
+        if (selectedProfile === 'max-competence') {
+          pick = right || any(wrong) || ask.els.find(shown);
+        } else if (selectedProfile === 'chaos-toddler') {
+          const shownEls = ask.els.filter(shown);
+          pick = shownEls.length ? any(shownEls) : null;
+        } else {
+          pick = right && (Math.random() < AP_RIGHT || !wrong.length) ? right : any(wrong);
+        }
       } else if (playWatch.plan) {
         pick = playWatch.plan();
         if (!pick || !shown(pick) || pick.disabled) {
