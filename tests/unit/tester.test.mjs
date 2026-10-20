@@ -50,6 +50,35 @@ test('only tester devices are heard; reports are checked and grouped into proble
   assert.ok(c.note.length <= T.TLIMITS.note && c.errors.length <= T.TLIMITS.errors && c.log.length <= T.TLIMITS.log, 'sizes are capped');
 });
 
+test('reporter attribution: auto detector, signed-in player, family shared device', async () => {
+  const S = mem();
+  // auto detector report
+  const rAuto = await T.addReport(S, LIVE, rep(A, { kind: 'auto', reporter: { type: 'auto' } }));
+  assert.ok(rAuto.ok);
+  const dAuto = await T.problem(S, rAuto.k);
+  assert.equal(dAuto.reports[0].reporter.type, 'auto');
+
+  // player report with explicit active player name
+  const rPlayer = await T.addReport(S, LIVE, rep(A, { kind: 'looks', auto: undefined, note: 'Color looks pale', reporter: { type: 'player', name: 'Bé Na' } }));
+  assert.ok(rPlayer.ok);
+  const dPlayer = await T.problem(S, rPlayer.k);
+  assert.deepEqual(dPlayer.reports[0].reporter, { type: 'player', name: 'Bé Na' });
+
+  // shared family device without confirmed reporter
+  const rFamily = await T.addReport(S, LIVE, rep(B, { kind: 'broken', auto: undefined, note: 'Game froze', reporter: { type: 'unknown' } }));
+  assert.ok(rFamily.ok);
+  const dFamily = await T.problem(S, rFamily.k);
+  assert.equal(dFamily.reports[0].reporter.type, 'unknown');
+
+  // mark fixed with version tag r88 retains history and report details
+  await T.setProblem(S, rPlayer.k, { status: 'fixed', fixedIn: 'r88' });
+  const dFixed = await T.problem(S, rPlayer.k);
+  assert.equal(dFixed.status, 'fixed');
+  assert.equal(dFixed.fixedIn, 'r88');
+  assert.equal(dFixed.reports.length, 1);
+  assert.equal(dFixed.reports[0].note, 'Color looks pale');
+});
+
 test('a device may send 60 reports a day, a connection 150 (PRIV-014)', async () => {
   const S = mem(); let last;
   for (let i = 0; i < T.TLIMITS.device + 1; i++) last = await T.addReport(S, LIVE, rep(A, { detail: 'e' + i }), Date.now(), 'ip1');

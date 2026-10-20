@@ -30,6 +30,13 @@ export function cleanReport(b, now = Date.now()) {
   const kind = KINDS.includes(b.kind) ? b.kind : null; if (!kind) return null;
   const auto = kind === 'auto' ? (AUTOS.includes(b.auto) ? b.auto : null) : null; if (kind === 'auto' && !auto) return null;
   const w = b.where && typeof b.where === 'object' ? b.where : {};
+  // Device profiles do not identify the person submitting a report.
+  const rep = b.reporter && typeof b.reporter === 'object' ? b.reporter : null;
+  const reporter = kind === 'auto'
+    ? { type: 'auto', name: auto || 'detector' }
+    : rep && rep.type === 'player' && txt(rep.name, 30)
+      ? { type: 'player', name: txt(rep.name, 30) }
+      : { type: 'unknown', name: '' };
   const r = {
     clientId: /^[a-f0-9]{32}$/.test(b.clientId || '') ? b.clientId : '', id: b.id, at: now, b: BUILD.test(b.b || '') ? b.b : '', kind, auto, detail: txt(b.detail, 200), note: txt(b.note, TLIMITS.note), spoken: b.spoken === true,
     where: { area: txt(w.area, 60), place: txt(w.place, 60), game: txt(w.game, 60), window: txt(w.window, 80), x: num(w.x, -5000, 5000), z: num(w.z, -5000, 5000) },
@@ -38,6 +45,7 @@ export function cleanReport(b, now = Date.now()) {
     log: (Array.isArray(b.log) ? b.log : []).slice(-TLIMITS.log).filter(e => Array.isArray(e)).map(([t, k, s]) => [num(t, -600, 600) || 0, txt(k, 12), txt(s, 120)]),
     dev: (d => ({ os: txt(d.os, 20), br: txt(d.br, 20), sc: txt(d.sc, 12), lang: txt(d.lang, 4), fps: num(d.fps, 0, 240), mem: num(d.mem, 0, 64), label: txt(d.label, 40) }))(b.dev && typeof b.dev === 'object' ? b.dev : {}),
     players: (Array.isArray(b.players) ? b.players : []).slice(0, 8).filter(p => p && typeof p === 'object').map(p => ({ name: txt(p.name, 30), age: txt(p.age, 10), coins: num(p.coins, 0, 1e7), stars: num(p.stars, 0, 1e5), level: txt(p.level, 20) })),
+    reporter,
     count: num(b.count, 1, 999) || 1
   };
   const shot = typeof b.shot === 'string' && /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(b.shot) ? b.shot : '';

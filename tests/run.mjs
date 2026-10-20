@@ -26,7 +26,13 @@ const sampled = name => process.env.SV_SAMPLE === '1' && !(process.env.SV_FULL |
 const SEED = Number(process.env.SV_SEED) || Math.floor(Date.now() / 36e5);
 // (owner, 16 Oct AEDT: TypeScript, batch 0) the game's .ts files are made into the .js the browser loads before any
 // check runs (tools/build.mts; suite.mjs does it once for all its runs and says so with SV_BUILT)
-if (!process.env.SV_BUILT) { const { execFileSync } = await import('child_process'); execFileSync(process.execPath, ['../tools/build.mts'], { stdio: 'inherit' }); }
+if (!process.env.SV_BUILT) {
+  const { execFileSync } = await import('child_process');
+  const { fileURLToPath } = await import('url');
+  const path = await import('path');
+  const here = path.dirname(fileURLToPath(import.meta.url));
+  execFileSync(process.execPath, [path.resolve(here, '../tools/build.mts')], { stdio: 'inherit' });
+}
 const only = process.argv.slice(2).filter(a => !a.startsWith('--'));
 const want = k => !only.length || only.includes(k);
 const results = [];
@@ -1400,9 +1406,10 @@ await check('testerreport', async () => {
   await P.page.waitForFunction(() => performance.now() > 0, null); await P.page.waitForTimeout(Math.max(0, 16000 - await P.page.evaluate(() => performance.now())));
   const earlierFreezes = got.filter(x => x && x.auto === 'freeze');
   await P.page.evaluate(() => new Promise(r => requestAnimationFrame(() => { const t = performance.now(); while (performance.now() - t < 2600) { } r(); })));
-  { const fz = await wait(x => x && x.auto === 'freeze', 6000); if (!fz) out.push('a frozen screen was not reported');
+  { const fz = await wait(x => x && x.auto === 'freeze' && !earlierFreezes.includes(x), 6000); if (!fz) out.push('a frozen screen was not reported');
     // (#261) the report says the game's own code ran long (this freeze is a 2.6 s script), not only that frames stopped
-    else { const why = JSON.stringify(fz.log || []).match(/longest script (\d+) ms/); // (the browser may measure the 2.6 s script a little shorter: GitHub saw 1912 ms; over a second is the script)
+    else { const scripts = [...JSON.stringify(fz.log || []).matchAll(/longest script (\d+) ms/g)];
+      const why = scripts.find(m => +m[1] >= 1000) || scripts[scripts.length - 1] || null;
       if (!why || +why[1] < 1000) out.push('the freeze report does not say a long script caused it: ' + (why ? why[0] : 'no note') + '; earlier freeze reports: ' + earlierFreezes.length); }
     fs.writeFileSync('out/tester-freeze-observation.json', JSON.stringify({ earlier: earlierFreezes, all: got.filter(x => x && x.auto === 'freeze') }, null, 2)); }
   // the ladybird: tap

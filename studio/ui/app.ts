@@ -1551,9 +1551,18 @@ PAGES.testers = async P => {
   let labels = {}; try { const pr = await api('players'); for (const d of (pr && pr.devices) || []) labels[d.id] = devTitle(d) + ' (' + devAbout(d) + ')'; } catch (e) { }
   const { problems = [], testers = [], summary = {} } = r || {}, gameBuild = await (async () => { try { return (await import(GAME + 'js/build.js')).BUILD; } catch (e) { return ''; } })();
   const sydney = t => t ? new Date(t).toLocaleString(LANG === 'vi' ? 'vi-VN' : 'en-AU', { timeZone: 'Australia/Sydney', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '';
-  const ST = { new: ['🆕', 'New', 'Mới'], fixing: ['🔨', 'Being fixed', 'Đang sửa'], fixed: ['✅', 'Fixed', 'Đã sửa'], confirmed: ['🏁', 'Fixed and checked', 'Đã sửa và kiểm tra'], back: ['🔁', 'Came back', 'Bị lại'], notbug: ['🚫', 'Not a bug', 'Không phải lỗi'], dup: ['🔗', 'Same as another', 'Trùng lỗi khác'] };
+  const ST = { new: ['🆕', 'Pending/New', 'Chờ xử lý / Mới'], fixing: ['🔨', 'Being fixed', 'Đang sửa'], fixed: ['✅', 'Fixed', 'Đã sửa'], confirmed: ['🏁', 'Completed/checked', 'Đã xong và kiểm tra'], back: ['🔁', 'Came back', 'Bị lại'], notbug: ['🚫', 'Not a bug', 'Không phải lỗi'], dup: ['🔗', 'Same as another', 'Trùng lỗi khác'] };
   const KIND = { broken: ['💥', 'Broken', 'Bị hỏng'], looks: ['👀', 'Looks wrong', 'Trông sai'], words: ['💬', 'Words or voice', 'Chữ hoặc giọng'], sound: ['🔔', 'Sound', 'Âm thanh'], idea: ['💡', 'Idea', 'Ý tưởng'], auto: ['🤖', 'Automatic', 'Tự động'] };
   const stName = s => ST[s] ? `${ST[s][0]} ${T(ST[s][1], ST[s][2])}` : s, kindName = k => KIND[k] ? `${KIND[k][0]} ${T(KIND[k][1], KIND[k][2])}` : k;
+  const stLabel = p => p.status === 'fixed' && p.fixedIn ? `✅ ${T('Fixed', 'Đã sửa')} (${esc(p.fixedIn)})` : stName(p.status);
+  const reporterLabel = x => {
+    const rep = x && x.reporter;
+    if (rep && rep.type === 'player' && rep.name) return `👤 ${T('Signed-in player', 'Người chơi đăng nhập')}: <b>${esc(rep.name)}</b>`;
+    if (rep && rep.type === 'auto') return `🤖 ${T('Automatic detector (system/robot)', 'Tự động phát hiện (hệ thống/robot)')}`;
+    if (rep && rep.type === 'unknown') return `👪 ${T('Family shared device (reporter unconfirmed)', 'Thiết bị gia đình chung (chưa xác nhận người báo)')}`;
+    if (x && x.kind === 'auto') return `🤖 ${T('Automatic detector (system/robot)', 'Tự động phát hiện (hệ thống/robot)')}`;
+    return `👪 ${T('Family shared device (reporter unconfirmed)', 'Thiết bị gia đình chung (chưa xác nhận người báo)')}`;
+  };
   const whereText = w => w ? [w.game, w.window, w.area].filter(Boolean).join(' · ') : '';
   const devName = id => labels[id] || easyName(id);
   const builds = [...new Set(problems.flatMap(p => p.builds || []))].sort();
@@ -1570,18 +1579,19 @@ PAGES.testers = async P => {
   const draw = () => {
     const st = $('#fst').value, kd = $('#fkd').value, bd = $('#fbd').value;
     const list = problems.filter(p => (st === 'open' ? ['new', 'fixing', 'back'].includes(p.status) : !st || p.status === st) && (!kd || (kd === 'tester' ? p.kind !== 'auto' : p.kind === kd)) && (!bd || (p.builds || []).includes(bd)));
-    $('#tpb').innerHTML = list.map(p => `<tr data-open="${esc(p.k)}" class="click"><td>${kindName(p.kind)}${p.auto ? ' · ' + esc(p.auto) : ''}<br><b>${esc(p.title)}</b>${p.spoken ? ' 🎤' : ''}</td><td>${esc(whereText(p.where))}</td><td>${p.n}</td><td>${p.devices}</td><td>${esc((p.builds || []).join(', '))}</td><td>${sydney(p.lastAt)}</td><td>${stName(p.status)}${p.fixedIn ? ' · ' + esc(p.fixedIn) : ''}</td></tr>`).join('') || `<tr><td colspan="7" class="note">${T('Nothing here.', 'Không có gì.')}</td></tr>`;
+    $('#tpb').innerHTML = list.map(p => `<tr data-open="${esc(p.k)}" class="click"><td>${kindName(p.kind)}${p.auto ? ' · ' + esc(p.auto) : ''}<br><b>${esc(p.title)}</b>${p.spoken ? ' 🎤' : ''}</td><td>${esc(whereText(p.where))}</td><td>${p.n}</td><td>${p.devices}</td><td>${esc((p.builds || []).join(', '))}</td><td>${sydney(p.lastAt)}</td><td>${stLabel(p)}</td></tr>`).join('') || `<tr><td colspan="7" class="note">${T('Nothing here.', 'Không có gì.')}</td></tr>`;
     P.querySelectorAll<HTMLInputElement>('[data-open]').forEach(x => x.onclick = e => { e.preventDefault(); open(x.dataset.open); });
   };
   const open = async k => {
     const box = $('#tdetail'); box.innerHTML = `<div class="card">${T('Loading…', 'Đang tải…')}</div>`;
     let p; try { p = await api('testers/problem/' + k); } catch (e) { box.innerHTML = `<div class="card"><p class="badtxt">⚠️ ${esc(e.message)}</p></div>`; return; }
     const others = problems.filter(q => q.k !== k && !['dup'].includes(q.status));
-    box.innerHTML = `<div class="card tdet"><h3>${kindName(p.kind)} · ${esc(p.title)}</h3><p class="note">${esc(whereText(p.where))} · ${p.n}× · ${p.devices.length} ${T('devices', 'máy')} · ${esc((p.builds || []).join(', '))} · ${stName(p.status)}${p.fixedIn ? ' ' + esc(p.fixedIn) : ''}</p>
+    box.innerHTML = `<div class="card tdet"><h3>${kindName(p.kind)} · ${esc(p.title)}</h3><p class="note">${esc(whereText(p.where))} · ${p.n}× · ${p.devices.length} ${T('devices', 'máy')} · ${esc((p.builds || []).join(', '))} · ${stLabel(p)}</p>
       <div class="bar"><label>${T('Fixed in', 'Đã sửa trong bản')} <input id="tfin" value="${esc(p.fixedIn || gameBuild)}" size="6"></label><button class="btn" id="tfix">✅ ${T('Mark fixed', 'Đánh dấu đã sửa')}</button>
         <button class="btn" data-set="fixing">🔨 ${T('Being fixed', 'Đang sửa')}</button><button class="btn" data-set="notbug">🚫 ${T('Not a bug', 'Không phải lỗi')}</button><button class="btn" data-set="new">🆕 ${T('Open again', 'Mở lại')}</button>
         <label>${T('Same as', 'Trùng với')} <select id="tdup"><option value="">…</option>${others.map(q => `<option value="${esc(q.k)}">${esc(q.title.slice(0, 60))}</option>`).join('')}</select></label></div>
       ${p.reports.slice().reverse().map(x => `<div class="trep"><p><b>${sydney(x.at)}</b> · ${esc(devName(x.id))} · ${esc(x.b)} · ${esc(x.dev.os)} ${esc(x.dev.br)} ${esc(x.dev.sc)} · ${esc(x.dev.lang)}${x.dev.fps ? ' · ' + x.dev.fps + ' fps' : ''}${x.count > 1 ? ' · ' + x.count + '×' : ''}</p>
+        <p class="note"><b>${T('Reporter', 'Người báo')}:</b> ${reporterLabel(x)} · 👧 ${T('Profiles on device', 'Hồ sơ trên máy')}: ${esc((x.players || []).map(q => `${q.name} (${q.age})`).join(', ') || '–')} · 📍 ${esc(whereText(x.where))} (${x.where.x ?? ''}, ${x.where.z ?? ''})</p>
         ${x.note ? `<p>${x.spoken ? '🎤 ' : '✏️ '}${esc(x.note)}</p>` : ''}${x.detail ? `<p class="note">${esc(x.detail)}</p>` : ''}
         <p class="note">👧 ${esc(x.players.map(q => `${q.name} (${q.age})`).join(', ') || '–')} · 📍 ${esc(whereText(x.where))} (${x.where.x ?? ''}, ${x.where.z ?? ''})</p>
         ${x.errors.length ? `<details><summary>${T('Errors', 'Lỗi')} (${x.errors.length})</summary><pre>${esc(x.errors.join('\n'))}</pre></details>` : ''}
