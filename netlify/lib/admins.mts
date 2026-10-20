@@ -102,6 +102,7 @@ export function needs(api, post) {
   if (['github/merge', 'site/restore'].includes(api)) return post ? 'deploy' : 'pages';
   if (['github/publish', 'pending/discard'].includes(api)) return post ? 'publish' : 'pages';
   if (api === 'site/rebuild') return post ? 'site' : 'pages';
+  if (api === 'bot/run') return post ? 'site' : 'pages';
   if (/^voices?(\/|$)/.test(api)) return post ? 'voices' : 'pages';
   return post ? 'edit' : 'pages';
 }
