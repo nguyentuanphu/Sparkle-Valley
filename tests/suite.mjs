@@ -12,9 +12,10 @@
 // failed beside others runs once more alone, and the summary lists it as "passed only alone".
 import fs from 'fs';
 import path from 'path';
+import { fileURLToPath } from 'node:url';
 import { spawn, execFileSync } from 'child_process';
 
-const HERE = path.dirname(new URL(import.meta.url).pathname), REPO = path.resolve(HERE, '..');
+const HERE = path.dirname(fileURLToPath(import.meta.url)), REPO = path.resolve(HERE, '..');
 const args = process.argv.slice(2), flag = n => args.includes(n), opt = (n, d) => { const i = args.indexOf(n); return i >= 0 && args[i + 1] ? args[i + 1] : d; };
 const JOBS = Math.max(1, Number(opt('--jobs', 3)) || 3), CHANGED = flag('--changed'), LIST = flag('--list');
 // these measure how fast the game is: never beside another check

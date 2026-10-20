@@ -19,9 +19,8 @@ if (typeof globalThis.navigator === 'undefined') globalThis.navigator = { langua
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { BROKERS, topicFor, keyFor, seal, open, Channel } from '../../js/relay.js';
+import { BROKERS, topicFor, keyFor, seal, open } from '../../js/relay.js';
 const { Net, okRoom, ROOM_LEN } = await import('../../js/net.js');
-import { checkMsg } from '../../js/netmsg.js';
 
 test('BROKERS returns default secure websocket brokers when window is undefined', () => {
   const brokers = BROKERS();
@@ -80,7 +79,7 @@ test('okRoom enforces 6-digit room code format', () => {
 test('heartbeat re-announces only admitted cloud guests and stops after leaving', t => {
   t.mock.timers.enable({ apis: ['setInterval'] });
   const room = Object.create(Net);
-  Object.assign(room, { role: 'guest', cloudOn: true, knocking: false, remotes: {}, send() {}, emit() {} });
+  Object.assign(room, { role: 'guest', cloudOn: true, knocking: false, hostId: 'host-1', remotes: {}, send() {}, emit() {} });
   let hellos = 0;
   room._helloCloud = () => hellos++;
   room._startPings();
@@ -97,3 +96,4 @@ test('heartbeat re-announces only admitted cloud guests and stops after leaving'
   assert.equal(hellos, 11);
   clearInterval(room._pt);
 });
+

@@ -46,6 +46,7 @@ They need the local servers: `cd <scratchpad>/srv && node peer.cjs & node mq.cjs
   late is stopped, never a second microphone. Every outcome of a tap is said on screen, EN and VI (asking, on, blocked
   with Settings → Safari → Microphone, no microphone, iPhone or iPad older than iOS 14.3), so the owner can see on a real
   iPhone what happened. Checked by `iphone`; needs a real iPhone try once live.
+- **Branch core/online approved (owner, 20 Oct 2026 AEDT):** plan pop-up `go_core_online` confirmed proceeding on `core/online` despite initial requested shared branch.
 - **Wait for r60 (owner, 11 Oct, 3 pm AEDT):** the r60 brief (check the map-version card and #55 on the live r60, the
   friends row's Join button with Kid UI) waits until Release publishes r60. At that time `main` and the live site were
   r59 without `core/online`, and `docs/cores/LOG-r60.md` did not exist. Nothing is changed until then. (r60 went live
@@ -107,6 +108,7 @@ They need the local servers: `cd <scratchpad>/srv && node peer.cjs & node mq.cjs
   all pass (local PeerJS and MQTT servers, none skipped), `tests/unit/netgames.test.mjs` pass; full suite 86/86 pass.
   Screenshots looked at: phone 390×760, tablet 820×1180, computer 1280×800, EN and VI, friends off and on, and the
   held button. No new spoken lines.
+- **20 Oct, 2:30 pm AEDT, branch `core/online`** (r88 websocket reconnection and lobby synchronization verification): files `js/net.ts` (guest heartbeat re-announces to host when cloud is on and host is missing from remotes after stale peer eviction/outage), `js/relay.ts` (guard window access in BROKERS), `tests/suite.mjs` (ESM Windows file URL fix), `tests/unit/online-reconnect-lobby.test.mjs` (regression coverage). Checks: `node tools/build.mts` passes (63 files); focused unit suite `node --test tests/unit/online-reconnect-lobby.test.mjs tests/unit/netgames.test.mjs` passes 15/15 (0 failures, 0 skips). Local browser-based checks (`multiplayer meet cloud knock netmsg iphone together netgames coop onlineoff mapver`) were not run locally due to missing local PeerJS/MQTT synthetic daemon services. Full suite deferred to GitHub workflow dispatch per rule (changed code triggers full suite selection against origin/main). No UI or spoken lines added; no screenshots taken.
 - **11 Oct, 2:25 pm AEDT, branch `core/online`, commit b4d449b8** (item 2, r57 map version, and bug #55, robot's
   `bugfix/online-55` merged in and extended): files `js/net.js`, `js/netmsg.js` (`W` from `WORLD.size`, `map` in hello),
   `js/main.js` (Online block: Different valley card, friends list and notes, microphone messages), `css/style.css`
