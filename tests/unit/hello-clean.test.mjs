@@ -26,3 +26,10 @@ test('an ordinary hello keeps its build, session and day', () => {
   assert.equal(h?.build, 'r75'); assert.equal(h?.sid, 'b'.repeat(16)); assert.equal(h?.started, NOW - 1000); assert.equal(h?.lang, 'vi'); assert.equal(h?.kind, 'tablet');
   assert.deepEqual(h?.days.map(x => [x.d, x.build, x.mins, x.games.maze, x.kids.k1.g.maze]), [['2026-10-14', 'r75', 12, 2, [1, 1, 0]]]);
 });
+
+test('synthetic bot metadata is recognized and preserved in cleaned hello', () => {
+  const h = clean({ id: 'device000001', b: 'r75', sid: 'c'.repeat(16), isRobot: true, traffic: 'synthetic_bot',
+    days: [{ d: '2026-10-14', build: 'r75', m: 5 }] }, NOW);
+  assert.equal(h?.isRobot, true);
+  assert.equal(h?.traffic, 'synthetic_bot');
+});
