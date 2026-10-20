@@ -3991,9 +3991,9 @@ await check('animalhomes', async () => {
 await check('names', async () => {
   // every game file: no name used that is never defined or imported (TypeScript's TS2304 on all of js/, nothing else
   // judged). Moving code between files (the architecture steps) is where this goes wrong; it once stopped the game.
-  const { execFileSync } = await import('child_process'), tsc = 'node_modules/.bin/tsc';
+  const { execFileSync } = await import('child_process'), tsc = 'node_modules/typescript/lib/tsc.js';
   if (!fs.existsSync(tsc)) return 'skipped (run npm install in tests)';
-  let out = ''; try { out = execFileSync(tsc, ['-p', 'tsconfig.names.json'], { encoding: 'utf8', maxBuffer: 64e6 }); } catch (e) { out = (e.stdout || '') + ''; }
+  let out = ''; try { out = execFileSync(process.execPath, [tsc, '-p', 'tsconfig.names.json'], { encoding: 'utf8', maxBuffer: 64e6 }); } catch (e) { out = (e.stdout || '') + ''; }
   const bad = out.split('\n').filter(l => /TS2304/.test(l) && !l.startsWith('../vendor'));
   ok(!bad.length, bad.slice(0, 6).join(' | '));
   return `${fs.readdirSync('../js', { recursive: true }).filter(f => String(f).endsWith('.js')).length} game files: every name is defined or imported`;
@@ -5241,11 +5241,13 @@ await check('chests', async () => {
 await check('types', async () => {
   // type checking (owner, round 30): the files that start with // @ts-check are checked against their JSDoc types
   // (js/state.js, js/netmsg.js; tests/tsconfig.json lists them), then the .mts and .cts files (tests/tsconfig.server.json). Needs: cd tests && npm install
-  const { execFileSync } = await import('child_process'), tsc = 'node_modules/.bin/tsc';
+  const { execFileSync } = await import('child_process'), tsc = 'node_modules/typescript/lib/tsc.js';
   if (!fs.existsSync(tsc)) return 'skipped (run npm install in tests)';
-  try { execFileSync(tsc, ['-p', '.'], { encoding: 'utf8' }); execFileSync(tsc, ['-p','tsconfig-contracts.json'], {encoding:'utf8'}); execFileSync(tsc, ['-p', 'sw-tsconfig.json'], {encoding:'utf8'}); } catch (e) { ok(false, ((e.stdout || '') + '').split('\n').slice(0, 8).join(' | ')); }
+  const runTsc = args => execFileSync(process.execPath, [tsc, ...args], { encoding: 'utf8' });
+  const diagnostics = e => [e.stdout, e.stderr].filter(Boolean).join('\n').trim() || e.message;
+  try { runTsc(['-p', '.']); runTsc(['-p', 'tsconfig-contracts.json']); runTsc(['-p', 'sw-tsconfig.json']); } catch (e) { ok(false, diagnostics(e)); }
   // (owner, 16-17 Oct AEDT: TypeScript batches 1 and 2) the website's server pieces, the Studio engine and the tools, as Node runs them
-  let server = ''; try { server = execFileSync(tsc, ['-p', 'tsconfig.server.json', '--listFilesOnly'], { encoding: 'utf8' }); execFileSync(tsc, ['-p', 'tsconfig.server.json'], { encoding: 'utf8' }); } catch (e) { ok(false, 'tsconfig.server.json: ' + ((e.stdout || '') + '').split('\n').slice(0, 8).join(' | ')); }
+  let server = ''; try { server = runTsc(['-p', 'tsconfig.server.json', '--listFilesOnly']); runTsc(['-p', 'tsconfig.server.json']); } catch (e) { ok(false, 'tsconfig.server.json: ' + diagnostics(e)); }
   const n = JSON.parse(fs.readFileSync('tsconfig.json', 'utf8')).files.length, ts = server.split('\n').filter(f => /\.(mts|cts)$/.test(f) && !f.includes('node_modules')).length;
   return `${n} explicit files type-checked; detector/outbox/family-backup modules additionally strict-checked; ${ts} TypeScript files of the server, Studio and tools; no errors`;
 });
