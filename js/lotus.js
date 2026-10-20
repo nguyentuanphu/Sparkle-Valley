@@ -42,9 +42,19 @@ export function createLotus(G, { say, toast }) {
     const bucket = new THREE.Mesh(merge([P(new THREE.CylinderGeometry(.2, .15, .3, 10), '#8a5a3b', [0, -.15, 0]), P(new THREE.CylinderGeometry(.01, .01, 1, 4), '#d9c9a0', [0, .35, 0])]), mat);
     const y0 = heightAt(x, z) + 1.3; bucket.position.set(x, y0, z); scene.add(bucket);
     world.colliders.push({ x, z, r: 1.3 });
-    let dip = 0; world.updaters.push(dt => { if (dip > 0) { dip = Math.max(0, dip - dt); bucket.position.y = y0 - Math.sin((1 - dip / 2.4) * Math.PI) * 1.1; } });
+    let dip = 0, wellBusyUntil = 0;
+    world.updaters.push(dt => { if (dip > 0) { dip = Math.max(0, dip - dt); bucket.position.y = y0 - Math.sin((1 - dip / 2.4) * Math.PI) * 1.1; } });
     lines.well = ['The village well! Long ago everyone came here for water, and to chat with their neighbours.', 'Giếng nước của làng đó! Ngày xưa ai cũng ra đây lấy nước và trò chuyện với hàng xóm.'];
-    thing('lv_well', x + 1.6, z + .6, 2.6, '🪣', () => T('The village well', 'Giếng nước của làng'), h => { dip = 2.4; setTimeout(() => SFX.splash(), 900); talk(h, 'well'); });
+    thing('lv_well', x + 1.6, z + .6, 2.6, '🪣', () => T('The village well', 'Giếng nước của làng'), h => {
+      const now = Date.now(); if (now < wellBusyUntil) return;
+      wellBusyUntil = now + 3200; dip = 2.4;
+      // iOS WebKit can terminate the page when Web Audio, speech and the quest story allocate together.
+      if (h && toast) toast(h, T(...lines.well));
+      setTimeout(() => { try { SFX.splash(); } catch (e) { } }, 800);
+      setTimeout(() => {
+        if (!document.querySelector('.storybook, .dialog, .modal, .reward')) { try { say(...lines.well); } catch (e) { } }
+      }, 3000);
+    });
   }
 
   // ---------- the banyan's hanging roots and the little shrine at its foot ----------

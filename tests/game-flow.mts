@@ -106,6 +106,7 @@ export async function gameFlowCheck(browser: Browser): Promise<string> {
 
     await P.page.setViewportSize({ width: 1280, height: 800 });
     phase = 'Play menu open';
+    await P.page.evaluate(() => { document.body.focus(); });
     await P.page.keyboard.press('g'); await P.page.locator('.modal.hub').waitFor();
     await P.page.locator('.modal.hub [data-play="numbers"]').click();
     phase = 'Play game launch';

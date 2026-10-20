@@ -97,3 +97,54 @@ export function apGameSeconds(speed, maxActions = 0, multiplier = 1) {
   const actions = Math.min(256, Math.ceil(maxActions));
   return Math.max(base, Math.min(600, Math.ceil(actions * (speed.think[1] + speed.finger / 1000 + .05) + 12)));
 }
+
+/** @typedef {'chaos-toddler' | 'gentle-explorer' | 'max-competence'} AutoplayProfile */
+export const AUTOPLAY_PROFILES = /** @type {const} */ (['chaos-toddler', 'gentle-explorer', 'max-competence']);
+
+/** @returns {AutoplayProfile} */
+export function autoplayProfileFromEnv() {
+  let saved = '';
+  try { saved = localStorage.getItem('sv2_autoplay_profile') || ''; } catch { /* storage can be unavailable */ }
+  const value = new URLSearchParams(globalThis.location?.search || '').get('autoplayProfile') || saved;
+  return AUTOPLAY_PROFILES.includes(/** @type {AutoplayProfile} */ (value)) ? /** @type {AutoplayProfile} */ (value) : 'gentle-explorer';
+}
+
+/**
+ * @typedef {'tap' | 'spam' | 'drag' | 'drop-outside' | 'wander'} AutoplayAction
+ * @param {AutoplayProfile} profile
+ * @param {() => number} [random]
+ * @returns {AutoplayAction}
+ */
+export function childAction(profile, random = Math.random) {
+  if (profile === 'max-competence') return 'tap';
+  const n = random();
+  if (profile === 'gentle-explorer') return n < .65 ? 'wander' : 'tap';
+  return n < .3 ? 'spam' : n < .55 ? 'drag' : n < .8 ? 'drop-outside' : 'tap';
+}
+
+/**
+ * @template T
+ * @param {T[]} choices
+ * @param {(choice: T) => number} score
+ * @returns {T | null}
+ */
+export function optimalAutoplayChoice(choices, score) {
+  if (!choices.length) return null;
+  return choices.reduce((best, choice) => score(choice) > score(best) ? choice : best);
+}
+
+/**
+ * @template T
+ * @param {T[]} choices
+ * @param {AutoplayProfile} profile
+ * @param {(choice: T) => number} score
+ * @param {() => number} [random]
+ * @returns {T | null}
+ */
+export function stochasticAutoplayChoice(choices, profile, score, random = Math.random) {
+  if (!choices.length) return null;
+  if (profile === 'max-competence') return optimalAutoplayChoice(choices, score);
+  if (profile === 'chaos-toddler') return choices[Math.floor(random() * choices.length)];
+  const best = optimalAutoplayChoice(choices, score);
+  return random() < .8 ? best : choices[Math.floor(random() * choices.length)];
+}
