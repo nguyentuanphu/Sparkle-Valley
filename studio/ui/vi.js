@@ -11,6 +11,8 @@ export const VI_MESSAGES = [
   [/^Set the website and a Studio key in Settings to put these pages live at once\.$/, () => 'Hãy điền trang web và khóa Studio trong Cài đặt để các trang này có hiệu lực ngay.'],
   [/^Too much to go live at once \((\d+) KB; 200 KB at most\): make the stories or the quiz shorter, then Save again\.$/, (m) => `Quá nhiều để có hiệu lực ngay một lần (${m[1]} KB; tối đa 200 KB): hãy làm truyện hoặc câu đố ngắn lại, rồi bấm Lưu lần nữa.`],
   [/^Some words are too long to go live \((.+): (\d+) letters at most\): make them shorter, then Save again\.$/, (m) => `Có chữ quá dài để có hiệu lực ngay (${LIVE_PART_VI[m[1]] || m[1]}: tối đa ${m[2]} chữ cái): hãy viết ngắn lại, rồi bấm Lưu lần nữa.`],
+  [/^Configure a GitHub token and repository in Settings to dispatch bot tests\.$/, () => 'Hãy cấu hình token và kho lưu trữ GitHub trong Cài đặt để chạy thử nghiệm bot.'],
+  [/^Invalid bot configuration\.$/, () => 'Cấu hình bot không hợp lệ.'],
   // (owner, 12 Oct) tester reports
   [/^No such problem\.$/, () => 'Không có lỗi này.'],
   [/^Set the website address and the Studio password in Settings to see the tester reports\.$/, () => 'Hãy điền địa chỉ trang web và mật khẩu Studio trong Cài đặt để xem báo cáo của người thử.'],
