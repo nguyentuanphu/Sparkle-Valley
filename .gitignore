@@ -114,6 +114,7 @@ marketing/source/runvalley.log
 /js/content/storyhelp.js
 /js/family-backup.js
 /js/familydevices.js
+/js/film.js
 /js/games/frame.js
 /js/games/learning-meta.js
 /js/games/learning.js
@@ -149,6 +150,7 @@ marketing/source/runvalley.log
 /js/solids.js
 /js/state.js
 /js/studio-position.js
+/js/tale-loader.js
 /js/tester-detection.js
 /js/tester.js
 /js/trade.js
