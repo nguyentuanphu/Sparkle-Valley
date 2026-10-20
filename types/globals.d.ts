@@ -35,6 +35,8 @@ declare global {
     svFeatureOn?: (id: string, def?: boolean) => boolean;
     /** the start-up bar before the title (js/launch.js) */
     svLaunchProgress?: (value: number, total: number, label?: string) => void;
+    /** the checks: speed up story films */
+    __svFilmRate?: number;
     /** older Safari */
     webkitAudioContext?: typeof AudioContext;
   }

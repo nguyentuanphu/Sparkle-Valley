@@ -13,6 +13,10 @@
 // Everything is drawn by one small renderer that is made once and reused by every film, with no shadows
 // and few lights, so it runs on older phones. Tapping a character makes it wiggle (little ones love that).
 import { THREE, P, merge, toonVC, toon, glow } from './gfx.js';
+import type { BufferGeometry, CanvasTexture, Material, Mesh, Object3D } from '../vendor/three.module.js';
+
+type PaintedCanvasTexture = CanvasTexture & { paint(top: string, bottom: string): void };
+type FilmApi = { onSay?: (en: string, vi: string, kind?: string) => Promise<unknown>; readonly now: any; page(k: number): Promise<unknown>; narrated(): void; pause(): void; close(): void };
 import { buildAvatar, drawFeatures, OUTLINED } from './avatar.js';
 import { reduceMotion } from './state.js';
 import { T } from './i18n.js';
@@ -30,16 +34,16 @@ const lerp = (a, b, k) => a + (b - a) * k;
 const v3 = a => Array.isArray(a) ? new THREE.Vector3(...a) : a.clone();
 
 // ---------- shared shapes (made once) ----------
-const own = g => { g.userData.film = true; return g; };
+const own = <T extends BufferGeometry>(g: T): T => { g.userData.film = true; return g; };
 const VC = toonVC(); VC.userData.shared = true;
 export const mesh = parts => new THREE.Mesh(own(merge(parts)), VC);
-const S_ = (r, w = 14, h = 10) => new THREE.SphereGeometry(r, w, h);
+const S_ = (r: number, w = 14, h = 10) => new THREE.SphereGeometry(r, w, h);
 const Cyl = (a, b, h, s = 10) => new THREE.CylinderGeometry(a, b, h, s);
 const Cone = (r, h, s = 10) => new THREE.ConeGeometry(r, h, s);
 const Box = (w, h, d) => new THREE.BoxGeometry(w, h, d);
 export const G3 = { S: S_, Cyl, Cone, Box };
-export const mat = (c, extra) => { const m = toon(c, Object.assign({}, extra || {})); m.userData.film = true; return m; };
-const solid = (geo, c, extra) => new THREE.Mesh(own(geo), mat(c, extra));
+export const mat = (c, extra = null) => { const m = toon(c, Object.assign({}, extra || {})); m.userData.film = true; return m; };
+const solid = (geo, c, extra = null) => new THREE.Mesh(own(geo), mat(c, extra));
 
 // ---------- faces that show feelings, and a mouth that moves while talking ----------
 const faces = {};
@@ -84,7 +88,12 @@ function person(look, scale = 1) {
   A.root.scale.setScalar(scale);
   const a = { A, o: A.root, state: 'idle', speed: 0, mood: 'smile', talkUntil: -1, px: 0, pz: 0, yaw: 0, look: LOOK(look), wig: 0 };
   A.root.userData.actor = a; A.faceMat.map = face(a.look, 'smile');
-  A.root.traverse(o => { if (o.geometry) KEEP.add(o.geometry); (Array.isArray(o.material) ? o.material : o.material ? [o.material] : []).forEach(m => KEEP.add(m)); });
+  A.root.traverse((o: Object3D) => {
+    const meshObj = o as unknown as Mesh;
+    if (meshObj.geometry) KEEP.add(meshObj.geometry);
+    const m = meshObj.material;
+    (Array.isArray(m) ? m : m ? [m] : []).forEach(mat => KEEP.add(mat));
+  });
   return a;
 }
 // lean the body forward (+) or back (−) from the hips, taking the head along so it stays on the neck
@@ -146,9 +155,9 @@ function renderer() {
 }
 
 // sky colours as a soft gradient
-function skyTex() {
+function skyTex(): PaintedCanvasTexture {
   const c = document.createElement('canvas'); c.width = 2; c.height = 128;
-  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace;
+  const t = new THREE.CanvasTexture(c) as PaintedCanvasTexture; t.colorSpace = THREE.SRGBColorSpace;
   t.paint = (top, bottom) => { const x = c.getContext('2d'), g = x.createLinearGradient(0, 0, 0, 128); g.addColorStop(0, top); g.addColorStop(1, bottom); x.fillStyle = g; x.fillRect(0, 0, 2, 128); t.needsUpdate = true; };
   return t;
 }
@@ -157,7 +166,7 @@ export const filmRate = () => (typeof window !== 'undefined' && window.__svFilmR
 const mixHex = (a, b, k) => '#' + new THREE.Color(a).lerp(new THREE.Color(b), k).getHexString();
 
 // A film: made when the theatre opens a tale that has one, gone when the theatre closes.
-export function createFilm(stage, script, ctx = {}) {
+export function createFilm(stage: HTMLElement, script: any, ctx: any = {}): FilmApi | null {
   const r = renderer(); if (!r || !script) return null;
   const scene = new THREE.Scene(), cam = new THREE.PerspectiveCamera(42, 1, .1, 600);
   const sky = skyTex(); scene.background = sky; scene.fog = new THREE.Fog('#cfefff', 60, 260);
@@ -197,7 +206,7 @@ export function createFilm(stage, script, ctx = {}) {
   r.domElement.addEventListener('pointerdown', onDown); r.domElement.addEventListener('pointerup', onUp);
 
   // ---------- one page ----------
-  function Page(k) {
+  function Page(this: any, k: number) {
     const S = this; S.root = new THREE.Group(); scene.add(S.root);
     S.ev = []; S.t = 0; S.len = 0; S.actors = []; S.tickers = []; S.hold = null; S.narrated = false; S.camT = null;
     S.camPos = new THREE.Vector3(0, 3, 12); S.camLook = new THREE.Vector3(0, 1, 0); S.follow = null;
@@ -208,7 +217,7 @@ export function createFilm(stage, script, ctx = {}) {
     S.at = (t, fn) => S.tw(t, 0, (k, first) => { if (first) fn(); });
     S.add = (o, x = 0, y = 0, z = 0, ry = 0) => { o.position.set(x, y, z); o.rotation.y = ry; S.root.add(o); o.traverse(c => { if (c.userData.tick) S.tickers.push(c.userData.tick); }); return o; };
     S.every = f => S.tickers.push(f);
-    S.sky = (top, bottom, fog) => { sky.paint(top, bottom); scene.fog.color.set(fog || bottom); S.skyNow = [top, bottom]; };
+    S.sky = (top, bottom, fog) => { sky.paint(top, bottom); (scene.fog as THREE.Fog).color.set(fog || bottom); S.skyNow = [top, bottom]; };
     S.skyTo = (t, dur, top, bottom) => { let from; return S.tw(t, dur, (k, first) => { if (first) from = S.skyNow.slice(); const a = mixHex(from[0], top, k), b = mixHex(from[1], bottom, k); sky.paint(a, b); scene.fog.color.set(b); if (k >= 1) S.skyNow = [top, bottom]; }, lin); };
     S.light = (sunI = 1.05, hemiI = .85) => { sun.intensity = Math.max(S.look ? .8 : .45, sunI); hemi.intensity = Math.max(S.look ? 1.1 : .65, hemiI); };
     S.lightTo = (t, dur, sunI, hemiI) => { let a, b; return S.tw(t, dur, (k, first) => { if (first) { a = sun.intensity; b = hemi.intensity; } sun.intensity = Math.max(S.look ? .8 : .45, lerp(a, sunI, k)); hemi.intensity = Math.max(S.look ? 1.1 : .65, lerp(b, hemiI, k)); }, lin); };
@@ -244,7 +253,7 @@ export function createFilm(stage, script, ctx = {}) {
     S.say = (t, en, vi) => { S.ev.push({ t, dur: 0, say: { en, vi }, e: lin }); S.len = Math.max(S.len, t + .1); };
     S.speaking = false;
     // a line spoken inside the film (a narration line or the child's turn): the page goes on only once it is said
-    const speak = (en, vi, after, kind = 'say') => { S.speaking = true; Promise.resolve(api.onSay ? api.onSay(en, vi, kind) : sayAsync(en, vi)).catch(() => { }).finally(() => { S.speaking = false; after && after(); }); };
+    const speak = (en: string, vi: string, after?: () => void, kind = 'say') => { S.speaking = true; Promise.resolve(api.onSay ? api.onSay(en, vi, kind) : sayAsync(en, vi)).catch(() => { }).finally(() => { S.speaking = false; after && after(); }); };
     S.help = (t, en, vi, act, at, dur = 0) => { S.ev.push({ t, dur: 0, help: { en, vi, act, dur, at: at ? () => v3(val(at)) : null }, e: lin }); S.len = Math.max(S.len, t + .1); };
     S.release = byChild => {
       const hd = S.hold; if (!hd) return; S.hold = null; help.hidden = true; ring.hidden = true; clearTimeout(hd.timer);
@@ -287,22 +296,23 @@ export function createFilm(stage, script, ctx = {}) {
     };
     S.dispose = () => {
       scene.remove(S.root); help.hidden = true; ring.hidden = true; if (S.hold) clearTimeout(S.hold.timer);
-      S.root.traverse(o => {
-        if (o.geometry && !o.isSprite && !KEEP.has(o.geometry)) o.geometry.dispose();
-        const ms = Array.isArray(o.material) ? o.material : o.material ? [o.material] : [];
-        for (const m of ms) { if (m.userData.shared || KEEP.has(m)) continue; if (m.map && m.map.userData.film) m.map.dispose(); m.dispose(); }
+      S.root.traverse((o: Object3D) => {
+        const meshObj = o as unknown as Mesh;
+        if (meshObj.geometry && !('isSprite' in o && o.isSprite) && !KEEP.has(meshObj.geometry)) meshObj.geometry.dispose();
+        const ms = Array.isArray(meshObj.material) ? meshObj.material : meshObj.material ? [meshObj.material] : [];
+        for (const m of ms) { if (m.userData.shared || KEEP.has(m)) continue; if ('map' in m && m.map instanceof THREE.Texture && m.map.userData.film) m.map.dispose(); m.dispose(); }
       });
     };
     S.lib = SETS;
   }
 
-  const api = current = {
+  const api: FilmApi = current = {
     get now() { return page; },
     // play page k: builds its film and resolves when the film has played to its end
     page(k) {
       if (page) page.dispose();
       paused = false; r.domElement.hidden = false;
-      page = new Page(k); scene.fog.near = 60; scene.fog.far = 260; sun.intensity = 1.4; hemi.intensity = 1.25;
+      page = new Page(k); (scene.fog as THREE.Fog).near = 60; (scene.fog as THREE.Fog).far = 260; sun.intensity = 1.4; hemi.intensity = 1.25;
       try {
         script.pages[k] && script.pages[k](page);
         if (page.look) { const n = page.tickers.length; dressStory(page); if (calm) page.tickers.length = n; }
@@ -446,7 +456,8 @@ export const SETS = {
   }
 };
 
-export const PROPS = {
+type PropFactory = (...args: any[]) => Object3D;
+export const PROPS: Record<string, PropFactory> = {
   bird(color = '#3a3a44') {
     const g = new THREE.Group(), body = mesh([P(S_(.16, 10, 8), color, [0, 0, 0], [0, 0, 0], [.9, .85, 1.4]), P(S_(.11, 10, 8), color, [0, .1, .18]), P(Cone(.04, .12, 6), '#f2a23a', [0, .09, .32], [H, 0, 0]), P(S_(.02, 6, 5), '#fff', [.06, .13, .26]), P(S_(.02, 6, 5), '#fff', [-.06, .13, .26]), P(Cone(.07, .25, 4), color, [0, .02, -.28], [-H - .3, 0, 0], [1, 1, .4])]);
     g.add(body);
@@ -520,12 +531,12 @@ export const PROPS = {
     neck.add(mesh([P(new THREE.CapsuleGeometry(.2, .6, 4, 8), c2, [0, .35, .12], [.5, 0, 0]), P(new THREE.CapsuleGeometry(.17, .42, 4, 8), c2, [0, .72, .42], [1.6, 0, 0]),
       P(S_(.06, 6, 5), iron ? '#ff8a2a' : '#1a1a1a', [.14, .82, .38]), P(S_(.06, 6, 5), iron ? '#ff8a2a' : '#1a1a1a', [-.14, .82, .38]),
       ...[-1, 1].map(s => P(Cone(.06, .18, 5), c2, [s * .09, .98, .26])), ...[0, 1, 2, 3, 4].map(i => P(Box(.06, .22, .14), mane, [0, .9 - i * .17, .12 - i * .1], [.4, 0, 0]))]));
-    const legs = [[.2, .55, 0], [-.2, .55, Math.PI], [.2, -.55, Math.PI], [-.2, -.55, 0]].map(([x, z, ph]) => { const l = new THREE.Group(); l.position.set(x, 1.15, z); l.add(mesh([P(Cyl(.09, .07, 1.1, 6), c2, [0, -.55, 0]), P(Cyl(.1, .1, .1, 6), iron ? '#3a3c40' : '#2a1a10', [0, -1.12, 0])])); body.add(l); return [l, ph]; });
+    const legs = [[.2, .55, 0], [-.2, .55, Math.PI], [.2, -.55, Math.PI], [-.2, -.55, 0]].map(([x, z, ph]) => { const l = new THREE.Group(); l.position.set(x, 1.15, z); l.add(mesh([P(Cyl(.09, .07, 1.1, 6), c2, [0, -.55, 0]), P(Cyl(.1, .1, .1, 6), iron ? '#3a3c40' : '#2a1a10', [0, -1.12, 0])])); body.add(l); return [l, ph] as const; });
     const tail = new THREE.Group(); tail.position.set(0, 1.5, -.95); tail.add(mesh([P(Cone(.12, .9, 6), mane, [0, -.4, -.12], [Math.PI - .4, 0, 0])])); body.add(tail);
     if (iron) body.add(mesh([P(Box(.82, .1, .9), '#3a3c40', [0, 1.78, -.05]), ...[-1, 1].map(s => P(Box(.05, .5, .05), '#3a3c40', [s * .42, 1.5, 0]))]));
     // fire from the mouth
     const fire = new THREE.Group(); fire.position.set(0, .7, .7); neck.add(fire); fire.visible = false;
-    if (iron) [['#ffd23f', .12, .7], ['#ff8a2a', .18, 1.1], ['#e8332a', .22, 1.5]].forEach(([c, r, l], i) => { const m = glow(c, .85); m.userData.film = true; const f = new THREE.Mesh(own(Cone(r, l, 8)), m); f.rotation.x = -H; f.position.z = l / 2; fire.add(f); });
+    if (iron) ([['#ffd23f', .12, .7], ['#ff8a2a', .18, 1.1], ['#e8332a', .22, 1.5]] as const).forEach(([c, r, l], i) => { const m = glow(c, .85); m.userData.film = true; const f = new THREE.Mesh(own(Cone(r, l, 8)), m); f.rotation.x = -H; f.position.z = l / 2; fire.add(f); });
     g.userData.seat = [0, 1.78, -.05]; g.userData.fire = fire; g.userData.gait = 0;
     g.userData.tick = (dt, time) => {
       const k = g.userData.gait; // 0 stand, 1 walk, 2 gallop
@@ -686,7 +697,7 @@ PROPS.sword = () => {
 // the Golden Turtle (Rùa Vàng): a big gentle turtle with a patterned shell; userData.head nods and holds the sword
 PROPS.turtle = () => {
   const g = new THREE.Group(), body = new THREE.Group(); g.add(body);
-  const parts = [P(S_(1, 18, 12, 0), '#d8a02a', [0, .25, 0], [0, 0, 0], [1.25, .55, 1.5]), P(Cyl(1.22, 1.22, .12, 20), '#c88a1e', [0, .2, 0], [0, 0, 0], [1, 1, 1.2])];
+  const parts = [P(S_(1, 18, 12), '#d8a02a', [0, .25, 0], [0, 0, 0], [1.25, .55, 1.5]), P(Cyl(1.22, 1.22, .12, 20), '#c88a1e', [0, .2, 0], [0, 0, 0], [1, 1, 1.2])];
   for (let i = 0; i < 7; i++) { const a = i / 7 * Math.PI * 2, d = i ? .62 : 0; parts.push(P(Cyl(.3, .32, .06, 6), '#f2c834', [Math.cos(a) * d, .78 - (i ? .1 : 0), Math.sin(a) * d * 1.2])); }
   [[.9, 1.1], [-.9, 1.1], [.95, -1], [-.95, -1]].forEach(([x, z]) => parts.push(P(S_(.32, 10, 8), '#b8a04a', [x, .1, z], [0, 0, 0], [1.6, .4, .9])));
   parts.push(P(Cone(.18, .45, 6), '#b8a04a', [0, .1, -1.75], [-H, 0, 0]));
@@ -713,7 +724,7 @@ PROPS.turtleTower = () => {
 // A page owns every added mesh, so the normal film disposal frees it on Next/Close.
 function dressStory(S) {
   const { setting: kind, accent: c } = S.look;
-  const parts = [], B = (w,h,d,color,x,y,z,rot) => parts.push(P(Box(w,h,d),color,[x,y,z],rot)),
+  const parts = [], B = (w,h,d,color,x,y,z,rot=[0,0,0]) => parts.push(P(Box(w,h,d),color,[x,y,z],rot)),
     ball = (r,color,x,y,z,scale=[1,1,1]) => parts.push(P(S_(r,10,7),color,[x,y,z],[0,0,0],scale)),
     post = (r,h,color,x,y,z) => parts.push(P(Cyl(r,r,h,8),color,[x,y,z]));
   const flowers = (x,z,color=c,n=9) => { for(let i=0;i<n;i++){const px=x+Math.cos(i*2.4)*(1+i%3*.3),pz=z+Math.sin(i*2.4)*.8;post(.025,.4,'#43a45a',px,.2,pz);ball(.17,color,px,.43,pz,[1,.5,1]);ball(.06,'#ffd764',px,.5,pz);} };
@@ -805,7 +816,7 @@ function storyHouse(S, x, z, ry) {
   const style = S.look.house, c = S.look.accent;
   if (style === 'none') return S.add(new THREE.Group(), x, 0, z, ry);
   if (style === 'hut') return SETS.hut(S, x, z, ry);
-  const parts = [], add = (g,c,p,r,s) => parts.push(P(g,c,p,r,s));
+  const parts = [], add = (g,c,p,r=[0,0,0],s=[1,1,1]) => parts.push(P(g,c,p,r,s));
   const open = style === 'pavilion' || style === 'workshop';
   const w = style === 'farm' ? 7 : style === 'study' ? 4 : 5.4, h = style === 'court' ? 3 : 2.3;
   add(Box(w+.6,.2,4.4),'#e8d5b4',[0,.1,0]);
