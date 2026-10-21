@@ -973,7 +973,7 @@ G.toggleMute = async () => { if (!Net.micLive) { Net.resumeAudio(); await Net.ge
 // Keyboard shortcuts on computers (shown as little key badges on the buttons). Player 1's screen.
 addEventListener('keydown', e => {
   if (!playing || e.repeat || e.ctrlKey || e.metaKey || e.altKey || /INPUT|TEXTAREA|SELECT/.test((e.target instanceof Element && e.target.tagName) || '')) return;
-  const k = e.code;
+  const k = e.code === 'KeyG' || e.key === 'g' || e.key === 'G' ? 'KeyG' : e.code;
   // Escape closes the top pop-up, chat or game card
   if (k === 'Escape') { const x = [...document.querySelectorAll<HTMLElement>('.modal .x, .vc-pop .vc-x, .chatwin .x, .dlg-close')].pop(); if (x) { x.click(); e.preventDefault(); } return; }
   if (G.paused || gameOpen() || document.querySelector<HTMLElement>('.modal, .storybook, .vc-pop')) return;
@@ -1439,8 +1439,8 @@ G.rects = rects; G.faceToFace = () => G.heroes.length > 1 && faceToFace();
 // child's holder is turned half a turn, so their windows face them (round R, owner: "the other child can keep playing").
 G.lastPlayer = 0;
 const holders = [0, 1].map(() => { const w = document.createElement('div'); w.className = 'halfwrap'; return w; });
-G.halfBusy = i => !!holders[i] && holders[i].isConnected && [...holders[i].children].some(c => !c.classList.contains('out'));
-const NOT_A_WINDOW = /(^|\s)(hud|stick|facewrap|halfwrap|caption|title)(\s|$)/;
+G.halfBusy = i => !!holders[i] && holders[i].isConnected && [...holders[i].children].some(c => !c.classList.contains('out') && !c.classList.contains('confetti') && /(^|\s)(modal|gl|storybook|vc-pop|dialog|reward|chatwin|handpad)(\s|$)/.test(c.className));
+const NOT_A_WINDOW = /(^|\s)(hud|stick|facewrap|halfwrap|caption|title|confetti|fade|apfinger|testertoast|packbar)(\s|$)/;
 function placeHolders() {
   const r = rects(), two = twoHalves();
   holders.forEach((w, i) => {

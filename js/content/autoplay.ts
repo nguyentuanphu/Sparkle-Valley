@@ -97,3 +97,35 @@ export function apGameSeconds(speed, maxActions = 0, multiplier = 1) {
   const actions = Math.min(256, Math.ceil(maxActions));
   return Math.max(base, Math.min(600, Math.ceil(actions * (speed.think[1] + speed.finger / 1000 + .05) + 12)));
 }
+
+export type AutoplayProfile = 'chaos-toddler' | 'gentle-explorer' | 'max-competence';
+export const AUTOPLAY_PROFILES: readonly AutoplayProfile[] = ['chaos-toddler', 'gentle-explorer', 'max-competence'] as const;
+
+export function autoplayProfileFromEnv(): AutoplayProfile {
+  let saved = '';
+  try { saved = localStorage.getItem('sv2_autoplay_profile') || ''; } catch { /* storage can be unavailable */ }
+  const value = new URLSearchParams(globalThis.location?.search || '').get('autoplayProfile') || saved;
+  return (AUTOPLAY_PROFILES as readonly string[]).includes(value) ? (value as AutoplayProfile) : 'gentle-explorer';
+}
+
+export type AutoplayAction = 'tap' | 'spam' | 'drag' | 'drop-outside' | 'wander';
+
+export function childAction(profile: AutoplayProfile, random: () => number = Math.random): AutoplayAction {
+  if (profile === 'max-competence') return 'tap';
+  const n = random();
+  if (profile === 'gentle-explorer') return n < .65 ? 'wander' : 'tap';
+  return n < .3 ? 'spam' : n < .55 ? 'drag' : n < .8 ? 'drop-outside' : 'tap';
+}
+
+export function optimalAutoplayChoice<T>(choices: T[], score: (choice: T) => number): T | null {
+  if (!choices.length) return null;
+  return choices.reduce((best, choice) => score(choice) > score(best) ? choice : best);
+}
+
+export function stochasticAutoplayChoice<T>(choices: T[], profile: AutoplayProfile, score: (choice: T) => number, random: () => number = Math.random): T | null {
+  if (!choices.length) return null;
+  if (profile === 'max-competence') return optimalAutoplayChoice(choices, score);
+  if (profile === 'chaos-toddler') return choices[Math.floor(random() * choices.length)];
+  const best = optimalAutoplayChoice(choices, score);
+  return random() < .8 ? best : choices[Math.floor(random() * choices.length)];
+}

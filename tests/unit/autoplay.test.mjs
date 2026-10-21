@@ -2,7 +2,7 @@
 // is put back (js/keepcopy.js), and Studio's choice of what goes back.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { apGameSeconds, apAllowed, keepRewards, revertOf, KEEP_FIELDS, AP_SPEEDS, AP_RIGHT, AP_GROUPS } from '../../js/content/autoplay.js';
+import { apGameSeconds, apAllowed, keepRewards, revertOf, KEEP_FIELDS, AP_SPEEDS, AP_RIGHT, AP_GROUPS, AUTOPLAY_PROFILES, childAction, stochasticAutoplayChoice } from '../../js/content/autoplay.js';
 
 test('the window shows only where Studio allows it', () => {
   assert.equal(apAllowed(false, { devices: [] }, 'abc'), false);
@@ -47,4 +47,31 @@ test('legal-plan allowance follows child speed and is bounded without extending 
   assert.ok(apGameSeconds(AP_SPEEDS.x1,83)>apGameSeconds(AP_SPEEDS.x2,83));
   assert.equal(apGameSeconds(AP_SPEEDS.x5,83),90);
   assert.equal(apGameSeconds(AP_SPEEDS.x1,1e9),600);
+});
+
+test('autoplay profiles support stochastic child behavior and optimal solver', () => {
+  assert.deepEqual(AUTOPLAY_PROFILES, ['chaos-toddler', 'gentle-explorer', 'max-competence']);
+  
+  // Test chaos-toddler / gentle-explorer actions
+  const toddlerAction = childAction('chaos-toddler', () => 0.1);
+  assert.equal(toddlerAction, 'spam');
+  const explorerAction = childAction('gentle-explorer', () => 0.1);
+  assert.equal(explorerAction, 'wander');
+  const maxAction = childAction('max-competence', () => 0.1);
+  assert.equal(maxAction, 'tap');
+
+  // Test stochastic choices and 100% win rate / optimal solver behavior for max-competence
+  const choices = [1, 2, 3];
+  const score = x => x;
+  assert.equal(stochasticAutoplayChoice(choices, 'max-competence', score), 3);
+  assert.equal(stochasticAutoplayChoice([], 'max-competence', score), null);
+
+  // 100 consecutive trials of max-competence choice always yield the optimal element (100% optimal selection)
+  let optimalWins = 0;
+  for (let i = 0; i < 100; i++) {
+    if (stochasticAutoplayChoice([10, 50, 30, 20], 'max-competence', x => x) === 50) {
+      optimalWins++;
+    }
+  }
+  assert.equal(optimalWins, 100);
 });

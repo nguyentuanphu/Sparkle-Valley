@@ -19,7 +19,8 @@ import { BUILD } from './build.js';
 import { pic } from './art.js';
 import { takeCopy, putCopyBack, hasCopy } from './keepcopy.js';
 import { sendAutoplayReport, reportDelivery, reportingState, retryReports, quickReport } from './tester.js';
-import { AP_GROUPS, apSpeed, apGameSeconds, AP_SPEEDS, AP_OPEN_WAIT, AP_RIGHT, AP_STUCK, AP_PATH, AP_TRAIL, AP_QUESTS, apGroupOf, revertOf } from './content/autoplay.js';
+import { AP_GROUPS, apSpeed, apGameSeconds, AP_SPEEDS, AP_OPEN_WAIT, AP_RIGHT, AP_STUCK, AP_PATH, AP_TRAIL, AP_QUESTS, apGroupOf, revertOf, AUTOPLAY_PROFILES, autoplayProfileFromEnv, childAction, optimalAutoplayChoice, stochasticAutoplayChoice } from './content/autoplay.js';
+import type { AutoplayProfile, AutoplayAction } from './content/autoplay.js';
 
 const REPORT = 'sv2_autoplay_report', UI = 'sv2_autoplay_ui', RUNCOPY = 'sv2_autoplay_copy', OLD_BACKUP = 'sv2_autoplay_backup';
 const SPEED_ORDER = ['watch', 'fast', 'x1', 'x2', 'x3', 'x5'];
@@ -32,13 +33,16 @@ const put = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catc
 const STOP = new Error('stop'), SKIP = new Error('skip');
 const rnd = (a, b) => a + Math.random() * (b - a), any = list => list[Math.floor(Math.random() * list.length)];
 let G = null, root = null, run = null, ui = null, errSink = null, finger = null, trail = [], btnTimer: ReturnType<typeof setInterval> | 0 = 0, hostClose = null, floatBar: HTMLDivElement | null = null;
+let selectedProfile: AutoplayProfile = 'gentle-explorer';
 
 export function mountAutoplay(game) {
   if (root) return;
   G = game;
   if (localStorage.getItem(OLD_BACKUP)) { oldPutBack(); return; } // (a check from before 13 Oct that never finished)
   if (hasCopy(RUNCOPY)) putCopyBack(RUNCOPY, G); // a run that never ended (the page was closed): its progress goes back
-  ui = Object.assign({ open: false, groups: AP_GROUPS.filter(g => g.key !== 'quests').map(g => g.key), speed: 'fast', x: null, y: null, q: '' }, get(UI, {}));
+  selectedProfile = autoplayProfileFromEnv();
+  ui = Object.assign({ open: false, groups: AP_GROUPS.filter(g => g.key !== 'quests').map(g => g.key), speed: 'fast', x: null, y: null, q: '', profile: selectedProfile }, get(UI, {}));
+  selectedProfile = (AUTOPLAY_PROFILES as readonly string[]).includes(ui.profile) ? ui.profile : selectedProfile;
   const devicePolicy = liveRule('tester')?.policies?.[localStorage.getItem('sv2_playerid') || '']; if (devicePolicy?.speed && AP_SPEEDS[devicePolicy.speed]) ui.speed = devicePolicy.speed;
   if (!AP_SPEEDS[ui.speed]) ui.speed = 'x1';
   root = el('div', 'apbox'); root.setAttribute('role', 'dialog'); root.setAttribute('aria-label', T('Auto play check', 'Tự chơi để kiểm tra'));
@@ -49,6 +53,8 @@ export function mountAutoplay(game) {
   const ce = console.error; console.error = (...a) => { if (errSink) errSink.push(a.map(String).join(' ').slice(0, 200)); ce.apply(console, a); };
   btnTimer = setInterval(buttons, 1000); buttons();
   G.autoplay = { unmount, running: () => !!run, trail: () => trail.slice(),
+    profile: () => selectedProfile,
+    setProfile: (p: AutoplayProfile) => { if ((AUTOPLAY_PROFILES as readonly string[]).includes(p)) { selectedProfile = p; ui.profile = p; put(UI, ui); draw(); } },
     walkTo: (x, z, speed) => walkTo(x, z, speed),
     // (tests: a button with something on top; outside a run it borrows a short one)
     tapFor: async (b, note) => { const had = run; if (!run) run = { speed: 'fast', list: [], i: 0, done: [], paused: false, skip: false, stop: false }; try { return await tap(b, note); } finally { if (!had) run = null; } },
@@ -348,6 +354,9 @@ function targets(stage) {
   const btn = e => e.matches('button, [role=button]');
   return list.filter(e => shown(e) && !e.closest('.gl-head') && !(btn(e) ? list.some(o => o !== e && e.contains(o) && btn(o)) : list.some(o => o !== e && o.contains(e) && btn(o))));
 }
+export { AUTOPLAY_PROFILES, autoplayProfileFromEnv, childAction, optimalAutoplayChoice, stochasticAutoplayChoice } from './content/autoplay.js';
+export type { AutoplayProfile, AutoplayAction } from './content/autoplay.js';
+
 type PlayResult = { won?: boolean; rights?: number; wrongs?: number; taps?: number; cant?: boolean };
 async function playGame(note): Promise<PlayResult> {
   const gl = document.querySelector('.gl'); if (!gl) return {};
@@ -369,7 +378,14 @@ async function playGame(note): Promise<PlayResult> {
       const ask = playWatch.ask; let pick = null;
       if (ask && ask.els.some(shown)) {
         const right = ask.els.find(e => shown(e) && ask.check(e)), wrong = ask.els.filter(e => shown(e) && !ask.check(e) && !tried.has(e));
-        pick = right && (Math.random() < competenceRate() || !wrong.length) ? right : any(wrong);
+        if (selectedProfile === 'max-competence') {
+          pick = right || any(wrong) || ask.els.find(shown);
+        } else if (selectedProfile === 'chaos-toddler') {
+          const shownEls = ask.els.filter(shown);
+          pick = shownEls.length ? any(shownEls) : null;
+        } else {
+          pick = right && (Math.random() < competenceRate() || !wrong.length) ? right : any(wrong);
+        }
       } else if (playWatch.plan) {
         pick = playWatch.plan();
         if (!pick || !shown(pick) || pick.disabled) {
@@ -381,12 +397,25 @@ async function playGame(note): Promise<PlayResult> {
         if (all.length && !fresh.length) tried.clear();
         pick = fresh.length ? any(fresh) : all.length ? any(all) : null;
       }
-      if (pick) { tried.add(pick); await tap(pick, note); r.taps++; }
-      else { // nothing to tap: a tap or a swipe on the playing field, like a child trying
-        const b = stage.getBoundingClientRect(), x = rnd(b.left + b.width * .2, b.right - b.width * .2), y = rnd(b.top + b.height * .25, b.bottom - b.height * .15);
-        if (Math.random() < .5) { await fingerTo(x, y); const t = document.elementFromPoint(x, y); if (t) { step_('tap', label(t)); fire(t, x, y); click(t); } }
-        else await swipe(x, y, x + rnd(-120, 120), y + rnd(-90, 90));
-        r.taps++;
+      const action = childAction(selectedProfile);
+      if (pick && (action === 'tap' || action === 'wander')) {
+        tried.add(pick);
+        if (action === 'wander') await hold(rnd(.8, 2.2));
+        if (await tap(pick, note)) { r.taps++; step_('profile', `${selectedProfile}:tap:${label(pick)}`); }
+      } else if (selectedProfile === 'chaos-toddler') {
+        const b = stage.getBoundingClientRect(), x = rnd(b.left + b.width * .2, b.right - b.width * .2), y = rnd(b.top + b.height * .2, b.bottom - b.height * .2);
+        const n = action === 'spam' ? 3 : 1;
+        for (let i = 0; i < n && gl.isConnected; i++) {
+          const px = action === 'drop-outside' ? (Math.random() < .5 ? rnd(-50, 0) : rnd(innerWidth, innerWidth + 50)) : x + rnd(-90, 90);
+          const py = action === 'drop-outside' ? rnd(-50, 0) : y + rnd(-90, 90);
+          if (action === 'drag' || action === 'drop-outside') await swipe(x, y, px, py);
+          else { await fingerTo(px, py); const t = document.elementFromPoint(px, py); if (t) { step_('spam', label(t)); fire(t, px, py); click(t); } }
+          r.taps++;
+        }
+        step_('profile', `${selectedProfile}:${action}`);
+      } else if (!pick) { // No available choice: make a harmless, visible field gesture and recover on the next turn.
+        await hold(rnd(.5, 1.2));
+        if (!gl.isConnected || !stage.isConnected) break;
       }
       if (Date.now() - last > s.idle * 1000) { r.cant = true; break; }
     }
@@ -603,6 +632,7 @@ function drag(handle) {
   };
 }
 const speedRow = () => `<div class="row">${Object.entries(AP_SPEEDS).filter(([key]) => /^x[1235]$/.test(key)).map(([k, s]) => `<button data-sp="${k}" class="${(run ? run.speed : ui.speed) === k ? 'on' : ''}">${esc(T(s.en, s.vi))}</button>`).join('')}</div>`;
+const profileRow = () => `<div class="row">${AUTOPLAY_PROFILES.map(p => `<button data-profile="${p}" class="${selectedProfile === p ? 'on' : ''}">${esc(p.replace('-', ' '))}</button>`).join('')}</div>`;
 const backNote = () => tester() && revertOf(liveRule('tester'), localStorage.getItem('sv2_playerid') || '') === 'keep'
   ? T('This device keeps progress after testing.', 'Máy này giữ tiến bộ sau khi thử nghiệm.')
   : (run ? run.perRun : !tester() || revertOf(liveRule('tester'), localStorage.getItem('sv2_playerid') || '') === 'autoplay')
@@ -631,6 +661,7 @@ function draw() {
       ${hero() ? '' : `<p class="note">${T('Choose a player first.', 'Hãy chọn người chơi trước.')}</p>`}
       <button class="go" data-a="start" ${hero() && all.length ? '' : 'disabled'}>${T(`Start (${all.length})`, `Bắt đầu (${all.length})`)}</button>
       ${speedRow()}
+      ${profileRow()}
       <input type="search" data-a="q" placeholder="${T('Only some: type a name', 'Chỉ vài thứ: gõ tên')}" value="${esc(q)}">
       ${q ? `<p class="note">${T(`${all.length} match`, `${all.length} mục khớp`)}: ${all.slice(0, 8).map(s => { try { return esc(s.name()); } catch (e) { return ''; } }).join(', ')}${all.length > 8 ? '…' : ''}</p>` : ''}
       <div class="grps">${AP_GROUPS.map(g => `<label class="${g.key === 'quests' ? 'qst' : ''}"><input type="checkbox" data-g="${g.key}" ${ui.groups.includes(g.key) ? 'checked' : ''}>${esc(T(g.en, g.vi))}</label>`).join('')}</div>
@@ -646,6 +677,14 @@ function draw() {
     const cl = root.querySelector('[data-a="clear"]'); if (cl) cl.onclick = () => { try { localStorage.removeItem(REPORT); } catch (e) { } draw(); };
   }
   root.querySelectorAll('[data-sp]').forEach(b => b.onclick = () => { ui.speed = b.dataset.sp; if (run) run.speed = ui.speed; put(UI, ui); draw(); });
+  root.querySelectorAll('[data-profile]').forEach(b => b.onclick = () => {
+    const prof = b.dataset.profile as AutoplayProfile;
+    if ((AUTOPLAY_PROFILES as readonly string[]).includes(prof)) {
+      selectedProfile = prof; ui.profile = prof;
+      try { localStorage.setItem('sv2_autoplay_profile', prof); } catch { }
+      put(UI, ui); draw();
+    }
+  });
   const a = k => root.querySelector(`[data-a="${k}"]`);
   a('min').onclick = () => { if (hostClose) return hostClose(); ui.open = false; put(UI, ui); draw(); };
   if (run) { a('pause').onclick = () => { run.paused = !run.paused; draw(); buttons(); }; a('skip').onclick = () => { run.skip = true; }; a('stop').onclick = () => { run.stop = true; }; }
