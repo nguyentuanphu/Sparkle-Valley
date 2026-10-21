@@ -1707,7 +1707,7 @@ PAGES.players = async P => {
         </div>
         <div class="grid two">
           <div class="card">
-            <h3>📑 ${T('Pages viewed', 'Trang đã xem')}</h3>
+            <h3>📄 ${T('Pages viewed', 'Trang đã xem')}</h3>
             <table class="mini"><thead><tr><th>${T('Page', 'Trang')}</th><th>${T('Views', 'Lượt xem')}</th></tr></thead><tbody>${routeRows}</tbody></table>
           </div>
           <div class="card">
