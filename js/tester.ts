@@ -175,7 +175,10 @@ function flush(): Promise<FlushSummary> {
   return flushJob;
 }
 
-const body = (kind, extra) => ({ id: me(), b: BUILD, kind, where: whereNow(), errors: errors.slice(-C.LIMITS.errors), log: log.map(([t, k, s]) => [Math.round((t - Date.now()) / 100) / 10, k, s]), dev: devNow(), players: playersNow(), at: Date.now(), ...extra });
+const body = (kind, extra) => {
+  const reporter = kind === 'auto' ? { type: 'auto' } : extra && extra.reporter ? extra.reporter : { type: 'unknown' };
+  return { id: me(), b: BUILD, kind, where: whereNow(), errors: errors.slice(-C.LIMITS.errors), log: log.map(([t, k, s]) => [Math.round((t - Date.now()) / 100) / 10, k, s]), dev: devNow(), players: playersNow(), reporter, at: Date.now(), ...extra };
+};
 
 // the game reports by itself (the same thing at the same place once in 10 minutes, counted meanwhile)
 // (more: extra fields; more.log, the auto play check's last steps, goes before the tester's own log)
@@ -234,10 +237,16 @@ function watch() {
   // (#261, a 3.4 s freeze on Windows Chrome that a probe could not reproduce) each freeze report says why the frames
   // stopped: the game's own code running long (a long task), or the browser not drawing while the window was resized,
   // left or hidden. The report itself and how reports are grouped are unchanged.
-  const longs = [], winAt = []; try { const po = new PerformanceObserver(l => { for (const e of l.getEntries()) { longs.push([e.startTime, e.duration]); if (longs.length > 20) longs.shift(); } }); po.observe({ type: 'longtask' }); offs.push(() => po.disconnect()); } catch (e) { }
+  const longs = [], winAt = [];
+  let po: PerformanceObserver | null = null;
+  try { po = new PerformanceObserver(l => { for (const e of l.getEntries()) { longs.push([e.startTime, e.duration]); if (longs.length > 20) longs.shift(); } }); po.observe({ type: 'longtask' }); offs.push(() => po?.disconnect()); } catch (e) { }
   const windowEvents: [EventTarget, string][] = [[window, 'resize'], [window, 'blur'], [window, 'focus'], [document, 'visibilitychange']];
   for (const [t, k] of windowEvents) on(t, k, () => { winAt.push([performance.now(), k]); if (winAt.length > 20) winAt.shift(); });
-  const why = (from, to) => { const ran = longs.filter(([a, d]) => a + d > from && a < to).reduce((m, [, d]) => Math.max(m, d), 0), seen = [...new Set(winAt.filter(([a]) => a > from - 500 && a < to).map(([, k]) => k))];
+  const why = (from, to) => {
+    if (po && typeof po.takeRecords === 'function') {
+      try { for (const e of po.takeRecords()) { longs.push([e.startTime, e.duration]); if (longs.length > 20) longs.shift(); } } catch { }
+    }
+    const ran = longs.filter(([a, d]) => a + d > from && a < to).reduce((m, [, d]) => Math.max(m, d), 0), seen = [...new Set(winAt.filter(([a]) => a > from - 500 && a < to).map(([, k]) => k))];
     return `longest script ${Math.round(ran)} ms; window: ${seen.join(', ') || 'no change'}; focus ${document.hasFocus() ? 'yes' : 'no'}`; };
   const tick = t => { if (!live) return; const gap = t - lastF; if (gap > C.LIMITS.freeze * 1000 && document.visibilityState === 'visible' && performance.now() - mounted > 15000) { note('freeze', why(lastF, t)); autoReport('freeze', `${(gap / 1000).toFixed(1)} s`); }
     lastF = t; frames++; if (t - since > C.LIMITS.slowFor * 1000) { fpsNow = frames * 1000 / (t - since); if (fpsNow < C.LIMITS.slowFps && document.visibilityState === 'visible' && performance.now() - mounted > 15000) autoReport('slow', `${Math.round(fpsNow)} frames a second`); frames = 0; since = t; }
@@ -291,7 +300,7 @@ function addUI() {
     const z = hud.q && hud.q('.zoomer'); if (!z || z.querySelector('.z-lb')) return;
     const b = el('button', 'z-lb', `${pic('🐞')}<i class="lb-n" hidden></i><i class="lb-ok" hidden>✓</i><kbd class="kb">L</kbd>`); b.setAttribute('aria-label', T('Report a problem (hold: quick report)', 'Báo lỗi (giữ: báo nhanh)'));
     let t0 = 0, quick = null;
-    b.addEventListener('pointerdown', e => { e.stopPropagation(); t0 = performance.now(); quick = setTimeout(() => { quick = null; quickReport(); }, 700); });
+    b.addEventListener('pointerdown', e => { e.stopPropagation(); t0 = performance.now(); quick = setTimeout(() => { quick = null; quickReport(i); }, 700); });
     b.addEventListener('pointerup', e => { e.stopPropagation(); if (quick) { clearTimeout(quick); quick = null; if (fixedToSee().length) showFixed(); else openPanel(i); } });
     b.addEventListener('pointerleave', () => { if (quick) { clearTimeout(quick); quick = null; } });
     b.addEventListener('keydown', e => { if (e.key === 'Enter') openPanel(i); });
@@ -302,7 +311,15 @@ function addUI() {
   addEventListener('keydown', key); offs.push(() => removeEventListener('keydown', key));
   paintCount();
 }
-async function quickReport() { SFX.tap && SFX.tap(); const s = await shot(); enqueue(body('broken', { note: T('Quick report: something was wrong just now', 'Báo nhanh: vừa có gì đó không ổn'), detail: 'quick', shot: s })); toast(L(C.TESTER_LINES.waiting)); }
+async function quickReport(i = 0) {
+  SFX.tap && SFX.tap();
+  const s = await shot();
+  const hero = G?.heroes?.[i];
+  const activePlayerName = hero?.profile?.name ? nm(hero.profile.name) : '';
+  const reporterAttribution = activePlayerName ? { type: 'player', name: activePlayerName } : { type: 'unknown' };
+  enqueue(body('broken', { note: T('Quick report: something was wrong just now', 'Báo nhanh: vừa có gì đó không ổn'), detail: 'quick', shot: s, reporter: reporterAttribution }));
+  toast(L(C.TESTER_LINES.waiting));
+}
 function toast(s) { const t = el('div', 'testertoast', esc(s)); document.body.appendChild(t); setTimeout(() => t.classList.add('out'), 2200); setTimeout(() => t.remove(), 2600); }
 
 function bindReportViewport(panel: HTMLElement) {
@@ -394,7 +411,10 @@ export async function openPanel(i = 0, initialTab = 'tester') {
   paintDelivery();
   card.querySelectorAll<HTMLButtonElement>('.tp-k').forEach(b => b.onclick = () => { kind = b.dataset.k; card.querySelectorAll<HTMLButtonElement>('.tp-k').forEach(x => { x.classList.toggle('on', x === b); x.setAttribute('aria-pressed', String(x === b)); }); SFX.tap && SFX.tap(); });
   const mic = card.querySelector<HTMLButtonElement>('.tp-mic'); if (mic) mic.onclick = async () => { mic.disabled = true; const heard = await listen({ onPartial: t => { ta.value = t; } }); mic.disabled = false; if (heard && heard[0] !== '\u0000') { ta.value = (ta.value && ta.value !== heard ? ta.value + ' ' : '') + heard; spoken = true; } };
-  const send = join => { if(!enqueue(body(kind, { note: ta.value.trim(), spoken, shot: selectedShot, where, join: join || '' })))return; close(); toast(join ? L(C.TESTER_LINES.already) : L(C.TESTER_LINES.waiting)); sayLine(join ? C.TESTER_LINES.already : C.TESTER_LINES.waiting); };
+  const hero = G?.heroes?.[i];
+  const activePlayerName = hero?.profile?.name ? nm(hero.profile.name) : '';
+  const reporterAttribution = activePlayerName ? { type: 'player', name: activePlayerName } : { type: 'unknown' };
+  const send = join => { if(!enqueue(body(kind, { note: ta.value.trim(), spoken, shot: selectedShot, where, join: join || '', reporter: reporterAttribution })))return; close(); toast(join ? L(C.TESTER_LINES.already) : L(C.TESTER_LINES.waiting)); sayLine(join ? C.TESTER_LINES.already : C.TESTER_LINES.waiting); };
   card.querySelector<HTMLButtonElement>('.tp-send').onclick = () => send('');
   card.querySelectorAll<HTMLButtonElement>('[data-join]').forEach(b => b.onclick = () => send(b.dataset.join));
   return m;

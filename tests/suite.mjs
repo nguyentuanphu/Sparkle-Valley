@@ -12,7 +12,7 @@
 // failed beside others runs once more alone, and the summary lists it as "passed only alone".
 import fs from 'fs';
 import path from 'path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath } from 'url';
 import { spawn, execFileSync } from 'child_process';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url)), REPO = path.resolve(HERE, '..');

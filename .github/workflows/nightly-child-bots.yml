@@ -1,0 +1,51 @@
+name: "Nightly Child Bots & Synthetic Telemetry"
+
+on:
+  schedule:
+    # 02:00 UTC and 14:00 UTC daily
+    - cron: '0 2,14 * * *'
+  workflow_dispatch:
+    inputs:
+      bot_count:
+        description: 'Number of simulated child bot profiles'
+        required: false
+        default: '5'
+        type: string
+      bot_profile:
+        description: 'Bot behavior profile (random, exploratory, competent)'
+        required: false
+        default: 'exploratory'
+        type: string
+      duration:
+        description: 'Max test duration in minutes'
+        required: false
+        default: '15'
+        type: string
+
+jobs:
+  nightly-bots:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: |
+          npm install
+          npx playwright install --with-deps chromium
+
+      - name: Run Headless Child Bots Matrix
+        env:
+          BOT_COUNT: ${{ inputs.bot_count || '5' }}
+          BOT_PROFILE: ${{ inputs.bot_profile || 'exploratory' }}
+          TEST_DURATION: ${{ inputs.duration || '15' }}
+          SYNTHETIC_BOT: 'true'
+        run: |
+          echo "Starting synthetic child bots test run..."
+          node tests/run.mjs syntheticbots || npm test
