@@ -761,7 +761,7 @@ async function drawReleases(P, lab) {
     ${groups.map(G => `<details class="relg" data-g="${G.g}" ${closed[gkey(G.g)] ? '' : 'open'}><summary><span class="gi">${REL_ICON[G.g] || '📦'}</span><b>${T(G.en, G.vi)}</b><span class="relg-n"></span>
       <span class="relg-all"><button type="button" class="btn small ghost" data-all="1">${T('All on', 'Bật hết')}</button><button type="button" class="btn small ghost" data-all="0">${T('All off', 'Tắt hết')}</button></span></summary>
       <div class="relgrid">${G.items.map(card).join('')}</div></details>`).join('')}
-    ${lab ? `<section class="card bot-config"><h3>🤖 ${T('Nightly Cloud Bot Testing', 'Kiểm thử bot đám mây ban đêm')}</h3><p class="note">${T('Set a nightly schedule and bot profile. Save to persist these settings.', 'Thiết lập lịch ban đêm và hồ sơ bot. Bấm Lưu để lưu cài đặt.')}</p><div class="bot-fields"><label class="chk"><input id="bot-enabled" type="checkbox"> ${T('Enable scheduled testing', 'Bật kiểm thử theo lịch')}</label><label>${T('Schedule', 'Lịch')}<select id="bot-schedule"><option value="day-night">${T('Day & night', 'Ngày và đêm')}</option><option value="custom">${T('Custom UTC time', 'Giờ UTC tùy chỉnh')}</option></select><input id="bot-time" type="time" value="02:00" aria-label="UTC time"></label><label>${T('Bot count', 'Số bot')} <input id="bot-count" type="number" min="1" max="10" value="5"></label><label>${T('Behavior profile', 'Hồ sơ hành vi')}<select id="bot-profile"><option value="chaos-toddler">${T('Chaotic Toddler Mashing', 'Bé nghịch ngợm')}</option><option value="gentle-explorer">${T('Gentle Explorer', 'Nhà thám hiểm nhẹ nhàng')}</option><option value="max-competence">${T('Max Competence', 'Thành thạo tối đa')}</option></select></label></div><div class="bar"><button type="button" class="btn" id="bot-run">▶️ ${T('Run Headless Bot Test Now', 'Chạy kiểm thử bot ngay')}</button><span class="note" id="bot-result"></span></div></section>` : ''}
+    ${lab && CAN('site') ? `<section class="card bot-config"><h3>🤖 ${T('Nightly Cloud Bot Testing', 'Kiểm thử bot đám mây ban đêm')}</h3><p class="note">${T('Set a nightly schedule and bot profile. Save to persist these settings.', 'Thiết lập lịch ban đêm và hồ sơ bot. Bấm Lưu để lưu cài đặt.')}</p><div class="bot-fields"><label class="chk"><input id="bot-enabled" type="checkbox"> ${T('Enable scheduled testing', 'Bật kiểm thử theo lịch')}</label><label>${T('Schedule', 'Lịch')}<select id="bot-schedule"><option value="day-night">${T('Day & night', 'Ngày và đêm')}</option><option value="custom">${T('Custom UTC time', 'Giờ UTC tùy chỉnh')}</option></select><input id="bot-time" type="time" value="02:00" aria-label="UTC time"></label><label>${T('Bot count', 'Số bot')} <input id="bot-count" type="number" min="1" max="10" value="5"></label><label>${T('Minutes per bot', 'Số phút mỗi bot')} <input id="bot-duration" type="number" min="1" max="30" value="5"></label><label>${T('Behavior profile', 'Hồ sơ hành vi')}<select id="bot-profile"><option value="chaos-toddler">${T('Chaotic Toddler Mashing', 'Bé nghịch ngợm')}</option><option value="gentle-explorer">${T('Gentle Explorer', 'Nhà thám hiểm nhẹ nhàng')}</option><option value="max-competence">${T('Max Competence', 'Thành thạo tối đa')}</option></select></label></div><div class="bar"><button type="button" class="btn" id="bot-run">▶️ ${T('Run Headless Bot Test Now', 'Chạy kiểm thử bot ngay')}</button><span class="note" id="bot-result"></span></div></section>` : ''}
     <div class="bar relsave"><span class="note" id="relch"></span><button class="btn" id="save">💾 ${T('Save', 'Lưu')}</button></div>`;
   P.querySelector('.sub').after(document.createRange().createContextualFragment(liveNote()));
   if (lab) { P.querySelector('.sub').textContent = T('Report problems and run automatic checks. Choose tester devices, checking speed and how their progress is restored.', 'Báo lỗi và chạy tự kiểm tra. Chọn máy thử, tốc độ kiểm tra và cách khôi phục tiến trình.'); if (canSee('testers')) { const link = document.createElement('button'); link.className = 'btn ghost'; link.textContent = T('Open tester reports', 'Mở báo cáo người thử'); link.onclick = () => go('testers'); P.querySelector('.sub').after(link); } }
@@ -836,7 +836,7 @@ async function drawReleases(P, lab) {
         card.querySelectorAll('[data-open]').forEach(x => x.setAttribute('aria-expanded', String(open && x === b))); card.querySelectorAll<HTMLElement>('.dpanel').forEach(x => { x.hidden = !(open && x.dataset.panel === k); }); });
       card.querySelectorAll('[data-tdev], [data-dev]').forEach(i => i.addEventListener('change', paint)); });
     devFilter($('#tdl')); }
-  if (lab) {
+  if (lab && CAN('site')) {
     const nb = (R as any).nightlyBots || {};
     const be = P.querySelector('#bot-enabled') as HTMLInputElement | null;
     if (be) be.checked = !!nb.enabled;
@@ -848,6 +848,8 @@ async function drawReleases(P, lab) {
     if (bc && nb.count) bc.value = String(nb.count);
     const bp = P.querySelector('#bot-profile') as HTMLSelectElement | null;
     if (bp && nb.profile) bp.value = nb.profile;
+    const bd = P.querySelector('#bot-duration') as HTMLInputElement | null;
+    if (bd && nb.duration) bd.value = String(nb.duration);
     const brun = P.querySelector('#bot-run') as HTMLButtonElement | null;
     const bres = P.querySelector('#bot-result') as HTMLElement | null;
     if (brun) {
@@ -860,6 +862,7 @@ async function drawReleases(P, lab) {
             schedule: (P.querySelector('#bot-schedule') as HTMLSelectElement | null)?.value ?? 'day-night',
             time: (P.querySelector('#bot-time') as HTMLInputElement | null)?.value ?? '02:00',
             count: +((P.querySelector('#bot-count') as HTMLInputElement | null)?.value ?? '5'),
+            duration: +((P.querySelector('#bot-duration') as HTMLInputElement | null)?.value ?? '5'),
             profile: (P.querySelector('#bot-profile') as HTMLSelectElement | null)?.value ?? 'chaos-toddler',
           };
           const res = await api('bot/run', payload);
@@ -890,14 +893,15 @@ async function drawReleases(P, lab) {
           const revert = P.querySelector('[data-trevert]:checked')?.dataset.trevert; if (['keep', 'autoplay'].includes(revert)) r.revert = revert; }
         if (Object.keys(r).length) out[id] = r; });
         // Nightly Cloud Bot Testing config (lab only)
-        if (lab) {
+        if (lab && CAN('site')) {
           const botEnabled = (P.querySelector('#bot-enabled') as HTMLInputElement | null)?.checked ?? false;
           const botSchedule = (P.querySelector('#bot-schedule') as HTMLSelectElement | null)?.value ?? 'day-night';
           const botTime = (P.querySelector('#bot-time') as HTMLInputElement | null)?.value ?? '02:00';
           const botCount = +((P.querySelector('#bot-count') as HTMLInputElement | null)?.value ?? '5');
           const botProfile = (P.querySelector('#bot-profile') as HTMLSelectElement | null)?.value ?? 'chaos-toddler';
-          if (botEnabled || latest.releases?.nightlyBots) {
-            out.nightlyBots = { enabled: botEnabled, schedule: botSchedule, time: botTime, count: botCount, profile: botProfile };
+          const botDuration = +((P.querySelector('#bot-duration') as HTMLInputElement | null)?.value ?? '5');
+          if (INFO?.online || botEnabled || latest.releases?.nightlyBots) {
+            out.nightlyBots = { enabled: botEnabled, schedule: botSchedule, time: botTime, count: botCount, profile: botProfile, duration: botDuration };
           } else {
             delete out.nightlyBots;
           }
@@ -1706,18 +1710,9 @@ PAGES.testers = async P => {
   let labels = {}; try { const pr = await api('players'); for (const d of (pr && pr.devices) || []) labels[d.id] = devTitle(d) + ' (' + devAbout(d) + ')'; } catch (e) { }
   const { problems = [], testers = [], summary = {} } = r || {}, gameBuild = await (async () => { try { return (await import(GAME + 'js/build.js')).BUILD; } catch (e) { return ''; } })();
   const sydney = t => t ? new Date(t).toLocaleString(LANG === 'vi' ? 'vi-VN' : 'en-AU', { timeZone: 'Australia/Sydney', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '';
-  const ST = { new: ['🆕', 'Pending/New', 'Chờ xử lý / Mới'], fixing: ['🔨', 'Being fixed', 'Đang sửa'], fixed: ['✅', 'Fixed', 'Đã sửa'], confirmed: ['🏁', 'Completed/checked', 'Đã xong và kiểm tra'], back: ['🔁', 'Came back', 'Bị lại'], notbug: ['🚫', 'Not a bug', 'Không phải lỗi'], dup: ['🔗', 'Same as another', 'Trùng lỗi khác'] };
+  const ST = { new: ['🆕', 'New', 'Mới'], fixing: ['🔨', 'Being fixed', 'Đang sửa'], fixed: ['✅', 'Fixed', 'Đã sửa'], confirmed: ['🏁', 'Fixed and checked', 'Đã sửa và kiểm tra'], back: ['🔁', 'Came back', 'Bị lại'], notbug: ['🚫', 'Not a bug', 'Không phải lỗi'], dup: ['🔗', 'Same as another', 'Trùng lỗi khác'] };
   const KIND = { broken: ['💥', 'Broken', 'Bị hỏng'], looks: ['👀', 'Looks wrong', 'Trông sai'], words: ['💬', 'Words or voice', 'Chữ hoặc giọng'], sound: ['🔔', 'Sound', 'Âm thanh'], idea: ['💡', 'Idea', 'Ý tưởng'], auto: ['🤖', 'Automatic', 'Tự động'] };
   const stName = s => ST[s] ? `${ST[s][0]} ${T(ST[s][1], ST[s][2])}` : s, kindName = k => KIND[k] ? `${KIND[k][0]} ${T(KIND[k][1], KIND[k][2])}` : k;
-  const stLabel = p => p.status === 'fixed' && p.fixedIn ? `✅ ${T('Fixed', 'Đã sửa')} (${esc(p.fixedIn)})` : stName(p.status);
-  const reporterLabel = x => {
-    const rep = x && x.reporter;
-    if (rep && rep.type === 'player' && rep.name) return `👤 ${T('Signed-in player', 'Người chơi đăng nhập')}: <b>${esc(rep.name)}</b>`;
-    if (rep && rep.type === 'auto') return `🤖 ${T('Automatic detector (system/robot)', 'Tự động phát hiện (hệ thống/robot)')}`;
-    if (rep && rep.type === 'unknown') return `👪 ${T('Family shared device (reporter unconfirmed)', 'Thiết bị gia đình chung (chưa xác nhận người báo)')}`;
-    if (x && x.kind === 'auto') return `🤖 ${T('Automatic detector (system/robot)', 'Tự động phát hiện (hệ thống/robot)')}`;
-    return `👪 ${T('Family shared device (reporter unconfirmed)', 'Thiết bị gia đình chung (chưa xác nhận người báo)')}`;
-  };
   const whereText = w => w ? [w.game, w.window, w.area].filter(Boolean).join(' · ') : '';
   const devName = id => labels[id] || easyName(id);
   const builds = [...new Set(problems.flatMap(p => p.builds || []))].sort();
@@ -1734,19 +1729,18 @@ PAGES.testers = async P => {
   const draw = () => {
     const st = $('#fst').value, kd = $('#fkd').value, bd = $('#fbd').value;
     const list = problems.filter(p => (st === 'open' ? ['new', 'fixing', 'back'].includes(p.status) : !st || p.status === st) && (!kd || (kd === 'tester' ? p.kind !== 'auto' : p.kind === kd)) && (!bd || (p.builds || []).includes(bd)));
-    $('#tpb').innerHTML = list.map(p => `<tr data-open="${esc(p.k)}" class="click"><td>${kindName(p.kind)}${p.auto ? ' · ' + esc(p.auto) : ''}<br><b>${esc(p.title)}</b>${p.spoken ? ' 🎤' : ''}</td><td>${esc(whereText(p.where))}</td><td>${p.n}</td><td>${p.devices}</td><td>${esc((p.builds || []).join(', '))}</td><td>${sydney(p.lastAt)}</td><td>${stLabel(p)}</td></tr>`).join('') || `<tr><td colspan="7" class="note">${T('Nothing here.', 'Không có gì.')}</td></tr>`;
+    $('#tpb').innerHTML = list.map(p => `<tr data-open="${esc(p.k)}" class="click"><td>${kindName(p.kind)}${p.auto ? ' · ' + esc(p.auto) : ''}<br><b>${esc(p.title)}</b>${p.spoken ? ' 🎤' : ''}</td><td>${esc(whereText(p.where))}</td><td>${p.n}</td><td>${p.devices}</td><td>${esc((p.builds || []).join(', '))}</td><td>${sydney(p.lastAt)}</td><td>${stName(p.status)}${p.fixedIn ? ' · ' + esc(p.fixedIn) : ''}</td></tr>`).join('') || `<tr><td colspan="7" class="note">${T('Nothing here.', 'Không có gì.')}</td></tr>`;
     P.querySelectorAll<HTMLInputElement>('[data-open]').forEach(x => x.onclick = e => { e.preventDefault(); open(x.dataset.open); });
   };
   const open = async k => {
     const box = $('#tdetail'); box.innerHTML = `<div class="card">${T('Loading…', 'Đang tải…')}</div>`;
     let p; try { p = await api('testers/problem/' + k); } catch (e) { box.innerHTML = `<div class="card"><p class="badtxt">⚠️ ${esc(e.message)}</p></div>`; return; }
     const others = problems.filter(q => q.k !== k && !['dup'].includes(q.status));
-    box.innerHTML = `<div class="card tdet"><h3>${kindName(p.kind)} · ${esc(p.title)}</h3><p class="note">${esc(whereText(p.where))} · ${p.n}× · ${p.devices.length} ${T('devices', 'máy')} · ${esc((p.builds || []).join(', '))} · ${stLabel(p)}</p>
+    box.innerHTML = `<div class="card tdet"><h3>${kindName(p.kind)} · ${esc(p.title)}</h3><p class="note">${esc(whereText(p.where))} · ${p.n}× · ${p.devices.length} ${T('devices', 'máy')} · ${esc((p.builds || []).join(', '))} · ${stName(p.status)}${p.fixedIn ? ' ' + esc(p.fixedIn) : ''}</p>
       <div class="bar"><label>${T('Fixed in', 'Đã sửa trong bản')} <input id="tfin" value="${esc(p.fixedIn || gameBuild)}" size="6"></label><button class="btn" id="tfix">✅ ${T('Mark fixed', 'Đánh dấu đã sửa')}</button>
         <button class="btn" data-set="fixing">🔨 ${T('Being fixed', 'Đang sửa')}</button><button class="btn" data-set="notbug">🚫 ${T('Not a bug', 'Không phải lỗi')}</button><button class="btn" data-set="new">🆕 ${T('Open again', 'Mở lại')}</button>
         <label>${T('Same as', 'Trùng với')} <select id="tdup"><option value="">…</option>${others.map(q => `<option value="${esc(q.k)}">${esc(q.title.slice(0, 60))}</option>`).join('')}</select></label></div>
       ${p.reports.slice().reverse().map(x => `<div class="trep"><p><b>${sydney(x.at)}</b> · ${esc(devName(x.id))} · ${esc(x.b)} · ${esc(x.dev.os)} ${esc(x.dev.br)} ${esc(x.dev.sc)} · ${esc(x.dev.lang)}${x.dev.fps ? ' · ' + x.dev.fps + ' fps' : ''}${x.count > 1 ? ' · ' + x.count + '×' : ''}</p>
-        <p class="note"><b>${T('Reporter', 'Người báo')}:</b> ${reporterLabel(x)} · 👧 ${T('Profiles on device', 'Hồ sơ trên máy')}: ${esc((x.players || []).map(q => `${q.name} (${q.age})`).join(', ') || '–')} · 📍 ${esc(whereText(x.where))} (${x.where.x ?? ''}, ${x.where.z ?? ''})</p>
         ${x.note ? `<p>${x.spoken ? '🎤 ' : '✏️ '}${esc(x.note)}</p>` : ''}${x.detail ? `<p class="note">${esc(x.detail)}</p>` : ''}
         <p class="note">👧 ${esc(x.players.map(q => `${q.name} (${q.age})`).join(', ') || '–')} · 📍 ${esc(whereText(x.where))} (${x.where.x ?? ''}, ${x.where.z ?? ''})</p>
         ${x.errors.length ? `<details><summary>${T('Errors', 'Lỗi')} (${x.errors.length})</summary><pre>${esc(x.errors.join('\n'))}</pre></details>` : ''}

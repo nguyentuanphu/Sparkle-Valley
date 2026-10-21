@@ -53,7 +53,7 @@ export interface StudioDevice {
 }
 
 /** a building kind Studio can place (js/worldedit.js BUILD_TYPES) */
-export type BuildType = { icon?: string, name?: string[], home?: boolean, [k: string]: any };
+export type BuildType = { icon?: string, name?: string[], home?: boolean, culture?: 'vietnam' | 'australia', [k: string]: any };
 
 /** what Studio reads from the game opened out of sight (the Map and Memory Villages pages) */
 export interface StudioGameView {

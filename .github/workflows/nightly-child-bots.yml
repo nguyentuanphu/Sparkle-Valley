@@ -1,51 +1,61 @@
-name: "Nightly Child Bots & Synthetic Telemetry"
-
+name: Child bot gameplay
 on:
-  schedule:
-    # 02:00 UTC and 14:00 UTC daily
-    - cron: '0 2,14 * * *'
   workflow_dispatch:
     inputs:
-      bot_count:
-        description: 'Number of simulated child bot profiles'
-        required: false
-        default: '5'
+      count:
+        description: 'Number of independent child sessions (1-10)'
+        required: true
         type: string
-      bot_profile:
-        description: 'Bot behavior profile (random, exploratory, competent)'
-        required: false
-        default: 'exploratory'
+      profile:
+        description: 'Behavior profile'
+        required: true
         type: string
       duration:
-        description: 'Max test duration in minutes'
-        required: false
-        default: '15'
+        description: 'Maximum minutes per child (1-30)'
+        required: true
         type: string
-
+      slot:
+        description: 'UTC scheduled slot (empty for manual run)'
+        required: false
+        type: string
+permissions:
+  contents: read
+concurrency:
+  group: child-bots-${{ github.event.inputs.slot || github.run_id }}
+  cancel-in-progress: false
 jobs:
-  nightly-bots:
+  play:
     runs-on: ubuntu-latest
+    timeout-minutes: 330
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
-          node-version: '22'
-          cache: 'npm'
-
-      - name: Install dependencies
-        run: |
-          npm install
-          npx playwright install --with-deps chromium
-
-      - name: Run Headless Child Bots Matrix
+          node-version: 22
+      - name: Validate bounded inputs
         env:
-          BOT_COUNT: ${{ inputs.bot_count || '5' }}
-          BOT_PROFILE: ${{ inputs.bot_profile || 'exploratory' }}
-          TEST_DURATION: ${{ inputs.duration || '15' }}
-          SYNTHETIC_BOT: 'true'
+          COUNT: ${{ inputs.count }}
+          PROFILE: ${{ inputs.profile }}
+          DURATION: ${{ inputs.duration }}
+        run: node -e 'const {COUNT:c,PROFILE:p,DURATION:d}=process.env; if(!/^(10|[1-9])$/.test(c)||!/^(30|[12][0-9]|[1-9])$/.test(d)||!(["chaos-toddler","gentle-explorer","max-competence"].includes(p))) process.exit(1)'
+      - name: Install browser dependencies and build TypeScript game
         run: |
-          echo "Starting synthetic child bots test run..."
-          node tests/run.mjs syntheticbots || npm test
+          cd tests && npm install --no-package-lock --no-save --no-audit --no-fund && npx playwright install --with-deps chromium
+          cd .. && node tools/build.mts
+      - name: Start local game server
+        run: |
+          python3 -m http.server 8765 >/dev/null 2>&1 &
+          sleep 2
+          curl --fail http://localhost:8765/ >/dev/null
+      - name: Play independent child sessions
+        env:
+          COUNT: ${{ inputs.count }}
+          PROFILE: ${{ inputs.profile }}
+          DURATION: ${{ inputs.duration }}
+        run: cd tests && node child-bots.mts
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: child-bot-results
+          path: tests/out/child-bots/
+          retention-days: 14

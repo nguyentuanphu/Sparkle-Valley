@@ -3,7 +3,7 @@
 // The family's files are kept in GitHub: saves go to the "studio-draft" branch, Publish puts them live (main).
 // Set these in Netlify → Site configuration → Environment variables (never in the code):
 //   STUDIO_PASSWORD   the grown-ups' password (12 characters or more, not used anywhere else)  required
-//   GITHUB_TOKEN      fine-grained token: this repository only, Contents read and write  for saving
+//   GITHUB_TOKEN      fine-grained token: this repository only, Contents read/write and Actions write for bot dispatch
 //   GITHUB_REPO       e.g. nguyentuanphu/Sparkle-Valley (the default)                    optional
 //   AZURE_KEY, AZURE_REGION                            to make voices online             optional
 //   NETLIFY_TOKEN                                      the Website page                  optional
@@ -23,6 +23,7 @@ import * as accessLog from '../lib/accesslog.mts';
 import { ipOf, ipKey, locked, failed, cleared, tidy } from '../lib/guard.mts';
 import { readLive, saveLive, readContent as readLiveContent, saveContent as saveLiveContent, LiveError } from '../lib/live.mts';
 import * as tester from '../lib/tester.mts';
+import { cleanBotConfig } from '../lib/child-bots.mts';
 // (TypeScript sees nothing of a CommonJS file's module.exports: the engine is checked once here and then has its own type)
 const isEngine = (m: unknown): m is StudioEngine => typeof m === 'object' && m !== null && 'createStudio' in m && 'githubStore' in m;
 if (!isEngine(core)) throw new Error('studio/core.cts: the Studio engine did not load');
@@ -209,7 +210,23 @@ export const makeStudio = ({ playersStore = blobs, adminStore = adminBlobs, held
     catch (e) { if (!(e instanceof LiveError)) throw e;
       return json({ error: e.why === 'big' ? `Too much to go live at once (${e.n} KB; 200 KB at most): make the stories or the quiz shorter, then Save again.` : `Some words are too long to go live (${LIVE_PART[e.where] || e.where}: ${e.n} letters at most): make them shorter, then Save again.` }, 400); }
   }
-  if (p === '/studio/api/live') return json(post ? await saveLive(await liveStore(), await req.json().catch(() => ({})), me.name) : await readLive(await liveStore()));
+  if (p === '/studio/api/live') {
+    const S = await liveStore();
+    if (!post) {
+      const v = await readLive(S);
+      return json(admins.allowed(me, 'bot/run', true)
+        ? { ...v, releases: { ...v.releases, nightlyBots: await S.get('bot-schedule', { type: 'json' }).catch(() => null) || undefined } }
+        : v);
+    }
+    const b = await body();
+    if (Object.prototype.hasOwnProperty.call(b.releases || {}, 'nightlyBots')) {
+      if (!admins.allowed(me, 'bot/run', true)) return json({ error: 'Website permission required to change the bot schedule.' }, 403);
+      const schedule = cleanBotConfig(b.releases.nightlyBots);
+      if (!schedule) return json({ error: 'Invalid bot configuration.' }, 400);
+      await S.setJSON('bot-schedule', schedule);
+    }
+    return json(await saveLive(S, b, me.name));
+  }
   const players = async () => report(await playersStore());
   if (p === '/studio/api/players') { await log(me.name, me.role, 'analytics'); return json(await players()); }
   if (p === '/studio/api/inbox') return json(await inbox(await playersStore()));
