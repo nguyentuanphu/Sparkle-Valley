@@ -74,10 +74,12 @@ export function createFerries(G) {
   function makeFerry({ model, path, loop, stops, speed }) {
     model.traverse(o => { o.userData.noCam = true; }); // a moving boat never pushes the camera in (it ended up inside the raft's roof)
     scene.add(model);
-    const F = { model, path, loop, stops, speed, seg: 0, k: 0, dir: 1, wait: 4, at: stops[0].i, riders: new Set(), waiting: new Set() };
-    model.position.set(path[0].x, WATER, path[0].z);
-    ferries.push(F); return F;
-  }
+      // Start at the first stop's path index, not path[0], so F.at and F.seg are consistent
+      const startIdx = stops[0].i;
+      const F = { model, path, loop, stops, speed, seg: startIdx, k: 0, dir: 1, wait: 4, at: startIdx, riders: new Set(), waiting: new Set() };
+      model.position.set(path[startIdx].x, WATER, path[startIdx].z);
+      ferries.push(F); return F;
+    }
   const stopAt = F => F.wait > 0 ? F.stops.find(s => s.i === F.at) : null;
 
   // ---------- Mirror Lake: four piers, one ferry going round ----------

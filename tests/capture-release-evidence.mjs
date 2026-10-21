@@ -139,17 +139,36 @@ try {
   }
   await webDeskCtx.close();
 
-  // 6. Parent website: Tablet (EN)
-  console.log('Capturing parent website tablet...');
+  // 6. Parent website: Tablet (EN & VI, Portrait & Landscape)
+  console.log('Capturing parent website tablet (portrait & landscape)...');
   const webTabCtx = await browser.newContext({ viewport: { width: 820, height: 1180 }, hasTouch: true, isMobile: true });
   const webTabPage = await webTabCtx.newPage();
   await webTabPage.goto('http://127.0.0.1:8765/home');
   await webTabPage.waitForTimeout(1500);
   await webTabPage.screenshot({ path: path.join(OUT, 'website-tablet-en.png') });
+  const viTabBtn = await webTabPage.$('#lang');
+  if (viTabBtn) {
+    await viTabBtn.click();
+    await webTabPage.waitForTimeout(800);
+    await webTabPage.screenshot({ path: path.join(OUT, 'website-tablet-vi.png') });
+  }
   await webTabCtx.close();
 
-  // 7. Parent website: Mobile (EN & VI)
-  console.log('Capturing parent website mobile (EN & VI)...');
+  const webTabLandCtx = await browser.newContext({ viewport: { width: 1180, height: 820 }, hasTouch: true, isMobile: true });
+  const webTabLandPage = await webTabLandCtx.newPage();
+  await webTabLandPage.goto('http://127.0.0.1:8765/home');
+  await webTabLandPage.waitForTimeout(1500);
+  await webTabLandPage.screenshot({ path: path.join(OUT, 'website-tablet-landscape-en.png') });
+  const viTabLandBtn = await webTabLandPage.$('#lang');
+  if (viTabLandBtn) {
+    await viTabLandBtn.click();
+    await webTabLandPage.waitForTimeout(800);
+    await webTabLandPage.screenshot({ path: path.join(OUT, 'website-tablet-landscape-vi.png') });
+  }
+  await webTabLandCtx.close();
+
+  // 7. Parent website: Mobile (EN & VI, Portrait & Landscape)
+  console.log('Capturing parent website mobile (portrait & landscape)...');
   const webMobCtx = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
   const webMobPage = await webMobCtx.newPage();
   await webMobPage.goto('http://127.0.0.1:8765/home');
@@ -162,6 +181,19 @@ try {
     await webMobPage.screenshot({ path: path.join(OUT, 'website-mobile-vi.png') });
   }
   await webMobCtx.close();
+
+  const webMobLandCtx = await browser.newContext({ viewport: { width: 844, height: 390 }, hasTouch: true, isMobile: true });
+  const webMobLandPage = await webMobLandCtx.newPage();
+  await webMobLandPage.goto('http://127.0.0.1:8765/home');
+  await webMobLandPage.waitForTimeout(1500);
+  await webMobLandPage.screenshot({ path: path.join(OUT, 'website-mobile-landscape-en.png') });
+  const viMobLandBtn = await webMobLandPage.$('#lang');
+  if (viMobLandBtn) {
+    await viMobLandBtn.click();
+    await webMobLandPage.waitForTimeout(800);
+    await webMobLandPage.screenshot({ path: path.join(OUT, 'website-mobile-landscape-vi.png') });
+  }
+  await webMobLandCtx.close();
 
   console.log('All screenshots captured successfully under evidence/release/');
 } finally {
