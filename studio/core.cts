@@ -578,6 +578,29 @@ function createStudio({ store, conf, online = false, local = {}, family = null }
     // (r81, owner 17 Oct AEDT) the content pages' live sections: the exe sends them to the website with its Studio key
     if (api === 'live/content') { if (!local.live) return bad('Set the website and a Studio key in Settings to put these pages live at once.'); try { return ok(await local.live(post ? b : null)); } catch (e) { return bad(String(e.message || e)); } }
     if (/^testers(\/(set|problem\/[a-f0-9]{16}|shot\/[a-f0-9]{16}))?$/.test(api)) { if (!local.testers) return bad('Set the website address and the Studio password in Settings to see the tester reports.'); try { return ok(await local.testers(api, post ? b : null)); } catch (e) { return bad(String(e.message || e)); } }
+    if (api === 'bot/run' && post) {
+      if (!gh || !/^[\w.-]+\/[\w.-]+$/.test(conf.githubRepo || '')) return bad('Configure a GitHub token and repository in Settings to dispatch bot tests.', 503);
+      if (!Number.isInteger(b.count) || b.count < 1 || b.count > 10 || !['chaos-toddler', 'gentle-explorer', 'max-competence'].includes(b.profile)) return bad('Invalid bot configuration.');
+      try {
+        // Try nightly-child-bots.yml first, fallback to full-suite.yml
+        let workflowId = 'nightly-child-bots.yml';
+        try {
+          await gh(`/repos/${conf.githubRepo}/actions/workflows/${workflowId}`);
+        } catch (e) {
+          workflowId = 'full-suite.yml';
+        }
+        const inputs = workflowId === 'nightly-child-bots.yml'
+          ? { count: String(b.count || 5), profile: String(b.profile || 'chaos-toddler') }
+          : {};
+        await gh(`/repos/${conf.githubRepo}/actions/workflows/${workflowId}/dispatches`, {
+          method: 'POST',
+          body: JSON.stringify({ ref: conf.githubBranch || 'main', inputs })
+        });
+        return ok({ ok: true, workflow: workflowId });
+      } catch (e: any) {
+        return bad(String(e.message || e));
+      }
+    }
     if (api === 'check') return ok(await check());
     if (local.api) { const r = await local.api(api, method, b); if (r) return r; }
     return bad('unknown', 404);

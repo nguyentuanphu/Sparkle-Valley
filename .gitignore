@@ -174,3 +174,36 @@ marketing/source/runvalley.log
 /studio/ui/app.js
 /sw.js
 # --- end of tools/build.mts ---
+# --- made by tools/build.mts from .ts files (never committed; do not edit by hand) ---
+/js/audio.js
+/js/avatar.js
+/js/build.js
+/js/claims.js
+/js/content/releases.js
+/js/content/storyhelp.js
+/js/family-backup.js
+/js/games/storyhelp.js
+/js/games/vietnam.js
+/js/keepcopy.js
+/js/main.js
+/js/mictest.js
+/js/net.js
+/js/netgames.js
+/js/netmsg.js
+/js/packbar.js
+/js/packhash.js
+/js/parents.js
+/js/popups.js
+/js/recorder.js
+/js/relay.js
+/js/roomcode.js
+/js/shop.js
+/js/state.js
+/js/trade.js
+/js/viwords.js
+/js/voice-index.js
+/js/voice.js
+/js/voicepack.js
+/js/world.js
+/studio/ui/app.js
+# --- end of tools/build.mts ---

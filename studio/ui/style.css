@@ -34,6 +34,25 @@ canvas.crop { width: 100%; max-width: 360px; aspect-ratio: 1; border-radius: 16p
 .swatches { display: flex; flex-wrap: wrap; gap: 6px; } .sw { width: 28px; height: 28px; border-radius: 50%; border: 3px solid var(--line); cursor: pointer; } .sw.on { border-color: var(--accent); transform: scale(1.12); }
 .thumbs { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; } .thumb { position: relative; } .thumb img { width: 92px; height: 66px; object-fit: cover; border-radius: 8px; display: block; } .thumb button { position: absolute; top: 2px; right: 2px; border: 0; border-radius: 50%; width: 22px; height: 22px; background: rgba(0,0,0,.6); color: #fff; cursor: pointer; }
 .modes { gap: 6px; } .modes > * { flex: 0 0 auto; min-width: 0; } .typelist { display: flex; flex-wrap: wrap; gap: 6px; }
+.house-picker { display: grid; gap: 10px; }
+.house-preview { display: flex; align-items: center; gap: 12px; min-height: 92px; padding: 8px; border: 1px solid var(--line); border-radius: 12px; background: var(--bg); }
+.house-preview-art { display: grid; flex: 0 0 140px; min-height: 80px; place-items: center; overflow: hidden; border-radius: 8px; background: var(--card); }
+.house-preview-art img { display: block; width: 140px; height: 80px; object-fit: contain; }
+.house-preview .note { margin: 3px 0 0; }
+.house-picker input[data-house-search] { min-height: 44px; }
+.house-tabs { display: flex; flex-wrap: wrap; gap: 6px; }
+.house-tabs .btn { min-height: 44px; }
+.house-tabs .note { color: inherit; }
+.house-type-list { display: grid; gap: 8px; }
+.house-type-group h4 { margin: 4px 0; }
+.house-type-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 132px), 1fr)); gap: 6px; }
+.house-type { display: flex; align-items: center; gap: 8px; min-width: 0; min-height: 52px; padding: 7px 9px; border: 1px solid var(--line); border-radius: 10px; background: var(--bg); color: var(--ink); font: inherit; text-align: left; cursor: pointer; }
+.house-type:hover, .house-type:focus-visible { border-color: var(--accent); outline: 2px solid var(--accent); outline-offset: 1px; }
+.house-type.on { border: 2px solid var(--accent); background: var(--bg); font-weight: 600; }
+.house-type-icon { display: grid; flex: 0 0 32px; width: 32px; height: 32px; place-items: center; border-radius: 8px; background: var(--line); font-size: 20px; }
+.house-choices { margin: 8px 0; }
+.house-choices summary { min-height: 44px; display: flex; align-items: center; color: var(--accent); font-weight: 600; cursor: pointer; }
+.house-choices[open] { display: grid; gap: 8px; }
 /* online (the website's /studio/ page): no Close button, and the sign-in card */
 .online #quit { display: none; }
 .signin { max-width: 420px; margin: 40px auto; }
@@ -220,7 +239,13 @@ details.part-fold { margin: 6px 0 12px; }
 .relbar input[type=search], #pkq { flex: 1 1 240px; min-height: 44px; padding: 8px 12px; border-radius: 12px; border: 2px solid #e6dcf7; font: inherit; }
 .relbar .note { flex-basis: 100%; margin: 0; }
 .chips { display: flex; flex-wrap: wrap; gap: 6px; }
-.chips .chip { min-height: 44px; padding: 6px 14px; border-radius: 999px; border: 2px solid #e6dcf7; background: #fff; font: inherit; font-weight: 700; cursor: pointer; }
+.chips .chip { min-height: 44px; padding: 6px 14px; border-radius: 999px; border: 2px solid #e6dcf7; background: #fff; font: inherit; font-weight: 700; cursor: pointer; white-space: nowrap; }
+.bot-config { margin-top: 16px; }
+.bot-config h3 { margin: 0 0 6px; }
+.bot-fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px 14px; align-items: end; margin: 10px 0; }
+.bot-fields label { display: flex; flex-direction: column; gap: 6px; font-weight: 600; }
+.bot-fields label.chk { flex-direction: row; align-items: center; gap: 8px; font-weight: 600; }
+.bot-fields input[type="number"], .bot-fields input[type="time"], .bot-fields select { box-sizing: border-box; min-height: 44px; padding: 8px 10px; border-radius: 10px; border: 1px solid var(--line, #e6dcf7); font: inherit; }
 .chips .chip.on { background: #8a5cf6; border-color: #8a5cf6; color: #fff; }
 details.relg, details.pkg { background: #fff; border-radius: 18px; margin: 12px 0; box-shadow: 0 2px 10px rgba(80, 40, 140, .08); }
 details.relg > summary, details.pkg > summary { list-style: none; cursor: pointer; display: flex; align-items: center; gap: 10px; padding: 12px 16px; min-height: 52px; flex-wrap: wrap; }
