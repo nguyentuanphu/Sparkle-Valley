@@ -42,6 +42,7 @@ marketing/source/runvalley.log
 /js/chat-player.js
 /js/chat.js
 /js/claims.js
+/js/content/autoplay.js
 /js/content/chapter2hanoi.js
 /js/content/chapter2text.js
 /js/content/chapters.js
@@ -49,12 +50,18 @@ marketing/source/runvalley.log
 /js/content/storyhelp.js
 /js/family-backup.js
 /js/familydevices.js
+/js/film.js
 /js/games/frame.js
 /js/games/learning-meta.js
 /js/games/learning.js
 /js/games/music.js
+/js/games/reading.js
 /js/games/readingmenu.js
+/js/games/registry.js
 /js/games/storyhelp.js
+/js/games/strategy.js
+/js/games/talkgames.js
+/js/games/thinking.js
 /js/games/vietnam.js
 /js/howto-data.js
 /js/howto-player.js
@@ -63,6 +70,7 @@ marketing/source/runvalley.log
 /js/install.js
 /js/keepcopy.js
 /js/lanterns.js
+/js/lotus.js
 /js/main.js
 /js/mictest.js
 /js/net.js
@@ -86,6 +94,7 @@ marketing/source/runvalley.log
 /js/solids.js
 /js/state.js
 /js/studio-position.js
+/js/tale-loader.js
 /js/tester-detection.js
 /js/tester.js
 /js/trade.js

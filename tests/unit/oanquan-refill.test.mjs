@@ -6,7 +6,8 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import vm from 'node:vm';
 
-const source = fs.readFileSync(new URL('../../js/games/vietnam.js', import.meta.url), 'utf8');
+const raw = fs.readFileSync(new URL('../../js/games/vietnam.js', import.meta.url), 'utf8');
+const source = raw.replace(/\r\n/g, '\n');
 const game = vm.runInNewContext(source.slice(source.indexOf('function refill'), source.indexOf("register({\n  id: 'oanquan'")) + '\n({ refill, repay })');
 // (objects made inside the sandbox compared as plain values)
 const plain = x => JSON.parse(JSON.stringify(x)), refill = (s, t) => plain(game.refill(s, t)), repay = s => game.repay(s);

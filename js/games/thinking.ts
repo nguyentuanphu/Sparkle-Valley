@@ -10,7 +10,7 @@ import { stream } from '../core/rng.js';
 
 const FRUIT = ['🍎', '🍌', '🍇', '🍓', '🍊', '🥝', '🍉', '🍐'];
 const ANIMALS = ['🐶', '🐱', '🐰', '🐸', '🐥', '🐷', '🐼', '🦊'];
-const others = (pool, not, n) => shuffle(pool.filter(x => !not.includes(x))).slice(0, n);
+const others = <V>(pool: V[], not: V[], n: number): V[] => shuffle(pool.filter(x => !not.includes(x))).slice(0, n);
 
 // ---------- What comes next? ----------
 register({
@@ -22,14 +22,14 @@ register({
       const pool = shuffle(r % 2 ? ANIMALS : FRUIT);
       const shapes = api.level <= 1 ? ['AB'] : api.level === 2 ? ['AB', 'AAB', 'ABC'] : ['AAB', 'ABB', 'ABC', 'AABB', 'ABCB'];
       const pat = pick(shapes), map = { A: pool[0], B: pool[1], C: pool[2] };
-      const seq = []; while (seq.length < Math.max(5, pat.length * 2 + 1)) seq.push(map[pat[seq.length % pat.length]]);
-      const answer = seq.pop();
+      const seq: string[] = []; while (seq.length < Math.max(5, pat.length * 2 + 1)) seq.push(map[pat[seq.length % pat.length]]);
+      const answer = seq.pop() as string;
       const row = el('div', 'seq');
       seq.forEach((s, i) => { const c = el('div', 'seq-item', s); c.style.animationDelay = i * .08 + 's'; row.appendChild(c); });
       const q = el('div', 'seq-item q', '?'); row.appendChild(q); api.stage.appendChild(row);
       api.say('What comes next?', 'Tiếp theo là gì nhỉ?');
       const opts = shuffle([answer, ...others(Object.values(map).concat(pool.slice(3)), [answer], 2)]);
-      const btns = choiceButtons(api, opts, o => o);
+      const btns = choiceButtons<string>(api, opts, o => o);
       const b = await untilRight(api, btns, e => e._v === answer); if (!b) return;
       q.textContent = answer; q.classList.add('right'); api.praise(); await wait(1200);
     }
@@ -76,7 +76,7 @@ register({
       const card = el('div', 'letter-card', lower ? `<b>${L}</b>` : `<span class="ear">👂</span>`); api.stage.appendChild(card);
       const ask = () => lower ? api.say(`Find the small letter that matches ${L}`, `Tìm chữ thường giống chữ ${letterName(L)}`) : api.say(`Find the letter ${L}`, `Tìm chữ ${letterName(L)}`);
       ask(); card.onclick = ask;
-      const btns = choiceButtons(api, opts, o => `<b class="letter">${lower ? o.toLowerCase() : o}</b>`, 'choice balloon');
+      const btns = choiceButtons<string>(api, opts, o => `<b class="letter">${lower ? o.toLowerCase() : o}</b>`, 'choice balloon');
       btns.forEach((b, i) => b.style.setProperty('--bc', COLORS[i % COLORS.length].hex));
       const b = await untilRight(api, btns, e => e._v === L); if (!b) return;
       const w = words[L];
@@ -135,7 +135,7 @@ register({
       const shadow = el('div', 'shadow-box', svgShape(k, '#1d2a3a')); api.stage.appendChild(shadow);
       api.say(`Which shape makes this shadow?`, `Hình nào tạo ra cái bóng này?`);
       const opts = shuffle([k, ...others(keys, [k], api.level <= 1 ? 2 : 3)]);
-      const btns = choiceButtons(api, opts, o => svgShape(o, COLORS[keys.indexOf(o) % COLORS.length].hex));
+      const btns = choiceButtons<string>(api, opts, o => svgShape(o, COLORS[keys.indexOf(o) % COLORS.length].hex));
       const b = await untilRight(api, btns, e => e._v === k); if (!b) return;
       shadow.innerHTML = svgShape(k, COLORS[keys.indexOf(k) % COLORS.length].hex);
       api.say(`A ${name[0]}!`, `${name[1][0].toUpperCase() + name[1].slice(1)}!`); await wait(1500);
@@ -158,7 +158,7 @@ register({
         const target = pick(COLORS), opts = shuffle([target, ...others(COLORS, [target], 2)]);
         api.stage.appendChild(el('div', 'big-emoji', '🎈'));
         api.say(`Tap the ${target.en} balloon!`, `Chạm vào bóng bay màu ${target.vi}!`);
-        const btns = choiceButtons(api, opts, o => `<span class="balloon-shape" style="--bc:${o.hex}"></span>`, 'choice plain');
+        const btns = choiceButtons<{ hex: string; en: string; vi: string }>(api, opts, o => `<span class="balloon-shape" style="--bc:${o.hex}"></span>`, 'choice plain');
         const b = await untilRight(api, btns, e => e._v === target); if (!b) return;
         api.say(`${target.en}!`, `Màu ${target.vi}!`);
       } else {
@@ -191,9 +191,9 @@ register({
       api.say(bigFirst ? 'Tap from the biggest to the smallest!' : 'Tap from the smallest to the biggest!', bigFirst ? 'Chạm từ lớn nhất đến bé nhất nhé!' : 'Chạm từ bé nhất đến lớn nhất nhé!');
       const shelf = el('div', 'shelf'); api.stage.appendChild(shelf);
       const line = el('div', 'size-line'); api.stage.appendChild(line);
-      const btns = shuffle(sizes).map(s => { const b = el('button', 'sizer', thing); b.style.fontSize = s + 'px'; b._v = s; line.appendChild(b); return b; });
+      const btns: (HTMLButtonElement & { _v: number })[] = shuffle(sizes).map(s => { const b = el('button', 'sizer', thing) as HTMLButtonElement & { _v: number }; b.style.fontSize = s + 'px'; b._v = s; line.appendChild(b); return b; });
       for (let i = 0; i < n; i++) {
-        const b = await untilRight(api, btns.filter(x => !x.disabled), e => e._v === order[i]); if (!b) return;
+        const b = await untilRight<HTMLButtonElement & { _v: number }>(api, btns.filter(x => !x.disabled), e => e._v === order[i]); if (!b) return;
         b.disabled = true; shelf.appendChild(b); api.sfx.pop(i);
       }
       api.praise(); await wait(1300);
@@ -222,8 +222,8 @@ register({
     for (;;) {
       const open = [];
       while (open.length < 2) {
-        const c = await tapOne(cards.filter(x => !x.classList.contains('flip')));
-        if (api.closed) return; c.classList.add('flip'); api.sfx.tap(); open.push(c);
+        const c = await tapOne<HTMLElement & { _v: any }>(cards.filter(x => !x.classList.contains('flip')));
+        if (api.closed || !c) return; c.classList.add('flip'); api.sfx.tap(); open.push(c);
       }
       await wait(700);
       if (open[0]._v === open[1]._v) {

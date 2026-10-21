@@ -40,15 +40,17 @@ function repeat(api, line) {
   const button = el('button', 'btn bt-repeat', pic('🔁') + T('Hear again', 'Nghe lại'));
   button.style.minHeight = '64px'; button.onclick = () => talk(api, line()); api.stage.appendChild(button); return button;
 }
-async function untilRightWith(api, els, check, why) {
+async function untilRightWith<E extends Element>(api: any, els: E[], check: (e: E) => boolean, why: (e: E) => any): Promise<E | null> {
   const wrong = api.wrong;
-  api.wrong = function onWrong(e) { api.wrong = wrong; try { wrongWhy(api, e, ...why(e)); } finally { api.wrong = onWrong; } };
+  api.wrong = function onWrong(e: E) { api.wrong = wrong; try { wrongWhy(api, e, ...why(e)); } finally { api.wrong = onWrong; } };
   try { return await untilRight(api, els, check); } finally { api.wrong = wrong; }
 }
 
 // ---------- Say It, Find It ----------
 // picture, English word, Vietnamese word (with its classifier), what the English and Vietnamese say it looks like
-const WORDS = [
+type TalkWord = [string, string, string, string, string];
+type PictureItem = { w: TalkWord; size: string };
+const WORDS: TalkWord[] = [
   ['🥭', 'mango', 'quả xoài', 'yellow-green and shaped like a big bean', 'màu vàng xanh, hình như hạt đậu to'],
   ['🍌', 'banana', 'quả chuối', 'long, curved and yellow', 'dài, cong và màu vàng'],
   ['🍎', 'apple', 'quả táo', 'round and red', 'tròn và màu đỏ'],
@@ -80,10 +82,10 @@ register({ id: 'sayfind', icon: '🗣️', learn: true, name: () => T('Say It, F
     // 2, 4 or 6 pictures; on Hard two of them are the same thing, big and little, and the ask has two words
     const n = [2, 4, 6, 6][level], two = level === 3, size = two ? (Math.random() < .5 ? 'big' : 'little') : '';
     const others = pick(WORDS.filter(w => w !== target), two ? n - 2 : n - 1).map(w => ({ w, size: '' }));
-    const items = shuffle([{ w: target, size }, ...(two ? [{ w: target, size: size === 'big' ? 'little' : 'big' }] : []), ...others]);
+    const items: PictureItem[] = shuffle([{ w: target, size }, ...(two ? [{ w: target, size: size === 'big' ? 'little' : 'big' }] : []), ...others]);
     const sizeVi = s => s === 'big' ? 'to' : 'nhỏ';
     const ask = () => two ? [`Where is the ${size} ${target[1]}?`, `${cap(target[2])} ${sizeVi(size)} ở đâu?`] : [`Where is the ${target[1]}?`, `${cap(target[2])} ở đâu?`];
-    const buttons = choiceButtons(api, items, it => pic(it.w[0]), 'choice sf-pic');
+    const buttons = choiceButtons<PictureItem>(api, items, it => pic(it.w[0]), 'choice sf-pic');
     buttons.forEach(b => { if (b._v.size === 'little') b.classList.add('sf-little'); b.setAttribute('aria-label', T((b._v.size ? b._v.size + ' ' : '') + b._v.w[1], b._v.w[2] + (b._v.size ? ' ' + sizeVi(b._v.size) : ''))); });
     const tools = el('div', 'sf-tools'); api.stage.appendChild(tools);
     const old = api.stage; api.stage = tools; repeat(api, ask); api.stage = old;
@@ -210,7 +212,7 @@ register({ id: 'marketcount', icon: '🧺', learn: true, name: () => T('Market C
 } });
 
 // ---------- How Do They Feel? ----------
-const FACES = { happy: ['😀', 'happy', 'vui'], sad: ['😢', 'sad', 'buồn'], surprised: ['😲', 'surprised', 'ngạc nhiên'], cross: ['😠', 'cross', 'giận'] };
+const FACES: Record<string, [string, string, string]> = { happy: ['😀', 'happy', 'vui'], sad: ['😢', 'sad', 'buồn'], surprised: ['😲', 'surprised', 'ngạc nhiên'], cross: ['😠', 'cross', 'giận'] };
 // a little story about Lá, the face it goes with, why (said after a wrong face), and what could help (Medium and Hard)
 const FEEL = [
   { id: 'icecream', face: 'sad', pic: '🍦', en: 'Lá dropped her ice cream.', vi: 'Lá làm rơi cây kem.', why: ['Would you smile if your ice cream fell?', 'Nếu kem của con bị rơi, con có cười không?'], help: ['🍦', 'Share your ice cream', 'Chia kem cho Lá'], helpWhy: ['Sharing can help when someone is sad.', 'Chia sẻ giúp bạn bớt buồn.'] },
@@ -233,9 +235,9 @@ register({ id: 'feelings', icon: '😊', learn: true, name: () => T('How Do They
     api.stage.appendChild(el('div', 'fs-card', `<span class="fs-kid">${pic('👧')}</span><span class="fs-pic">${pic(story.pic)}</span>`));
     // 2 faces for under-5s (the right one and a very different one), all 4 from Easy
     const opposite = { happy: 'sad', sad: 'happy', surprised: 'cross', cross: 'happy' }[story.face];
-    const faces = level === 0 ? shuffle([story.face, opposite]) : shuffle(Object.keys(FACES));
+    const faces: string[] = level === 0 ? shuffle([story.face, opposite]) : shuffle(Object.keys(FACES));
     const ask = () => [`${story.en} How does Lá feel?`, `${story.vi} Lá cảm thấy thế nào?`];
-    const buttons = choiceButtons(api, faces, k => `${pic(FACES[k][0])}${level === 0 ? '' : `<small>${T(FACES[k][1], FACES[k][2])}</small>`}`, 'choice fs-face');
+    const buttons = choiceButtons<string>(api, faces, k => `${pic(FACES[k][0])}${level === 0 ? '' : `<small>${T(FACES[k][1], FACES[k][2])}</small>`}`, 'choice fs-face');
     buttons.forEach(b => b.setAttribute('aria-label', T(FACES[b._v][1], FACES[b._v][2])));
     const again = repeat(api, ask);
     talk(api, ask());

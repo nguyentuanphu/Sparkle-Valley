@@ -803,7 +803,7 @@ export const openPad = Object.assign(function (game, i, tab) {
     body.innerHTML = `<p class="note">${T('Play any game you have already found again. Every win makes the next one a little harder.', 'Chơi lại các trò con đã tìm thấy. Mỗi lần thắng, trò chơi sẽ khó hơn một chút.')}</p><div class="gamelist"></div>`;
     const list = body.querySelector('.gamelist');
     const found = new Set([...SHRINES.filter(s => p.shrines[s.id]).map(s => s.game), ...Object.keys(p.levels)]);
-    Object.values(GAMES).forEach(g => {
+    (Object.values(GAMES) as { id: string; icon: string; name: () => string }[]).forEach(g => {
       const ok = found.has(g.id);
       const b = el('button', 'gcard' + (ok ? '' : ' locked'), `<span>${ok ? g.icon : '🔒'}</span><b>${esc(ok ? g.name() : '???')}</b>${ok ? `<small>${T('Level', 'Cấp')} ${p.levels[g.id] || 1}</small>` : ''}`);
       if (ok) b.onclick = () => { close(); game.playGame(i, g.id, 'pad'); }; // (r79 point 7: closing the game comes back here)

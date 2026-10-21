@@ -15,7 +15,7 @@ register({
     const tools = el('div', 'tools', `<button class="pill hint">💡 ${T('Hint', 'Gợi ý')}</button><span class="moves"></span>`); api.stage.appendChild(tools);
     let held = null, moves = 0;
     const rodEls = [0, 1, 2].map(i => { const r = el('button', 'rod'); r._v = i; board.appendChild(r); return r; });
-    function draw(hint) {
+    function draw(hint?: number[] | null) {
       rodEls.forEach((r, i) => {
         r.innerHTML = '<i class="pole"></i>' + (i === 2 ? '<i class="flag">🚩</i>' : '');
         rods[i].forEach((d, k) => { const disc = el('i', 'disc' + (held === i && k === rods[i].length - 1 ? ' up' : '')); disc.style.width = (30 + d * 16) + '%'; disc.style.background = COLS[d - 1]; disc.style.bottom = (8 + k * 18) + 'px'; r.appendChild(disc); });
@@ -42,8 +42,8 @@ register({
     api.say(`Move all the discs to the flag. A big disc can never sit on a small one!`, `Chuyển hết đĩa sang cột có cờ. Đĩa to không được đặt lên đĩa nhỏ nhé!`);
     draw();
     for (;;) {
-      const r = await tapOne(rodEls, api); if (api.closed) return;
-      const i = r._v;
+      const r = await tapOne(rodEls, api); if (!r || api.closed) return;
+      const i = (r as HTMLButtonElement & { _v: number })._v;
       if (held == null) { if (rods[i].length) { held = i; api.sfx.tap(); } else api.wrong(r, 'That pole is empty.', 'Cột này trống rồi.'); }
       else if (held === i) { held = null; }
       else {
@@ -147,7 +147,7 @@ function makeMaze(W, H) {
   const walls = Array.from({ length: W * H }, () => ({ n: 1, s: 1, e: 1, w: 1 })), seen = new Set(), st = [[0, 0]]; seen.add('0,0');
   while (st.length) {
     const [x, y] = st[st.length - 1];
-    const nb = [[0, -1, 'n', 's'], [0, 1, 's', 'n'], [1, 0, 'e', 'w'], [-1, 0, 'w', 'e']].filter(([dx, dy]) => { const nx = x + dx, ny = y + dy; return nx >= 0 && ny >= 0 && nx < W && ny < H && !seen.has(nx + ',' + ny); });
+    const nb = [[0, -1, 'n', 's'], [0, 1, 's', 'n'], [1, 0, 'e', 'w'], [-1, 0, 'w', 'e']].filter(([dx, dy]) => { const nx = x + Number(dx), ny = y + Number(dy); return nx >= 0 && ny >= 0 && nx < W && ny < H && !seen.has(nx + ',' + ny); });
     if (!nb.length) { st.pop(); continue; }
     const [dx, dy, a, b] = pick(nb), nx = x + dx, ny = y + dy;
     walls[y * W + x][a] = 0; walls[ny * W + nx][b] = 0; seen.add(nx + ',' + ny); st.push([nx, ny]);
@@ -170,7 +170,7 @@ register({
       place();
       if (duck) api.say('Help the duckling find its mummy!', 'Giúp vịt con tìm vịt mẹ nào!'); else api.say('Find the way to the watermelon!', 'Tìm đường đến quả dưa hấu nào!');
       const pad = el('div', 'rpad'); api.stage.appendChild(pad);
-      await new Promise(res => {
+      await new Promise<void>(res => {
         const move = k => {
           const w = walls[p[1] * N + p[0]], d = { up: ['n', 0, -1], down: ['s', 0, 1], left: ['w', -1, 0], right: ['e', 1, 0] }[k];
           if (w[d[0]]) { me.classList.remove('bump'); void me.offsetWidth; me.classList.add('bump'); api.sfx.no(); return; }

@@ -171,7 +171,7 @@ async function sounds(api, c) {
     if (r === 0) await c.say('Listen to the sound, then catch the fish with that letter.', 'Nghe âm, rồi bắt chú cá mang chữ cái đó.');
     else await c.say('Which fish has this sound?', 'Chú cá nào mang âm này?');
     await sound(); if (api.closed) return;
-    const b = await untilRight(api, fish, e => e._v === target); if (!b) return;
+    const b = await untilRight<Element & { _v: any }>(api, fish, e => e._v === target); if (!b) return;
     top.innerHTML = `<div class="rd-card"><span class="rd-pic">${pic(target[2])}</span><b class="rd-word">${esc(target[0])} · ${esc(target[1])}</b></div>`;
     await sound(); await c.read(target[1]); await wait(500); if (api.closed) return;
   }
@@ -259,7 +259,7 @@ async function rhyme(api, c) {
       const top = el('div', 'rd-row', `<div class="rd-card"><span class="rd-pic">${pic(a[1])}</span><b class="rd-word">${esc(a[0])}</b></div>`); api.stage.appendChild(top);
       top.appendChild(ear(api, () => c.read(a[0])));
       await c.say('Which one rhymes?', 'Tiếng nào cùng vần?'); await c.read(a[0]); if (api.closed) return;
-      const btns = choiceButtons(api, shuffle([right, ...others]), w => t === 3 ? `<span class="rd-word">${esc(w[0])}</span>` : card(w, true), 'choice rd-opt' + (t === 3 ? ' txt' : ''));
+      const btns = choiceButtons<[string, string]>(api, shuffle([right, ...others]) as [string, string][], w => t === 3 ? `<span class="rd-word">${esc(w[0])}</span>` : card(w, true), 'choice rd-opt' + (t === 3 ? ' txt' : ''));
       const got = await untilRight(api, btns, e => e._v === right); if (!got) return;
       await c.read(a[0]); await c.read(right[0]);
     }
@@ -285,7 +285,7 @@ async function sight(api, c) {
     });
     if (r === 0) await c.say('Listen, then pop the balloon with that word.', 'Nghe, rồi bấm vỡ quả bóng có chữ đó.');
     await c.read(w); if (api.closed) return;
-    const b = await untilRight(api, btns, e => e._v === w); if (!b) return;
+    const b = await untilRight<Element & { _v: any }>(api, btns, e => e._v === w); if (!b) return;
     b.classList.add('pop'); api.sfx.pop && api.sfx.pop();
     await c.read(w); await wait(500); if (api.closed) return;
   }
@@ -349,7 +349,7 @@ async function syllable(api, c) {
     let ok = false;
     for (let tries = 0; !ok; tries++) {
       beats.innerHTML = '';
-      const n = await new Promise(res => {
+      const n = await new Promise<number>(res => {
         let k = 0, rest = 0, fin = false;
         api.onCleanup(() => { if (!fin) { fin = true; res(-1); } });
         drum.onclick = () => { if (fin) return; k++; api.sfx.tap(); beats.appendChild(el('i')); drum.classList.add('hit'); setTimeout(() => drum.classList.remove('hit'), 90); clearTimeout(rest); rest = c.later(() => { fin = true; drum.onclick = null; res(k); }, 1600); };
@@ -433,14 +433,16 @@ async function sentence(api, c) {
   api.dots(rounds, rounds); return api.win();
 }
 
+type Book = { icon: string; title: string; pages: [string, string][]; q: string; answers: [string, string][] };
+
 // ---------- 10. Read With Me: a little book read aloud, each word lighting up; then one question ----------
 async function readalong(api, c) {
-  const L = lang(), t = tier(api), books = READ[L].books;
+  const L = lang(), t = tier(api), books = READ[L].books as Book[];
   api.stage.innerHTML = '';
   // choose a book (its cover: a picture and its name, which is read when tapped)
   await c.say('Let’s read together! Choose a book.', 'Cùng đọc nhé! Chọn một quyển truyện.'); if (api.closed) return;
-  const covers = choiceButtons(api, books, B => `<span class="rd-pic">${pic(B.icon)}</span><span>${esc(B.title)}</span>`, 'choice rd-book');
-  const B = await new Promise(res => { covers.forEach(b => b.onclick = () => { api.sfx.tap(); res(b._v); }); api.onCleanup(() => res(null)); });
+  const covers = choiceButtons<Book>(api, books, B => `<span class="rd-pic">${pic(B.icon)}</span><span>${esc(B.title)}</span>`, 'choice rd-book');
+  const B = await new Promise<Book | null>(res => { covers.forEach(b => b.onclick = () => { api.sfx.tap(); res(b._v); }); api.onCleanup(() => res(null)); });
   if (!B || api.closed) return;
   const steps = B.pages.length + 1;
   await c.read(B.title);
