@@ -2,11 +2,40 @@
 
 Created 22 October 2026 AEDT at the owner's request, using the GitHub project: [nguyentuanphu/Sparkle-Valley](https://github.com/nguyentuanphu/Sparkle-Valley).
 
-![Sparkle Valley activity and parent guide banner](sparkle-valley-learning-banner.png)
+![Combined Sparkle Valley banner: learning, Vietnamese folk games and stories](sparkle-valley-combined-heritage.png)
 
-[Download the banner](sparkle-valley-learning-banner.png) · [Editable banner wording](copy.md)
+[Download the combined banner](sparkle-valley-combined-heritage.png) · [Combined copy and Vietnamese learning notes](combined.md) · [Original wording](copy.md)
 
-The landscape banner introduces the game to parents of children aged 2–8. It presents eight groups of existing activities, examples of named games, the actions children take, and skills they can practise. The parent strip explains available ways to guide play. The artwork is a promotional illustration, not a screenshot of the game interface.
+The landscape banners introduce the game to parents of children aged 2–8. They present named activities, the actions children take, skills they can practise and ways parents can guide play. The combined design brings together the adventure-map arrangement and the game's UI/art identity, with larger sections for Vietnamese folk games and stories. These are promotional compositions, not screenshots of a live banner interface.
+
+## Designs and combined banner
+
+The current combined design follows the owner's request to combine themes 2 and 3, use the game references, and add more information about Vietnamese folk games and stories. The earlier options are preserved for comparison. All designs use the source-backed feature and learning information below, with different selections of examples.
+
+| Theme | Direction | Download |
+| --- | --- | --- |
+| Combined: Learning and Vietnamese heritage | Adventure-map journey with the actual game identity, three named folk games, three named stories and four broader learning groups | [Combined PNG](sparkle-valley-combined-heritage.png) |
+| 1. Storybook Valley | Bright illustrated world, wooden brand sign, eight activity panels | [Original PNG](sparkle-valley-learning-banner.png) |
+| 2. Paper Trail Adventure | Layered paper-cut landscape, deep teal headings, a winding journey through six learning groups | [Theme 2 PNG](theme-2-paper-trail.png) |
+| 3. In the Game | Actual game identity: pink/purple title, blue/lilac gradient, rounded white cards, outlined icons and the flat owl | [Theme 3 PNG](theme-3-game-ui.png) |
+
+### Original: Storybook Valley
+
+![Original Storybook Valley banner](sparkle-valley-learning-banner.png)
+
+### Theme 2: Paper Trail Adventure
+
+![Theme 2: Paper Trail Adventure](theme-2-paper-trail.png)
+
+This independent creative direction groups words and stories, numbers and money, puzzles and patterns, sounds and music, culture and discovery, and family and feelings along a river journey.
+
+### Theme 3: In the Game
+
+![Theme 3: In the Game](theme-3-game-ui.png)
+
+This promotional composition follows the game's existing visual identity. Its references are the real title, counting, colours, music and valley screenshots listed in [the theme notes](themes.md). It is a designed banner, rather than an unmodified game screenshot.
+
+[Theme copy and art references](themes.md)
 
 ## Games, play and practice
 
@@ -46,6 +75,8 @@ Source snapshot: GitHub `main`, commit [`de8cc0edbecac65fbe7213cf1527187d70fbdfb
 - [Reading games](../../js/games/readingmenu.ts)
 - [Animal-sound game](../../js/games/learning.js)
 - [Money games](../../js/games/money.js)
+- [Vietnamese folk-game rules](../../js/games/vietnam.js) and [kite game](../../js/games/folk2.js)
+- [Vietnamese stories and narration](../../js/tales-content.js)
 - [Existing feature and parent-control descriptions](../../marketing/ads-r82/README.md)
 
 Game names and the featured parent controls were checked against these sources. The generated artwork was reviewed visually for spelling, layout, and agreement with [copy.md](copy.md). The PNG is 1672 × 941 pixels. This is an artwork/documentation change; it does not change the game, its version or its deployment.
@@ -56,3 +87,5 @@ Validation on 22 October 2026 AEDT:
 - Local document links: 10 valid; `git diff --check` passed.
 - `cd tests && node suite.mjs --changed --jobs 1`: emoji, preload, arch, unit (175 tests), names, bilingual, rules and types passed. The `noemoji` check initially failed with `ERR_CONNECTION_REFUSED` after the background preview server stopped.
 - After starting a persistent server, `node suite.mjs --jobs 1 --only noemoji` passed (297 seconds; 100 games and the checked interface screens). All nine selected checks therefore passed; `noemoji` needed this second attempt.
+
+For the two additional themes and the combined heritage design, see [artwork review](themes.md#artwork-review) and [follow-up validation](combined.md#review-and-validation). The follow-up's selected suite passed 9/9 with no retries.
