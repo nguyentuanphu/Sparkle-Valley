@@ -135,7 +135,7 @@ function ribbonGeo(R, pts, ys) {
 }
 // all roads: profiles, joints matched, road beds registered and switched on (the ground is reshaped), then the ribbons
 function buildRoads(G, mats) {
-  const { scene, world } = G, all = ROADS.map(R => { const pts = denseLine(R); return { R, pts, ...profile(R, world, pts) }; });
+  const { scene, world } = G, all = ROADS.map(R => { const pts = denseLine(R); return { R, pts, extraFix: new Map<number, number>(), jEnd: [false, false], ...profile(R, world, pts) }; });
   // a road whose end meets another road takes that road's exact surface height wherever the two overlap; its own
   // smooth, gentle profile is then worked out again around those fixed points (twice, so joints settle)
   const yOn = (B, x, z) => { let bd = 1e9, by = 0; for (let j = 0; j < B.pts.length - 1; j++) { const [ax, az] = B.pts[j], [bx, bz] = B.pts[j + 1], dx = bx - ax, dz = bz - az, t = Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / (dx * dx + dz * dz || 1))), d = Math.hypot(x - ax - dx * t, z - az - dz * t); if (d < bd) { bd = d; by = B.ys[j] + (B.ys[j + 1] - B.ys[j]) * t; } } return { d: bd, y: by }; };
@@ -253,6 +253,7 @@ function gateSign(text, w, h, bg = '#c62828', fg = '#ffe27a') {
   const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; if (typeof text !== 'string') onLang(() => { draw(); t.needsUpdate = true; });
   const m = new THREE.MeshBasicMaterial({ map: t }), grp = new THREE.Group();
   const a = new THREE.Mesh(new THREE.PlaneGeometry(w, h), m), b = new THREE.Mesh(new THREE.PlaneGeometry(w, h), m); b.rotation.y = Math.PI; a.position.z = .13; b.position.z = -.13;
+  a.userData.camOccluder = b.userData.camOccluder = true;
   grp.add(a, b); return grp;
 }
 
@@ -272,7 +273,7 @@ export function goldenGate(scene, world, x, z, rot, text, span = 8) {
   // the roof curls up at both ends, like a temple roof
   for (const s of [-1, 1]) parts.push(P(new THREE.ConeGeometry(.35, 1.4, 6), gold, [s * (hs + 1.4), H + 1.3, 0], [0, 0, s * -.9]));
   parts.push(P(new THREE.BoxGeometry(span * .55, .5, .9), red, [0, H + 1.35, 0]), P(new THREE.SphereGeometry(.5, 10, 8), '#ff5a3a', [0, H + 1.85, 0]));
-  const m = new THREE.Mesh(merge(parts), toonVC()); m.position.set(x, heightAt(x, z) - .1, z); m.rotation.y = rot; m.castShadow = true; m.userData.noCam = true; scene.add(m); outline(m, .025, '#6a4a10');
+  const m = new THREE.Mesh(merge(parts), toonVC()); m.position.set(x, heightAt(x, z) - .1, z); m.rotation.y = rot; m.castShadow = true; scene.add(m); outline(m, .025, '#6a4a10');
   const sg = gateSign(text, span - .6, 1.5, red, '#ffe27a'); sg.position.set(0, H - .7, 0); m.add(sg);
   // pillars are solid; you walk between them
   for (const s of [-1, 1]) world.colliders.push({ x: x + Math.cos(rot) * s * hs, z: z - Math.sin(rot) * s * hs, r: .9 });
@@ -359,7 +360,7 @@ export const GATE_STYLE = { hanoi: 'ohquan', bacninh: 'kinhbac', danang: 'golden
 export function localGate(scene, world, x, z, rot, text, style, span = 7.5) {
   const make = STYLES[style]; if (!make) return goldenGate(scene, world, x, z, rot, text, span);
   const hs = span / 2, g = make(hs);
-  const m = new THREE.Mesh(merge(g.parts), toonVC()); m.position.set(x, heightAt(x, z) - .1, z); m.rotation.y = rot; m.castShadow = true; m.userData.noCam = true; scene.add(m); outline(m, .022, '#4a3a2a');
+  const m = new THREE.Mesh(merge(g.parts), toonVC()); m.position.set(x, heightAt(x, z) - .1, z); m.rotation.y = rot; m.castShadow = true; scene.add(m); outline(m, .022, '#4a3a2a');
   const sg = gateSign(text, g.sign.w, g.sign.h, g.sign.bg, g.sign.fg); sg.position.set(0, g.sign.y, 0); m.add(sg);
   for (const s of [-1, 1]) world.colliders.push({ x: x + Math.cos(rot) * s * g.posts, z: z - Math.sin(rot) * s * g.posts, r: g.postR || .8 });
   return m;
@@ -419,7 +420,7 @@ export function createRoads(G) {
       for (let k = 0; k < 4; k++) parts.push(P(new THREE.ConeGeometry(.06, .22, 4), '#ffffff', [x0 + 1.2 + k * .2, y0 - .2, (k % 2 ? 1 : -1) * .26], [Math.PI, 0, 0])); // teeth
     }
     { const T0 = curve.getPointAt(0); parts.push(P(new THREE.ConeGeometry(.6, 1.4, 3), orange, [T0.x - .6, T0.y + .2, 0], [0, 0, Math.PI / 2], [1, 1, .3])); } // tail fin
-    const br = new THREE.Mesh(merge(parts), toonVC()); br.position.set(...(alongZ ? [B.c, y, mid] : [mid, y, B.c])); if (alongZ) br.rotation.y = -Math.PI / 2; br.castShadow = true; scene.add(br); outline(br, .02, '#6a4a10');
+    const br = new THREE.Mesh(merge(parts), toonVC()); br.position.set(alongZ ? B.c : mid, y, alongZ ? mid : B.c); if (alongZ) br.rotation.y = -Math.PI / 2; br.castShadow = true; scene.add(br); outline(br, .02, '#6a4a10');
     // fire, then water, from the dragon's mouth: every 40 s (as the real bridge does on weekend nights), or when tapped
     const mouth = new THREE.Vector3(...((m => [m[0], y + curve.getPointAt(1).y - .2, m[1]])(W(curve.getPointAt(1).x + 2.4, 0)))), NP = 70;
     const spray = new THREE.InstancedMesh(new THREE.SphereGeometry(.35, 8, 6), new THREE.MeshBasicMaterial({ transparent: true, opacity: .85, depthWrite: false }), NP);
@@ -459,13 +460,15 @@ export function createRoads(G) {
   // It stands across the place's main road where it comes in: a city's main gate (the first of its gates in the map),
   // otherwise the first road that names the place. Other roads come in through a plain opening.
   // (the gate stands on the road's end point and faces along the road, so you always drive through it)
-  const mainEnd = {}; world.gates = [];
-  for (const R of ROADS) (R.gates || []).forEach((id, k) => {
+  const mainEnd: Record<string, string> = {}; world.gates = [];
+  for (const R of ROADS) (R.gates || []).forEach((idRaw, k) => {
+    const id = String(idRaw || '');
     if (!id) return; const n = R.pts.length, [x, z] = R.pts[k ? n - 1 : 0], C = CITIES.find(c => c.id === id);
     const isMain = C ? Math.hypot(C.gates[0][0] - x, C.gates[0][1] - z) < 1.5 : !mainEnd[id];
     if (isMain && !mainEnd[id]) mainEnd[id] = R.id + ':' + k;
   });
-  for (const R of ROADS) (R.gates || []).forEach((id, k) => {
+  for (const R of ROADS) (R.gates || []).forEach((idRaw, k) => {
+    const id = String(idRaw || '');
     if (!id || mainEnd[id] !== R.id + ':' + k) return;
     const n = R.pts.length, [x, z] = R.pts[k ? n - 1 : 0], [px, pz] = R.pts[k ? n - 2 : 1];
     world.gates.push({ place: id, road: R.id, x, z });
@@ -484,14 +487,14 @@ export function createCrossings(G) {
   scene.updateMatrixWorld(true);
   const overheadMeshes=[];scene.traverse(o=>{if(o.isMesh)overheadMeshes.push(o);});
   const headRay=new THREE.Raycaster(new THREE.Vector3(),new THREE.Vector3(0,1,0),.05,2.75);
-  const headroom=(x,z)=>{headRay.ray.origin.set(x,heightAt(x,z)+.1,z);return !headRay.intersectObjects(overheadMeshes,false).some(hit=>{for(let o=hit.object;o;o=o.parent)if(!o.visible)return false;const mats=Array.isArray(hit.object.material)?hit.object.material:[hit.object.material];return mats.some(m=>m&&m.visible!==false&&(m.opacity??1)>.95);});};
+  const headroom=(x,z)=>{headRay.ray.origin.set(x,heightAt(x,z)+.1,z);return !headRay.intersectObjects(overheadMeshes,false).some(hit=>{for(let o=hit.object;o;o=o.parent)if(!o.visible)return false;const m=(hit.object as THREE.Mesh).material;const mats=Array.isArray(m)?m:[m];return mats.some((mm): mm is THREE.Material => !!mm && mm.visible!==false && (mm.opacity??1)>.95);});};
   // Bubble width3.2 plus board width2.4 requires2.8m between their centres.
   const free = (x, z) => [[0, 0], [-1.25, 0], [1.25, 0], [0, -.25], [0, .25]].every(([dx, dz]) => G.goodSpot(x + dx, z + dz))
     && (d => !d.road || d.d > d.road.w / 2 + .5)(roadDist(x, z))
     && !((G.homes && G.homes.list) || []).some(h => h.door && Math.hypot(h.door.x - x, h.door.z - z) < 2.2)
     && G.interactables.every(it => !Number.isFinite(it.x) || Math.hypot(it.x - x, it.z - z) > (it.bubble ? 2.9 : 1.8))
     && [-1.25,0,1.25].every(dx=>headroom(x+dx,z));
-  for (const [id, place] of [['town', TOWN], ['aussie', AUSSIE]]) {
+  for (const [id, place] of [['town', TOWN], ['aussie', AUSSIE]] as const) {
     const crossing = { id, x: place.x - 4, z: place.roadZ, halfRoad: 3.5, signs: [] };
     for (const side of [-1, 1]) {
       let at = null;
@@ -507,7 +510,7 @@ export function createCrossings(G) {
       const it = { id: 'crossing_' + id + '_' + (side < 0 ? 'north' : 'south'), x: at.x, z: at.z, r: 2.4, icon: '👣',
         label: () => T('Crossing: stop, look, listen', 'Sang đường: dừng, nhìn, nghe'),
         act: () => { SFX.tap(); return G.dialog(T('Stop, look and listen', 'Dừng, nhìn và nghe'), [['Stop at the kerb. Look and listen both ways. Cross with a grown-up when the road is clear. Keep looking as you cross.', 'Dừng ở mép đường. Nhìn và lắng nghe cả hai phía. Đi cùng người lớn khi đường đã vắng xe. Tiếp tục quan sát khi sang đường.']]); } };
-      G.interactables.push(it); root.traverse(o => { if (o.isMesh) { o.userData.noSolid = o.userData.noCam = true; o.userData.it = it; (G.tapTargets = G.tapTargets || []).push(o); } });
+      G.interactables.push(it); root.traverse((o: THREE.Object3D) => { if ((o as THREE.Mesh).isMesh) { o.userData.noSolid = o.userData.noCam = true; o.userData.it = it; (G.tapTargets = G.tapTargets || []).push(o); } });
       world.colliders.push({ x: at.x, z: at.z, r: .16 }); crossing.signs.push({ x: at.x, z: at.z, side, interaction: it.id });
     }
     list.push(crossing);

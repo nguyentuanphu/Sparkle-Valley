@@ -21,6 +21,7 @@ export function createSeeThrough(G) {
   const rootCache = new WeakMap();     // mesh -> its thing (the whole house, not one wall)
   const partsCache = new WeakMap();    // root -> its meshes
   const dims = new WeakMap();          // tree geometry -> { h, r }
+  const originals = new WeakMap();    // temporary fade copies must not exclude an occluder on refresh
   let cands = [], at = -1e9;
 
   const isHero = o => G.heroes.some(h => h.av.root.getObjectById(o.id));
@@ -28,7 +29,8 @@ export function createSeeThrough(G) {
     cands = [];
     scene.traverse(o => {
       if (!o.isMesh || o.isInstancedMesh || o.userData.outline || o.userData.noCam || o.userData.road || o.userData.roomShape || o === G.world.terrain || !o.visible) return; // (a room's walls and floor are one shape: never fade the whole room)
-      const mt = o.material; if (!mt || Array.isArray(mt) || mt.transparent || mt.side === THREE.BackSide || mt.isMeshBasicMaterial) return;
+      const mt = originals.get(o) || o.material;
+      if (!mt || Array.isArray(mt) || mt.transparent || mt.side === THREE.BackSide || (mt.isMeshBasicMaterial && !o.userData.camOccluder)) return;
       if (!o.geometry.boundingSphere) o.geometry.computeBoundingSphere();
       sph.copy(o.geometry.boundingSphere).applyMatrix4(o.matrixWorld);
       if (sph.radius < MIN_R || sph.radius > MAX_R || isHero(o)) return;
@@ -90,12 +92,13 @@ export function createSeeThrough(G) {
     for (const q of parts) {
       if (q.o.userData.outline) { e.parts.push({ o: q.o, outline: true }); continue; }
       if (!q.orig || Array.isArray(q.orig)) continue;
+      originals.set(q.o, q.orig);
       const mat = q.orig.clone(); mat.transparent = true; mat.depthWrite = false; q.o.material = mat;
       e.parts.push({ o: q.o, orig: q.orig, mat, base: q.orig.opacity });
     }
     fading.set(root, e); return e;
   };
-  const endFade = (root, e) => { for (const q of e.parts) { if (q.outline) q.o.visible = true; else { q.o.material = q.orig; q.mat.dispose(); } } fading.delete(root); };
+  const endFade = (root, e) => { for (const q of e.parts) { if (q.outline) q.o.visible = true; else { q.o.material = q.orig; originals.delete(q.o); q.mat.dispose(); } } fading.delete(root); };
   const setFade = (e, a) => { e.a = a; for (const q of e.parts) { if (q.outline) q.o.visible = a > .7; else q.mat.opacity = q.base * a; } };
 
   const startGhost = key => {
