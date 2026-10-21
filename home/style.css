@@ -1,0 +1,184 @@
+/* Sparkle Valley Parent Website Styles */
+body {
+  background: radial-gradient(circle at 50% 20%, #224c60, #0d1d22);
+  color: var(--text);
+  font-family: var(--font);
+  overflow-y: auto;
+  height: auto;
+  min-height: 100vh;
+}
+.parent-wrap {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 24px 16px 60px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+.p-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--panel2);
+  border-radius: 20px;
+  padding: 12px 20px;
+  box-shadow: var(--shadow);
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.p-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 22px;
+  font-weight: 900;
+  color: #4a2a78;
+  text-decoration: none;
+}
+.p-links {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.p-links button, .p-links a {
+  border: 0;
+  background: transparent;
+  padding: 8px 14px;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+  text-decoration: none;
+  cursor: pointer;
+  transition: background .15s, color .15s;
+}
+.p-links button.on, .p-links a.on {
+  background: var(--cyan);
+  color: #06303a;
+}
+.p-links button:hover, .p-links a:hover {
+  background: rgba(95, 224, 255, .2);
+}
+.p-play-btn {
+  background: linear-gradient(180deg, #ffb020, #e08a00) !important;
+  color: #fff !important;
+  box-shadow: 0 3px 0 #b36b00;
+}
+.p-hero {
+  background: var(--panel2);
+  border-radius: 28px;
+  padding: 36px 28px;
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  text-align: center;
+  align-items: center;
+}
+.p-hero h1 {
+  margin: 0;
+  font-size: clamp(32px, 6vw, 48px);
+  color: #4a2a78;
+}
+.p-hero p {
+  margin: 0;
+  font-size: clamp(16px, 2.5vw, 20px);
+  color: var(--soft);
+  max-width: 750px;
+  line-height: 1.5;
+}
+.p-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 20px;
+}
+.p-card {
+  background: var(--panel2);
+  border-radius: 22px;
+  padding: 24px;
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.p-card h3 {
+  margin: 0;
+  font-size: 22px;
+  color: #8a5cf6;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.p-card p {
+  margin: 0;
+  color: var(--soft);
+  line-height: 1.45;
+  font-size: 16px;
+}
+.p-foot {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 24px;
+  background: var(--panel2);
+  border-radius: 20px;
+  box-shadow: var(--shadow);
+  font-size: 14px;
+  color: var(--soft);
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.p-foot-links {
+  display: flex;
+  gap: 16px;
+}
+.p-foot-links a {
+  color: #8a5cf6;
+  text-decoration: none;
+  font-weight: 700;
+}
+.p-foot-links a:hover {
+  text-decoration: underline;
+}
+.consent-banner {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: #222e38;
+  color: #fff;
+  padding: 16px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  z-index: 100;
+  box-shadow: 0 -4px 20px rgba(0,0,0,0.3);
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.consent-banner p {
+  margin: 0;
+  font-size: 15px;
+  max-width: 800px;
+  line-height: 1.4;
+}
+.consent-actions {
+  display: flex;
+  gap: 10px;
+}
+.consent-actions button {
+  padding: 8px 16px;
+  border-radius: 10px;
+  border: 0;
+  font-weight: 700;
+  cursor: pointer;
+}
+.consent-accept {
+  background: var(--cyan);
+  color: #06303a;
+}
+.consent-decline {
+  background: rgba(255,255,255,0.15);
+  color: #fff;
+}

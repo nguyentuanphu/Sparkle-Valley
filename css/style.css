@@ -1951,6 +1951,9 @@ body.calm .sp-stop.next .sp-pic { animation: none; }
 .sp-tabs button.on { background: #efe6ff; color: #5b2fd0; font-weight: 700; }
 .simplesw { pointer-events: auto; display: flex; align-items: center; gap: 6px; margin-top: 6px; min-height: 44px; padding: 5px 14px 5px 8px; border: 0; border-radius: 999px; background: rgba(255, 255, 255, .92); color: #3b2a4f; font-family: inherit; font-weight: 800; font-size: 14px; box-shadow: 0 3px 0 rgba(59, 42, 79, .18), 0 6px 14px rgba(0, 0, 0, .12); cursor: pointer; }
 .simplesw .ico { width: 28px; height: 28px; } .simplesw:active { transform: translateY(2px); }
+/* the parent website Home button, beside the game information button in the HUD */
+.homebtn { pointer-events: auto; display: flex; align-items: center; gap: 6px; margin-top: 6px; min-height: 44px; padding: 5px 14px 5px 8px; border: 0; border-radius: 999px; background: rgba(255, 255, 255, .92); color: #3b2a4f; font-family: inherit; font-weight: 800; font-size: 14px; box-shadow: 0 3px 0 rgba(59, 42, 79, .18), 0 6px 14px rgba(0, 0, 0, .12); cursor: pointer; }
+.homebtn .ico { width: 28px; height: 28px; } .homebtn:active { transform: translateY(2px); }
 /* on phones: beside the player's card (the quest bar takes the row under it), the picture with its name small underneath */
 .hud.small .hud-tl { flex-direction: row; align-items: flex-start; } .hud.small .simplesw { margin-top: 0; }
 .hud.small .simplesw { flex-direction: column; gap: 0; width: 52px; min-height: 48px; padding: 4px 2px; border-radius: 16px; font-size: 10px; line-height: 1.1; } .hud.small .simplesw .ico { width: 26px; height: 26px; }
@@ -2803,6 +2806,11 @@ body:has(.modal:not(.out), .gl, .wardrobe, .audio-tray, .dialog:not(.out), .stor
 .hud.small .hud-tl > .simplesw, .hud.small .hud-tl > .kidrow { align-self: center; margin-top: 0; }
 .hud.small .hud-tl > .kidrow { flex-wrap: nowrap; }
 .hud.small .simplesw { width: auto; min-width: 56px; min-height: 48px; padding: 4px 8px; }
+/* the parent website Home button on a phone: a small picture with its name under it, beside "Big pictures" */
+.hud.small .hud-tl > .homebtn { align-self: center; margin-top: 0; }
+.hud.small .homebtn { flex-direction: column; gap: 0; width: 52px; min-height: 48px; padding: 4px 2px; border-radius: 16px; font-size: 10px; line-height: 1.1; }
+.hud.small .homebtn .ico { width: 26px; height: 26px; }
+.hud.small .homebtn b { font-weight: 800; white-space: nowrap; }
 /* (r79 A7, owner 16 Oct, with a drawing on the tablet picture) zoom in, zoom out and camera view open in one straight
    column just to the LEFT of the View button, the middle one level with it, one above and one below */
 .zoomer .ztray { right: calc(100% + 10px); left: auto; top: 50%; bottom: auto; transform: translateY(-50%); flex-direction: column; align-items: center; gap: 8px; }

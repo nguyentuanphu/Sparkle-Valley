@@ -35,7 +35,8 @@ export class Hud {
         <div class="pcard" role="button" aria-label="${T('Settings', 'Cài đặt')}"><img class="pav" alt=""><i class="pgear">${ICONS.gear}</i><div class="pinfo"><b class="pname"></b><div class="hearts"></div></div></div>
         <div class="chips"><button class="chip c-money" data-chip="money" title="${T('Coins', 'Đồng xu')}"></button><button class="chip c-orbs" data-chip="orbs" title="${T('Sparkle Orbs', 'Ngọc Lấp Lánh')}"></button><button class="chip c-leafy" data-chip="leafy" title="${T('Leafies', 'Bạn Lá')}"></button></div>
         <button class="simplesw" aria-label="${T('Big pictures screen', 'Màn hình hình to')}"><span>${ICONS.bigTiles}</span><b>${T('Big pictures', 'Hình to')}</b></button>
-      </div>
+            <button class="homebtn" aria-label="${T('Parent website', 'Trang web phụ huynh')}"><span>${ICONS.info}</span><b>${T('Home', 'Trang chủ')}</b></button>
+          </div>
       <div class="quest">
         <button class="q-say" aria-label="${T('Hear the goal again', 'Nghe lại nhiệm vụ')}"><span class="q-icon">📍</span><span class="q-text"></span></button>
         <button class="q-go">▶ ${T('Go', 'Đi')}<kbd class="kb">F</kbd></button>
@@ -105,7 +106,9 @@ export class Hud {
     this.q('.z-where').onclick = () => game.openWhere && game.openWhere(i);   // (Round U) "Where is…?" sparkles
     this.q('.dk.snd').onclick = () => game.openSound(this.q('.dk.snd'));   // (Round U) the three Sound switches: music, sounds, voice
     this.q('.friendchip').onclick = () => { const r = game.findFriend(i); if (r) game.say && game.say(r[0], r[1]); };
-    // (Round V, owner 13 Oct) a tap on the quest folds it to a small chip and hides its arrow and sparkles; a tap on the chip
+        // Parent website Home button: opens /home in a new tab, preserving game session
+        this.q('.homebtn').onclick = () => { SFX.tap(); window.open('/home', '_blank', 'noopener,noreferrer'); };
+        // (Round V, owner 13 Oct) a tap on the quest folds it to a small chip and hides its arrow and sparkles; a tap on the chip
     // opens it again and says the goal (remembered per child)
     this.q('.q-say').onclick = () => { const p = this.hero.profile; p.questFold = !p.questFold; saveProfiles(); this.foldQuest(); if (!p.questFold) game.sayObjective(i); };
     this.q('.q-go').onclick = () => game.goToObjective(i);

@@ -1688,6 +1688,41 @@ PAGES.players = async P => {
     <div class="card"><h3>🧱 ${T('Where children got stuck', 'Chỗ các bé bị kẹt')}</h3>${pb.stuck.length ? `<table class="mini"><tbody>${pb.stuck.map(([k, n]) => `<tr><td>${esc(where(k))}</td><td>${n}×</td></tr>`).join('')}</tbody></table><p class="note">${T('Pushing to walk for 4 seconds without moving (area and map position).', 'Đẩy để đi 4 giây mà không nhúc nhích (khu và vị trí trên bản đồ).')}</p>` : `<p class="ok">✅ ${T('Nobody got stuck.', 'Không ai bị kẹt.')}</p>`}</div>
     <div class="card"><h3>🚪 ${T('Games left before the end', 'Trò bị bỏ dở')}</h3>${pb.quits.length ? `<table class="mini"><tbody>${pb.quits.map(([g, n, st, pc]) => `<tr><td>${esc(gname(g))}</td><td>${n}/${st}</td><td class="${pc >= 50 ? 'warn' : ''}">${pc}%</td></tr>`).join('')}</tbody></table>` : `<p class="ok">✅ ${T('None.', 'Không có.')}</p>`}</div>
     <div class="card"><h3>🐢 ${T('Slow devices', 'Máy chạy chậm')}</h3>${pb.slow.length ? `<table class="mini"><tbody>${pb.slow.map(([id, l, f, sm]) => { const d = r.devices.find(x => x.id === id) || { id, label: l, fps: f }; return `<tr class="devrow${isRobot(d) ? ' robot' : ''}"><td>${devHTML(d)}</td><td>${f} ${T('frames/s', 'khung/giây')}</td><td>${sm} ${T('slow min', 'phút chậm')}</td></tr>`; }).join('')}</tbody></table>` : `<p class="ok">✅ ${T('All smooth.', 'Đều mượt.')}</p>`}</div></div>`)}
+  ${await (async () => {
+    try {
+      const pa = await api('parent-analytics');
+      const tot = pa?.totals || {};
+      const pv = tot.pageViews || {};
+      const devs = tot.devices || {};
+      const langs = tot.languages || {};
+      const acts = tot.actionClicks || {};
+      const routeRows = Object.entries(pv).sort((a: any, b: any) => b[1] - a[1]).map(([rt, c]) => `<tr><td><code>${esc(rt)}</code></td><td><b>${c}</b></td></tr>`).join('') || `<tr><td colspan="2" class="note">${T('No parent website visits recorded yet.', 'Chưa có lượt truy cập website cha mẹ.')}</td></tr>`;
+      return more('parent-analytics', T('🌐 Parent website analytics (first-party)', '🌐 Phân tích website cha mẹ (trực tiếp)'), `
+        <p class="sub">${T('Privacy-conscious first-party measurement of sparklevalley.au/home. Separate from game telemetry and synthetic traffic. Consent-gated; visitors who opt out are never recorded, so numbers represent consenting visitors only.', 'Đo lường trực tiếp, bảo vệ quyền riêng tư cho sparklevalley.au/home. Tách biệt với số liệu trò chơi và lưu lượng tự động. Phải có đồng ý; khách từ chối không bao giờ bị ghi nhận, nên số liệu chỉ đại diện người đồng ý.')}</p>
+        <div class="tiles">
+          ${tile('👁️', tot.totalEvents || 0, T('consented events (30d)', 'sự kiện đồng ý (30 ngày)'))}
+          ${tile('▶️', tot.playConversions || 0, T('Play Sparkle Valley clicks', 'bấm Chơi Sparkle Valley'))}
+          ${tile('⏱️', Math.round((tot.activeTimeTotalSec || 0) / 60) + ' min', T('active reading time', 'thời gian đọc thực tế'))}
+          ${tile('🔗', tot.linkClicks || 0, T('link clicks', 'lượt bấm liên kết'))}
+        </div>
+        <div class="grid two">
+          <div class="card">
+            <h3>📑 ${T('Pages viewed', 'Trang đã xem')}</h3>
+            <table class="mini"><thead><tr><th>${T('Page', 'Trang')}</th><th>${T('Views', 'Lượt xem')}</th></tr></thead><tbody>${routeRows}</tbody></table>
+          </div>
+          <div class="card">
+            <h3>📱 ${T('Devices & Languages', 'Thiết bị & Ngôn ngữ')}</h3>
+            <p><strong>${T('Devices', 'Thiết bị')}:</strong> 📱 ${T('Phone', 'Điện thoại')}: ${devs.phone || 0} · 📲 ${T('Tablet', 'Máy tính bảng')}: ${devs.tablet || 0} · 💻 ${T('Desktop', 'Máy tính')}: ${devs.desktop || 0}</p>
+            <p><strong>${T('Languages', 'Ngôn ngữ')}:</strong> 🇬🇧 EN: ${langs.en || 0} · 🇻🇳 VI: ${langs.vi || 0}</p>
+            <p><strong>${T('Key actions', 'Thao tác chính')}:</strong> 🌐 ${T('Lang switch', 'Đổi ngôn ngữ')}: ${acts.lang_switch || 0} · ▶️ ${T('Nav play', 'Chơi từ thanh menu')}: ${acts.nav_play || 0}</p>
+            <p class="note">${T('No free text, full URLs, keystrokes, fingerprints or private family memories/photos/voices are ever measured.', 'Tuyệt đối không đo lường văn bản tự do, URL đầy đủ, phím gõ, dấu vân tay hay kỷ niệm/ảnh/giọng nói riêng tư của gia đình.')}</p>
+          </div>
+        </div>
+      `);
+    } catch {
+      return '';
+    }
+  })()}
   <p class="note">${T('Made', 'Lúc')} ${esc(new Date(r.made).toLocaleString(LANG === 'vi' ? 'vi-VN' : 'en-AU', { timeZone: 'Australia/Sydney' }))} ${sydneyZone(r.made)}</p>`;
   { const tt = P.querySelector<HTMLInputElement>('#totesters'); if (tt) tt.onclick = () => go('testers'); }
   devFilter($('#devlist')); // (owner, 13 Oct) find a device by a child's name, its name, the town or the kind of device

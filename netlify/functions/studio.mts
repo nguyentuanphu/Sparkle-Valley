@@ -50,6 +50,7 @@ const store = name => () => import('@netlify/blobs').then(m => m.getStore({ name
 const LIVE_PART = { message: 'Message', missions: 'Missions', quiz: 'Quiz', tales: 'Our stories', names: 'Villagers', plots: 'Memory Villages', looks: 'Story characters', ads: 'Ads', album: 'Family album' };
 const blobs = store('players'), adminBlobs = store('studio-admins'), liveBlobs = store('live'), heldBlobs = store('studio-pending');
 const familyBlobs = store('family-photos'), guardBlobs = store('guard'), logBlobs = store('studio-log'), testerBlobs = store('testers');
+const parentAnalyticsBlobs = store('parent-analytics');
 // (round R privacy) what signs a cookie: the owner's with the password, the sign-out generation and part of the two-step
 // secret; an admin's with the password and the generation (plus their own hash and secret, admins.mts)
 const ownerKey = (pw, gen, t, off) => `${pw}\u0000${gen}\u0000${t && t.secret ? String(t.secret).slice(0, 8) : ''}${off ? '\u0000p' : ''}`;
@@ -238,8 +239,33 @@ export const makeStudio = ({ playersStore = blobs, adminStore = adminBlobs, held
   if (p === '/studio/api/testers/set' && post) { const b = await body(); const r = await tester.setProblem(await testerStore(), b.k, b, now()); return r ? json(r) : json({ error: 'No such problem.' }, 404); }
   // a name for a device in the play report ("Na's iPad"), round L
   if (p === '/studio/api/players/label' && post) { const b = await body(); return json({ ok: await setLabel(await playersStore(), b.id, b.label) }); }
-  const conf = { azureKey: env('AZURE_KEY'), azureRegion: env('AZURE_REGION'), githubToken: env('GITHUB_TOKEN'), githubRepo: env('GITHUB_REPO') || 'nguyentuanphu/Sparkle-Valley', githubBranch: env('GITHUB_BRANCH') || 'main',
-    netlifyToken: env('NETLIFY_TOKEN'), netlifySite: env('NETLIFY_SITE') || env('SITE_ID'), siteUrl: env('URL') };
+    // Parent website analytics (privacy-first, consent-gated, no PII)
+    if (p === '/studio/api/parent-analytics') {
+      if (!admins.allowed(me, 'analytics', false)) return json({ error: 'Analytics permission required.' }, 403);
+      const S = await parentAnalyticsBlobs();
+      const days = 30;
+      const out: any = { days: [], totals: { totalEvents: 0, pageViews: {}, actionClicks: {}, linkClicks: 0, scrollMilestones: {}, activeTimeTotalSec: 0, playConversions: 0, languages: {}, devices: {} } };
+      for (let i = 0; i < days; i++) {
+        const d = new Date(Date.now() - i * 864e5).toISOString().slice(0, 10);
+        const sum = await S.get(`sum/${d}`, { type: 'json' }).catch(() => null);
+        if (sum) {
+          out.days.push(sum);
+          out.totals.totalEvents += sum.totalEvents || 0;
+          for (const [k, v] of Object.entries(sum.pageViews || {})) out.totals.pageViews[k] = (out.totals.pageViews[k] || 0) + (v as number);
+          for (const [k, v] of Object.entries(sum.actionClicks || {})) out.totals.actionClicks[k] = (out.totals.actionClicks[k] || 0) + (v as number);
+          out.totals.linkClicks += sum.linkClicks || 0;
+          for (const [k, v] of Object.entries(sum.scrollMilestones || {})) out.totals.scrollMilestones[k] = (out.totals.scrollMilestones[k] || 0) + (v as number);
+          out.totals.activeTimeTotalSec += sum.activeTimeTotalSec || 0;
+          out.totals.playConversions += sum.playConversions || 0;
+          for (const [k, v] of Object.entries(sum.languages || {})) out.totals.languages[k] = (out.totals.languages[k] || 0) + (v as number);
+          for (const [k, v] of Object.entries(sum.devices || {})) out.totals.devices[k] = (out.totals.devices[k] || 0) + (v as number);
+        }
+      }
+      out.days.reverse();
+      return json(out);
+    }
+    const conf = { azureKey: env('AZURE_KEY'), azureRegion: env('AZURE_REGION'), githubToken: env('GITHUB_TOKEN'), githubRepo: env('GITHUB_REPO') || 'nguyentuanphu/Sparkle-Valley', githubBranch: env('GITHUB_BRANCH') || 'main',
+      netlifyToken: env('NETLIFY_TOKEN'), netlifySite: env('NETLIFY_SITE') || env('SITE_ID'), siteUrl: env('URL') };
   if (!conf.githubToken) return json({ error: 'Add GITHUB_TOKEN in Netlify (Site configuration → Environment variables) so the online Studio can read and save the family’s files.', setup: true }, 503);
   const gstore = githubStore({ token: conf.githubToken, repo: conf.githubRepo, branch: conf.githubBranch, held: heldOn(await heldStore()) });
   // the changes waiting for Publish, and dropping them (round P)

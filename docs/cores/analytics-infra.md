@@ -136,7 +136,7 @@ Blobs stores: `players`, `live`, `studio-admins`, `studio-pending`, `family-phot
   photo, unit, familyphotos, nostudio: all pass except startup.
 - **19 Oct 2026 AEDT: Unified tester reports UI & API overhaul and `testerreport` CI fix (`core/analytics-infra`).** 
   - Overhauled tester reports attribution (`auto`, signed-in `player`, or unconfirmed family shared device `unknown`) across client (`js/tester.ts`) and backend (`netlify/lib/tester.mts`).
-  - Updated Studio UI (`studio/ui/app.ts`) to display explicit reporter attribution and surface clear lifecycle statuses: Pending/New (`🆕`), Being fixed (`🔨`), Fixed in version (`✅`), Completed/checked (`🏁`), Not a bug (`🚫`), supporting version-tagged history (`r88`) without data loss.
+  - Updated Studio UI (`studio/ui/app.ts`) to display explicit reporter attribution and surface clear lifecycle statuses: Pending/New, Being fixed, Fixed in version, Completed/checked, Not a bug, supporting version-tagged history (`r88`) without data loss.
   - Fixed ESM path resolution in `tests/suite.mjs` and freeze detection race conditions in `tests/run.mjs` and `js/tester.ts`.
   - Verified `testerreport` CI check passes cleanly (67s) alongside all unit tests (`tests/unit/tester.test.mjs`, 12/12 passed). Ready for Release.
 

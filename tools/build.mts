@@ -26,7 +26,7 @@ const START = '# --- made by tools/build.mts from .ts files (never committed; do
 export function sources(root = ROOT) {
   const out = [], walk = rel => { let ents; try { ents = fs.readdirSync(path.join(root, rel), { withFileTypes: true }); } catch (e) { return; }
     for (const d of ents) { const r = rel ? rel + '/' + d.name : d.name; if (d.isDirectory()) { if (d.name !== 'node_modules') walk(r); } else if (r.endsWith('.ts') && !r.endsWith('.d.ts')) out.push(r); } };
-  walk('js'); walk('studio/ui'); if (fs.existsSync(path.join(root, 'sw.ts'))) out.push('sw.ts');
+  walk('js'); walk('studio/ui'); walk('home'); if (fs.existsSync(path.join(root, 'sw.ts'))) out.push('sw.ts');
   return out.sort();
 }
 /** a .ts file's text as the JavaScript the browser runs (same lines and columns) */

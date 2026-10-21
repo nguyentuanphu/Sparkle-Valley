@@ -498,7 +498,7 @@ export const openPad = Object.assign(function (game, i, tab) {
       // a landmark that is now a place of its own (Hội An) is listed as that place, no longer under the city near it
       const homeOf = l => game.PLACES.some(pl => pl.key === l.id) ? l.id : LANDMARK_HOME[l.id];
       for (const t of tops) {
-        out.push({ icon: t.icon, name: t.name, go: () => game.travelTo(hero, t.x, t.z) });
+        out.push({ icon: t.icon, name: t.name, go: () => game.travelTo(hero, t.x, t.z, !['memory_e', 'memory_w'].includes(t.key)) });
         all.filter(pl => pl.under && pl.under === t.key).forEach(pl => out.push({ sub: true, icon: pl.icon, name: pl.name, go: () => game.travelTo(hero, pl.x, pl.z) }));
         lms.filter(l => homeOf(l) === t.key).forEach(l => out.push({ sub: true, icon: l.icon, name: l.name, go: () => game.travelTo(hero, l.x, l.z) }));
       }
@@ -539,7 +539,7 @@ export const openPad = Object.assign(function (game, i, tab) {
     game.PLACES.forEach(pl => {
       const [a, b] = pt(pl.x, pl.z); x.fillStyle = 'rgba(255,255,255,.92)'; x.beginPath(); x.arc(a, b, 22, 0, Math.PI * 2); x.fill(); x.strokeStyle = '#ffb020'; x.lineWidth = 3; x.stroke();
       icon(pl.icon, pl.x, pl.z, 26);
-      spots.push({ x: pl.x, z: pl.z, name: pl.name(), r: 14 });
+      spots.push({ x: pl.x, z: pl.z, name: pl.name(), r: 14, snapToNpc: !['memory_e', 'memory_w'].includes(pl.key) });
     });
     // (Release request, T1) each name goes under its picture, or above, right or left of it when that spot would cover
     // another name or picture, so places close together (the festival stage by Đà Nẵng) stay readable
@@ -592,7 +592,7 @@ export const openPad = Object.assign(function (game, i, tab) {
         const c = el('button', 'btn', '📣 ' + T('Ask to come', 'Gọi bạn đến')); c.onclick = () => { close(); game.askFriendToCome(hero, s.friend); }; ok.insertBefore(c, ok.querySelector('.no'));
         ok.querySelector('.no').onclick = () => ok.remove(); return;
       }
-      ok.querySelector('.primary').onclick = () => { close(); game.travelTo(hero, s.x, s.z); };
+      ok.querySelector('.primary').onclick = () => { close(); game.travelTo(hero, s.x, s.z, s.snapToNpc !== false); };
       ok.querySelector('.walk').onclick = () => { close(); hero.walkTo = { x: s.x, z: s.z, name: s.name }; say(`Follow the footprints to ${s.name}!`, `Đi theo dấu chân đến ${s.name} nhé!`); };
       ok.querySelector('.no').onclick = () => ok.remove();
     };
