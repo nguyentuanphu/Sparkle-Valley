@@ -761,7 +761,7 @@ async function drawReleases(P, lab) {
     ${groups.map(G => `<details class="relg" data-g="${G.g}" ${closed[gkey(G.g)] ? '' : 'open'}><summary><span class="gi">${REL_ICON[G.g] || '📦'}</span><b>${T(G.en, G.vi)}</b><span class="relg-n"></span>
       <span class="relg-all"><button type="button" class="btn small ghost" data-all="1">${T('All on', 'Bật hết')}</button><button type="button" class="btn small ghost" data-all="0">${T('All off', 'Tắt hết')}</button></span></summary>
       <div class="relgrid">${G.items.map(card).join('')}</div></details>`).join('')}
-    ${lab ? `<section class="card bot-config"><h3>🤖 ${T('Nightly Cloud Bot Testing', 'Kiểm thử bot đám mây ban đêm')}</h3><p class="note">${T('Set a nightly schedule and bot profile. Save to persist these settings.', 'Thiết lập lịch ban đêm và hồ sơ bot. Bấm Lưu để lưu cài đặt.')}</p><div class="bot-fields"><label class="chk"><input id="bot-enabled" type="checkbox"> ${T('Enable scheduled testing', 'Bật kiểm thử theo lịch')}</label><label>${T('Schedule', 'Lịch')}<select id="bot-schedule"><option value="day-night">${T('Day & night', 'Ngày và đêm')}</option><option value="custom">${T('Custom UTC time', 'Giờ UTC tùy chỉnh')}</option></select><input id="bot-time" type="time" value="02:00" aria-label="UTC time"></label><label>${T('Bot count', 'Số bot')} <input id="bot-count" type="number" min="1" max="10" value="5"></label><label>${T('Behavior profile', 'Hồ sơ hành vi')}<select id="bot-profile"><option value="chaos-toddler">${T('Chaotic Toddler Mashing', 'Bé nghịch ngợm')}</option><option value="gentle-explorer">${T('Gentle Explorer', 'Nhà thám hiểm nhẹ nhàng')}</option><option value="max-competence">${T('Max Competence', 'Thành thạo tối đa')}</option></select></label></div><div class="bar"><button type="button" class="btn" id="bot-run">▶️ ${T('Run Headless Bot Test Now', 'Chạy kiểm thử bot ngay')}</button><span class="note" id="bot-result"></span></div></section>` : ''}
+    ${lab && CAN('site') ? `<section class="card bot-config"><h3>🤖 ${T('Nightly Cloud Bot Testing', 'Kiểm thử bot đám mây ban đêm')}</h3><p class="note">${T('Set a nightly schedule and bot profile. Save to persist these settings.', 'Thiết lập lịch ban đêm và hồ sơ bot. Bấm Lưu để lưu cài đặt.')}</p><div class="bot-fields"><label class="chk"><input id="bot-enabled" type="checkbox"> ${T('Enable scheduled testing', 'Bật kiểm thử theo lịch')}</label><label>${T('Schedule', 'Lịch')}<select id="bot-schedule"><option value="day-night">${T('Day & night', 'Ngày và đêm')}</option><option value="custom">${T('Custom UTC time', 'Giờ UTC tùy chỉnh')}</option></select><input id="bot-time" type="time" value="02:00" aria-label="UTC time"></label><label>${T('Bot count', 'Số bot')} <input id="bot-count" type="number" min="1" max="10" value="5"></label><label>${T('Minutes per bot', 'Số phút mỗi bot')} <input id="bot-duration" type="number" min="1" max="30" value="5"></label><label>${T('Behavior profile', 'Hồ sơ hành vi')}<select id="bot-profile"><option value="chaos-toddler">${T('Chaotic Toddler Mashing', 'Bé nghịch ngợm')}</option><option value="gentle-explorer">${T('Gentle Explorer', 'Nhà thám hiểm nhẹ nhàng')}</option><option value="max-competence">${T('Max Competence', 'Thành thạo tối đa')}</option></select></label></div><div class="bar"><button type="button" class="btn" id="bot-run">▶️ ${T('Run Headless Bot Test Now', 'Chạy kiểm thử bot ngay')}</button><span class="note" id="bot-result"></span></div></section>` : ''}
     <div class="bar relsave"><span class="note" id="relch"></span><button class="btn" id="save">💾 ${T('Save', 'Lưu')}</button></div>`;
   P.querySelector('.sub').after(document.createRange().createContextualFragment(liveNote()));
   if (lab) { P.querySelector('.sub').textContent = T('Report problems and run automatic checks. Choose tester devices, checking speed and how their progress is restored.', 'Báo lỗi và chạy tự kiểm tra. Chọn máy thử, tốc độ kiểm tra và cách khôi phục tiến trình.'); if (canSee('testers')) { const link = document.createElement('button'); link.className = 'btn ghost'; link.textContent = T('Open tester reports', 'Mở báo cáo người thử'); link.onclick = () => go('testers'); P.querySelector('.sub').after(link); } }
@@ -836,7 +836,7 @@ async function drawReleases(P, lab) {
         card.querySelectorAll('[data-open]').forEach(x => x.setAttribute('aria-expanded', String(open && x === b))); card.querySelectorAll<HTMLElement>('.dpanel').forEach(x => { x.hidden = !(open && x.dataset.panel === k); }); });
       card.querySelectorAll('[data-tdev], [data-dev]').forEach(i => i.addEventListener('change', paint)); });
     devFilter($('#tdl')); }
-  if (lab) {
+  if (lab && CAN('site')) {
     const nb = (R as any).nightlyBots || {};
     const be = P.querySelector('#bot-enabled') as HTMLInputElement | null;
     if (be) be.checked = !!nb.enabled;
@@ -848,6 +848,8 @@ async function drawReleases(P, lab) {
     if (bc && nb.count) bc.value = String(nb.count);
     const bp = P.querySelector('#bot-profile') as HTMLSelectElement | null;
     if (bp && nb.profile) bp.value = nb.profile;
+    const bd = P.querySelector('#bot-duration') as HTMLInputElement | null;
+    if (bd && nb.duration) bd.value = String(nb.duration);
     const brun = P.querySelector('#bot-run') as HTMLButtonElement | null;
     const bres = P.querySelector('#bot-result') as HTMLElement | null;
     if (brun) {
@@ -860,6 +862,7 @@ async function drawReleases(P, lab) {
             schedule: (P.querySelector('#bot-schedule') as HTMLSelectElement | null)?.value ?? 'day-night',
             time: (P.querySelector('#bot-time') as HTMLInputElement | null)?.value ?? '02:00',
             count: +((P.querySelector('#bot-count') as HTMLInputElement | null)?.value ?? '5'),
+            duration: +((P.querySelector('#bot-duration') as HTMLInputElement | null)?.value ?? '5'),
             profile: (P.querySelector('#bot-profile') as HTMLSelectElement | null)?.value ?? 'chaos-toddler',
           };
           const res = await api('bot/run', payload);
@@ -890,14 +893,15 @@ async function drawReleases(P, lab) {
           const revert = P.querySelector('[data-trevert]:checked')?.dataset.trevert; if (['keep', 'autoplay'].includes(revert)) r.revert = revert; }
         if (Object.keys(r).length) out[id] = r; });
         // Nightly Cloud Bot Testing config (lab only)
-        if (lab) {
+        if (lab && CAN('site')) {
           const botEnabled = (P.querySelector('#bot-enabled') as HTMLInputElement | null)?.checked ?? false;
           const botSchedule = (P.querySelector('#bot-schedule') as HTMLSelectElement | null)?.value ?? 'day-night';
           const botTime = (P.querySelector('#bot-time') as HTMLInputElement | null)?.value ?? '02:00';
           const botCount = +((P.querySelector('#bot-count') as HTMLInputElement | null)?.value ?? '5');
           const botProfile = (P.querySelector('#bot-profile') as HTMLSelectElement | null)?.value ?? 'chaos-toddler';
-          if (botEnabled || latest.releases?.nightlyBots) {
-            out.nightlyBots = { enabled: botEnabled, schedule: botSchedule, time: botTime, count: botCount, profile: botProfile };
+          const botDuration = +((P.querySelector('#bot-duration') as HTMLInputElement | null)?.value ?? '5');
+          if (INFO?.online || botEnabled || latest.releases?.nightlyBots) {
+            out.nightlyBots = { enabled: botEnabled, schedule: botSchedule, time: botTime, count: botCount, profile: botProfile, duration: botDuration };
           } else {
             delete out.nightlyBots;
           }

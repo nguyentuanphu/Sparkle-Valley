@@ -1,0 +1,61 @@
+name: Child bot gameplay
+on:
+  workflow_dispatch:
+    inputs:
+      count:
+        description: 'Number of independent child sessions (1-10)'
+        required: true
+        type: string
+      profile:
+        description: 'Behavior profile'
+        required: true
+        type: string
+      duration:
+        description: 'Maximum minutes per child (1-30)'
+        required: true
+        type: string
+      slot:
+        description: 'UTC scheduled slot (empty for manual run)'
+        required: false
+        type: string
+permissions:
+  contents: read
+concurrency:
+  group: child-bots-${{ github.event.inputs.slot || github.run_id }}
+  cancel-in-progress: false
+jobs:
+  play:
+    runs-on: ubuntu-latest
+    timeout-minutes: 330
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Validate bounded inputs
+        env:
+          COUNT: ${{ inputs.count }}
+          PROFILE: ${{ inputs.profile }}
+          DURATION: ${{ inputs.duration }}
+        run: node -e 'const {COUNT:c,PROFILE:p,DURATION:d}=process.env; if(!/^(10|[1-9])$/.test(c)||!/^(30|[12][0-9]|[1-9])$/.test(d)||!(["chaos-toddler","gentle-explorer","max-competence"].includes(p))) process.exit(1)'
+      - name: Install browser dependencies and build TypeScript game
+        run: |
+          cd tests && npm install --no-package-lock --no-save --no-audit --no-fund && npx playwright install --with-deps chromium
+          cd .. && node tools/build.mts
+      - name: Start local game server
+        run: |
+          python3 -m http.server 8765 >/dev/null 2>&1 &
+          sleep 2
+          curl --fail http://localhost:8765/ >/dev/null
+      - name: Play independent child sessions
+        env:
+          COUNT: ${{ inputs.count }}
+          PROFILE: ${{ inputs.profile }}
+          DURATION: ${{ inputs.duration }}
+        run: cd tests && node child-bots.mts
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: child-bot-results
+          path: tests/out/child-bots/
+          retention-days: 14

@@ -4,6 +4,12 @@
 signing in and admins, saving and Publish, and every family page (message, children, album, quiz, stories,
 villagers, Simple screen, music, map, real photos, play time, voices, ads, analytics view, website, check, settings).
 
+## Map houses and child bots
+
+The Map's Build mode groups house models from `js/worldedit.ts` by Vietnamese and Australian styles. The 3D preview renders the same model used by the game; the screenshots in `evidence/studio/` are captured from the mobile Studio using `node tests/studio-house-evidence.mts` (English and Vietnamese).
+
+Sparkle Lab's scheduled child bots require the online Studio's Website permission. Save stores the bounded configuration privately in the `live` Netlify Blob store (`bot-schedule`), not in the public `/api/live` response. Netlify's `child-bots` scheduled function checks every five minutes: day/night means 08:00 and 20:00 UTC; custom means the selected UTC time. It dispatches `nightly-child-bots.yml` only when enabled, and records each successful slot to avoid repeats. The manual Run button dispatches the same workflow without modifying the schedule. A run launches 1-10 mobile child sessions, each for 1-30 minutes, using the game's autoplay engine; results are GitHub Actions artifacts. Set `GITHUB_TOKEN` with Actions write access and `GITHUB_REPO` in Netlify. Schedules become active only after the site deploys the merged code. Validate with `node --test tests/unit/child-bots.test.mts` and `npx tsc -p tests`.
+
 ## You own
 - `studio/` (`core.cts` the engine, `studio.cts` the exe's server, `ui/` the pages, `build-exe.sh`, `version.json` with Release)
 - `netlify/functions/studio.mts`, `netlify/lib/admins.mts`, `netlify/lib/accesslog.mts`

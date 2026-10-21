@@ -31,12 +31,12 @@ const house = (mk, kind, room) => ({ mk, kind, room, home: true });
 const landmark = key => ({ mk: () => ({ parts: MODELS[key]() }), kind: 'landmark' });
 // what can be built (Sparkle Studio shows the same list): [id] → how to make it, in both languages
 export const BUILD_TYPES = {
-  tube: { ...house(o => houseTube({ wall: o.color || '#9fd8c8', floors: 3 }), 'tube', 'tube'), name: ['Tube house (Vietnam)', 'Nhà ống'], icon: '🏠' },
-  tube2: { ...house(o => houseTube({ wall: o.color || '#ffb3a0', floors: 2 }), 'tube', 'tube'), name: ['Small tube house', 'Nhà ống nhỏ'], icon: '🏠' },
-  village: { ...house(o => houseVillage({ wall: o.color || '#efe0bf' }), 'village', 'village'), name: ['Village house with tiled roof', 'Nhà ngói ở làng'], icon: '🏡' },
+  tube: { ...house(o => houseTube({ wall: o.color || '#9fd8c8', floors: 3 }), 'tube', 'tube'), culture: 'vietnam', name: ['Tube house (Vietnam)', 'Nhà ống'], icon: '🏠' },
+  tube2: { ...house(o => houseTube({ wall: o.color || '#ffb3a0', floors: 2 }), 'tube', 'tube'), culture: 'vietnam', name: ['Small tube house', 'Nhà ống nhỏ'], icon: '🏠' },
+  village: { ...house(o => houseVillage({ wall: o.color || '#efe0bf' }), 'village', 'village'), culture: 'vietnam', name: ['Village house with tiled roof', 'Nhà ngói ở làng'], icon: '🏡' },
   villa: { ...house(() => houseVilla(), 'villa', 'villa'), name: ['French villa', 'Biệt thự Pháp'], icon: '🏛️' },
-  cottage: { ...house(o => houseCottage({ wall: o.color || '#cfe6ee' }), 'cottage', 'cottage'), name: ['Australian cottage', 'Nhà gỗ kiểu Úc'], icon: '🏘️' },
-  raised: { ...house(() => raisedHouse(), 'raised', 'raised'), name: ['Queenslander on stilts', 'Nhà sàn kiểu Queensland'], icon: '🛖' },
+  cottage: { ...house(o => houseCottage({ wall: o.color || '#cfe6ee' }), 'cottage', 'cottage'), culture: 'australia', name: ['Australian cottage', 'Nhà gỗ kiểu Úc'], icon: '🏘️' },
+  raised: { ...house(() => raisedHouse(), 'raised', 'raised'), culture: 'australia', name: ['Queenslander on stilts', 'Nhà sàn kiểu Queensland'], icon: '🛖' },
   pagoda: { ...landmark('chuadau'), name: ['Pagoda', 'Chùa'], icon: '🛕' },
   clocktower: { ...landmark('bnclock'), name: ['Clock tower', 'Tháp đồng hồ'], icon: '🕰️' },
   cathedral: { ...landmark('cathedral'), name: ['Red-brick church', 'Nhà thờ gạch đỏ'], icon: '⛪' },
