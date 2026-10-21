@@ -32,13 +32,16 @@ export const AP_GROUPS = [
  * @typedef {{ on?: boolean, devices?: unknown, revert?: unknown, policies?: Record<string, DevicePolicy | undefined> }} TesterRule  (Studio's saved rule; old saves may lack fields or hold wrong kinds)
  */
 /** @type {Record<string, ApSpeed>} */
-export const AP_SPEEDS = {
+type ApSpeed = { en: string; vi: string; run: boolean; fly: number; think: number[]; finger: number; game: number; page: number; stay: number; talk: number; idle: number; rate?: number };
+type DevicePolicy = { autoplay?: boolean; revert?: string };
+type TesterRule = { on?: boolean; devices?: unknown; revert?: unknown; policies?: Record<string, DevicePolicy | undefined> };
+export const AP_SPEEDS: Record<string, ApSpeed> = {
   watch: { en: 'Watch', vi: 'Xem', run: false, fly: 110, think: [1.1, 2.2], finger: 650, game: 90, page: 0, stay: 3, talk: 3, idle: 25 },
   fast: { en: 'Quick', vi: 'Nhanh', run: true, fly: 45, think: [.35, .8], finger: 260, game: 45, page: 1.6, stay: .8, talk: 1.2, idle: 14 }
 };
 for (const rate of [1, 2, 3, 5]) AP_SPEEDS['x' + rate] = { ...AP_SPEEDS.watch, en: rate + '×', vi: rate + '×', run: rate > 1, think: AP_SPEEDS.watch.think.map(n => n / rate), finger: AP_SPEEDS.watch.finger / rate, stay: AP_SPEEDS.watch.stay / rate, talk: AP_SPEEDS.watch.talk / rate, game: AP_SPEEDS.watch.game, idle: AP_SPEEDS.watch.idle, rate };
 /** @param {string} k @returns {ApSpeed} */
-export const apSpeed = k => AP_SPEEDS[k] || AP_SPEEDS.fast;
+export const apSpeed = (k: string): ApSpeed => AP_SPEEDS[k] || AP_SPEEDS.fast;
 // a game or a story that has not opened after this many seconds did not open
 export const AP_OPEN_WAIT = 3;
 // how often a game's answer is the right one (owner, 13 Oct: "mostly right, some wrong", so wrong answers and hints
@@ -54,13 +57,14 @@ export const AP_TRAIL = 15;
 export const AP_QUESTS = { max: 40, tries: 3 };
 // which group an interactable belongs to, by its id
 /** @param {string} id @returns {string} */
-export const apGroupOf = id => /^npc_/.test(id) ? 'people' : /^festival_/.test(id) ? 'festivals' : /^shop_/.test(id) ? 'shop'
+export const apGroupOf = (id: string): string => /^npc_/.test(id) ? 'people' : /^festival_/.test(id) ? 'festivals' : /^shop_/.test(id) ? 'shop'
   : /hoilang|folk|show|stage|singer|pole|parade/.test(id) ? 'folk' : 'things';
 // may this device show the window? (rule: the release rule from Studio; me: this device's player id)
 /** @param {unknown} on @param {TesterRule | null | undefined} rule @param {string} me @returns {boolean} */
-export function apAllowed(on, rule, me) {
+/** @param {boolean} on @param {TesterRule | null | undefined} rule @param {string} me @returns {boolean} */
+export function apAllowed(on: boolean, rule: TesterRule | null | undefined, me: string): boolean {
   if (!on || rule?.policies?.[me]?.autoplay === false) return false;
-  const list = rule && Array.isArray(rule.devices) ? rule.devices.filter(d => typeof d === 'string') : [];
+  const list = rule && Array.isArray(rule.devices) ? rule.devices.filter((d): d is string => typeof d === 'string') : [];
   return !list.length || list.includes(me);
 }
 
@@ -74,15 +78,14 @@ export const REVERT = [
   { key: 'autoplay', en: 'Only what auto play did goes back', vi: 'Chỉ trả lại phần tự chơi đã làm' }
 ];
 /** @param {unknown} v @returns {v is 'keep' | 'autoplay' | 'progress'} (a saved value from an older Studio may be anything) */
-const isRevert = v => v === 'keep' || v === 'autoplay' || v === 'progress';
+const isRevert = (v: unknown): v is 'keep' | 'autoplay' | 'progress' => v === 'keep' || v === 'autoplay' || v === 'progress';
 /** @param {TesterRule | null | undefined} rule @param {string} [device] @returns {'keep' | 'autoplay' | 'progress'} */
-export const revertOf = (rule, device = '') => { const value = rule?.policies?.[device]?.revert || rule?.revert; return isRevert(value) ? value : 'progress'; };
+export const revertOf = (rule: TesterRule | null | undefined, device = ''): 'keep' | 'autoplay' | 'progress' => { const value = rule?.policies?.[device]?.revert || rule?.revert; return isRevert(value) ? value : 'progress'; };
 // the fields of a child's profile that stay as they are now: rewards (badges and the star are in `look`, stickers, the
 // album, clothes and gear in `owned`, the tester's stickers) and what a grown-up set (name, photo, age, how hard, which
 // screen, which story they follow), and where they stand
 export const KEEP_FIELDS = ['name', 'photo', 'age', 'difficulty', 'gameDiff', 'screen', 'follow', 'look', 'owned', 'stickers', 'album', 'testerStickers', 'pos', 'posMap'];
-/** @param {Record<string, unknown>} old @param {Record<string, unknown> | null | undefined} now @returns {Record<string, unknown>} */
-export function keepRewards(old, now) {
+export function keepRewards(old: Record<string, unknown>, now: Record<string, unknown> | null | undefined): Record<string, unknown> {
   const m = Object.assign({}, old);
   for (const k of KEEP_FIELDS) if (now && k in now) m[k] = now[k];
   return m;
@@ -90,8 +93,7 @@ export function keepRewards(old, now) {
 
 // Legal plans can need more than90s at child speed. Bound by their maximum action count,
 // including normal finger/thinking time; unsupported games keep the existing timeout.
-/** @param {ApSpeed} speed @param {number} [maxActions] @param {number} [multiplier] @returns {number} */
-export function apGameSeconds(speed, maxActions = 0, multiplier = 1) {
+export function apGameSeconds(speed: ApSpeed, maxActions = 0, multiplier = 1): number {
   const base = speed.game * multiplier;
   if (!Number.isFinite(maxActions) || maxActions <= 0) return base;
   const actions = Math.min(256, Math.ceil(maxActions));

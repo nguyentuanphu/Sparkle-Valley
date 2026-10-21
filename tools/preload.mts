@@ -4,7 +4,8 @@
 //   node tools/preload.mts --check   say whether the list is up to date (the 'preload' check)
 import fs from 'fs';
 import path from 'path';
-const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..');
+import { fileURLToPath } from 'url';
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const seen = new Set(), order = [];
 const visit = rel => {
   if (seen.has(rel)) return; seen.add(rel);
@@ -22,5 +23,6 @@ const block = '<!-- preload:start (tools/preload.mts) -->\n' + list.map(f => `<l
 const file = path.join(ROOT, 'index.html'), html = fs.readFileSync(file, 'utf8');
 const re = /<!-- preload:start[\s\S]*?<!-- preload:end -->/;
 const next = re.test(html) ? html.replace(re, block) : html.replace('</head>', block + '\n</head>');
-if (process.argv.includes('--check')) { const ok = next === html; console.log(ok ? `up to date: ${list.length} scripts` : 'index.html preload list is out of date: run node tools/preload.mts'); process.exit(ok ? 0 : 1); }
+const norm = (s: string) => s.replace(/\r\n/g, '\n');
+if (process.argv.includes('--check')) { const ok = norm(next) === norm(html); console.log(ok ? `up to date: ${list.length} scripts` : 'index.html preload list is out of date: run node tools/preload.mts'); process.exit(ok ? 0 : 1); }
 fs.writeFileSync(file, next); console.log(`index.html: ${list.length} scripts preloaded`);
