@@ -311,13 +311,14 @@ function addUI() {
   addEventListener('keydown', key); offs.push(() => removeEventListener('keydown', key));
   paintCount();
 }
-async function quickReport(i = 0) {
+export async function quickReport(detail: string = 'quick'): Promise<void> {
   SFX.tap && SFX.tap();
-  const s = await shot();
-  const hero = G?.heroes?.[i];
+  const hero = G?.heroes?.[0];
   const activePlayerName = hero?.profile?.name ? nm(hero.profile.name) : '';
   const reporterAttribution = activePlayerName ? { type: 'player', name: activePlayerName } : { type: 'unknown' };
-  enqueue(body('broken', { note: T('Quick report: something was wrong just now', 'Báo nhanh: vừa có gì đó không ổn'), detail: 'quick', shot: s, reporter: reporterAttribution }));
+  const snapshot = body('broken', { note: T('Quick report: something was wrong just now', 'Báo nhanh: vừa có gì đó không ổn'), detail, reporter: reporterAttribution });
+  const s = await shot();
+  enqueue({ ...snapshot, shot: s });
   toast(L(C.TESTER_LINES.waiting));
 }
 function toast(s) { const t = el('div', 'testertoast', esc(s)); document.body.appendChild(t); setTimeout(() => t.classList.add('out'), 2200); setTimeout(() => t.remove(), 2600); }

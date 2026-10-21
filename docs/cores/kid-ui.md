@@ -212,3 +212,8 @@ A changed screen layout is re-recorded with `node run.mjs contract --update-cont
     - `startup`: fails on r69 too, measured side by side today (valley ready 25.9 s on the branch, 25.3 s on r69).
   - After merging today's `main`, run again and passed: hscroll, perf, festhunt (new), festivals, festcal, unit, types, arch, rules, emoji, noemoji, preload, voicecover, boot, contract, phone, shop, a11y, studio.
   - Screenshots looked at, on phone, tablet and computer: Tết in Lotus Village (before and at 5x), Hà Nội, a remote road, Đà Nẵng, Halloween at Aussie Corner and Two Homes Street, a hidden red envelope, the Passport's festival badges.
+- **20 Oct 2026, 8:40 pm AEDT, `core/kid-ui`: Stage 1 kid-facing modal accessibility round:**
+  - Added a 44px minimum height for standard `.btn` controls and 64px width/height minimums for under-5 modal buttons, close controls, role buttons, dialogue chat actions, and the hands-on panel `Later` control (`.handpad .hp-x`).
+  - `modal()` now applies `.little` from `dialogHooks.little?.()` and emits `role="dialog"` with `aria-modal="true"` on the shared card.
+  - Verification: all four TypeScript projects passed; the targeted `a11y` check passed (12 screens, general targets ≥44px and under-5 answers/Simple controls ≥64px). The changed-file runner currently routes this branch to the full suite because of the pre-existing `.gitignore` change; no full suite was run locally.
+  - Screenshots reviewed: phone, tablet and computer modal layouts, including under-5 controls. No new spoken lines. Branch: `core/kid-ui`; ready for Release after commit.

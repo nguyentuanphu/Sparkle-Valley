@@ -78,8 +78,11 @@ button:focus-visible, input:focus-visible, select:focus-visible, label.btn:focus
 .sub { margin: -4px 0 0; color: var(--soft); font-size: 16px; }
 .note { margin: 0; color: var(--soft); font-size: 14px; font-weight: 600; line-height: 1.4; }
 .center { text-align: center; justify-content: center; }
-.x { position: absolute; top: 12px; right: 12px; width: 48px; height: 48px; border-radius: 50%; border: 1px solid var(--line); background: rgba(255, 255, 255, .08); font-size: 22px; z-index: 2; }
-.btn { border: 1px solid var(--line); background: rgba(255, 255, 255, .1); border-radius: 999px; padding: 10px 18px; font-size: 16px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; cursor: pointer; color: #fff; }
+.x { position: absolute; top: 12px; right: 12px; width: 48px; height: 48px; min-width: 48px; min-height: 48px; border-radius: 50%; border: 1px solid var(--line); background: rgba(255, 255, 255, .08); font-size: 22px; z-index: 2; }
+.btn { border: 1px solid var(--line); background: rgba(255, 255, 255, .1); border-radius: 999px; padding: 10px 18px; min-height: 44px; font-size: 16px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; cursor: pointer; color: #fff; }
+.modal.little .x, .modal.little .btn, .modal.little button, .modal.little [role=button] { min-width: 64px; min-height: 64px; }
+.modal.little .x { width: 64px; height: 64px; }
+.dialog.little .dask { min-width: 64px; min-height: 64px; }
 .btn.primary { background: var(--cyan); color: #06303a; border-color: transparent; }
 .btn.danger { color: #ffb0b8; }
 .btn.wide { width: 100%; }
@@ -367,7 +370,7 @@ select option { color: #000; }
 .bigstone { width: 28px; height: 22px; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #9a9aa0, #4a4a52); display: inline-block; }
 .oaq-c .n { position: absolute; bottom: 2px; right: 6px; font-size: 14px; color: #8a5a20; }
 .oaq-arrows { position: absolute; inset: 0; display: flex; align-items: center; justify-content: space-between; background: rgba(255, 255, 255, .7); z-index: 2; }
-.oaq-arrows button { border: 0; background: none; font-size: 34px; padding: 0 4px; }
+.oaq-arrows button { border: 0; background: none; font-size: 34px; padding: 0 4px; min-width: 44px; min-height: 44px; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; }
 /* Give young children full-size choices without covering the selected seeds. */
 .oaq-directions { min-height: 64px; width: 100%; display: flex; justify-content: center; }
 .oaq-little .oaq-arrows { position: static; width: min(820px, 100%); justify-content: center; gap: 24px; border-radius: 12px; }
@@ -2218,8 +2221,8 @@ body.songs-on .htoast { display: none; } /* the valley's hints stay behind the S
 .th-skip .art { width: 26px; height: 26px; }
 /* while a hands-on panel is open, the "walk up and tap" button stays out of the way */
 body:has(.handpad) .hud .bigprompt { display: none !important; }
-/* ✕ Later: a child can always leave a hands-on panel and come back to it */
-.handpad .hp-x { position: absolute; top: -14px; right: -14px; width: 44px; height: 44px; border-radius: 50%; border: 0; background: #fff; color: #3a2e4a; font-size: 20px; box-shadow: 0 3px 8px rgba(40, 30, 60, .3); cursor: pointer; }
+/* ✕ Later: a child can always leave a hands-on panel and come back to it (under-5 64px touch target) */
+.handpad .hp-x { position: absolute; top: -14px; right: -14px; width: 64px; height: 64px; min-width: 64px; min-height: 64px; border-radius: 50%; border: 0; background: #fff; color: #3a2e4a; font-size: 26px; box-shadow: 0 3px 8px rgba(40, 30, 60, .3); cursor: pointer; display: grid; place-items: center; }
 /* (round R) side stories on the Adventures page */
 .sides { display: grid; gap: 8px; margin-bottom: 10px; }
 .sides .side { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 8px 10px; border-radius: 14px; background: rgba(47, 127, 115, .1); }
