@@ -26,6 +26,18 @@ The quest snapshot was checked against `main` at [`781089d6`](https://github.com
 
 To rebuild: `node docs/website-review-20261023/build-preview.mjs` writes the self-contained preview, parent guide and quest guide. To deliberately refresh quest data after reviewing a newer source, update the pinned ref in `refresh-quest-snapshot.mjs`, run it, review coverage and rebuild. Serve the repo root on port 8765, then run `node docs/website-review-20261023/check-preview.cjs` for the visual-guide interaction checks. It uses the existing Playwright dependency and runs serially across device sizes.
 
+## Pictured prizes and badges
+
+The owner asked to make prizes prominent because children enjoy seeing what they can earn. The preview now has a hero link, a **Prizes & Badges / Quà thưởng & Huy hiệu** menu entry and a corresponding section in the Quest Guide. Eight illustrated cards pair **Complete this → Earn this → Where to see it**. Expandable picture collections show nine stamp-chest prizes, four Passport wearables, all 24 festival badges, nine example stickers, six Hard reasoning stickers and six example mystery collectibles.
+
+The content distinguishes fixed rewards, one-time unlocks, the stamp chest's next-not-owned order, and variable mystery-box contents. It does not show a fictitious child's collection. Daily-adventure guide entries identify their actual sticker, coins and stamp; family missions and festival hunts have picture reward strips; lantern chapters show the chapter's coins/keepsake, and main quest entries show matching one-time picture-book bonuses. The main-journey crown is tied to all 17 main goals, not to finishing every game or festival.
+
+[Complete bilingual reward guide](rewards-guide.md) includes all 56 adventure-to-sticker mappings, 24 badge requirements, 252 catalogue sticker clues, ten picture-book bonuses and all 25 mystery collectible names. [Pinned reward snapshot](reward-snapshot.json) comes from the same source ref as the quest guide. The walkthrough also mentions construction-yard, job-board, daily gift and mini-game rewards without presenting a universal coin amount for every activity. Existing protected parent question editing remains unchanged.
+
+Validation: [reward checks](evidence/reward-checks.json) passed at 390 px, 820 px, 1440 px, 320 px and phone landscape, including EN/VI, expanded details retained across language changes, specific reward pictures, exact badge-to-quest links, search recovery and no horizontal overflow. The original photo/guide/Family Quiz/printing checks also passed on the update. Phone, tablet and desktop reward screenshots were inspected. The first reward-check attempt asserted search clearing before the browser's hash-change navigation completed; the automation now waits for the destination route and cleared search, and passed on all five layouts. This was a check timing issue; no game check or reward rule was weakened.
+
+The prize pictures reuse the game's SVG artwork. Festival medallion frames are website presentation around the actual festival symbols, not new in-game badges. These are design-document changes only; the website does not grant prizes or alter child saves.
+
 ## What the current website needs
 
 The live site was inspected on a 390 × 844 phone, 820 × 1180 tablet and 1440 × 1000 computer, in English and Vietnamese. [Measured results](evidence/live-findings.json) and [screenshots](evidence/live-phone-en.png) are saved with the proposal.

@@ -21,3 +21,18 @@ const tales=run('export const QUEST_TALES = '+storySource).QUEST_TALES;
 const snapshot={source:SOURCE_REF,reviewed:'23 October 2026 AEDT',quests:quests.map(q=>({id:q.id,icon:q.icon,title:q.title(),at:q.at,hint:tales[q.id]?.slice(2)||null})),chapters:chapters.CHAPTERS,adventures:adventures.ADVENTURES.map(a=>({...a,title:adventures.titleOf(a,Object.fromEntries(festivals.FESTCAL.map(f=>[f.id,[f.en,f.vi]]))),giverName:adventures.GIVERS[a.giver],steps:a.steps.map(s=>({...s,little:adventures.stepText(s,'little'),older:adventures.stepText(s,'big')}))})),weekPrizes:adventures.WEEK_PRIZES,family:family.FAMILY_MISSIONS,hunts:Object.entries(hunts.HUNT).map(([id,h])=>({...h,...festivals.FESTCAL.find(f=>f.id===id),id,objectEn:h.en,objectVi:h.vi}))};
 fs.writeFileSync(new URL('./quest-snapshot.json',import.meta.url),JSON.stringify(snapshot,null,2)+'\n');
 console.log(JSON.stringify({quests:snapshot.quests.length,chapters:snapshot.chapters.map(c=>[c.id,c.steps.length]),daily:snapshot.adventures.length,family:snapshot.family.length,hunts:snapshot.hunts.length}));
+// Additional reward catalogues; extracting data never starts a game or changes a save.
+const stickers=run(read('js/content/stickers.js')),boxes=run(read('js/content/boxes.js'));
+const countryText=read('js/passport.js').split('export const COUNTRIES = ')[1].split('const ccOf')[0];
+const countryData=run('const T=(en,vi)=>[en,vi]; export const COUNTRIES = '+countryText).COUNTRIES;
+const hatText=read('js/data.js').split('export const HAT_ICON = ')[1].split('export const GATHER')[0];
+// Only the two hat maps, excluding unrelated placement data.
+const hatLines=hatText.split('\n').slice(0,2).join('\n');
+const hats=run('const T=(en,vi)=>[en,vi]; export const HAT_ICON = '+hatLines);
+const bookText=read('js/story.js').split('export const CHAPTERS = ')[1].split('// Show pages')[0];
+const books=run('const T=(en,vi)=>[en,vi]; export const CHAPTERS = '+bookText).CHAPTERS;
+const skills=run(read('js/games/registry.ts')).SKILLS;
+const yard=run(read('js/content/yard.js'));
+const rewardSnapshot={source:SOURCE_REF,stickers:stickers.STICKERS,themes:stickers.THEMES,countries:countryData.map(c=>({cc:c.cc,name:c.name(),place:c.place(),games:c.games,hat:c.hat,hatName:hats.HAT_NAME[c.hat](),hatIcon:hats.HAT_ICON[c.hat]})),storyBooks:books.map(c=>({id:c.id,after:c.after,reward:c.reward,title:c.title()})),skills,collectibles:boxes.COLLECTIBLES,weekPrizes:adventures.WEEK_PRIZES,yardSteps:yard.YARD_STEPS};
+fs.writeFileSync(new URL('./reward-snapshot.json',import.meta.url),JSON.stringify(rewardSnapshot,null,2)+'\n');
+console.log('Reward catalogue extracted:',rewardSnapshot.stickers.length,'stickers,',rewardSnapshot.collectibles.length,'collectibles');

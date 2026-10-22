@@ -2,7 +2,7 @@
 
 Reviewed 23 October 2026 AEDT against [source 781089d6](https://github.com/nguyentuanphu/Sparkle-Valley/tree/781089d6).
 
-[Open the interactive Quest Guide](prototype.html#quest-guide) · [Website review](README.md)
+[Open the interactive Quest Guide](prototype.html#quest-guide) · [Website review](README.md) · [Prizes and badges](rewards-guide.md)
 
 This guide covers every entry in the reviewed valley, lantern, daily-adventure, family-mission and festival-hunt catalogues. Availability depends on age, family choices, visited places and the festival calendar. It cannot unlock content or change saved progress. Read together, follow the current on-screen goal and take breaks whenever needed.
 

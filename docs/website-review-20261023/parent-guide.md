@@ -205,3 +205,7 @@ The examples describe opportunities for practice and parent-child discussion. Th
 ## Family questions written by parents / Câu hỏi gia đình do cha mẹ thêm
 
 See the [Family Quiz setup guide](quest-guide.md#family-quiz--đố-vui-gia-đình). Parents with family-content editing access can write bilingual questions, add two to four answers and optional game artwork, select the correct answer, save and publish. Children receive the published questions on their next online opening. An in-game self-service editor for every parent is not implemented. / Cha mẹ có quyền sửa nội dung gia đình có thể viết câu hỏi song ngữ, thêm hai đến bốn đáp án và hình trò chơi tùy chọn, chọn đáp án đúng, lưu và phát hành. Bé nhận câu hỏi khi mở có mạng lần tới. Chưa có trình tự thêm ngay trong trò chơi cho mọi cha mẹ.
+
+## Prizes and badges / Quà thưởng và huy hiệu
+
+[Explore what children can earn and how](rewards-guide.md): pictured stickers, stamp-chest pets and companion hats, lantern keepsakes, festival badges, country wearables and page-completion prizes. / [Xem bé nhận quà gì và cần làm gì](rewards-guide.md): hình dán, thú cưng và mũ bạn đồng hành từ rương dấu, đèn lưu niệm, huy hiệu lễ hội, quà Hộ chiếu và quà hoàn thành trang.

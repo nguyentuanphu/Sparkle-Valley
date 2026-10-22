@@ -1,0 +1,5168 @@
+{
+  "source": "781089d6",
+  "stickers": [
+    {
+      "id": "hen",
+      "theme": "farm",
+      "icon": "🐔",
+      "en": "Hen",
+      "vi": "Gà mái",
+      "hint": [
+        "Clucks in Lotus Village",
+        "Cục tác ở Làng Sen"
+      ],
+      "earn": [
+        {
+          "meet": "chicken"
+        },
+        {
+          "act": "pen"
+        }
+      ],
+      "sound": "cluck",
+      "starter": true
+    },
+    {
+      "id": "buffalo",
+      "theme": "farm",
+      "icon": "🐃",
+      "en": "Water buffalo",
+      "vi": "Con trâu",
+      "hint": [
+        "Grazes by the rice fields",
+        "Gặm cỏ bên đồng lúa"
+      ],
+      "earn": [
+        {
+          "meet": "buffalo"
+        },
+        {
+          "act": "sym_bacninh"
+        },
+        {
+          "act": "buffalo0"
+        }
+      ],
+      "sound": "moo"
+    },
+    {
+      "id": "duck",
+      "theme": "farm",
+      "icon": "🦆",
+      "en": "Duck",
+      "vi": "Con vịt",
+      "hint": [
+        "Swims on the pond",
+        "Bơi trên ao"
+      ],
+      "earn": [
+        {
+          "meet": "duck"
+        },
+        {
+          "secret": "ducks"
+        }
+      ],
+      "sound": "quack"
+    },
+    {
+      "id": "dog",
+      "theme": "farm",
+      "icon": "🐶",
+      "en": "Puppy",
+      "vi": "Cún con",
+      "hint": [
+        "Wags his tail in the village",
+        "Vẫy đuôi trong làng"
+      ],
+      "earn": [
+        {
+          "meet": "puppy"
+        },
+        {
+          "prize": "🐶"
+        }
+      ],
+      "sound": "woof"
+    },
+    {
+      "id": "cat",
+      "theme": "farm",
+      "icon": "🐱",
+      "en": "Kitten",
+      "vi": "Mèo con",
+      "hint": [
+        "A prize for quests, jobs and festivals",
+        "Quà khi làm nhiệm vụ, việc nhà và lễ hội"
+      ],
+      "earn": [
+        {
+          "meet": "kitty"
+        },
+        {
+          "prize": "🐱"
+        }
+      ],
+      "sound": "meow"
+    },
+    {
+      "id": "cow",
+      "theme": "farm",
+      "icon": "🐄",
+      "en": "Cow",
+      "vi": "Con bò",
+      "hint": [
+        "Moos on the farm",
+        "Rống ò ò ở nông trại"
+      ],
+      "earn": [
+        {
+          "meet": "cow"
+        },
+        {
+          "meet": "bull"
+        }
+      ],
+      "sound": "moo"
+    },
+    {
+      "id": "calf",
+      "theme": "farm",
+      "icon": "🐮",
+      "en": "Calf",
+      "vi": "Bê con",
+      "hint": [
+        "A baby cow on the farm",
+        "Bò con ở nông trại"
+      ],
+      "earn": [
+        {
+          "meet": "calf"
+        }
+      ],
+      "sound": "calfmoo"
+    },
+    {
+      "id": "bunny",
+      "theme": "farm",
+      "icon": "🐰",
+      "en": "Bunny",
+      "vi": "Thỏ con",
+      "hint": [
+        "Hungry in her hutch",
+        "Đói bụng trong chuồng"
+      ],
+      "earn": [
+        {
+          "meet": "bunny"
+        },
+        {
+          "act": "hutch"
+        }
+      ],
+      "sound": "squeak"
+    },
+    {
+      "id": "chick",
+      "theme": "farm",
+      "icon": "🐣",
+      "en": "Chick",
+      "vi": "Gà con",
+      "hint": [
+        "A prize for quests, jobs and festivals",
+        "Quà khi làm nhiệm vụ, việc nhà và lễ hội"
+      ],
+      "earn": [
+        {
+          "prize": "🐣"
+        }
+      ],
+      "sound": "chirp"
+    },
+    {
+      "id": "koala",
+      "theme": "wild",
+      "icon": "🐨",
+      "en": "Koala",
+      "vi": "Gấu koala",
+      "hint": [
+        "Sleeps in Brisbane",
+        "Ngủ ở Brisbane"
+      ],
+      "earn": [
+        {
+          "act": "sym_brisbane"
+        },
+        {
+          "meet": "koala"
+        },
+        {
+          "prize": "🐨"
+        }
+      ],
+      "sound": "sniff",
+      "starter": true
+    },
+    {
+      "id": "panda",
+      "theme": "wild",
+      "icon": "🐼",
+      "en": "Giant panda",
+      "vi": "Gấu trúc",
+      "hint": [
+        "Eats bamboo in China Town",
+        "Ăn tre ở Làng Trung Hoa"
+      ],
+      "earn": [
+        {
+          "act": "sym_china"
+        },
+        {
+          "meet": "panda"
+        },
+        {
+          "prize": "🐼"
+        }
+      ],
+      "sound": "sniff"
+    },
+    {
+      "id": "turtle",
+      "theme": "wild",
+      "icon": "🐢",
+      "en": "Golden turtle",
+      "vi": "Rùa vàng",
+      "hint": [
+        "Lives in Hà Nội's lake",
+        "Sống ở hồ Hà Nội"
+      ],
+      "earn": [
+        {
+          "act": "sym_hanoi"
+        },
+        {
+          "meet": "turtle"
+        },
+        {
+          "prize": "🐢"
+        }
+      ],
+      "sound": "splash"
+    },
+    {
+      "id": "platypus",
+      "theme": "wild",
+      "icon": "🦫",
+      "en": "Platypus",
+      "vi": "Thú mỏ vịt",
+      "hint": [
+        "Swims in Sydney",
+        "Bơi ở Sydney"
+      ],
+      "earn": [
+        {
+          "act": "sym_sydney"
+        },
+        {
+          "meet": "platypus"
+        }
+      ],
+      "sound": "splash"
+    },
+    {
+      "id": "penguin",
+      "theme": "wild",
+      "icon": "🐧",
+      "en": "Little penguin",
+      "vi": "Chim cánh cụt nhỏ",
+      "hint": [
+        "Waddles in Melbourne",
+        "Lạch bạch ở Melbourne"
+      ],
+      "earn": [
+        {
+          "act": "sym_melbourne"
+        },
+        {
+          "meet": "penguin"
+        }
+      ],
+      "sound": "squeak"
+    },
+    {
+      "id": "elephant",
+      "theme": "wild",
+      "icon": "🐘",
+      "en": "Elephant",
+      "vi": "Con voi",
+      "hint": [
+        "Stomps in Đà Nẵng",
+        "Đi dạo ở Đà Nẵng"
+      ],
+      "earn": [
+        {
+          "act": "sym_danang"
+        },
+        {
+          "meet": "elephant"
+        }
+      ],
+      "sound": "trumpet"
+    },
+    {
+      "id": "crane",
+      "theme": "wild",
+      "icon": "🦢",
+      "en": "Sarus crane",
+      "vi": "Sếu đầu đỏ",
+      "hint": [
+        "Dances in Hồ Chí Minh City",
+        "Nhảy múa ở TP. Hồ Chí Minh"
+      ],
+      "earn": [
+        {
+          "act": "sym_saigon"
+        },
+        {
+          "meet": "crane"
+        }
+      ],
+      "sound": "honk"
+    },
+    {
+      "id": "emu",
+      "theme": "wild",
+      "icon": "🦤",
+      "en": "Emu",
+      "vi": "Đà điểu emu",
+      "hint": [
+        "Runs in Aussie Corner",
+        "Chạy ở Góc Nước Úc"
+      ],
+      "earn": [
+        {
+          "act": "sym_aussie"
+        },
+        {
+          "meet": "emu"
+        }
+      ],
+      "sound": "chuff"
+    },
+    {
+      "id": "peacock",
+      "theme": "wild",
+      "icon": "🦚",
+      "en": "Peacock",
+      "vi": "Chim công",
+      "hint": [
+        "Shows off in India Village",
+        "Xòe đuôi ở Làng Ấn Độ"
+      ],
+      "earn": [
+        {
+          "act": "sym_india"
+        },
+        {
+          "meet": "peacock"
+        }
+      ],
+      "sound": "squawk"
+    },
+    {
+      "id": "butterfly",
+      "theme": "wild",
+      "icon": "🦋",
+      "en": "Butterfly",
+      "vi": "Con bướm",
+      "hint": [
+        "Flutters over the meadows",
+        "Bay trên đồng cỏ"
+      ],
+      "earn": [
+        {
+          "meet": "butterfly"
+        }
+      ],
+      "sound": "squeak",
+      "starter": true
+    },
+    {
+      "id": "dino",
+      "theme": "wild",
+      "icon": "🦖",
+      "en": "Little dinosaur",
+      "vi": "Khủng long nhỏ",
+      "hint": [
+        "A prize for quests, jobs and festivals",
+        "Quà khi làm nhiệm vụ, việc nhà và lễ hội"
+      ],
+      "earn": [
+        {
+          "prize": "🦖"
+        }
+      ],
+      "sound": "chuff"
+    },
+    {
+      "id": "dolphin",
+      "theme": "wild",
+      "icon": "🐬",
+      "en": "Dolphin",
+      "vi": "Cá heo",
+      "hint": [
+        "A prize for quests, jobs and festivals",
+        "Quà khi làm nhiệm vụ, việc nhà và lễ hội"
+      ],
+      "earn": [
+        {
+          "prize": "🐬"
+        }
+      ],
+      "sound": "splash"
+    },
+    {
+      "id": "fox",
+      "theme": "wild",
+      "icon": "🦊",
+      "en": "Fox",
+      "vi": "Cáo nhỏ",
+      "hint": [
+        "A prize for quests, jobs and festivals",
+        "Quà khi làm nhiệm vụ, việc nhà và lễ hội"
+      ],
+      "earn": [
+        {
+          "prize": "🦊"
+        }
+      ],
+      "sound": "sniff"
+    },
+    {
+      "id": "frog",
+      "theme": "wild",
+      "icon": "🐸",
+      "en": "Frog",
+      "vi": "Ếch xanh",
+      "hint": [
+        "A prize for quests, jobs and festivals",
+        "Quà khi làm nhiệm vụ, việc nhà và lễ hội"
+      ],
+      "earn": [
+        {
+          "prize": "🐸"
+        }
+      ],
+      "sound": "ribbit"
+    },
+    {
+      "id": "ladybird",
+      "theme": "wild",
+      "icon": "🐞",
+      "en": "Ladybird",
+      "vi": "Bọ rùa",
+      "hint": [
+        "A prize for quests, jobs and festivals",
+        "Quà khi làm nhiệm vụ, việc nhà và lễ hội"
+      ],
+      "earn": [
+        {
+          "prize": "🐞"
+        }
+      ],
+      "sound": "squeak"
+    },
+    {
+      "id": "parrot",
+      "theme": "wild",
+      "icon": "🦜",
+      "en": "Parrot",
+      "vi": "Con vẹt",
+      "hint": [
+        "A prize for quests, jobs and festivals",
+        "Quà khi làm nhiệm vụ, việc nhà và lễ hội"
+      ],
+      "earn": [
+        {
+          "prize": "🦜"
+        }
+      ],
+      "sound": "squawk"
+    },
+    {
+      "id": "octopus",
+      "theme": "wild",
+      "icon": "🐙",
+      "en": "Octopus",
+      "vi": "Bạch tuộc",
+      "hint": [
+        "A prize for quests, jobs and festivals",
+        "Quà khi làm nhiệm vụ, việc nhà và lễ hội"
+      ],
+      "earn": [
+        {
+          "prize": "🐙"
+        }
+      ],
+      "sound": "water"
+    },
+    {
+      "id": "bird",
+      "theme": "wild",
+      "icon": "🐦",
+      "en": "Little bird",
+      "vi": "Chim non",
+      "hint": [
+        "Tap a big tree to find one",
+        "Chạm vào cây to để tìm chim"
+      ],
+      "earn": [
+        {
+          "meet": "bird"
+        }
+      ],
+      "sound": "chirp"
+    },
+    {
+      "id": "dish_pho",
+      "theme": "dishes",
+      "icon": "🍲",
+      "en": "Phở",
+      "vi": "Phở",
+      "hint": [
+        "Cook it at a cooking pot",
+        "Nấu ở nồi nấu ăn"
+      ],
+      "earn": [
+        {
+          "cook": "pho"
+        }
+      ],
+      "sound": "cook",
+      "starter": true
+    },
+    {
+      "id": "dish_banhchung",
+      "theme": "dishes",
+      "icon": "🟩",
+      "en": "Bánh chưng",
+      "vi": "Bánh chưng",
+      "hint": [
+        "Cook it at a cooking pot",
+        "Nấu ở nồi nấu ăn"
+      ],
+      "earn": [
+        {
+          "cook": "banhchung"
+        }
+      ],
+      "sound": "cook"
+    },
+    {
+      "id": "dish_xoixoai",
+      "theme": "dishes",
+      "icon": "🥭",
+      "en": "Mango sticky rice",
+      "vi": "Xôi xoài",
+      "hint": [
+        "Cook it at a cooking pot",
+        "Nấu ở nồi nấu ăn"
+      ],
+      "earn": [
+        {
+          "cook": "xoixoai"
+        }
+      ],
+      "sound": "cook"
+    },
+    {
+      "id": "dish_chechuoi",
+      "theme": "dishes",
+      "icon": "🍧",
+      "en": "Banana sweet soup",
+      "vi": "Chè chuối",
+      "hint": [
+        "Cook it at a cooking pot",
+        "Nấu ở nồi nấu ăn"
+      ],
+      "earn": [
+        {
+          "cook": "chechuoi"
+        }
+      ],
+      "sound": "cook"
+    },
+    {
+      "id": "dish_canhchua",
+      "theme": "dishes",
+      "icon": "🥣",
+      "en": "Sour fish soup",
+      "vi": "Canh chua cá",
+      "hint": [
+        "Cook it at a cooking pot",
+        "Nấu ở nồi nấu ăn"
+      ],
+      "earn": [
+        {
+          "cook": "canhchua"
+        }
+      ],
+      "sound": "cook"
+    },
+    {
+      "id": "dish_comchien",
+      "theme": "dishes",
+      "icon": "🍳",
+      "en": "Egg fried rice",
+      "vi": "Cơm chiên trứng",
+      "hint": [
+        "Cook it at a cooking pot",
+        "Nấu ở nồi nấu ăn"
+      ],
+      "earn": [
+        {
+          "cook": "comchien"
+        }
+      ],
+      "sound": "cook"
+    },
+    {
+      "id": "dish_comnam",
+      "theme": "dishes",
+      "icon": "🍚",
+      "en": "Mushroom rice",
+      "vi": "Cơm nấm",
+      "hint": [
+        "Cook it at a cooking pot",
+        "Nấu ở nồi nấu ăn"
+      ],
+      "earn": [
+        {
+          "cook": "comnam"
+        }
+      ],
+      "sound": "cook"
+    },
+    {
+      "id": "dish_cakho",
+      "theme": "dishes",
+      "icon": "🐟",
+      "en": "Braised fish",
+      "vi": "Cá kho",
+      "hint": [
+        "Cook it at a cooking pot",
+        "Nấu ở nồi nấu ăn"
+      ],
+      "earn": [
+        {
+          "cook": "cakho"
+        }
+      ],
+      "sound": "cook"
+    },
+    {
+      "id": "dish_taonuong",
+      "theme": "dishes",
+      "icon": "🍎",
+      "en": "Baked apples",
+      "vi": "Táo nướng",
+      "hint": [
+        "Cook it at a cooking pot",
+        "Nấu ở nồi nấu ăn"
+      ],
+      "earn": [
+        {
+          "cook": "taonuong"
+        }
+      ],
+      "sound": "cook"
+    },
+    {
+      "id": "dish_chuoinuong",
+      "theme": "dishes",
+      "icon": "🍌",
+      "en": "Grilled banana",
+      "vi": "Chuối nướng",
+      "hint": [
+        "Cook it at a cooking pot",
+        "Nấu ở nồi nấu ăn"
+      ],
+      "earn": [
+        {
+          "cook": "chuoinuong"
+        }
+      ],
+      "sound": "cook",
+      "starter": true
+    },
+    {
+      "id": "dish_nam",
+      "theme": "dishes",
+      "icon": "🍢",
+      "en": "Mushroom skewer",
+      "vi": "Nấm xiên nướng",
+      "hint": [
+        "Cook it at a cooking pot",
+        "Nấu ở nồi nấu ăn"
+      ],
+      "earn": [
+        {
+          "cook": "nam"
+        }
+      ],
+      "sound": "cook"
+    },
+    {
+      "id": "dish_fruit",
+      "theme": "dishes",
+      "icon": "🥗",
+      "en": "Fruit salad",
+      "vi": "Salad trái cây",
+      "hint": [
+        "Cook it at a cooking pot",
+        "Nấu ở nồi nấu ăn"
+      ],
+      "earn": [
+        {
+          "cook": "fruit"
+        }
+      ],
+      "sound": "cook"
+    },
+    {
+      "id": "dish_raumuong",
+      "theme": "dishes",
+      "icon": "🥬",
+      "en": "Water spinach",
+      "vi": "Rau muống xào",
+      "hint": [
+        "Cook it at a cooking pot",
+        "Nấu ở nồi nấu ăn"
+      ],
+      "earn": [
+        {
+          "cook": "raumuong"
+        }
+      ],
+      "sound": "cook"
+    },
+    {
+      "id": "dish_khoainuong",
+      "theme": "dishes",
+      "icon": "🍠",
+      "en": "Grilled sweet potato",
+      "vi": "Khoai lang nướng",
+      "hint": [
+        "Cook it at a cooking pot",
+        "Nấu ở nồi nấu ăn"
+      ],
+      "earn": [
+        {
+          "cook": "khoainuong"
+        }
+      ],
+      "sound": "cook"
+    },
+    {
+      "id": "dish_chedua",
+      "theme": "dishes",
+      "icon": "🥥",
+      "en": "Coconut sweet soup",
+      "vi": "Chè dừa đậu xanh",
+      "hint": [
+        "Cook it at a cooking pot",
+        "Nấu ở nồi nấu ăn"
+      ],
+      "earn": [
+        {
+          "cook": "chedua"
+        }
+      ],
+      "sound": "cook"
+    },
+    {
+      "id": "dish_chemit",
+      "theme": "dishes",
+      "icon": "🍈",
+      "en": "Jackfruit dessert",
+      "vi": "Chè mít dừa",
+      "hint": [
+        "Cook it at a cooking pot",
+        "Nấu ở nồi nấu ăn"
+      ],
+      "earn": [
+        {
+          "cook": "chemit"
+        }
+      ],
+      "sound": "cook"
+    },
+    {
+      "id": "dish_macbread",
+      "theme": "dishes",
+      "icon": "🍞",
+      "en": "Banana bread",
+      "vi": "Bánh chuối mắc ca",
+      "hint": [
+        "Cook it at a cooking pot",
+        "Nấu ở nồi nấu ăn"
+      ],
+      "earn": [
+        {
+          "cook": "macbread"
+        }
+      ],
+      "sound": "cook"
+    },
+    {
+      "id": "dish_quandongpie",
+      "theme": "dishes",
+      "icon": "🥧",
+      "en": "Quandong pie",
+      "vi": "Bánh quandong",
+      "hint": [
+        "Cook it at a cooking pot",
+        "Nấu ở nồi nấu ăn"
+      ],
+      "earn": [
+        {
+          "cook": "quandongpie"
+        }
+      ],
+      "sound": "cook"
+    },
+    {
+      "id": "dish_limefish",
+      "theme": "dishes",
+      "icon": "🐠",
+      "en": "Finger lime fish",
+      "vi": "Cá sốt chanh",
+      "hint": [
+        "Cook it at a cooking pot",
+        "Nấu ở nồi nấu ăn"
+      ],
+      "earn": [
+        {
+          "cook": "limefish"
+        }
+      ],
+      "sound": "cook",
+      "starter": true
+    },
+    {
+      "id": "dish_damper",
+      "theme": "dishes",
+      "icon": "🫓",
+      "en": "Damper bread",
+      "vi": "Bánh damper",
+      "hint": [
+        "Cook it at a cooking pot",
+        "Nấu ở nồi nấu ăn"
+      ],
+      "earn": [
+        {
+          "cook": "damper"
+        }
+      ],
+      "sound": "cook"
+    },
+    {
+      "id": "dish_dumplings",
+      "theme": "dishes",
+      "icon": "🥟",
+      "en": "Dumplings",
+      "vi": "Sủi cảo",
+      "hint": [
+        "Cook it at a cooking pot",
+        "Nấu ở nồi nấu ăn"
+      ],
+      "earn": [
+        {
+          "cook": "dumplings"
+        }
+      ],
+      "sound": "cook"
+    },
+    {
+      "id": "dish_peachbun",
+      "theme": "dishes",
+      "icon": "🍑",
+      "en": "Peach buns",
+      "vi": "Bánh bao đào tiên",
+      "hint": [
+        "Cook it at a cooking pot",
+        "Nấu ở nồi nấu ăn"
+      ],
+      "earn": [
+        {
+          "cook": "peachbun"
+        }
+      ],
+      "sound": "cook"
+    },
+    {
+      "id": "dish_peafried",
+      "theme": "dishes",
+      "icon": "🍚",
+      "en": "Snow pea rice",
+      "vi": "Cơm chiên đậu",
+      "hint": [
+        "Cook it at a cooking pot",
+        "Nấu ở nồi nấu ăn"
+      ],
+      "earn": [
+        {
+          "cook": "peafried"
+        }
+      ],
+      "sound": "cook"
+    },
+    {
+      "id": "dish_mandarins",
+      "theme": "dishes",
+      "icon": "🍊",
+      "en": "Mandarin segments",
+      "vi": "Quýt bóc múi",
+      "hint": [
+        "Cook it at a cooking pot",
+        "Nấu ở nồi nấu ăn"
+      ],
+      "earn": [
+        {
+          "cook": "mandarins"
+        }
+      ],
+      "sound": "cook"
+    },
+    {
+      "id": "dish_aampanna",
+      "theme": "dishes",
+      "icon": "🧃",
+      "en": "Mango drink",
+      "vi": "Nước xoài gừng",
+      "hint": [
+        "Cook it at a cooking pot",
+        "Nấu ở nồi nấu ăn"
+      ],
+      "earn": [
+        {
+          "cook": "aampanna"
+        }
+      ],
+      "sound": "cook"
+    },
+    {
+      "id": "dish_bharta",
+      "theme": "dishes",
+      "icon": "🍆",
+      "en": "Smoky brinjal",
+      "vi": "Cà tím nướng",
+      "hint": [
+        "Cook it at a cooking pot",
+        "Nấu ở nồi nấu ăn"
+      ],
+      "earn": [
+        {
+          "cook": "bharta"
+        }
+      ],
+      "sound": "cook"
+    },
+    {
+      "id": "dish_dal",
+      "theme": "dishes",
+      "icon": "🍛",
+      "en": "Dal and rice",
+      "vi": "Đậu hầm với cơm",
+      "hint": [
+        "Cook it at a cooking pot",
+        "Nấu ở nồi nấu ăn"
+      ],
+      "earn": [
+        {
+          "cook": "dal"
+        }
+      ],
+      "sound": "cook"
+    },
+    {
+      "id": "cupcake",
+      "theme": "dishes",
+      "icon": "🧁",
+      "en": "Cupcake",
+      "vi": "Bánh cupcake",
+      "hint": [
+        "A prize for quests, jobs and festivals",
+        "Quà khi làm nhiệm vụ, việc nhà và lễ hội"
+      ],
+      "earn": [
+        {
+          "prize": "🧁"
+        }
+      ],
+      "sound": "pop"
+    },
+    {
+      "id": "lollipop",
+      "theme": "dishes",
+      "icon": "🍭",
+      "en": "Lollipop",
+      "vi": "Kẹo mút",
+      "hint": [
+        "A prize for quests, jobs and festivals",
+        "Quà khi làm nhiệm vụ, việc nhà và lễ hội"
+      ],
+      "earn": [
+        {
+          "prize": "🍭"
+        }
+      ],
+      "sound": "pop"
+    },
+    {
+      "id": "icecream",
+      "theme": "dishes",
+      "icon": "🍦",
+      "en": "Ice cream",
+      "vi": "Kem ốc quế",
+      "hint": [
+        "Buy one from Gazza",
+        "Mua kem của Gazza"
+      ],
+      "earn": [
+        {
+          "prize": "🍦"
+        },
+        {
+          "taste": "gazza"
+        },
+        {
+          "taste": "k_kemtt"
+        }
+      ],
+      "sound": "pop",
+      "starter": true
+    },
+    {
+      "id": "banhmi",
+      "theme": "dishes",
+      "icon": "🥖",
+      "en": "Bánh mì",
+      "vi": "Bánh mì",
+      "hint": [
+        "Buy one at the market",
+        "Mua ở chợ"
+      ],
+      "earn": [
+        {
+          "taste": "chutam"
+        }
+      ],
+      "sound": "pop"
+    },
+    {
+      "id": "banhxeo",
+      "theme": "dishes",
+      "icon": "🥞",
+      "en": "Bánh xèo",
+      "vi": "Bánh xèo",
+      "hint": [
+        "Buy one in the city",
+        "Mua ở thành phố"
+      ],
+      "earn": [
+        {
+          "taste": "k_banhxeo"
+        }
+      ],
+      "sound": "pop"
+    },
+    {
+      "id": "lamington",
+      "theme": "dishes",
+      "icon": "🍫",
+      "en": "Lamington",
+      "vi": "Bánh lamington",
+      "hint": [
+        "Buy one in Australia",
+        "Mua ở nước Úc"
+      ],
+      "earn": [
+        {
+          "taste": "k_lamington"
+        }
+      ],
+      "sound": "pop"
+    },
+    {
+      "id": "fairybread",
+      "theme": "dishes",
+      "icon": "🍞",
+      "en": "Fairy bread",
+      "vi": "Bánh mì cốm màu",
+      "hint": [
+        "Buy one in Australia",
+        "Mua ở nước Úc"
+      ],
+      "earn": [
+        {
+          "taste": "k_fairybread"
+        }
+      ],
+      "sound": "pop"
+    },
+    {
+      "id": "tanghulu",
+      "theme": "dishes",
+      "icon": "🍡",
+      "en": "Candied fruit",
+      "vi": "Kẹo hồ lô",
+      "hint": [
+        "Buy one in China Town",
+        "Mua ở Làng Trung Hoa"
+      ],
+      "earn": [
+        {
+          "taste": "k_tanghulu"
+        }
+      ],
+      "sound": "pop"
+    },
+    {
+      "id": "lassi",
+      "theme": "dishes",
+      "icon": "🥭",
+      "en": "Mango lassi",
+      "vi": "Sinh tố xoài",
+      "hint": [
+        "Buy one in India Village",
+        "Mua ở Làng Ấn Độ"
+      ],
+      "earn": [
+        {
+          "taste": "k_lassi"
+        }
+      ],
+      "sound": "pop"
+    },
+    {
+      "id": "strawberry",
+      "theme": "fruit",
+      "icon": "🍓",
+      "en": "Wild strawberries",
+      "vi": "Dâu rừng",
+      "hint": [
+        "Pick it in the meadows",
+        "Hái ở đồng cỏ"
+      ],
+      "earn": [
+        {
+          "find": "strawberry"
+        },
+        {
+          "prize": "🍓"
+        }
+      ],
+      "sound": "harvest",
+      "starter": true
+    },
+    {
+      "id": "mulberry",
+      "theme": "fruit",
+      "icon": "🫐",
+      "en": "Mulberries",
+      "vi": "Dâu tằm",
+      "hint": [
+        "Pick it in the meadows",
+        "Hái ở đồng cỏ"
+      ],
+      "earn": [
+        {
+          "find": "mulberry"
+        }
+      ],
+      "sound": "harvest"
+    },
+    {
+      "id": "guava",
+      "theme": "fruit",
+      "icon": "🍐",
+      "en": "Guava",
+      "vi": "Ổi",
+      "hint": [
+        "Pick it in the meadows",
+        "Hái ở đồng cỏ"
+      ],
+      "earn": [
+        {
+          "find": "guava"
+        }
+      ],
+      "sound": "harvest"
+    },
+    {
+      "id": "lime",
+      "theme": "fruit",
+      "icon": "🍋",
+      "en": "Wild lemon",
+      "vi": "Chanh rừng",
+      "hint": [
+        "Pick it in the meadows",
+        "Hái ở đồng cỏ"
+      ],
+      "earn": [
+        {
+          "find": "lime"
+        }
+      ],
+      "sound": "harvest"
+    },
+    {
+      "id": "peach",
+      "theme": "fruit",
+      "icon": "🌸",
+      "en": "Peach blossom",
+      "vi": "Hoa đào",
+      "hint": [
+        "Pick it in the meadows",
+        "Hái ở đồng cỏ"
+      ],
+      "earn": [
+        {
+          "find": "peach"
+        }
+      ],
+      "sound": "chime"
+    },
+    {
+      "id": "apricot",
+      "theme": "fruit",
+      "icon": "🏵️",
+      "en": "Apricot blossom",
+      "vi": "Hoa mai",
+      "hint": [
+        "Pick it in the meadows",
+        "Hái ở đồng cỏ"
+      ],
+      "earn": [
+        {
+          "find": "apricot"
+        }
+      ],
+      "sound": "chime"
+    },
+    {
+      "id": "wattle",
+      "theme": "fruit",
+      "icon": "🌼",
+      "en": "Golden wattle",
+      "vi": "Hoa keo vàng",
+      "hint": [
+        "Pick it in the meadows",
+        "Hái ở đồng cỏ"
+      ],
+      "earn": [
+        {
+          "find": "wattle"
+        }
+      ],
+      "sound": "chime"
+    },
+    {
+      "id": "hibiscus",
+      "theme": "fruit",
+      "icon": "🌺",
+      "en": "Hibiscus",
+      "vi": "Hoa dâm bụt",
+      "hint": [
+        "Pick it in the meadows",
+        "Hái ở đồng cỏ"
+      ],
+      "earn": [
+        {
+          "find": "hibiscus"
+        }
+      ],
+      "sound": "chime"
+    },
+    {
+      "id": "sunflower",
+      "theme": "fruit",
+      "icon": "🌻",
+      "en": "Sunflower",
+      "vi": "Hoa hướng dương",
+      "hint": [
+        "A prize for quests, jobs and festivals",
+        "Quà khi làm nhiệm vụ, việc nhà và lễ hội"
+      ],
+      "earn": [
+        {
+          "prize": "🌻"
+        }
+      ],
+      "sound": "chime"
+    },
+    {
+      "id": "coconut",
+      "theme": "fruit",
+      "icon": "🥥",
+      "en": "Coconut",
+      "vi": "Dừa",
+      "hint": [
+        "Pick it in the Vietnam gardens",
+        "Hái ở vườn Việt Nam"
+      ],
+      "earn": [
+        {
+          "find": "coconut"
+        }
+      ],
+      "sound": "harvest",
+      "starter": true
+    },
+    {
+      "id": "jackfruit",
+      "theme": "fruit",
+      "icon": "🍈",
+      "en": "Jackfruit",
+      "vi": "Mít",
+      "hint": [
+        "Pick it in the Vietnam gardens",
+        "Hái ở vườn Việt Nam"
+      ],
+      "earn": [
+        {
+          "find": "jackfruit"
+        }
+      ],
+      "sound": "harvest"
+    },
+    {
+      "id": "chilli",
+      "theme": "fruit",
+      "icon": "🌶️",
+      "en": "Chilli",
+      "vi": "Ớt",
+      "hint": [
+        "Pick it in the Vietnam gardens",
+        "Hái ở vườn Việt Nam"
+      ],
+      "earn": [
+        {
+          "find": "chilli"
+        }
+      ],
+      "sound": "harvest"
+    },
+    {
+      "id": "waterspinach",
+      "theme": "fruit",
+      "icon": "🥬",
+      "en": "Water spinach",
+      "vi": "Rau muống",
+      "hint": [
+        "Pick it in the Vietnam gardens",
+        "Hái ở vườn Việt Nam"
+      ],
+      "earn": [
+        {
+          "find": "waterspinach"
+        }
+      ],
+      "sound": "harvest"
+    },
+    {
+      "id": "sweetpotato",
+      "theme": "fruit",
+      "icon": "🍠",
+      "en": "Sweet potato",
+      "vi": "Khoai lang",
+      "hint": [
+        "Pick it in the Vietnam gardens",
+        "Hái ở vườn Việt Nam"
+      ],
+      "earn": [
+        {
+          "find": "sweetpotato"
+        }
+      ],
+      "sound": "harvest"
+    },
+    {
+      "id": "macadamia",
+      "theme": "fruit",
+      "icon": "🥜",
+      "en": "Macadamia nuts",
+      "vi": "Hạt mắc ca",
+      "hint": [
+        "Pick it in the Aussie gardens",
+        "Hái ở vườn nước Úc"
+      ],
+      "earn": [
+        {
+          "find": "macadamia"
+        }
+      ],
+      "sound": "harvest"
+    },
+    {
+      "id": "quandong",
+      "theme": "fruit",
+      "icon": "🍑",
+      "en": "Quandong",
+      "vi": "Quả quandong",
+      "hint": [
+        "Pick it in the Aussie gardens",
+        "Hái ở vườn nước Úc"
+      ],
+      "earn": [
+        {
+          "find": "quandong"
+        }
+      ],
+      "sound": "harvest"
+    },
+    {
+      "id": "fingerlime",
+      "theme": "fruit",
+      "icon": "🍋",
+      "en": "Finger lime",
+      "vi": "Chanh ngón tay",
+      "hint": [
+        "Pick it in the Aussie gardens",
+        "Hái ở vườn nước Úc"
+      ],
+      "earn": [
+        {
+          "find": "fingerlime"
+        }
+      ],
+      "sound": "harvest"
+    },
+    {
+      "id": "bushtomato",
+      "theme": "fruit",
+      "icon": "🍅",
+      "en": "Bush tomato",
+      "vi": "Cà chua dại",
+      "hint": [
+        "Pick it in the Aussie gardens",
+        "Hái ở vườn nước Úc"
+      ],
+      "earn": [
+        {
+          "find": "bushtomato"
+        }
+      ],
+      "sound": "harvest"
+    },
+    {
+      "id": "cnpeach",
+      "theme": "fruit",
+      "icon": "🍑",
+      "en": "Longevity peach",
+      "vi": "Đào tiên",
+      "hint": [
+        "Pick it in China Town",
+        "Hái ở Làng Trung Hoa"
+      ],
+      "earn": [
+        {
+          "find": "cnpeach"
+        }
+      ],
+      "sound": "harvest",
+      "starter": true
+    },
+    {
+      "id": "mandarin",
+      "theme": "fruit",
+      "icon": "🍊",
+      "en": "Mandarin",
+      "vi": "Quýt",
+      "hint": [
+        "Pick it in China Town",
+        "Hái ở Làng Trung Hoa"
+      ],
+      "earn": [
+        {
+          "find": "mandarin"
+        }
+      ],
+      "sound": "harvest"
+    },
+    {
+      "id": "bokchoy",
+      "theme": "fruit",
+      "icon": "🥬",
+      "en": "Bok choy",
+      "vi": "Cải thìa",
+      "hint": [
+        "Pick it in China Town",
+        "Hái ở Làng Trung Hoa"
+      ],
+      "earn": [
+        {
+          "find": "bokchoy"
+        }
+      ],
+      "sound": "harvest"
+    },
+    {
+      "id": "snowpea",
+      "theme": "fruit",
+      "icon": "🫛",
+      "en": "Snow peas",
+      "vi": "Đậu Hà Lan",
+      "hint": [
+        "Pick it in China Town",
+        "Hái ở Làng Trung Hoa"
+      ],
+      "earn": [
+        {
+          "find": "snowpea"
+        }
+      ],
+      "sound": "harvest"
+    },
+    {
+      "id": "mango",
+      "theme": "fruit",
+      "icon": "🥭",
+      "en": "Mango",
+      "vi": "Xoài",
+      "hint": [
+        "Pick it in India Village",
+        "Hái ở Làng Ấn Độ"
+      ],
+      "earn": [
+        {
+          "find": "mango"
+        }
+      ],
+      "sound": "harvest"
+    },
+    {
+      "id": "brinjal",
+      "theme": "fruit",
+      "icon": "🍆",
+      "en": "Brinjal",
+      "vi": "Cà tím",
+      "hint": [
+        "Pick it in India Village",
+        "Hái ở Làng Ấn Độ"
+      ],
+      "earn": [
+        {
+          "find": "brinjal"
+        }
+      ],
+      "sound": "harvest"
+    },
+    {
+      "id": "ginger",
+      "theme": "fruit",
+      "icon": "🫚",
+      "en": "Ginger",
+      "vi": "Gừng",
+      "hint": [
+        "Pick it in India Village",
+        "Hái ở Làng Ấn Độ"
+      ],
+      "earn": [
+        {
+          "find": "ginger"
+        }
+      ],
+      "sound": "harvest"
+    },
+    {
+      "id": "marigold",
+      "theme": "fruit",
+      "icon": "🌼",
+      "en": "Marigolds",
+      "vi": "Hoa cúc vạn thọ",
+      "hint": [
+        "Pick it in India Village",
+        "Hái ở Làng Ấn Độ"
+      ],
+      "earn": [
+        {
+          "find": "marigold"
+        }
+      ],
+      "sound": "chime"
+    },
+    {
+      "id": "watermelon",
+      "theme": "fruit",
+      "icon": "🍉",
+      "en": "Watermelon",
+      "vi": "Dưa hấu",
+      "hint": [
+        "A prize for quests, jobs and festivals",
+        "Quà khi làm nhiệm vụ, việc nhà và lễ hội"
+      ],
+      "earn": [
+        {
+          "prize": "🍉"
+        }
+      ],
+      "sound": "pop"
+    },
+    {
+      "id": "pebble",
+      "theme": "treasure",
+      "icon": "🪨",
+      "en": "Pretty pebble",
+      "vi": "Viên sỏi đẹp",
+      "hint": [
+        "Tap a rock 3 times",
+        "Gõ hòn đá 3 lần"
+      ],
+      "earn": [
+        {
+          "find": "pebble"
+        }
+      ],
+      "sound": "coin",
+      "starter": true
+    },
+    {
+      "id": "fossil",
+      "theme": "treasure",
+      "icon": "🐚",
+      "en": "Fossil shell",
+      "vi": "Hóa thạch vỏ ốc",
+      "hint": [
+        "Tap a rock 3 times",
+        "Gõ hòn đá 3 lần"
+      ],
+      "earn": [
+        {
+          "find": "fossil"
+        }
+      ],
+      "sound": "coin"
+    },
+    {
+      "id": "crystal",
+      "theme": "treasure",
+      "icon": "🔮",
+      "en": "Purple crystal",
+      "vi": "Pha lê tím",
+      "hint": [
+        "Tap a rock 3 times",
+        "Gõ hòn đá 3 lần"
+      ],
+      "earn": [
+        {
+          "find": "crystal"
+        }
+      ],
+      "sound": "coin"
+    },
+    {
+      "id": "gold",
+      "theme": "treasure",
+      "icon": "🪙",
+      "en": "Gold nugget",
+      "vi": "Cục vàng",
+      "hint": [
+        "Tap a rock 3 times",
+        "Gõ hòn đá 3 lần"
+      ],
+      "earn": [
+        {
+          "find": "gold"
+        }
+      ],
+      "sound": "coin"
+    },
+    {
+      "id": "gem",
+      "theme": "treasure",
+      "icon": "💎",
+      "en": "Blue gem",
+      "vi": "Đá quý xanh",
+      "hint": [
+        "Tap a rock 3 times",
+        "Gõ hòn đá 3 lần"
+      ],
+      "earn": [
+        {
+          "find": "gem"
+        }
+      ],
+      "sound": "coin"
+    },
+    {
+      "id": "bone",
+      "theme": "treasure",
+      "icon": "🦴",
+      "en": "Dinosaur bone",
+      "vi": "Xương khủng long",
+      "hint": [
+        "Dig at a sparkly mound",
+        "Đào ở ụ đất lấp lánh"
+      ],
+      "earn": [
+        {
+          "find": "bone"
+        }
+      ],
+      "sound": "coin"
+    },
+    {
+      "id": "oldcoin",
+      "theme": "treasure",
+      "icon": "🏅",
+      "en": "Old bronze coin",
+      "vi": "Đồng xu cổ",
+      "hint": [
+        "Dig at a sparkly mound",
+        "Đào ở ụ đất lấp lánh"
+      ],
+      "earn": [
+        {
+          "find": "oldcoin"
+        }
+      ],
+      "sound": "coin"
+    },
+    {
+      "id": "jade",
+      "theme": "treasure",
+      "icon": "🟢",
+      "en": "Green jade",
+      "vi": "Ngọc bích",
+      "hint": [
+        "Dig at a sparkly mound",
+        "Đào ở ụ đất lấp lánh"
+      ],
+      "earn": [
+        {
+          "find": "jade"
+        }
+      ],
+      "sound": "coin"
+    },
+    {
+      "id": "ruby",
+      "theme": "treasure",
+      "icon": "❤️",
+      "en": "Red ruby",
+      "vi": "Hồng ngọc",
+      "hint": [
+        "Dig at a sparkly mound",
+        "Đào ở ụ đất lấp lánh"
+      ],
+      "earn": [
+        {
+          "find": "ruby"
+        }
+      ],
+      "sound": "coin"
+    },
+    {
+      "id": "diamond",
+      "theme": "treasure",
+      "icon": "💠",
+      "en": "Diamond",
+      "vi": "Kim cương",
+      "hint": [
+        "Dig at a sparkly mound",
+        "Đào ở ụ đất lấp lánh"
+      ],
+      "earn": [
+        {
+          "find": "diamond"
+        }
+      ],
+      "sound": "coin",
+      "starter": true
+    },
+    {
+      "id": "crown",
+      "theme": "treasure",
+      "icon": "👑",
+      "en": "Golden crown",
+      "vi": "Vương miện vàng",
+      "hint": [
+        "Dig at a sparkly mound",
+        "Đào ở ụ đất lấp lánh"
+      ],
+      "earn": [
+        {
+          "find": "crown"
+        },
+        {
+          "prize": "👑"
+        }
+      ],
+      "sound": "fanfare"
+    },
+    {
+      "id": "goldenapple",
+      "theme": "treasure",
+      "icon": "🍏",
+      "en": "Golden apple",
+      "vi": "Táo vàng",
+      "hint": [
+        "Shake an old apple tree",
+        "Rung cây táo già"
+      ],
+      "earn": [
+        {
+          "secret": "golden"
+        }
+      ],
+      "sound": "secret"
+    },
+    {
+      "id": "roofcat",
+      "theme": "treasure",
+      "icon": "🐈",
+      "en": "Rooftop cat",
+      "vi": "Mèo trên mái nhà",
+      "hint": [
+        "Look up in Lotus Village",
+        "Nhìn lên mái nhà Làng Sen"
+      ],
+      "earn": [
+        {
+          "secret": "cat"
+        }
+      ],
+      "sound": "meow"
+    },
+    {
+      "id": "bell",
+      "theme": "treasure",
+      "icon": "🔔",
+      "en": "Hidden bell",
+      "vi": "Chuông bí mật",
+      "hint": [
+        "Deep in the bamboo forest",
+        "Sâu trong rừng tre"
+      ],
+      "earn": [
+        {
+          "secret": "bell"
+        }
+      ],
+      "sound": "ding"
+    },
+    {
+      "id": "bottle",
+      "theme": "treasure",
+      "icon": "🍾",
+      "en": "Message in a bottle",
+      "vi": "Thư trong chai",
+      "hint": [
+        "On Mirror Lake's beach",
+        "Trên bờ Hồ Gương"
+      ],
+      "earn": [
+        {
+          "secret": "bottle"
+        }
+      ],
+      "sound": "splash"
+    },
+    {
+      "id": "snowman",
+      "theme": "treasure",
+      "icon": "⛄",
+      "en": "Snowman",
+      "vi": "Người tuyết",
+      "hint": [
+        "At the top of Snowcap Peaks",
+        "Trên đỉnh Núi Tuyết"
+      ],
+      "earn": [
+        {
+          "secret": "snowman"
+        }
+      ],
+      "sound": "secret"
+    },
+    {
+      "id": "wish",
+      "theme": "treasure",
+      "icon": "🌠",
+      "en": "A wish on a star",
+      "vi": "Điều ước sao băng",
+      "hint": [
+        "The Lotus Statue at night",
+        "Tượng Sen vào ban đêm"
+      ],
+      "earn": [
+        {
+          "secret": "wish"
+        }
+      ],
+      "sound": "secret"
+    },
+    {
+      "id": "fireflies",
+      "theme": "treasure",
+      "icon": "✨",
+      "en": "Firefly friends",
+      "vi": "Bạn đom đóm",
+      "hint": [
+        "Tap five fireflies at night",
+        "Chạm năm đom đóm ban đêm"
+      ],
+      "earn": [
+        {
+          "secret": "fireflies"
+        }
+      ],
+      "sound": "secret"
+    },
+    {
+      "id": "chest",
+      "theme": "treasure",
+      "icon": "🧰",
+      "en": "Treasure chest",
+      "vi": "Rương kho báu",
+      "hint": [
+        "Find 3 map pieces",
+        "Tìm 3 mảnh bản đồ"
+      ],
+      "earn": [
+        {
+          "surprise": "chest"
+        }
+      ],
+      "sound": "fanfare",
+      "starter": true
+    },
+    {
+      "id": "moondance",
+      "theme": "treasure",
+      "icon": "🌙",
+      "en": "Moonlight dance",
+      "vi": "Điệu nhảy dưới trăng",
+      "hint": [
+        "Dance on the stage at night",
+        "Nhảy trên sân khấu ban đêm"
+      ],
+      "earn": [
+        {
+          "secret": "moondance"
+        }
+      ],
+      "sound": "secret"
+    },
+    {
+      "id": "skyglide",
+      "theme": "treasure",
+      "icon": "🪂",
+      "en": "Sky explorer",
+      "vi": "Nhà thám hiểm bầu trời",
+      "hint": [
+        "Glide for a long time",
+        "Lượn thật lâu"
+      ],
+      "earn": [
+        {
+          "secret": "skyglide"
+        }
+      ],
+      "sound": "glide"
+    },
+    {
+      "id": "parade",
+      "theme": "treasure",
+      "icon": "🦆",
+      "en": "Duck parade",
+      "vi": "Đoàn vịt diễu hành",
+      "hint": [
+        "Feed the ducks 3 times",
+        "Cho vịt ăn 3 lần"
+      ],
+      "earn": [
+        {
+          "secret": "ducks"
+        }
+      ],
+      "sound": "quack"
+    },
+    {
+      "id": "glade",
+      "theme": "treasure",
+      "icon": "🍄",
+      "en": "Fairy glade",
+      "vi": "Khu rừng tiên",
+      "hint": [
+        "Follow the glowing stones",
+        "Đi theo đá phát sáng"
+      ],
+      "earn": [
+        {
+          "surprise": "glade"
+        }
+      ],
+      "sound": "secret"
+    },
+    {
+      "id": "tw_plateau",
+      "theme": "treasure",
+      "icon": "🗼",
+      "en": "Dawn Tower",
+      "vi": "Tháp Bình Minh",
+      "hint": [
+        "Climb it on Dawn Plateau",
+        "Leo tháp ở Cao Nguyên"
+      ],
+      "earn": [
+        {
+          "tower": "tw_plateau"
+        }
+      ],
+      "sound": "tower"
+    },
+    {
+      "id": "tw_bamboo",
+      "theme": "treasure",
+      "icon": "🗼",
+      "en": "Bamboo Tower",
+      "vi": "Tháp Rừng Tre",
+      "hint": [
+        "Climb it in the bamboo",
+        "Leo tháp trong rừng tre"
+      ],
+      "earn": [
+        {
+          "tower": "tw_bamboo"
+        }
+      ],
+      "sound": "tower"
+    },
+    {
+      "id": "tw_peaks",
+      "theme": "treasure",
+      "icon": "🗼",
+      "en": "Peak Tower",
+      "vi": "Tháp Núi Tuyết",
+      "hint": [
+        "Climb it on Snowcap Peaks",
+        "Leo tháp trên Núi Tuyết"
+      ],
+      "earn": [
+        {
+          "tower": "tw_peaks"
+        }
+      ],
+      "sound": "tower"
+    },
+    {
+      "id": "tw_lake",
+      "theme": "treasure",
+      "icon": "🗼",
+      "en": "Lake Tower",
+      "vi": "Tháp Hồ Gương",
+      "hint": [
+        "Climb it by Mirror Lake",
+        "Leo tháp bên Hồ Gương"
+      ],
+      "earn": [
+        {
+          "tower": "tw_lake"
+        }
+      ],
+      "sound": "tower"
+    },
+    {
+      "id": "place_plateau",
+      "theme": "vietnam",
+      "icon": "🌄",
+      "en": "Dawn Plateau",
+      "vi": "Cao Nguyên Bình Minh",
+      "hint": [
+        "Visit Dawn Plateau",
+        "Đến Cao Nguyên Bình Minh"
+      ],
+      "earn": [
+        {
+          "enter": "plateau"
+        }
+      ],
+      "sound": "chime",
+      "starter": true
+    },
+    {
+      "id": "place_village",
+      "theme": "vietnam",
+      "icon": "🪷",
+      "en": "Lotus Village",
+      "vi": "Làng Sen",
+      "hint": [
+        "Visit Lotus Village",
+        "Đến Làng Sen"
+      ],
+      "earn": [
+        {
+          "enter": "village"
+        }
+      ],
+      "sound": "chime"
+    },
+    {
+      "id": "place_home",
+      "theme": "vietnam",
+      "icon": "🌻",
+      "en": "Sunny Farm",
+      "vi": "Nông Trại Nắng Mai",
+      "hint": [
+        "Visit Sunny Farm",
+        "Đến Nông Trại Nắng Mai"
+      ],
+      "earn": [
+        {
+          "enter": "home"
+        }
+      ],
+      "sound": "chime"
+    },
+    {
+      "id": "place_town",
+      "theme": "vietnam",
+      "icon": "🏠",
+      "en": "Two Homes Street",
+      "vi": "Phố Hai Quê",
+      "hint": [
+        "Visit Two Homes Street",
+        "Đến Phố Hai Quê"
+      ],
+      "earn": [
+        {
+          "enter": "town"
+        }
+      ],
+      "sound": "chime"
+    },
+    {
+      "id": "place_market",
+      "theme": "vietnam",
+      "icon": "🛒",
+      "en": "Three Regions Market",
+      "vi": "Chợ Ba Miền",
+      "hint": [
+        "Visit Three Regions Market",
+        "Đến Chợ Ba Miền"
+      ],
+      "earn": [
+        {
+          "enter": "market"
+        }
+      ],
+      "sound": "chime"
+    },
+    {
+      "id": "place_paddies",
+      "theme": "vietnam",
+      "icon": "🌾",
+      "en": "Golden Rice Fields",
+      "vi": "Cánh Đồng Lúa Vàng",
+      "hint": [
+        "Visit Golden Rice Fields",
+        "Đến Cánh Đồng Lúa Vàng"
+      ],
+      "earn": [
+        {
+          "enter": "paddies"
+        }
+      ],
+      "sound": "chime"
+    },
+    {
+      "id": "place_lake",
+      "theme": "vietnam",
+      "icon": "🦢",
+      "en": "Mirror Lake",
+      "vi": "Hồ Gương",
+      "hint": [
+        "Visit Mirror Lake",
+        "Đến Hồ Gương"
+      ],
+      "earn": [
+        {
+          "enter": "lake"
+        }
+      ],
+      "sound": "chime"
+    },
+    {
+      "id": "place_bamboo",
+      "theme": "vietnam",
+      "icon": "🎋",
+      "en": "Whispering Bamboo",
+      "vi": "Rừng Tre Thì Thầm",
+      "hint": [
+        "Visit Whispering Bamboo",
+        "Đến Rừng Tre Thì Thầm"
+      ],
+      "earn": [
+        {
+          "enter": "bamboo"
+        }
+      ],
+      "sound": "chime"
+    },
+    {
+      "id": "place_mountain",
+      "theme": "vietnam",
+      "icon": "🏔️",
+      "en": "Snowcap Peaks",
+      "vi": "Núi Tuyết Trắng",
+      "hint": [
+        "Visit Snowcap Peaks",
+        "Đến Núi Tuyết Trắng"
+      ],
+      "earn": [
+        {
+          "enter": "mountain"
+        }
+      ],
+      "sound": "chime"
+    },
+    {
+      "id": "place_meadow",
+      "theme": "vietnam",
+      "icon": "🌼",
+      "en": "Breezy Meadows",
+      "vi": "Đồng Cỏ Lộng Gió",
+      "hint": [
+        "Visit Breezy Meadows",
+        "Đến Đồng Cỏ Lộng Gió"
+      ],
+      "earn": [
+        {
+          "enter": "meadow"
+        }
+      ],
+      "sound": "chime",
+      "starter": true
+    },
+    {
+      "id": "place_hanoi",
+      "theme": "vietnam",
+      "icon": "🐢",
+      "en": "Hà Nội",
+      "vi": "Hà Nội",
+      "hint": [
+        "Visit Hà Nội",
+        "Đến Hà Nội"
+      ],
+      "earn": [
+        {
+          "enter": "hanoi"
+        }
+      ],
+      "sound": "chime"
+    },
+    {
+      "id": "place_bacninh",
+      "theme": "vietnam",
+      "icon": "🕰️",
+      "en": "Bắc Ninh",
+      "vi": "Bắc Ninh",
+      "hint": [
+        "Visit Bắc Ninh",
+        "Đến Bắc Ninh"
+      ],
+      "earn": [
+        {
+          "enter": "bacninh"
+        }
+      ],
+      "sound": "chime"
+    },
+    {
+      "id": "place_danang",
+      "theme": "vietnam",
+      "icon": "🐉",
+      "en": "Đà Nẵng",
+      "vi": "Đà Nẵng",
+      "hint": [
+        "Visit Đà Nẵng",
+        "Đến Đà Nẵng"
+      ],
+      "earn": [
+        {
+          "enter": "danang"
+        }
+      ],
+      "sound": "chime"
+    },
+    {
+      "id": "place_saigon",
+      "theme": "vietnam",
+      "icon": "🛵",
+      "en": "Hồ Chí Minh City",
+      "vi": "TP. Hồ Chí Minh",
+      "hint": [
+        "Visit Hồ Chí Minh City",
+        "Đến TP. Hồ Chí Minh"
+      ],
+      "earn": [
+        {
+          "enter": "saigon"
+        }
+      ],
+      "sound": "chime"
+    },
+    {
+      "id": "place_vungtau",
+      "theme": "vietnam",
+      "icon": "🏖️",
+      "en": "Bà Rịa–Vũng Tàu",
+      "vi": "Bà Rịa–Vũng Tàu",
+      "hint": [
+        "Visit Bà Rịa–Vũng Tàu",
+        "Đến Bà Rịa–Vũng Tàu"
+      ],
+      "earn": [
+        {
+          "enter": "vungtau"
+        }
+      ],
+      "sound": "chime"
+    },
+    {
+      "id": "place_hoian",
+      "theme": "vietnam",
+      "icon": "🏮",
+      "en": "Hội An",
+      "vi": "Hội An",
+      "hint": [
+        "Visit Hội An",
+        "Đến Hội An"
+      ],
+      "earn": [
+        {
+          "enter": "hoian"
+        }
+      ],
+      "sound": "chime"
+    },
+    {
+      "id": "stamp_vn",
+      "theme": "vietnam",
+      "icon": "🛂",
+      "en": "Vietnam passport page",
+      "vi": "Trang hộ chiếu Việt Nam",
+      "hint": [
+        "Fill the Vietnam page",
+        "Điền đủ trang Việt Nam"
+      ],
+      "earn": [
+        {
+          "stamp": "vn_full"
+        }
+      ],
+      "sound": "fanfare"
+    },
+    {
+      "id": "pc_turtle",
+      "theme": "vietnam",
+      "icon": "🐢",
+      "en": "Turtle Tower",
+      "vi": "Tháp Rùa",
+      "hint": [
+        "Read the sign: Turtle Tower",
+        "Đọc bảng: Tháp Rùa"
+      ],
+      "earn": [
+        {
+          "postcard": "turtle"
+        }
+      ],
+      "sound": "ding"
+    },
+    {
+      "id": "pc_onepillar",
+      "theme": "vietnam",
+      "icon": "🪷",
+      "en": "One Pillar Pagoda",
+      "vi": "Chùa Một Cột",
+      "hint": [
+        "Read the sign: One Pillar Pagoda",
+        "Đọc bảng: Chùa Một Cột"
+      ],
+      "earn": [
+        {
+          "postcard": "onepillar"
+        }
+      ],
+      "sound": "ding",
+      "starter": true
+    },
+    {
+      "id": "pc_thehuc",
+      "theme": "vietnam",
+      "icon": "🌉",
+      "en": "Thê Húc Bridge",
+      "vi": "Cầu Thê Húc",
+      "hint": [
+        "Read the sign: Thê Húc Bridge",
+        "Đọc bảng: Cầu Thê Húc"
+      ],
+      "earn": [
+        {
+          "postcard": "thehuc"
+        }
+      ],
+      "sound": "ding"
+    },
+    {
+      "id": "pc_longbien",
+      "theme": "vietnam",
+      "icon": "🌉",
+      "en": "Long Biên Bridge",
+      "vi": "Cầu Long Biên",
+      "hint": [
+        "Read the sign: Long Biên Bridge",
+        "Đọc bảng: Cầu Long Biên"
+      ],
+      "earn": [
+        {
+          "postcard": "longbien"
+        }
+      ],
+      "sound": "ding"
+    },
+    {
+      "id": "pc_vanmieu",
+      "theme": "vietnam",
+      "icon": "📚",
+      "en": "Temple of Literature",
+      "vi": "Văn Miếu",
+      "hint": [
+        "Read the sign: Temple of Literature",
+        "Đọc bảng: Văn Miếu"
+      ],
+      "earn": [
+        {
+          "postcard": "vanmieu"
+        }
+      ],
+      "sound": "ding"
+    },
+    {
+      "id": "pc_puppettheatre",
+      "theme": "vietnam",
+      "icon": "🎎",
+      "en": "Water Puppet Theatre",
+      "vi": "Nhà hát Múa rối nước",
+      "hint": [
+        "Read the sign: Water Puppet Theatre",
+        "Đọc bảng: Nhà hát Múa rối nước"
+      ],
+      "earn": [
+        {
+          "postcard": "puppettheatre"
+        }
+      ],
+      "sound": "ding"
+    },
+    {
+      "id": "pc_bnclock",
+      "theme": "vietnam",
+      "icon": "🕰️",
+      "en": "Bắc Ninh Clock Tower",
+      "vi": "Cột Đồng Hồ Bắc Ninh",
+      "hint": [
+        "Read the sign: Bắc Ninh Clock Tower",
+        "Đọc bảng: Cột Đồng Hồ Bắc Ninh"
+      ],
+      "earn": [
+        {
+          "postcard": "bnclock"
+        }
+      ],
+      "sound": "ding"
+    },
+    {
+      "id": "pc_chuadau",
+      "theme": "vietnam",
+      "icon": "🧱",
+      "en": "Dâu Pagoda",
+      "vi": "Chùa Dâu",
+      "hint": [
+        "Read the sign: Dâu Pagoda",
+        "Đọc bảng: Chùa Dâu"
+      ],
+      "earn": [
+        {
+          "postcard": "chuadau"
+        }
+      ],
+      "sound": "ding"
+    },
+    {
+      "id": "pc_butthap",
+      "theme": "vietnam",
+      "icon": "🖌️",
+      "en": "Bút Tháp Pagoda",
+      "vi": "Chùa Bút Tháp",
+      "hint": [
+        "Read the sign: Bút Tháp Pagoda",
+        "Đọc bảng: Chùa Bút Tháp"
+      ],
+      "earn": [
+        {
+          "postcard": "butthap"
+        }
+      ],
+      "sound": "ding"
+    },
+    {
+      "id": "pc_dendo",
+      "theme": "vietnam",
+      "icon": "⛩️",
+      "en": "Đô Temple",
+      "vi": "Đền Đô",
+      "hint": [
+        "Read the sign: Đô Temple",
+        "Đọc bảng: Đền Đô"
+      ],
+      "earn": [
+        {
+          "postcard": "dendo"
+        }
+      ],
+      "sound": "ding"
+    },
+    {
+      "id": "pc_quanho",
+      "theme": "vietnam",
+      "icon": "🎶",
+      "en": "Quan họ singing",
+      "vi": "Dân ca Quan họ",
+      "hint": [
+        "Read the sign: Quan họ singing",
+        "Đọc bảng: Dân ca Quan họ"
+      ],
+      "earn": [
+        {
+          "postcard": "quanho"
+        }
+      ],
+      "sound": "ding",
+      "starter": true
+    },
+    {
+      "id": "pc_halong",
+      "theme": "vietnam",
+      "icon": "⛰️",
+      "en": "Hạ Long Bay",
+      "vi": "Vịnh Hạ Long",
+      "hint": [
+        "Read the sign: Hạ Long Bay",
+        "Đọc bảng: Vịnh Hạ Long"
+      ],
+      "earn": [
+        {
+          "postcard": "halong"
+        }
+      ],
+      "sound": "ding"
+    },
+    {
+      "id": "pc_trangan",
+      "theme": "vietnam",
+      "icon": "🛶",
+      "en": "Tràng An",
+      "vi": "Tràng An",
+      "hint": [
+        "Read the sign: Tràng An",
+        "Đọc bảng: Tràng An"
+      ],
+      "earn": [
+        {
+          "postcard": "trangan"
+        }
+      ],
+      "sound": "ding"
+    },
+    {
+      "id": "pc_phongnha",
+      "theme": "vietnam",
+      "icon": "🦇",
+      "en": "Phong Nha caves",
+      "vi": "Hang động Phong Nha",
+      "hint": [
+        "Read the sign: Phong Nha caves",
+        "Đọc bảng: Hang động Phong Nha"
+      ],
+      "earn": [
+        {
+          "postcard": "phongnha"
+        }
+      ],
+      "sound": "ding"
+    },
+    {
+      "id": "pc_hue",
+      "theme": "vietnam",
+      "icon": "🏯",
+      "en": "Huế Imperial City",
+      "vi": "Kinh thành Huế",
+      "hint": [
+        "Read the sign: Huế Imperial City",
+        "Đọc bảng: Kinh thành Huế"
+      ],
+      "earn": [
+        {
+          "postcard": "hue"
+        }
+      ],
+      "sound": "ding"
+    },
+    {
+      "id": "pc_chuacau",
+      "theme": "vietnam",
+      "icon": "🌉",
+      "en": "Hội An Covered Bridge",
+      "vi": "Chùa Cầu Hội An",
+      "hint": [
+        "Read the sign: Hội An Covered Bridge",
+        "Đọc bảng: Chùa Cầu Hội An"
+      ],
+      "earn": [
+        {
+          "postcard": "chuacau"
+        }
+      ],
+      "sound": "ding"
+    },
+    {
+      "id": "pc_hoian",
+      "theme": "vietnam",
+      "icon": "🏮",
+      "en": "Hội An Ancient Town",
+      "vi": "Phố cổ Hội An",
+      "hint": [
+        "Read the sign: Hội An Ancient Town",
+        "Đọc bảng: Phố cổ Hội An"
+      ],
+      "earn": [
+        {
+          "postcard": "hoian"
+        }
+      ],
+      "sound": "ding"
+    },
+    {
+      "id": "pc_myson",
+      "theme": "vietnam",
+      "icon": "🧱",
+      "en": "Mỹ Sơn Sanctuary",
+      "vi": "Thánh địa Mỹ Sơn",
+      "hint": [
+        "Read the sign: Mỹ Sơn Sanctuary",
+        "Đọc bảng: Thánh địa Mỹ Sơn"
+      ],
+      "earn": [
+        {
+          "postcard": "myson"
+        }
+      ],
+      "sound": "ding"
+    },
+    {
+      "id": "pc_goldenbridge",
+      "theme": "vietnam",
+      "icon": "🤲",
+      "en": "Golden Bridge",
+      "vi": "Cầu Vàng",
+      "hint": [
+        "Read the sign: Golden Bridge",
+        "Đọc bảng: Cầu Vàng"
+      ],
+      "earn": [
+        {
+          "postcard": "goldenbridge"
+        }
+      ],
+      "sound": "ding"
+    },
+    {
+      "id": "pc_dragonbridge",
+      "theme": "vietnam",
+      "icon": "🐉",
+      "en": "Dragon Bridge",
+      "vi": "Cầu Rồng",
+      "hint": [
+        "Read the sign: Dragon Bridge",
+        "Đọc bảng: Cầu Rồng"
+      ],
+      "earn": [
+        {
+          "postcard": "dragonbridge"
+        }
+      ],
+      "sound": "ding",
+      "starter": true
+    },
+    {
+      "id": "pc_marble",
+      "theme": "vietnam",
+      "icon": "⛰️",
+      "en": "Marble Mountains",
+      "vi": "Ngũ Hành Sơn",
+      "hint": [
+        "Read the sign: Marble Mountains",
+        "Đọc bảng: Ngũ Hành Sơn"
+      ],
+      "earn": [
+        {
+          "postcard": "marble"
+        }
+      ],
+      "sound": "ding"
+    },
+    {
+      "id": "pc_benthanh",
+      "theme": "vietnam",
+      "icon": "🕰️",
+      "en": "Bến Thành Clock Tower",
+      "vi": "Tháp Đồng Hồ Bến Thành",
+      "hint": [
+        "Read the sign: Bến Thành Clock Tower",
+        "Đọc bảng: Tháp Đồng Hồ Bến Thành"
+      ],
+      "earn": [
+        {
+          "postcard": "benthanh"
+        }
+      ],
+      "sound": "ding"
+    },
+    {
+      "id": "pc_cathedral",
+      "theme": "vietnam",
+      "icon": "⛪",
+      "en": "Sài Gòn Cathedral",
+      "vi": "Nhà thờ Đức Bà",
+      "hint": [
+        "Read the sign: Sài Gòn Cathedral",
+        "Đọc bảng: Nhà thờ Đức Bà"
+      ],
+      "earn": [
+        {
+          "postcard": "cathedral"
+        }
+      ],
+      "sound": "ding"
+    },
+    {
+      "id": "pc_postoffice",
+      "theme": "vietnam",
+      "icon": "📮",
+      "en": "Sài Gòn Post Office",
+      "vi": "Bưu điện Thành phố",
+      "hint": [
+        "Read the sign: Sài Gòn Post Office",
+        "Đọc bảng: Bưu điện Thành phố"
+      ],
+      "earn": [
+        {
+          "postcard": "postoffice"
+        }
+      ],
+      "sound": "ding"
+    },
+    {
+      "id": "pc_cairang",
+      "theme": "vietnam",
+      "icon": "🛶",
+      "en": "Cái Răng Floating Market",
+      "vi": "Chợ nổi Cái Răng",
+      "hint": [
+        "Read the sign: Cái Răng Floating Market",
+        "Đọc bảng: Chợ nổi Cái Răng"
+      ],
+      "earn": [
+        {
+          "postcard": "cairang"
+        }
+      ],
+      "sound": "ding"
+    },
+    {
+      "id": "pc_lighthouse",
+      "theme": "vietnam",
+      "icon": "🗼",
+      "en": "Vũng Tàu Lighthouse",
+      "vi": "Hải Đăng Vũng Tàu",
+      "hint": [
+        "Read the sign: Vũng Tàu Lighthouse",
+        "Đọc bảng: Hải Đăng Vũng Tàu"
+      ],
+      "earn": [
+        {
+          "postcard": "lighthouse"
+        }
+      ],
+      "sound": "ding"
+    },
+    {
+      "id": "pc_bachdinh",
+      "theme": "vietnam",
+      "icon": "🏛️",
+      "en": "The White Villa",
+      "vi": "Bạch Dinh",
+      "hint": [
+        "Read the sign: The White Villa",
+        "Đọc bảng: Bạch Dinh"
+      ],
+      "earn": [
+        {
+          "postcard": "bachdinh"
+        }
+      ],
+      "sound": "ding"
+    },
+    {
+      "id": "pc_nhatron",
+      "theme": "vietnam",
+      "icon": "💧",
+      "en": "The Round House",
+      "vi": "Nhà Tròn Bà Rịa",
+      "hint": [
+        "Read the sign: The Round House",
+        "Đọc bảng: Nhà Tròn Bà Rịa"
+      ],
+      "earn": [
+        {
+          "postcard": "nhatron"
+        }
+      ],
+      "sound": "ding"
+    },
+    {
+      "id": "place_aussie",
+      "theme": "world",
+      "icon": "🦘",
+      "en": "Aussie Corner",
+      "vi": "Góc Nước Úc",
+      "hint": [
+        "Visit Aussie Corner",
+        "Đến Góc Nước Úc"
+      ],
+      "earn": [
+        {
+          "enter": "aussie"
+        }
+      ],
+      "sound": "chime",
+      "starter": true
+    },
+    {
+      "id": "place_brisbane",
+      "theme": "world",
+      "icon": "🐨",
+      "en": "Brisbane",
+      "vi": "Brisbane",
+      "hint": [
+        "Visit Brisbane",
+        "Đến Brisbane"
+      ],
+      "earn": [
+        {
+          "enter": "brisbane"
+        }
+      ],
+      "sound": "chime"
+    },
+    {
+      "id": "place_sydney",
+      "theme": "world",
+      "icon": "⛴️",
+      "en": "Sydney",
+      "vi": "Sydney",
+      "hint": [
+        "Visit Sydney",
+        "Đến Sydney"
+      ],
+      "earn": [
+        {
+          "enter": "sydney"
+        }
+      ],
+      "sound": "chime"
+    },
+    {
+      "id": "place_melbourne",
+      "theme": "world",
+      "icon": "🚋",
+      "en": "Melbourne",
+      "vi": "Melbourne",
+      "hint": [
+        "Visit Melbourne",
+        "Đến Melbourne"
+      ],
+      "earn": [
+        {
+          "enter": "melbourne"
+        }
+      ],
+      "sound": "chime"
+    },
+    {
+      "id": "place_china",
+      "theme": "world",
+      "icon": "🏮",
+      "en": "China Town",
+      "vi": "Làng Trung Hoa",
+      "hint": [
+        "Visit China Town",
+        "Đến Làng Trung Hoa"
+      ],
+      "earn": [
+        {
+          "enter": "china"
+        }
+      ],
+      "sound": "chime"
+    },
+    {
+      "id": "place_india",
+      "theme": "world",
+      "icon": "🪔",
+      "en": "India Village",
+      "vi": "Làng Ấn Độ",
+      "hint": [
+        "Visit India Village",
+        "Đến Làng Ấn Độ"
+      ],
+      "earn": [
+        {
+          "enter": "india"
+        }
+      ],
+      "sound": "chime"
+    },
+    {
+      "id": "stamp_au",
+      "theme": "world",
+      "icon": "🛂",
+      "en": "Australia passport page",
+      "vi": "Trang hộ chiếu nước Úc",
+      "hint": [
+        "Fill the Australia page",
+        "Điền đủ trang nước Úc"
+      ],
+      "earn": [
+        {
+          "stamp": "au_full"
+        }
+      ],
+      "sound": "fanfare"
+    },
+    {
+      "id": "stamp_cn",
+      "theme": "world",
+      "icon": "🛂",
+      "en": "China passport page",
+      "vi": "Trang hộ chiếu Trung Quốc",
+      "hint": [
+        "Fill the China page",
+        "Điền đủ trang Trung Quốc"
+      ],
+      "earn": [
+        {
+          "stamp": "cn_full"
+        }
+      ],
+      "sound": "fanfare"
+    },
+    {
+      "id": "stamp_in",
+      "theme": "world",
+      "icon": "🛂",
+      "en": "India passport page",
+      "vi": "Trang hộ chiếu Ấn Độ",
+      "hint": [
+        "Fill the India page",
+        "Điền đủ trang Ấn Độ"
+      ],
+      "earn": [
+        {
+          "stamp": "in_full"
+        }
+      ],
+      "sound": "fanfare"
+    },
+    {
+      "id": "pc_opera",
+      "theme": "world",
+      "icon": "🎭",
+      "en": "Sydney Opera House",
+      "vi": "Nhà hát Opera Sydney",
+      "hint": [
+        "Read the sign: Sydney Opera House",
+        "Đọc bảng: Nhà hát Opera Sydney"
+      ],
+      "earn": [
+        {
+          "postcard": "opera"
+        }
+      ],
+      "sound": "ding",
+      "starter": true
+    },
+    {
+      "id": "pc_harbour",
+      "theme": "world",
+      "icon": "🌉",
+      "en": "Harbour Bridge",
+      "vi": "Cầu Cảng Sydney",
+      "hint": [
+        "Read the sign: Harbour Bridge",
+        "Đọc bảng: Cầu Cảng Sydney"
+      ],
+      "earn": [
+        {
+          "postcard": "harbour"
+        }
+      ],
+      "sound": "ding"
+    },
+    {
+      "id": "pc_sydneytower",
+      "theme": "world",
+      "icon": "🗼",
+      "en": "Sydney Tower Eye",
+      "vi": "Tháp Sydney",
+      "hint": [
+        "Read the sign: Sydney Tower Eye",
+        "Đọc bảng: Tháp Sydney"
+      ],
+      "earn": [
+        {
+          "postcard": "sydneytower"
+        }
+      ],
+      "sound": "ding"
+    },
+    {
+      "id": "pc_lunapark",
+      "theme": "world",
+      "icon": "😃",
+      "en": "Luna Park",
+      "vi": "Công viên Luna",
+      "hint": [
+        "Read the sign: Luna Park",
+        "Đọc bảng: Công viên Luna"
+      ],
+      "earn": [
+        {
+          "postcard": "lunapark"
+        }
+      ],
+      "sound": "ding"
+    },
+    {
+      "id": "pc_bondi",
+      "theme": "world",
+      "icon": "🏖️",
+      "en": "Lifesavers' Tower",
+      "vi": "Tháp Cứu Hộ",
+      "hint": [
+        "Read the sign: Lifesavers' Tower",
+        "Đọc bảng: Tháp Cứu Hộ"
+      ],
+      "earn": [
+        {
+          "postcard": "bondi"
+        }
+      ],
+      "sound": "ding"
+    },
+    {
+      "id": "pc_sisters",
+      "theme": "world",
+      "icon": "🏔️",
+      "en": "The Three Sisters",
+      "vi": "Ba Chị Em",
+      "hint": [
+        "Read the sign: The Three Sisters",
+        "Đọc bảng: Ba Chị Em"
+      ],
+      "earn": [
+        {
+          "postcard": "sisters"
+        }
+      ],
+      "sound": "ding"
+    },
+    {
+      "id": "pc_banana",
+      "theme": "world",
+      "icon": "🍌",
+      "en": "The Big Banana",
+      "vi": "Quả Chuối Khổng Lồ",
+      "hint": [
+        "Read the sign: The Big Banana",
+        "Đọc bảng: Quả Chuối Khổng Lồ"
+      ],
+      "earn": [
+        {
+          "postcard": "banana"
+        }
+      ],
+      "sound": "ding"
+    },
+    {
+      "id": "pc_wheel",
+      "theme": "world",
+      "icon": "🎡",
+      "en": "Wheel of Brisbane",
+      "vi": "Vòng quay Brisbane",
+      "hint": [
+        "Read the sign: Wheel of Brisbane",
+        "Đọc bảng: Vòng quay Brisbane"
+      ],
+      "earn": [
+        {
+          "postcard": "wheel"
+        }
+      ],
+      "sound": "ding"
+    },
+    {
+      "id": "pc_lonepine",
+      "theme": "world",
+      "icon": "🐨",
+      "en": "Lone Pine Koalas",
+      "vi": "Koala Lone Pine",
+      "hint": [
+        "Read the sign: Lone Pine Koalas",
+        "Đọc bảng: Koala Lone Pine"
+      ],
+      "earn": [
+        {
+          "postcard": "lonepine"
+        }
+      ],
+      "sound": "ding"
+    },
+    {
+      "id": "pc_storybridge",
+      "theme": "world",
+      "icon": "🌉",
+      "en": "Story Bridge",
+      "vi": "Cầu Story",
+      "hint": [
+        "Read the sign: Story Bridge",
+        "Đọc bảng: Cầu Story"
+      ],
+      "earn": [
+        {
+          "postcard": "storybridge"
+        }
+      ],
+      "sound": "ding",
+      "starter": true
+    },
+    {
+      "id": "pc_reef",
+      "theme": "world",
+      "icon": "🐠",
+      "en": "Great Barrier Reef",
+      "vi": "Rạn san hô Great Barrier",
+      "hint": [
+        "Read the sign: Great Barrier Reef",
+        "Đọc bảng: Rạn san hô Great Barrier"
+      ],
+      "earn": [
+        {
+          "postcard": "reef"
+        }
+      ],
+      "sound": "ding"
+    },
+    {
+      "id": "pc_flinders",
+      "theme": "world",
+      "icon": "🚉",
+      "en": "Flinders Street Station",
+      "vi": "Ga Flinders Street",
+      "hint": [
+        "Read the sign: Flinders Street Station",
+        "Đọc bảng: Ga Flinders Street"
+      ],
+      "earn": [
+        {
+          "postcard": "flinders"
+        }
+      ],
+      "sound": "ding"
+    },
+    {
+      "id": "pc_wtram",
+      "theme": "world",
+      "icon": "🚋",
+      "en": "Melbourne trams",
+      "vi": "Tàu điện Melbourne",
+      "hint": [
+        "Read the sign: Melbourne trams",
+        "Đọc bảng: Tàu điện Melbourne"
+      ],
+      "earn": [
+        {
+          "postcard": "wtram"
+        }
+      ],
+      "sound": "ding"
+    },
+    {
+      "id": "pc_princes",
+      "theme": "world",
+      "icon": "🌉",
+      "en": "Princes Bridge",
+      "vi": "Cầu Princes",
+      "hint": [
+        "Read the sign: Princes Bridge",
+        "Đọc bảng: Cầu Princes"
+      ],
+      "earn": [
+        {
+          "postcard": "princes"
+        }
+      ],
+      "sound": "ding"
+    },
+    {
+      "id": "pc_exhibition",
+      "theme": "world",
+      "icon": "🏛️",
+      "en": "Royal Exhibition Building",
+      "vi": "Tòa nhà Triển lãm",
+      "hint": [
+        "Read the sign: Royal Exhibition Building",
+        "Đọc bảng: Tòa nhà Triển lãm"
+      ],
+      "earn": [
+        {
+          "postcard": "exhibition"
+        }
+      ],
+      "sound": "ding"
+    },
+    {
+      "id": "pc_apostles",
+      "theme": "world",
+      "icon": "🪨",
+      "en": "The Twelve Apostles",
+      "vi": "Mười Hai Tông Đồ",
+      "hint": [
+        "Read the sign: The Twelve Apostles",
+        "Đọc bảng: Mười Hai Tông Đồ"
+      ],
+      "earn": [
+        {
+          "postcard": "apostles"
+        }
+      ],
+      "sound": "ding"
+    },
+    {
+      "id": "pc_uluru",
+      "theme": "world",
+      "icon": "🪨",
+      "en": "Uluru",
+      "vi": "Uluru",
+      "hint": [
+        "Read the sign: Uluru",
+        "Đọc bảng: Uluru"
+      ],
+      "earn": [
+        {
+          "postcard": "uluru"
+        }
+      ],
+      "sound": "ding"
+    },
+    {
+      "id": "pc_kakadu",
+      "theme": "world",
+      "icon": "🎨",
+      "en": "Kakadu rock art",
+      "vi": "Tranh đá Kakadu",
+      "hint": [
+        "Read the sign: Kakadu rock art",
+        "Đọc bảng: Tranh đá Kakadu"
+      ],
+      "earn": [
+        {
+          "postcard": "kakadu"
+        }
+      ],
+      "sound": "ding"
+    },
+    {
+      "id": "pc_forbidden",
+      "theme": "world",
+      "icon": "🏯",
+      "en": "The Forbidden City",
+      "vi": "Tử Cấm Thành",
+      "hint": [
+        "Read the sign: The Forbidden City",
+        "Đọc bảng: Tử Cấm Thành"
+      ],
+      "earn": [
+        {
+          "postcard": "forbidden"
+        }
+      ],
+      "sound": "ding",
+      "starter": true
+    },
+    {
+      "id": "pc_heaven",
+      "theme": "world",
+      "icon": "⛩️",
+      "en": "Temple of Heaven",
+      "vi": "Thiên Đàn",
+      "hint": [
+        "Read the sign: Temple of Heaven",
+        "Đọc bảng: Thiên Đàn"
+      ],
+      "earn": [
+        {
+          "postcard": "heaven"
+        }
+      ],
+      "sound": "ding"
+    },
+    {
+      "id": "pc_terracotta",
+      "theme": "world",
+      "icon": "🗿",
+      "en": "Terracotta Army",
+      "vi": "Đội quân đất nung",
+      "hint": [
+        "Read the sign: Terracotta Army",
+        "Đọc bảng: Đội quân đất nung"
+      ],
+      "earn": [
+        {
+          "postcard": "terracotta"
+        }
+      ],
+      "sound": "ding"
+    },
+    {
+      "id": "pc_potala",
+      "theme": "world",
+      "icon": "🏔️",
+      "en": "Potala Palace",
+      "vi": "Cung điện Potala",
+      "hint": [
+        "Read the sign: Potala Palace",
+        "Đọc bảng: Cung điện Potala"
+      ],
+      "earn": [
+        {
+          "postcard": "potala"
+        }
+      ],
+      "sound": "ding"
+    },
+    {
+      "id": "pc_qutub",
+      "theme": "world",
+      "icon": "🗼",
+      "en": "Qutub Minar",
+      "vi": "Tháp Qutub Minar",
+      "hint": [
+        "Read the sign: Qutub Minar",
+        "Đọc bảng: Tháp Qutub Minar"
+      ],
+      "earn": [
+        {
+          "postcard": "qutub"
+        }
+      ],
+      "sound": "ding"
+    },
+    {
+      "id": "pc_redfort",
+      "theme": "world",
+      "icon": "🏰",
+      "en": "Red Fort",
+      "vi": "Pháo đài Đỏ",
+      "hint": [
+        "Read the sign: Red Fort",
+        "Đọc bảng: Pháo đài Đỏ"
+      ],
+      "earn": [
+        {
+          "postcard": "redfort"
+        }
+      ],
+      "sound": "ding"
+    },
+    {
+      "id": "pc_konark",
+      "theme": "world",
+      "icon": "☸️",
+      "en": "Konark Sun Temple",
+      "vi": "Đền Mặt Trời Konark",
+      "hint": [
+        "Read the sign: Konark Sun Temple",
+        "Đọc bảng: Đền Mặt Trời Konark"
+      ],
+      "earn": [
+        {
+          "postcard": "konark"
+        }
+      ],
+      "sound": "ding"
+    },
+    {
+      "id": "pc_hampi",
+      "theme": "world",
+      "icon": "🛕",
+      "en": "Hampi stone chariot",
+      "vi": "Cỗ xe đá Hampi",
+      "hint": [
+        "Read the sign: Hampi stone chariot",
+        "Đọc bảng: Cỗ xe đá Hampi"
+      ],
+      "earn": [
+        {
+          "postcard": "hampi"
+        }
+      ],
+      "sound": "ding"
+    },
+    {
+      "id": "pc_mahabodhi",
+      "theme": "world",
+      "icon": "🙏",
+      "en": "Mahabodhi Temple",
+      "vi": "Đền Mahabodhi",
+      "hint": [
+        "Read the sign: Mahabodhi Temple",
+        "Đọc bảng: Đền Mahabodhi"
+      ],
+      "earn": [
+        {
+          "postcard": "mahabodhi"
+        }
+      ],
+      "sound": "ding"
+    },
+    {
+      "id": "lantern",
+      "theme": "festivals",
+      "icon": "🏮",
+      "en": "Red lantern",
+      "vi": "Đèn lồng đỏ",
+      "hint": [
+        "A prize for quests, jobs and festivals",
+        "Quà khi làm nhiệm vụ, việc nhà và lễ hội"
+      ],
+      "earn": [
+        {
+          "prize": "🏮"
+        }
+      ],
+      "sound": "chime",
+      "starter": true
+    },
+    {
+      "id": "kite",
+      "theme": "festivals",
+      "icon": "🪁",
+      "en": "Kite",
+      "vi": "Con diều",
+      "hint": [
+        "A prize for quests, jobs and festivals",
+        "Quà khi làm nhiệm vụ, việc nhà và lễ hội"
+      ],
+      "earn": [
+        {
+          "prize": "🪁"
+        }
+      ],
+      "sound": "whoosh"
+    },
+    {
+      "id": "dragon",
+      "theme": "festivals",
+      "icon": "🐉",
+      "en": "Dragon dance",
+      "vi": "Múa rồng",
+      "hint": [
+        "A prize for quests, jobs and festivals",
+        "Quà khi làm nhiệm vụ, việc nhà và lễ hội"
+      ],
+      "earn": [
+        {
+          "prize": "🐉"
+        }
+      ],
+      "sound": "fanfare"
+    },
+    {
+      "id": "fest_tet",
+      "theme": "festivals",
+      "icon": "🧧",
+      "en": "Tết",
+      "vi": "Tết Nguyên Đán",
+      "hint": [
+        "On Tết, visit the festival table",
+        "Ngày Tết Nguyên Đán, ghé bàn lễ hội"
+      ],
+      "earn": [
+        {
+          "fest": "tet"
+        }
+      ],
+      "sound": "fanfare"
+    },
+    {
+      "id": "fest_ramthang1",
+      "theme": "festivals",
+      "icon": "🏮",
+      "en": "First Full Moon",
+      "vi": "Rằm tháng Giêng",
+      "hint": [
+        "On First Full Moon, visit the festival table",
+        "Ngày Rằm tháng Giêng, ghé bàn lễ hội"
+      ],
+      "earn": [
+        {
+          "fest": "ramthang1"
+        }
+      ],
+      "sound": "fanfare"
+    },
+    {
+      "id": "fest_giotohung",
+      "theme": "festivals",
+      "icon": "👑",
+      "en": "Hùng Kings' Day",
+      "vi": "Giỗ Tổ Hùng Vương",
+      "hint": [
+        "On Hùng Kings' Day, visit the festival table",
+        "Ngày Giỗ Tổ Hùng Vương, ghé bàn lễ hội"
+      ],
+      "earn": [
+        {
+          "fest": "giotohung"
+        }
+      ],
+      "sound": "fanfare"
+    },
+    {
+      "id": "fest_doanngo",
+      "theme": "festivals",
+      "icon": "🐉",
+      "en": "Đoan Ngọ",
+      "vi": "Tết Đoan Ngọ",
+      "hint": [
+        "On Đoan Ngọ, visit the festival table",
+        "Ngày Tết Đoan Ngọ, ghé bàn lễ hội"
+      ],
+      "earn": [
+        {
+          "fest": "doanngo"
+        }
+      ],
+      "sound": "fanfare"
+    },
+    {
+      "id": "fest_vulan",
+      "theme": "festivals",
+      "icon": "🌹",
+      "en": "Vu Lan",
+      "vi": "Lễ Vu Lan",
+      "hint": [
+        "On Vu Lan, visit the festival table",
+        "Ngày Lễ Vu Lan, ghé bàn lễ hội"
+      ],
+      "earn": [
+        {
+          "fest": "vulan"
+        }
+      ],
+      "sound": "fanfare"
+    },
+    {
+      "id": "fest_midautumn",
+      "theme": "festivals",
+      "icon": "🥮",
+      "en": "Mid-Autumn",
+      "vi": "Tết Trung Thu",
+      "hint": [
+        "On Mid-Autumn, visit the festival table",
+        "Ngày Tết Trung Thu, ghé bàn lễ hội"
+      ],
+      "earn": [
+        {
+          "fest": "midautumn"
+        }
+      ],
+      "sound": "fanfare"
+    },
+    {
+      "id": "fest_ongtao",
+      "theme": "festivals",
+      "icon": "🐟",
+      "en": "Kitchen Gods' Day",
+      "vi": "Ông Công Ông Táo",
+      "hint": [
+        "On Kitchen Gods' Day, visit the festival table",
+        "Ngày Ông Công Ông Táo, ghé bàn lễ hội"
+      ],
+      "earn": [
+        {
+          "fest": "ongtao"
+        }
+      ],
+      "sound": "fanfare",
+      "starter": true
+    },
+    {
+      "id": "fest_thieunhi",
+      "theme": "festivals",
+      "icon": "🎈",
+      "en": "Children's Day",
+      "vi": "Ngày Thiếu nhi",
+      "hint": [
+        "On Children's Day, visit the festival table",
+        "Ngày Ngày Thiếu nhi, ghé bàn lễ hội"
+      ],
+      "earn": [
+        {
+          "fest": "thieunhi"
+        }
+      ],
+      "sound": "fanfare"
+    },
+    {
+      "id": "fest_quockhanh",
+      "theme": "festivals",
+      "icon": "🇻🇳",
+      "en": "National Day",
+      "vi": "Quốc khánh",
+      "hint": [
+        "On National Day, visit the festival table",
+        "Ngày Quốc khánh, ghé bàn lễ hội"
+      ],
+      "earn": [
+        {
+          "fest": "quockhanh"
+        }
+      ],
+      "sound": "fanfare"
+    },
+    {
+      "id": "fest_nhagiao",
+      "theme": "festivals",
+      "icon": "💐",
+      "en": "Teachers' Day",
+      "vi": "Ngày Nhà giáo",
+      "hint": [
+        "On Teachers' Day, visit the festival table",
+        "Ngày Ngày Nhà giáo, ghé bàn lễ hội"
+      ],
+      "earn": [
+        {
+          "fest": "nhagiao"
+        }
+      ],
+      "sound": "fanfare"
+    },
+    {
+      "id": "fest_easter",
+      "theme": "festivals",
+      "icon": "🥚",
+      "en": "Easter",
+      "vi": "Lễ Phục Sinh",
+      "hint": [
+        "On Easter, visit the festival table",
+        "Ngày Lễ Phục Sinh, ghé bàn lễ hội"
+      ],
+      "earn": [
+        {
+          "fest": "easter"
+        }
+      ],
+      "sound": "fanfare"
+    },
+    {
+      "id": "fest_mothersday",
+      "theme": "festivals",
+      "icon": "💝",
+      "en": "Mother's Day",
+      "vi": "Ngày của Mẹ",
+      "hint": [
+        "On Mother's Day, visit the festival table",
+        "Ngày Ngày của Mẹ, ghé bàn lễ hội"
+      ],
+      "earn": [
+        {
+          "fest": "mothersday"
+        }
+      ],
+      "sound": "fanfare"
+    },
+    {
+      "id": "fest_fathersday",
+      "theme": "festivals",
+      "icon": "👔",
+      "en": "Father's Day",
+      "vi": "Ngày của Bố",
+      "hint": [
+        "On Father's Day, visit the festival table",
+        "Ngày Ngày của Bố, ghé bàn lễ hội"
+      ],
+      "earn": [
+        {
+          "fest": "fathersday"
+        }
+      ],
+      "sound": "fanfare"
+    },
+    {
+      "id": "fest_halloween",
+      "theme": "festivals",
+      "icon": "🎃",
+      "en": "Halloween",
+      "vi": "Halloween",
+      "hint": [
+        "On Halloween, visit the festival table",
+        "Ngày Halloween, ghé bàn lễ hội"
+      ],
+      "earn": [
+        {
+          "fest": "halloween"
+        }
+      ],
+      "sound": "fanfare"
+    },
+    {
+      "id": "fest_christmas",
+      "theme": "festivals",
+      "icon": "🎄",
+      "en": "Christmas",
+      "vi": "Giáng Sinh",
+      "hint": [
+        "On Christmas, visit the festival table",
+        "Ngày Giáng Sinh, ghé bàn lễ hội"
+      ],
+      "earn": [
+        {
+          "fest": "christmas"
+        }
+      ],
+      "sound": "fanfare"
+    },
+    {
+      "id": "fest_newyear",
+      "theme": "festivals",
+      "icon": "🎆",
+      "en": "New Year's Eve",
+      "vi": "Giao thừa Dương lịch",
+      "hint": [
+        "On New Year's Eve, visit the festival table",
+        "Ngày Giao thừa Dương lịch, ghé bàn lễ hội"
+      ],
+      "earn": [
+        {
+          "fest": "newyear"
+        }
+      ],
+      "sound": "fanfare",
+      "starter": true
+    },
+    {
+      "id": "fest_ausday",
+      "theme": "festivals",
+      "icon": "🇦🇺",
+      "en": "Australia Day",
+      "vi": "Ngày Nước Úc",
+      "hint": [
+        "On Australia Day, visit the festival table",
+        "Ngày Ngày Nước Úc, ghé bàn lễ hội"
+      ],
+      "earn": [
+        {
+          "fest": "ausday"
+        }
+      ],
+      "sound": "fanfare"
+    },
+    {
+      "id": "fest_cleanup",
+      "theme": "festivals",
+      "icon": "♻️",
+      "en": "Clean Up Day",
+      "vi": "Ngày Làm Sạch",
+      "hint": [
+        "On Clean Up Day, visit the festival table",
+        "Ngày Ngày Làm Sạch, ghé bàn lễ hội"
+      ],
+      "earn": [
+        {
+          "fest": "cleanup"
+        }
+      ],
+      "sound": "fanfare"
+    },
+    {
+      "id": "fest_harmony",
+      "theme": "festivals",
+      "icon": "🤝",
+      "en": "Harmony Day",
+      "vi": "Ngày Hòa hợp",
+      "hint": [
+        "On Harmony Day, visit the festival table",
+        "Ngày Ngày Hòa hợp, ghé bàn lễ hội"
+      ],
+      "earn": [
+        {
+          "fest": "harmony"
+        }
+      ],
+      "sound": "fanfare"
+    },
+    {
+      "id": "fest_holi",
+      "theme": "festivals",
+      "icon": "🎨",
+      "en": "Holi",
+      "vi": "Lễ hội Holi",
+      "hint": [
+        "On Holi, visit the festival table",
+        "Ngày Lễ hội Holi, ghé bàn lễ hội"
+      ],
+      "earn": [
+        {
+          "fest": "holi"
+        }
+      ],
+      "sound": "fanfare"
+    },
+    {
+      "id": "fest_anzac",
+      "theme": "festivals",
+      "icon": "🌺",
+      "en": "Anzac Day",
+      "vi": "Ngày Anzac",
+      "hint": [
+        "On Anzac Day, visit the festival table",
+        "Ngày Ngày Anzac, ghé bàn lễ hội"
+      ],
+      "earn": [
+        {
+          "fest": "anzac"
+        }
+      ],
+      "sound": "fanfare"
+    },
+    {
+      "id": "fest_reconciliation",
+      "theme": "festivals",
+      "icon": "🖐️",
+      "en": "Reconciliation Week",
+      "vi": "Tuần lễ Hòa giải",
+      "hint": [
+        "On Reconciliation Week, visit the festival table",
+        "Ngày Tuần lễ Hòa giải, ghé bàn lễ hội"
+      ],
+      "earn": [
+        {
+          "fest": "reconciliation"
+        }
+      ],
+      "sound": "fanfare"
+    },
+    {
+      "id": "fest_naidoc",
+      "theme": "festivals",
+      "icon": "🪃",
+      "en": "NAIDOC Week",
+      "vi": "Tuần lễ NAIDOC",
+      "hint": [
+        "On NAIDOC Week, visit the festival table",
+        "Ngày Tuần lễ NAIDOC, ghé bàn lễ hội"
+      ],
+      "earn": [
+        {
+          "fest": "naidoc"
+        }
+      ],
+      "sound": "fanfare"
+    },
+    {
+      "id": "fest_diwali",
+      "theme": "festivals",
+      "icon": "🪔",
+      "en": "Diwali",
+      "vi": "Lễ hội Diwali",
+      "hint": [
+        "On Diwali, visit the festival table",
+        "Ngày Lễ hội Diwali, ghé bàn lễ hội"
+      ],
+      "earn": [
+        {
+          "fest": "diwali"
+        }
+      ],
+      "sound": "fanfare"
+    },
+    {
+      "id": "owl",
+      "theme": "friends",
+      "icon": "🦉",
+      "en": "Grandpa Owl",
+      "vi": "Ông Cú",
+      "hint": [
+        "Talk to Grandpa Owl",
+        "Nói chuyện với Ông Cú"
+      ],
+      "earn": [
+        {
+          "act": "npc_owl"
+        }
+      ],
+      "sound": "hee",
+      "starter": true
+    },
+    {
+      "id": "gourd",
+      "theme": "friends",
+      "icon": "🎃",
+      "en": "Grandpa Gourd",
+      "vi": "Ông Bầu",
+      "hint": [
+        "Talk to Grandpa Gourd",
+        "Nói chuyện với Ông Bầu"
+      ],
+      "earn": [
+        {
+          "act": "npc_gourd"
+        }
+      ],
+      "sound": "hee"
+    },
+    {
+      "id": "mai",
+      "theme": "friends",
+      "icon": "👩",
+      "en": "Auntie Mai",
+      "vi": "Cô Mai",
+      "hint": [
+        "Talk to Auntie Mai",
+        "Nói chuyện với Cô Mai"
+      ],
+      "earn": [
+        {
+          "act": "npc_mai"
+        }
+      ],
+      "sound": "hee"
+    },
+    {
+      "id": "ba",
+      "theme": "friends",
+      "icon": "👨",
+      "en": "Uncle Ba",
+      "vi": "Bác Ba",
+      "hint": [
+        "Talk to Uncle Ba",
+        "Nói chuyện với Bác Ba"
+      ],
+      "earn": [
+        {
+          "act": "npc_ba"
+        }
+      ],
+      "sound": "hee"
+    },
+    {
+      "id": "bear",
+      "theme": "friends",
+      "icon": "🐻",
+      "en": "Mr. Bear",
+      "vi": "Bác Gấu",
+      "hint": [
+        "Talk to Mr. Bear",
+        "Nói chuyện với Bác Gấu"
+      ],
+      "earn": [
+        {
+          "act": "bear"
+        }
+      ],
+      "sound": "hee"
+    },
+    {
+      "id": "nam",
+      "theme": "friends",
+      "icon": "👵",
+      "en": "Grandma Năm",
+      "vi": "Bà Năm",
+      "hint": [
+        "Talk to Grandma Năm",
+        "Nói chuyện với Bà Năm"
+      ],
+      "earn": [
+        {
+          "act": "g_chichi"
+        }
+      ],
+      "sound": "hee"
+    },
+    {
+      "id": "hue",
+      "theme": "friends",
+      "icon": "👵",
+      "en": "Grandma Huệ",
+      "vi": "Bà Huệ",
+      "hint": [
+        "Talk to Grandma Huệ",
+        "Nói chuyện với Bà Huệ"
+      ],
+      "earn": [
+        {
+          "act": "npc_bahue"
+        }
+      ],
+      "sound": "hee"
+    },
+    {
+      "id": "nghi",
+      "theme": "friends",
+      "icon": "👴",
+      "en": "Grandpa Nghi",
+      "vi": "Ông Nghi",
+      "hint": [
+        "Talk to Grandpa Nghi",
+        "Nói chuyện với Ông Nghi"
+      ],
+      "earn": [
+        {
+          "act": "npc_ongnghi"
+        }
+      ],
+      "sound": "hee"
+    },
+    {
+      "id": "bestfriends",
+      "theme": "friends",
+      "icon": "🤝",
+      "en": "Best friends",
+      "vi": "Bạn thân",
+      "hint": [
+        "Open a chest with a friend",
+        "Mở rương cùng một bạn"
+      ],
+      "earn": [
+        {
+          "prize": "🤝"
+        }
+      ],
+      "sound": "fanfare"
+    },
+    {
+      "id": "teo",
+      "theme": "friends",
+      "icon": "👦",
+      "en": "Tèo",
+      "vi": "Tèo",
+      "hint": [
+        "Talk to Tèo",
+        "Nói chuyện với Tèo"
+      ],
+      "earn": [
+        {
+          "act": "npc_teo"
+        }
+      ],
+      "sound": "hee",
+      "starter": true
+    },
+    {
+      "id": "ti",
+      "theme": "friends",
+      "icon": "👦",
+      "en": "Tí",
+      "vi": "Tí",
+      "hint": [
+        "Talk to Tí",
+        "Nói chuyện với Tí"
+      ],
+      "earn": [
+        {
+          "act": "npc_ti"
+        }
+      ],
+      "sound": "hee"
+    },
+    {
+      "id": "bong",
+      "theme": "friends",
+      "icon": "👧",
+      "en": "Bống",
+      "vi": "Bống",
+      "hint": [
+        "Talk to Bống",
+        "Nói chuyện với Bống"
+      ],
+      "earn": [
+        {
+          "act": "npc_bong"
+        }
+      ],
+      "sound": "hee"
+    },
+    {
+      "id": "su",
+      "theme": "friends",
+      "icon": "👧",
+      "en": "Su",
+      "vi": "Su",
+      "hint": [
+        "Talk to Su",
+        "Nói chuyện với Su"
+      ],
+      "earn": [
+        {
+          "act": "npc_su"
+        }
+      ],
+      "sound": "hee"
+    },
+    {
+      "id": "mit",
+      "theme": "friends",
+      "icon": "👦",
+      "en": "Mít",
+      "vi": "Mít",
+      "hint": [
+        "Talk to Mít",
+        "Nói chuyện với Mít"
+      ],
+      "earn": [
+        {
+          "act": "npc_mit"
+        }
+      ],
+      "sound": "hee"
+    },
+    {
+      "id": "bom",
+      "theme": "friends",
+      "icon": "👦",
+      "en": "Bờm",
+      "vi": "Bờm",
+      "hint": [
+        "Talk to Bờm",
+        "Nói chuyện với Bờm"
+      ],
+      "earn": [
+        {
+          "act": "npc_bom"
+        }
+      ],
+      "sound": "hee"
+    },
+    {
+      "id": "lan",
+      "theme": "friends",
+      "icon": "👧",
+      "en": "Lan",
+      "vi": "Lan",
+      "hint": [
+        "Talk to Lan",
+        "Nói chuyện với Lan"
+      ],
+      "earn": [
+        {
+          "act": "npc_lan"
+        }
+      ],
+      "sound": "hee"
+    },
+    {
+      "id": "jack",
+      "theme": "friends",
+      "icon": "👦",
+      "en": "Jack",
+      "vi": "Jack",
+      "hint": [
+        "Talk to Jack",
+        "Nói chuyện với Jack"
+      ],
+      "earn": [
+        {
+          "act": "npc_jack"
+        }
+      ],
+      "sound": "hee"
+    },
+    {
+      "id": "f_ruby",
+      "theme": "friends",
+      "icon": "👧",
+      "en": "Ruby",
+      "vi": "Ruby",
+      "hint": [
+        "Talk to Ruby",
+        "Nói chuyện với Ruby"
+      ],
+      "earn": [
+        {
+          "act": "npc_ruby"
+        }
+      ],
+      "sound": "hee"
+    },
+    {
+      "id": "rainbow",
+      "theme": "rare",
+      "icon": "🌈",
+      "en": "Rainbow",
+      "vi": "Cầu vồng",
+      "hint": [
+        "After the rain, look around",
+        "Sau cơn mưa, nhìn quanh nhé"
+      ],
+      "earn": [
+        {
+          "surprise": "rainbow"
+        },
+        {
+          "prize": "🌈"
+        }
+      ],
+      "sound": "secret",
+      "starter": true
+    },
+    {
+      "id": "stars",
+      "theme": "rare",
+      "icon": "🌙",
+      "en": "Shooting stars",
+      "vi": "Sao băng",
+      "hint": [
+        "Look up on a clear night",
+        "Nhìn trời đêm quang"
+      ],
+      "earn": [
+        {
+          "surprise": "stars"
+        },
+        {
+          "prize": "🌙"
+        }
+      ],
+      "sound": "secret"
+    },
+    {
+      "id": "rainbowlotus",
+      "theme": "rare",
+      "icon": "🪷",
+      "en": "Rainbow lotus",
+      "vi": "Sen cầu vồng",
+      "hint": [
+        "Blooms on the lotus pond",
+        "Nở trên ao sen"
+      ],
+      "earn": [
+        {
+          "surprise": "lotus"
+        },
+        {
+          "prize": "🪷"
+        }
+      ],
+      "sound": "secret"
+    },
+    {
+      "id": "goldbutterfly",
+      "theme": "rare",
+      "icon": "🦋",
+      "en": "Golden butterfly",
+      "vi": "Bướm vàng",
+      "hint": [
+        "Follow it when it comes",
+        "Đi theo khi bướm đến"
+      ],
+      "earn": [
+        {
+          "surprise": "butterfly"
+        },
+        {
+          "prize": "🦋"
+        }
+      ],
+      "sound": "secret"
+    },
+    {
+      "id": "fairy",
+      "theme": "rare",
+      "icon": "🧚",
+      "en": "Visiting fairy",
+      "vi": "Cô tiên ghé thăm",
+      "hint": [
+        "Sometimes a fairy visits",
+        "Thỉnh thoảng cô tiên ghé"
+      ],
+      "earn": [
+        {
+          "surprise": "fairy"
+        }
+      ],
+      "sound": "secret"
+    },
+    {
+      "id": "unicorn",
+      "theme": "rare",
+      "icon": "🦄",
+      "en": "Unicorn",
+      "vi": "Kỳ lân",
+      "hint": [
+        "A prize for quests, jobs and festivals",
+        "Quà khi làm nhiệm vụ, việc nhà và lễ hội"
+      ],
+      "earn": [
+        {
+          "prize": "🦄"
+        }
+      ],
+      "sound": "secret"
+    },
+    {
+      "id": "sun",
+      "theme": "rare",
+      "icon": "☀️",
+      "en": "Happy sun",
+      "vi": "Ông mặt trời",
+      "hint": [
+        "A prize for quests, jobs and festivals",
+        "Quà khi làm nhiệm vụ, việc nhà và lễ hội"
+      ],
+      "earn": [
+        {
+          "prize": "☀️"
+        }
+      ],
+      "sound": "chime"
+    },
+    {
+      "id": "rocket",
+      "theme": "rare",
+      "icon": "🚀",
+      "en": "Rocket",
+      "vi": "Tên lửa",
+      "hint": [
+        "A prize for quests, jobs and festivals",
+        "Quà khi làm nhiệm vụ, việc nhà và lễ hội"
+      ],
+      "earn": [
+        {
+          "prize": "🚀"
+        }
+      ],
+      "sound": "whoosh"
+    },
+    {
+      "id": "train",
+      "theme": "rare",
+      "icon": "🚂",
+      "en": "Little train",
+      "vi": "Tàu hỏa nhỏ",
+      "hint": [
+        "A prize for quests, jobs and festivals",
+        "Quà khi làm nhiệm vụ, việc nhà và lễ hội"
+      ],
+      "earn": [
+        {
+          "prize": "🚂"
+        }
+      ],
+      "sound": "chuff"
+    }
+  ],
+  "themes": [
+    {
+      "id": "farm",
+      "tab": [
+        "Farm",
+        "Nông trại"
+      ],
+      "color": "#43c463",
+      "icon": "🐃",
+      "en": "Farm friends",
+      "vi": "Bạn nông trại",
+      "song": "farm",
+      "decor": [
+        "🐃",
+        "Golden frame: farm friends",
+        "Khung vàng: bạn nông trại"
+      ]
+    },
+    {
+      "id": "wild",
+      "tab": [
+        "Wild",
+        "Hoang dã"
+      ],
+      "color": "#2e9e5b",
+      "icon": "🐼",
+      "en": "Wild animals",
+      "vi": "Thú hoang dã",
+      "song": "folk",
+      "decor": [
+        "🐼",
+        "Golden frame: wild animals",
+        "Khung vàng: thú hoang dã"
+      ]
+    },
+    {
+      "id": "dishes",
+      "tab": [
+        "Food",
+        "Món ăn"
+      ],
+      "color": "#ffb020",
+      "icon": "🍲",
+      "en": "Yummy dishes",
+      "vi": "Món ngon",
+      "song": "village2",
+      "decor": [
+        "🍲",
+        "Golden frame: yummy dishes",
+        "Khung vàng: món ngon"
+      ]
+    },
+    {
+      "id": "fruit",
+      "tab": [
+        "Fruit",
+        "Hoa quả"
+      ],
+      "color": "#ff6fae",
+      "icon": "🌸",
+      "en": "Fruit and flowers",
+      "vi": "Hoa và quả",
+      "song": "vn_sang",
+      "decor": [
+        "🌸",
+        "Golden frame: fruit and flowers",
+        "Khung vàng: hoa và quả"
+      ]
+    },
+    {
+      "id": "treasure",
+      "tab": [
+        "Treasure",
+        "Báu vật"
+      ],
+      "color": "#c98a1a",
+      "icon": "💎",
+      "en": "Treasures",
+      "vi": "Báu vật",
+      "song": "twinkle",
+      "decor": [
+        "💎",
+        "Golden frame: treasures",
+        "Khung vàng: báu vật"
+      ]
+    },
+    {
+      "id": "vietnam",
+      "tab": [
+        "Vietnam",
+        "Việt Nam"
+      ],
+      "color": "#e8433a",
+      "icon": "🪷",
+      "en": "Places in Vietnam",
+      "vi": "Nơi chốn Việt Nam",
+      "song": "village",
+      "decor": [
+        "🪷",
+        "Golden frame: Vietnam",
+        "Khung vàng: Việt Nam"
+      ]
+    },
+    {
+      "id": "world",
+      "tab": [
+        "World",
+        "Thế giới"
+      ],
+      "color": "#29b6f6",
+      "icon": "🦘",
+      "en": "Australia and the world",
+      "vi": "Nước Úc và thế giới",
+      "song": "ausday",
+      "decor": [
+        "🦘",
+        "Golden frame: Australia and the world",
+        "Khung vàng: nước Úc và thế giới"
+      ]
+    },
+    {
+      "id": "festivals",
+      "tab": [
+        "Festivals",
+        "Lễ hội"
+      ],
+      "color": "#8a5cf6",
+      "icon": "🏮",
+      "en": "Festivals",
+      "vi": "Lễ hội",
+      "song": "trungthu1",
+      "decor": [
+        "🏮",
+        "Golden frame: festivals",
+        "Khung vàng: lễ hội"
+      ]
+    },
+    {
+      "id": "friends",
+      "tab": [
+        "Friends",
+        "Bạn bè"
+      ],
+      "color": "#ff8a3d",
+      "icon": "🦉",
+      "en": "Friends and family",
+      "vi": "Bạn bè và gia đình",
+      "song": "pond",
+      "decor": [
+        "🦉",
+        "Golden frame: friends and family",
+        "Khung vàng: bạn bè và gia đình"
+      ]
+    },
+    {
+      "id": "rare",
+      "tab": [
+        "Rare",
+        "Hiếm"
+      ],
+      "color": "#5b6ee8",
+      "icon": "🌈",
+      "en": "Rare and shiny",
+      "vi": "Hiếm và lấp lánh",
+      "song": "trungthu2",
+      "decor": [
+        "🌈",
+        "Golden frame: rare and shiny",
+        "Khung vàng: hiếm và lấp lánh"
+      ]
+    }
+  ],
+  "countries": [
+    {
+      "cc": "vn",
+      "name": [
+        "Vietnam",
+        "Việt Nam"
+      ],
+      "place": [
+        "Lotus Village",
+        "Làng Sen"
+      ],
+      "games": [
+        "dragon",
+        "dacau",
+        "datnieu",
+        "kite",
+        "chichi",
+        "oanquan",
+        "hopscotch",
+        "caro",
+        "tug",
+        "chuyen",
+        "skipping",
+        "words"
+      ],
+      "hat": "khanran",
+      "hatName": [
+        "Khăn rằn checked scarf",
+        "Khăn rằn"
+      ],
+      "hatIcon": "🧣"
+    },
+    {
+      "cc": "au",
+      "name": [
+        "Australia",
+        "Nước Úc"
+      ],
+      "place": [
+        "Aussie Corner",
+        "Góc Nước Úc"
+      ],
+      "games": [
+        "mrwolf",
+        "snap",
+        "cricket",
+        "parcel",
+        "marbles",
+        "sackrace"
+      ],
+      "hat": "akubra",
+      "hatName": [
+        "Akubra bush hat",
+        "Mũ Akubra nước Úc"
+      ],
+      "hatIcon": "🤠"
+    },
+    {
+      "cc": "cn",
+      "name": [
+        "China",
+        "Trung Quốc"
+      ],
+      "place": [
+        "China Town",
+        "Làng Trung Hoa"
+      ],
+      "games": [
+        "tangram",
+        "firstwords"
+      ],
+      "hat": "silkcap",
+      "hatName": [
+        "Chinese silk cap",
+        "Mũ lụa Trung Hoa"
+      ],
+      "hatIcon": "🎩"
+    },
+    {
+      "cc": "in",
+      "name": [
+        "India",
+        "Ấn Độ"
+      ],
+      "place": [
+        "India Village",
+        "Làng Ấn Độ"
+      ],
+      "games": [
+        "snakes",
+        "rangoli",
+        "firstwords"
+      ],
+      "hat": "pagri",
+      "hatName": [
+        "Pagri turban",
+        "Khăn xếp Pagri"
+      ],
+      "hatIcon": "👳"
+    }
+  ],
+  "storyBooks": [
+    {
+      "id": "ch1",
+      "after": "tower1",
+      "reward": 15,
+      "title": [
+        "Chapter 1: The Tower Wakes Up",
+        "Chương 1: Tháp Thức Dậy"
+      ]
+    },
+    {
+      "id": "ch2",
+      "after": "glider",
+      "reward": 20,
+      "title": [
+        "Chapter 2: Wings of a Leaf",
+        "Chương 2: Đôi Cánh Lá"
+      ]
+    },
+    {
+      "id": "ch3",
+      "after": "village",
+      "reward": 15,
+      "title": [
+        "Chapter 3: Lotus Village",
+        "Chương 3: Làng Sen"
+      ]
+    },
+    {
+      "id": "ch4",
+      "after": "folk",
+      "reward": 15,
+      "title": [
+        "Chapter 4: Laughter Lights the Lanterns",
+        "Chương 4: Tiếng Cười Thắp Đèn"
+      ]
+    },
+    {
+      "id": "ch4b",
+      "after": "playground",
+      "reward": 20,
+      "title": [
+        "Chapter 5: Friends from Far Away",
+        "Chương 5: Những Người Bạn Phương Xa"
+      ]
+    },
+    {
+      "id": "ch5",
+      "after": "cook",
+      "reward": 15,
+      "title": [
+        "Chapter 6: A Feast for Friends",
+        "Chương 6: Bữa Tiệc Cho Bạn Bè"
+      ]
+    },
+    {
+      "id": "ch6",
+      "after": "leafies",
+      "reward": 20,
+      "title": [
+        "Chapter 7: The Hidden Leafies",
+        "Chương 7: Các Bạn Lá Lá"
+      ]
+    },
+    {
+      "id": "ch7",
+      "after": "statue",
+      "reward": 20,
+      "title": [
+        "Chapter 8: The Lotus Blessing",
+        "Chương 8: Phước Lành Hoa Sen"
+      ]
+    },
+    {
+      "id": "ch8",
+      "after": "towers",
+      "reward": 30,
+      "title": [
+        "Chapter 9: Every Tower Shines",
+        "Chương 9: Mọi Tháp Đều Sáng"
+      ]
+    },
+    {
+      "id": "ch9",
+      "after": "shrines",
+      "reward": 50,
+      "title": [
+        "The End: A Rainbow Friend",
+        "Kết Thúc: Người Bạn Cầu Vồng"
+      ]
+    }
+  ],
+  "skills": {
+    "rulefinder": {
+      "key": "skill:rulefinder",
+      "en": "Rule finder",
+      "vi": "Tìm quy luật"
+    },
+    "gardenorder": {
+      "key": "skill:gardenorder",
+      "en": "Story sorter",
+      "vi": "Xếp câu chuyện"
+    },
+    "steppingpath": {
+      "key": "skill:steppingpath",
+      "en": "Path planner",
+      "vi": "Vẽ đường đi"
+    },
+    "patternpicnic": {
+      "key": "skill:patternpicnic",
+      "en": "Pattern spotter",
+      "vi": "Nhìn ra quy luật"
+    },
+    "shapebuilders": {
+      "key": "skill:shapebuilders",
+      "en": "Shape builder",
+      "vi": "Ghép hình giỏi"
+    },
+    "remembergarden": {
+      "key": "skill:remembergarden",
+      "en": "Memory keeper",
+      "vi": "Nhớ giỏi"
+    }
+  },
+  "collectibles": [
+    {
+      "id": "f_rose",
+      "kind": "fairy",
+      "icon": "🧚",
+      "rare": "common",
+      "en": "Rose fairy",
+      "vi": "Tiên hoa hồng",
+      "hue": 0
+    },
+    {
+      "id": "f_sky",
+      "kind": "fairy",
+      "icon": "🧚",
+      "rare": "common",
+      "en": "Sky fairy",
+      "vi": "Tiên bầu trời",
+      "hue": 160
+    },
+    {
+      "id": "f_leaf",
+      "kind": "fairy",
+      "icon": "🧚",
+      "rare": "common",
+      "en": "Leaf fairy",
+      "vi": "Tiên lá xanh",
+      "hue": 90
+    },
+    {
+      "id": "f_sun",
+      "kind": "fairy",
+      "icon": "🧚",
+      "rare": "rare",
+      "en": "Sunshine fairy",
+      "vi": "Tiên nắng",
+      "hue": 40
+    },
+    {
+      "id": "f_moon",
+      "kind": "fairy",
+      "icon": "🧚",
+      "rare": "rare",
+      "en": "Moon fairy",
+      "vi": "Tiên mặt trăng",
+      "hue": 220
+    },
+    {
+      "id": "f_lotus",
+      "kind": "fairy",
+      "icon": "🪷",
+      "rare": "magic",
+      "en": "Lotus fairy",
+      "vi": "Tiên hoa sen",
+      "hue": 0
+    },
+    {
+      "id": "d_green",
+      "kind": "dragon",
+      "icon": "🐉",
+      "rare": "common",
+      "en": "Rice-field dragon",
+      "vi": "Rồng đồng lúa",
+      "hue": 0
+    },
+    {
+      "id": "d_red",
+      "kind": "dragon",
+      "icon": "🐉",
+      "rare": "common",
+      "en": "Lantern dragon",
+      "vi": "Rồng đèn lồng",
+      "hue": 250
+    },
+    {
+      "id": "d_blue",
+      "kind": "dragon",
+      "icon": "🐉",
+      "rare": "common",
+      "en": "River dragon",
+      "vi": "Rồng sông",
+      "hue": 110
+    },
+    {
+      "id": "d_gold",
+      "kind": "dragon",
+      "icon": "🐲",
+      "rare": "rare",
+      "en": "Golden dragon",
+      "vi": "Rồng vàng",
+      "hue": 300
+    },
+    {
+      "id": "d_cloud",
+      "kind": "dragon",
+      "icon": "🐲",
+      "rare": "rare",
+      "en": "Cloud dragon",
+      "vi": "Rồng mây",
+      "hue": 180
+    },
+    {
+      "id": "d_rainbow",
+      "kind": "dragon",
+      "icon": "🦄",
+      "rare": "magic",
+      "en": "Rainbow dragon-horse",
+      "vi": "Ngựa rồng cầu vồng",
+      "hue": 0
+    },
+    {
+      "id": "s_koala",
+      "kind": "sticker",
+      "icon": "🐨",
+      "rare": "common",
+      "en": "Koala sticker",
+      "vi": "Hình dán gấu túi",
+      "hue": 0
+    },
+    {
+      "id": "s_roo",
+      "kind": "sticker",
+      "icon": "🦘",
+      "rare": "common",
+      "en": "Kangaroo sticker",
+      "vi": "Hình dán chuột túi",
+      "hue": 0
+    },
+    {
+      "id": "s_turtle",
+      "kind": "sticker",
+      "icon": "🐢",
+      "rare": "common",
+      "en": "Turtle sticker",
+      "vi": "Hình dán rùa",
+      "hue": 0
+    },
+    {
+      "id": "s_flamingo",
+      "kind": "sticker",
+      "icon": "🦩",
+      "rare": "common",
+      "en": "Flamingo sticker",
+      "vi": "Hình dán hồng hạc",
+      "hue": 0
+    },
+    {
+      "id": "s_whale",
+      "kind": "sticker",
+      "icon": "🐳",
+      "rare": "rare",
+      "en": "Whale sticker",
+      "vi": "Hình dán cá voi",
+      "hue": 0
+    },
+    {
+      "id": "s_peacock",
+      "kind": "sticker",
+      "icon": "🦚",
+      "rare": "rare",
+      "en": "Peacock sticker",
+      "vi": "Hình dán chim công",
+      "hue": 0
+    },
+    {
+      "id": "s_rainbow",
+      "kind": "sticker",
+      "icon": "🌈",
+      "rare": "magic",
+      "en": "Rainbow sticker",
+      "vi": "Hình dán cầu vồng",
+      "hue": 0
+    },
+    {
+      "id": "o_lantern",
+      "kind": "deco",
+      "icon": "🏮",
+      "rare": "common",
+      "en": "Red lantern",
+      "vi": "Đèn lồng đỏ",
+      "hue": 0
+    },
+    {
+      "id": "o_chime",
+      "kind": "deco",
+      "icon": "🎐",
+      "rare": "common",
+      "en": "Wind chime",
+      "vi": "Chuông gió",
+      "hue": 0
+    },
+    {
+      "id": "o_plant",
+      "kind": "deco",
+      "icon": "🪴",
+      "rare": "common",
+      "en": "Pot plant",
+      "vi": "Chậu cây",
+      "hue": 0
+    },
+    {
+      "id": "o_lamp",
+      "kind": "deco",
+      "icon": "🪔",
+      "rare": "rare",
+      "en": "Little oil lamp",
+      "vi": "Đèn dầu nhỏ",
+      "hue": 0
+    },
+    {
+      "id": "o_carp",
+      "kind": "deco",
+      "icon": "🎏",
+      "rare": "rare",
+      "en": "Carp streamer",
+      "vi": "Cờ cá chép",
+      "hue": 0
+    },
+    {
+      "id": "o_teddy",
+      "kind": "deco",
+      "icon": "🧸",
+      "rare": "magic",
+      "en": "Golden teddy",
+      "vi": "Gấu bông vàng",
+      "hue": 20
+    }
+  ],
+  "weekPrizes": [
+    {
+      "hat": "party",
+      "icon": "🎉",
+      "en": "A party hat for your companion",
+      "vi": "Mũ sinh nhật cho bạn đồng hành"
+    },
+    {
+      "pet": "kitty",
+      "icon": "🐱",
+      "en": "A kitten to look after",
+      "vi": "Một bé mèo để chăm sóc"
+    },
+    {
+      "hat": "flower",
+      "icon": "🌸",
+      "en": "A flower crown for your companion",
+      "vi": "Vòng hoa cho bạn đồng hành"
+    },
+    {
+      "pet": "bunny",
+      "icon": "🐰",
+      "en": "A bunny to look after",
+      "vi": "Một bé thỏ để chăm sóc"
+    },
+    {
+      "hat": "nonla",
+      "icon": "👒",
+      "en": "A little nón lá for your companion",
+      "vi": "Nón lá nhỏ cho bạn đồng hành"
+    },
+    {
+      "pet": "panda",
+      "icon": "🐼",
+      "en": "A baby panda to look after",
+      "vi": "Một bé gấu trúc để chăm sóc"
+    },
+    {
+      "hat": "crown",
+      "icon": "👑",
+      "en": "A golden crown for your companion",
+      "vi": "Vương miện vàng cho bạn đồng hành"
+    },
+    {
+      "pet": "joey",
+      "icon": "🦘",
+      "en": "A joey to look after",
+      "vi": "Một bé chuột túi để chăm sóc"
+    },
+    {
+      "pet": "calf",
+      "icon": "🐮",
+      "en": "A calf to look after",
+      "vi": "Một bé bê để chăm sóc"
+    }
+  ],
+  "yardSteps": [
+    {
+      "id": "y_start",
+      "icon": "👵",
+      "en": "Ask Bà Huệ about the new yard",
+      "vi": "Hỏi bà Huệ về công trường mới",
+      "at": "hue"
+    },
+    {
+      "id": "y_coach",
+      "icon": "🚌",
+      "en": "Meet the coach from Hà Tĩnh",
+      "vi": "Đón xe khách từ Hà Tĩnh",
+      "at": "coach",
+      "tale": [
+        "👵🚌",
+        "Bà Huệ",
+        "When Grandpa Nghi and I started out, we brought the young ones from Hà Tĩnh to work with us. Today more of the family are coming! Please meet their coach.",
+        "Hồi bà với ông Nghi mới lập nghiệp, ông bà đưa các em từ Hà Tĩnh vào làm cùng. Hôm nay lại có thêm người nhà vào! Con ra đón xe khách giúp bà nhé."
+      ]
+    },
+    {
+      "id": "y_jobs",
+      "icon": "👷",
+      "en": "Give everyone a job",
+      "vi": "Giao việc cho mọi người",
+      "at": "relatives",
+      "tale": [
+        "👷🏗️",
+        "Anh 2",
+        "Welcome to the yard! Ask each of them what they are good at, then give them the right job.",
+        "Chào mừng đến công trường! Con hỏi mỗi người giỏi việc gì, rồi giao cho họ việc phù hợp nhé."
+      ]
+    },
+    {
+      "id": "y_truck",
+      "icon": "🚚",
+      "en": "Drive the dump truck with earth and stone",
+      "vi": "Lái xe ben chở đất đá",
+      "at": "truck",
+      "tale": [
+        "🚚🪨",
+        "Chú Thuận",
+        "Jump in, we will drive together! Load up at the stone pile, then tip it out at the building site.",
+        "Lên xe nào, mình cùng lái nhé! Xúc đá ở bãi đá, rồi đổ xuống chỗ xây nhà."
+      ]
+    },
+    {
+      "id": "y_dig",
+      "icon": "🏗️",
+      "en": "Dig the foundations with the excavator",
+      "vi": "Đào móng bằng máy xúc",
+      "at": "digger",
+      "tale": [
+        "🏗️💪",
+        "Anh Quân",
+        "A strong house needs deep foundations. Pull the levers with me and dig!",
+        "Nhà chắc phải có móng sâu. Con kéo cần cùng anh rồi đào nhé!"
+      ]
+    },
+    {
+      "id": "y_build",
+      "icon": "🧱",
+      "en": "Build the house together",
+      "vi": "Cùng nhau xây nhà",
+      "at": "site",
+      "tale": [
+        "🧱🏠",
+        "Chú Hùng",
+        "Brick by brick, everyone together! Then we lift the roof on.",
+        "Từng viên gạch, mọi người cùng làm! Rồi mình lợp mái nhé."
+      ]
+    },
+    {
+      "id": "y_party",
+      "icon": "🍲",
+      "en": "Come to the house-warming meal at the Huệ Nghi shop",
+      "vi": "Về tiệm Huệ Nghi ăn mừng nhà mới",
+      "at": "hue",
+      "tale": [
+        "🏠🎉",
+        "Anh 2",
+        "The house is finished! Mum is cooking a big meal at the shop. Let us all go and eat together!",
+        "Nhà xong rồi! Mẹ đang nấu một bữa thật ngon ở tiệm. Mình cùng về ăn mừng nhé!"
+      ]
+    }
+  ]
+}
