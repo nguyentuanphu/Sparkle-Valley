@@ -18,6 +18,21 @@ Reference images inspected and supplied for this composition:
 
 The banner is a generated promotional composition using these references. It does not introduce a new game interface.
 
+### Vietnam on the left, Australia on the right
+
+The owner approved the other elements and requested clearer Vietnamese landmarks in the left background on 22 October 2026 AEDT. The scenic revision uses Cầu Rồng, Hồ Gươm with Tháp Rùa, and Chùa Một Cột; Sydney Opera House and Sydney Harbour Bridge identify Australia on the right. The text, activity panels, story/game illustrations and parent guidance keep their approved design.
+
+Landmark references:
+
+- [Actual game Dragon Bridge](../../marketing/source/stills/city-dragon.jpg)
+- [Actual game Hanoi/Turtle Tower](../../marketing/source/stills10/cine-hanoi-en.jpg)
+- [Hanoi landmark models](../../js/regions.js): Turtle Tower on its lake islet and One Pillar Pagoda on a single pillar above a pond.
+- [Landmark metadata](../../js/cities.js) and [world placement](../../js/content/map.js): Đà Nẵng's Dragon Bridge, Hồ Gươm and the Hanoi landmarks.
+
+The previous combined design is preserved in Git history at commit `c7977ada`.
+
+The revised PNG was visually inspected on 22 October 2026 AEDT: all three Vietnamese landmarks are visible on the left, Sydney's landmarks remain on the right, and the game/story names, explanations, parent footer, logo and website copy remain present and legible. File validation confirms 1672 × 941 pixels. This image-only revision was checked visually and for file/document-link integrity; the prior 9/9 game checks below refer to the preceding banner batch, with no game-code change in this revision.
+
 ## Vietnamese folk games
 
 | Existing game | How the game plays | Practice and family connection |

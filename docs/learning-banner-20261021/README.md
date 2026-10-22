@@ -8,6 +8,8 @@ Created 22 October 2026 AEDT at the owner's request, using the GitHub project: [
 
 The landscape banners introduce the game to parents of children aged 2–8. They present named activities, the actions children take, skills they can practise and ways parents can guide play. The combined design brings together the adventure-map arrangement and the game's UI/art identity, with larger sections for Vietnamese folk games and stories. These are promotional compositions, not screenshots of a live banner interface.
 
+The updated combined background clearly places Vietnam on the left with Cầu Rồng, Hồ Gươm/Tháp Rùa and Chùa Một Cột, and Australia on the right with Sydney Opera House and Sydney Harbour Bridge.
+
 ## Designs and combined banner
 
 The current combined design follows the owner's request to combine themes 2 and 3, use the game references, and add more information about Vietnamese folk games and stories. The earlier options are preserved for comparison. All designs use the source-backed feature and learning information below, with different selections of examples.
