@@ -151,3 +151,12 @@ test('tester summary uses the Sydney day across the UTC date boundary', () => {
  const result = T.summary([{ firstAt:Date.parse('2026-10-13T22:00:00Z'), lastAt:now, devices:1, n:1, status:'new', title:'x' }], now);
  assert.equal(result.day,'2026-10-14'); assert.equal(result.new,1); assert.equal(result.open,1);
 });
+
+test('the problem list reads the store many at a time (r89: the robot got 504 from one-by-one reads)', async () => {
+  const S = mem(); let busy = 0, most = 0;
+  for (let i = 0; i < 60; i++) await S.setJSON(`p/${String(i).padStart(16, '0')}`, { k: String(i).padStart(16, '0'), kind: 'auto', title: 't' + i, where: {}, n: 1, devices: [], builds: [], reports: [], status: 'new', kinds: {}, lastAt: i });
+  const get = S.get; S.get = async (k, o) => { busy++; most = Math.max(most, busy); await new Promise(r => setTimeout(r, 5)); busy--; return get(k, o); };
+  const list = await T.problems(S);
+  assert.equal(list.length, 60); assert.equal(list[0].title, 't59', 'newest first as before');
+  assert.ok(most >= 8, `at most ${most} reads at once`);
+});

@@ -91,18 +91,20 @@ export async function addReport(S, live, body, now = Date.now(), ipk = '') {
   const receipt = { ok: true, k, rid, status: p.status, at:now }; if (receiptKey) await S.setJSON(receiptKey, receipt); return receipt;
 }
 
+// (r89: the hourly tester-issues robot got 504 for the list from 22 Oct) the store is read many at a time, never one by one
+// (as Analytics, netlify/lib/players.mts): hundreds of problems one after another ran past the function's time limit
+const POOL = 16;
+async function readJSON(S, keys: string[]) { const out = new Array(keys.length); let i = 0; await Promise.all(Array.from({ length: Math.min(POOL, keys.length) }, async () => { while (i < keys.length) { const j = i++; out[j] = await S.get(keys[j], { type: 'json' }); } })); return out; }
 const all = async (S, prefix, cap = 5000) => { const out = []; let cursor; do { const l = await S.list({ prefix, cursor }); for (const b of l.blobs) out.push(b.key); cursor = l.cursor; } while (cursor && out.length < cap); return out; };
 const short = p => ({ k: p.k, kind: p.kind, auto: p.auto, title: p.title, where: p.where, n: p.n, devices: p.devices.length, builds: p.builds, firstAt: p.firstAt, lastAt: p.lastAt, status: p.status, fixedIn: p.fixedIn || '', dupOf: p.dupOf || '', issue: p.issue || 0, spoken: !!p.spoken, kinds: p.kinds });
 export async function problems(S) {
-  const keys = await all(S, 'p/'); const out = [];
-  for (const k of keys) { const p = await S.get(k, { type: 'json' }); if (p) out.push(short(p)); }
+  const out = (await readJSON(S, await all(S, 'p/'))).filter(Boolean).map(short);
   return out.sort((a, b) => (b.lastAt || 0) - (a.lastAt || 0));
 }
 // the weekly star: the device whose reports helped most in the last 7 days
 export const starOf = (testers, now = Date.now()) => { let best = null, n = 0; for (const t of testers) { const c = (t.helped || []).filter(h => now - h.at < 7 * 864e5).length; if (c > n) { n = c; best = t.id; } } return best; };
 export async function testers(S, now = Date.now()) {
-  const keys = await all(S, 't/'), out = [];
-  for (const k of keys) { const t = await S.get(k, { type: 'json' }); if (t) out.push(t); }
+  const out = (await readJSON(S, await all(S, 't/'))).filter(Boolean);
   const star = starOf(out, now);
   return out.map(t => ({ id: t.id, label: t.label || '', players: t.players || [], os: t.os || '', b: t.b || '', firstAt: t.firstAt, lastAt: t.lastAt, reports: t.reports || 0, helped: (t.helped || []).length, star: t.id === star, accepted: t.accepted || 0 })).sort((a, b) => (b.lastAt || 0) - (a.lastAt || 0));
 }
@@ -117,7 +119,7 @@ export async function overview(S, now = Date.now()) { const list = await problem
 // one problem with its reports (Studio's details: notes, players, errors, the replay as steps; the screenshots by `shot`)
 export async function problem(S, k) {
   if (!PK.test(k || '')) return null; const p = await S.get(`p/${k}`, { type: 'json' }); if (!p) return null;
-  const reports = []; for (const rid of p.reports) { const r = await S.get(`r/${rid}`, { type: 'json' }); if (r) reports.push(r); }
+  const reports = (await readJSON(S, p.reports.map(rid => `r/${rid}`))).filter(Boolean);
   return { ...short(p), devices: p.devices, reports };
 }
 export const shotOf = async (S, rid) => /^[a-f0-9]{16}$/.test(rid || '') ? await S.get(`shot/${rid}`) : null;
@@ -144,11 +146,12 @@ export async function setProblem(S, k, b, now = Date.now()) {
 export async function deviceStatus(S, live, id, build, now = Date.now()) {
   if (!isTester(live, id)) return null;
   const t = (await S.get(`t/${id}`, { type: 'json' })) || { id, mine: [], helped: [] }, mine = [];
-  for (const k of (t.mine || []).slice(-100)) { const p = await S.get(`p/${k}`, { type: 'json' }); if (p) mine.push({ k, title: p.title, status: p.status, fixedIn: p.fixedIn || '', kind: (t.kinds || {})[k] || p.kind, auto: p.auto || '', where: p.where, spoken: !!p.spoken }); }
+  const minek = (t.mine || []).slice(-100), mp = await readJSON(S, minek.map(k => `p/${k}`));
+  for (const [i, k] of minek.entries()) { const p = mp[i]; if (p) mine.push({ k, title: p.title, status: p.status, fixedIn: p.fixedIn || '', kind: (t.kinds || {})[k] || p.kind, auto: p.auto || '', where: p.where, spoken: !!p.spoken }); }
   const list = await problems(S), b = BUILD.test(build || '') ? +build.slice(1) : 0;
   const open = list.filter(p => ['new', 'fixing', 'back'].includes(p.status)).slice(0, 200).map(p => ({ k: p.k, title: p.title, where: p.where, n: p.n }));
   const retest = mine.filter(p => p.status === 'fixed' && p.fixedIn && b >= +p.fixedIn.slice(1) && p.kind === 'auto');
-  const star = starOf(await (async () => { const out = []; for (const k of await all(S, 't/')) { const x = await S.get(k, { type: 'json' }); if (x) out.push(x); } return out; })(), now) === id;
+  const star = starOf((await readJSON(S, await all(S, 't/'))).filter(Boolean), now) === id;
   return { mine, open, retest, helped: (t.helped || []).length, helpedKinds: [...new Set((t.helped || []).map(h => h.kind))], reports: t.reports || 0, star, peeks: Array.isArray((testerRule(live) || {}).peeks) ? testerRule(live).peeks : [] };
 }
 // a tester device tells: accepted the agreement, or a retest result (fixed: still fixed → confirmed; not: back)
