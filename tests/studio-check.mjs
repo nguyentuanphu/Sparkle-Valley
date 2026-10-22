@@ -107,7 +107,7 @@ export async function fakeNetlify({ port, env, players, adminStore = memoryBlobs
   const { makeFamily } = await import(toURL(path.join(ROOT, 'netlify/functions/family.mts')));
   const { makeTester } = await import(toURL(path.join(ROOT, 'netlify/functions/tester.mts'))); // (owner, 12 Oct) tester reports
   const now = () => testClock.t, tester = makeTester({ testerStore: async () => testerStore, liveStore: async () => liveStore, guardStore: async () => guardStore, now }), family = makeFamily({ familyStore: async () => familyStore, guardStore: async () => guardStore, now });
-  const studio = makeStudio({ playersStore: async () => players, adminStore: async () => adminStore, heldStore: async () => heldStore, liveStore: async () => liveStore, familyStore: async () => familyStore, guardStore: async () => guardStore, logStore: async () => logStore, testerStore: async () => testerStore, parentAnalyticsStore: async () => parentAnalyticsStore, now }), hello = makeHello({ playersStore: async () => players, guardStore: async () => guardStore }), live = makeLive({ liveStore: async () => liveStore });
+  const studio = makeStudio({ playersStore: async () => players, adminStore: async () => adminStore, heldStore: async () => heldStore, liveStore: async () => liveStore, familyStore: async () => familyStore, guardStore: async () => guardStore, logStore: async () => logStore, testerStore: async () => testerStore, parentAnalyticsStore: async () => parentAnalyticsStore, now }), hello = makeHello({ playersStore: async () => players, botStore: async () => players, guardStore: async () => guardStore }), live = makeLive({ liveStore: async () => liveStore });
   const MIME = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.png': 'image/png', '.jpg': 'image/jpeg', '.svg': 'image/svg+xml', '.mp3': 'audio/mpeg', '.woff2': 'font/woff2' };
   const server = http.createServer(async (req, res) => {
     const url = new URL(req.url, `http://localhost:${port}`); let p = decodeURIComponent(url.pathname);
@@ -345,23 +345,24 @@ export async function studioCheck(browser, open) {
       await ctx.setOffline(true);
       const off = await pg.evaluate(async ([today, yday]) => { const P = await import('/js/players.js'); P.countPlay('game', 'caro'); P.countPlay('tale');
         const { BUILD } = await import('/js/build.js');
-        const o = JSON.parse(localStorage.getItem('sv2_hello_out')); o.days[today+'|'+BUILD].m = 12;
+        const key = navigator.webdriver ? 'sv2_bot_telemetry' : 'sv2_hello_out';
+        const o = JSON.parse(localStorage.getItem(key)); o.days[today+'|'+BUILD].m = 12;
         // Deliberately retain an old date-only bucket to prove migration does not invent its originating build.
-        o.days[yday] = { m: 20, g: { oanquan: 1 }, t: 0, o: 0 }; localStorage.setItem('sv2_hello_out', JSON.stringify(o));
-        const sent = await P.flush(false); return { sent, out: JSON.parse(localStorage.getItem('sv2_hello_out')), me: localStorage.getItem('sv2_playerid'),build:BUILD }; }, [today, yday]);
+        o.days[yday] = { m: 20, g: { oanquan: 1 }, t: 0, o: 0 }; localStorage.setItem(key, JSON.stringify(o));
+        const sent = await P.flush(false); return { sent, out: JSON.parse(localStorage.getItem(key)), me: localStorage.getItem('sv2_playerid'),build:BUILD }; }, [today, yday]);
       ok(!off.sent && off.out.pending && off.out.pending.days.length === 2, 'offline: the outbox did not keep the play: ' + JSON.stringify(off));
       ok(off.out.pending.days.find(d=>d.d===today)?.build===off.build && off.out.pending.days.find(d=>d.d===yday)?.build==='?', 'offline: current build must be retained and a legacy build must stay unknown');
       const before = players._m.size;
       await ctx.setOffline(false);
-      const on = await pg.evaluate(async () => { const P = await import('/js/players.js'); const sent = await P.flush(false); return { sent, out: JSON.parse(localStorage.getItem('sv2_hello_out')), me: localStorage.getItem('sv2_playerid') }; });
+      const on = await pg.evaluate(async () => { const P = await import('/js/players.js'), key = navigator.webdriver ? 'sv2_bot_telemetry' : 'sv2_hello_out'; const sent = await P.flush(false); return { sent, out: JSON.parse(localStorage.getItem(key)), me: localStorage.getItem('sv2_playerid') }; });
       const rec = d => JSON.parse(players._m.get(`d/${d}/${on.me}`) || 'null');
       ok(players._m.size > before && on.sent && !on.out.pending && on.me===off.me && rec(yday) && rec(yday).mins === 20 && rec(yday).games.oanquan === 1 && rec(today).mins === 12 && rec(today).games.caro === 1 && rec(today).tales === 1, 'back online: the waiting play was not counted on its own days/installation: ' + JSON.stringify({ on, y: rec(yday), t: rec(today) }));
       // the website gets it but the answer is lost: the device keeps the batch and sends the same one again
       await pg.route('**/api/hello', async route => { await route.fetch(); await route.fulfill({ status: 500, body: '' }); });
-      const lost = await pg.evaluate(async today => { const P = await import('/js/players.js'), {BUILD}=await import('/js/build.js'); const o = JSON.parse(localStorage.getItem('sv2_hello_out')); o.days[today+'|'+BUILD] = { build:BUILD,m: 5, g: {}, t: 0, o: 0 }; localStorage.setItem('sv2_hello_out', JSON.stringify(o)); return { sent: await P.flush(false), out: JSON.parse(localStorage.getItem('sv2_hello_out')) }; }, today);
+      const lost = await pg.evaluate(async today => { const P = await import('/js/players.js'), {BUILD}=await import('/js/build.js'), key = navigator.webdriver ? 'sv2_bot_telemetry' : 'sv2_hello_out'; const o = JSON.parse(localStorage.getItem(key)); o.days[today+'|'+BUILD] = { build:BUILD,m: 5, g: {}, t: 0, o: 0 }; localStorage.setItem(key, JSON.stringify(o)); return { sent: await P.flush(false), out: JSON.parse(localStorage.getItem(key)) }; }, today);
       ok(!lost.sent && lost.out.pending && rec(today).mins === 17, 'lost answer: ' + JSON.stringify({ lost, t: rec(today) }));
       await pg.unroute('**/api/hello');
-      const again = await pg.evaluate(async () => { const P = await import('/js/players.js'); const pending=JSON.parse(localStorage.getItem('sv2_hello_out')).pending;return { batch:pending.h,sent: await P.flush(false), out: JSON.parse(localStorage.getItem('sv2_hello_out')) }; });
+      const again = await pg.evaluate(async () => { const P = await import('/js/players.js'), key = navigator.webdriver ? 'sv2_bot_telemetry' : 'sv2_hello_out'; const pending=JSON.parse(localStorage.getItem(key)).pending;return { batch:pending.h,sent: await P.flush(false), out: JSON.parse(localStorage.getItem(key)) }; });
       ok(again.sent && again.batch===lost.out.pending.h && !again.out.pending && rec(today).mins === 17, 'the same batch was changed or counted twice: ' + JSON.stringify({ again, t: rec(today) }));
       await ctx.close();
       notes.push('offline play waits in an outbox and is counted on its own days; a re-sent batch counts once');
@@ -533,7 +534,7 @@ export async function studioCheck(browser, open) {
         await pg.screenshot({ path: path.join(ROOT, 'tests/out', `studio-admins-${w}.png`) }); }
       { await pg.evaluate(() => document.querySelector('#tabs [data-k="players"]').click()); await pg.waitForSelector('.tiles .tile', { timeout: 15000 });
         // (r65, owner: "cleaner but still the details") five tiles, a row per child and per kind of device, the rest folded and closed at first
-        const look = await pg.evaluate(() => ({ tiles: document.querySelectorAll('.tiles .tile').length, top: document.querySelector('#page').innerText, more: document.querySelectorAll('details.more').length, open: document.querySelectorAll('details.more[open]').length, kinds: document.querySelectorAll('table.kinds tbody tr').length }));
+        const look = await pg.evaluate(() => ({ tiles: document.querySelectorAll('#page > .tiles .tile').length, top: document.querySelector('#page').innerText, more: document.querySelectorAll('details.more').length, open: document.querySelectorAll('details.more[open]').length, kinds: document.querySelectorAll('table.kinds tbody tr').length }));
         const t = await pg.evaluate(() => (document.querySelectorAll('details.more').forEach(d => { d.open = true; }), document.querySelector('#page').innerText));
         ok(/3/.test(t), 'online players page');
         if (!(look.tiles === 5 && look.more >= 5 && !look.open && look.kinds >= 2 && /(not reported yet|chưa có số liệu)/.test(look.top) && !/(usually ready in|thường sẵn sàng sau)/.test(look.top))) bad.push(`online ${w}px: the Analytics page is not five tiles, rows and folded detail: ` + JSON.stringify({ ...look, top: look.top.slice(0, 200) }));

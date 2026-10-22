@@ -13,7 +13,7 @@ const EMO = /\p{Extended_Pictographic}(?:️|[\u{1F3FB}-\u{1F3FF}])*(?:‍\p{Ext
 // symbols that should read as plain marks (their drawing, when there is one, still wins)
 // (written as character codes, so the emoji audit doesn't read this list as pictures the game shows)
 const TEXTISH = new Set([0x25B6, 0x25C0, 0xA9, 0xAE, 0x2122, 0x2194, 0x2195, 0x23EE, 0x23F8, 0x23EF, 0x23FA, 0x203C, 0x2049, 0x2716, 0x27A1, 0x2B05, 0x2B06, 0x2B07, 0x2197, 0x2198, 0x2611, 0x2733, 0x2734, 0x2747, 0x25AA, 0x25AB, 0x25FB, 0x25FC, 0x25FD, 0x25FE, 0x2934, 0x2935, 0x2640, 0x2642, 0x2695, 0x2702, 0x2712, 0x270F].map(c => String.fromCodePoint(c)));
-const FLAG_OF = { '🇻🇳': 'vn', '🇦🇺': 'au', '🇨🇳': 'cn', '🇮🇳': 'in' };
+const FLAG_OF = { '🇻🇳': 'vn', '🇦🇺': 'au', '🇨🇳': 'cn', '🇮🇳': 'in', '🇬🇧': 'gb' };
 export const noArt = (typeof window !== 'undefined' && (window.__svNoArt = window.__svNoArt || new Set())) || new Set();
 const kind = e => FLAG_OF[e] ? 'flag' : hasArt(e) ? 'art' : TEXTISH.has(e.replace(/️/g, '')) ? 'text' : 'none';
 
