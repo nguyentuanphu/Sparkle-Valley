@@ -7276,6 +7276,8 @@ await check('oanquanrules', async () => {
 });
 
 await check('ridingcamera', async () => (await import('./riding-camera.mts')).ridingCameraCheck(b));
+// (r89) the ten drawing games: auto play finishes each; buttons big enough on phone, tablet and computer
+await check('drawinggames', async () => (await import('./drawing-games.mts')).drawingGamesCheck(b));
 await check('musicaudio', async () => (await import('./music-audio.mts')).musicAudioCheck(b));
 await check('soundgames', async () => (await import('./sound-games.mts')).soundGamesCheck(b));
 await check('rememberedhomes', async () => (await import('./remembered-homes.mts')).rememberedHomesCheck(b));
