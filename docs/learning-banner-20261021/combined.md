@@ -95,12 +95,14 @@ Listening, vocabulary & story sequencing
 
 ### Broader learning stops
 
-| Group | Examples | Practice line |
+| Group, English / Vietnamese | Examples, English / Vietnamese | Practice line, English / Vietnamese |
 | --- | --- | --- |
-| Words & numbers | Word Builder • Count With Me | Letters, words & early maths |
-| Sounds & colour | Who Says That? • Rainbow Paints | Listening & colour recognition |
-| Music & thinking | Music Corner • Memory Match | Rhythm, memory & problem-solving |
-| Family & money | Family missions • Piggy Bank | Helping, turn-taking & saving |
+| Words & numbers / Chữ và số | Word Builder • Count With Me / Ghép Chữ • Cùng Đếm Nào | Letters, words & early maths / Chữ cái, từ ngữ và toán cơ bản |
+| Sounds & colour / Âm thanh và màu sắc | Who Says That? • Rainbow Paints / Con Gì Kêu Thế? • Pha Màu Cầu Vồng | Listening & colour recognition / Lắng nghe và nhận biết màu sắc |
+| Music & thinking / Âm nhạc và tư duy | Music Corner • Memory Match / Góc Âm Nhạc • Lật Hình Ghi Nhớ | Rhythm, memory & problem-solving / Nhịp điệu, trí nhớ và giải quyết vấn đề |
+| Family & money / Gia đình và tiền bạc | Family missions • Piggy Bank / Nhiệm vụ gia đình • Heo Đất | Helping, turn-taking & saving / Giúp đỡ, luân phiên và tiết kiệm |
+
+On 22 October 2026 AEDT the owner requested both languages in all four numbered boxes. The primary PNG now includes English and Vietnamese category headings, game names and learning descriptions, using the game's Vietnamese catalogue names. These 24 lines were visually reviewed for spelling and legibility. The established landmark background, four star lanterns and cultural panels remain. Image-only validation: PNG file/dimensions, visual review, local links and whitespace; game checks were not rerun for this text/art update. The previous star-lantern version is in Git history at `ba17e6db`.
 
 ### Parent footer
 

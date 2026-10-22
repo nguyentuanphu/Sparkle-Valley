@@ -12,6 +12,8 @@ The updated combined background clearly places Vietnam on the left with Cầu R�
 
 Its festive decorations use Vietnamese five-pointed **đèn ông sao**, following the owner's latest art direction.
 
+All four numbered learning boxes now include English and Vietnamese headings, game names and practice descriptions.
+
 ## Designs and combined banner
 
 The current combined design follows the owner's request to combine themes 2 and 3, use the game references, and add more information about Vietnamese folk games and stories. The earlier options are preserved for comparison. All designs use the source-backed feature and learning information below, with different selections of examples.
