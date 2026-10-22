@@ -40,19 +40,33 @@ export async function autoplayShrineCheck(browser: Browser): Promise<string> {
     });
     fs.writeFileSync(`${dir}/setup.json`, JSON.stringify(setup, null, 2));
     assert.ok(setup.distance > (setup.target.r || 0) + 1, 'fixture must start outside the shrine interaction range');
-    await P.page.waitForFunction(() => !window.__sv.autoplay.running(), null, { timeout: 120000 });
+    // The live trail keeps only the last AP_TRAIL steps, so collect it while the run goes: the walk is the first step.
+    const seen = new Map<string, [number, string, string]>();
+    for (const end = Date.now() + 120000; ;) {
+      const now = await P.page.evaluate(() => {
+        const api = window.__sv.autoplay;
+        if (!api || typeof api.trail !== 'function') throw Error('autoplay trail unavailable');
+        return { running: api.running(), trail: api.trail() };
+      });
+      for (const step of now.trail) seen.set(step.join('|'), step);
+      if (!now.running) break;
+      assert.ok(Date.now() < end, 'autoplay did not finish the counting shrine within 120 s');
+      await P.page.waitForTimeout(100);
+    }
     const result = await P.page.evaluate(() => {
       const api = window.__sv.autoplay;
       if (!api || typeof api.trail !== 'function') throw Error('autoplay trail unavailable');
       return { report: JSON.parse(localStorage.getItem('sv2_autoplay_report') || '{}'), trail: api.trail() };
     });
-    fs.writeFileSync(`${dir}/result.json`, JSON.stringify(result, null, 2));
+    for (const step of result.trail) seen.set(step.join('|'), step);
+    const trail = [...seen.values()].sort((a, b) => a[0] - b[0]);
+    fs.writeFileSync(`${dir}/result.json`, JSON.stringify({ ...result, trail }, null, 2));
     await P.page.screenshot({ path: `${dir}/result.png` });
     assert.equal(footprint.length, 0, 'walkability accepts positions rejected by the real child collision footprint: ' + JSON.stringify(footprint.slice(0, 8)));
     const row = result.report.done?.[0];
     assert.ok(row && row.key === 'game:counting' && row.problems.every((problem: string) => /^slow:/.test(problem)), JSON.stringify(result));
     assert.match(row.said, /won/); assert.deepEqual(P.errors, []);
-    assert.ok(result.trail.some((step: [number, string, string]) => step[1] === 'walk'), 'shrine approach did not exercise actual walking');
+    assert.ok(trail.some(step => step[1] === 'walk'), 'shrine approach did not exercise actual walking');
     return 'actual autoplay enters and wins the counting shrine from the stalled plateau approach; planner positions agree with real child collisions';
   } finally { await P.ctx.close(); }
 }
