@@ -15,6 +15,7 @@ import { MODELS } from './cities.js';
 import { registerName } from './i18n.js';
 import { CUSTOM } from './custom.js';
 import { studioPosition } from './studio-position.js';
+import { BUILD_TYPE_CATALOG, type BuildCulture, type HouseModel } from './content/build-types.js';
 
 export const builtPlotIds = new Set<string>();
 // Builders' w/d describe their walls; roofs, palms and verandas can extend farther.
@@ -28,22 +29,37 @@ export function fitPlotHouse(object: THREE.Object3D, plot: { w: number, d: numbe
 }
 
 const house = (mk, kind, room) => ({ mk, kind, room, home: true });
-const landmark = key => ({ mk: () => ({ parts: MODELS[key]() }), kind: 'landmark' });
-// what can be built (Sparkle Studio shows the same list): [id] → how to make it, in both languages
+// every buildable thing makes one of these: a ready object, one geometry, or parts to merge (and its walls' size)
+type BuildModel = { obj?: THREE.Object3D, geo?: THREE.BufferGeometry, parts?: THREE.BufferGeometry[], w?: number, d?: number };
+type BuildMaker = (o?: { color?: string | null }) => BuildModel;
+const maker = (f: BuildMaker) => f;
+const landmark = (key: string) => ({ mk: maker(() => ({ parts: MODELS[key]() })), kind: 'landmark' });
+// (r89, World's catalogue) one model per house family; a family's colour from Studio wins over the type's own wall
+const houseModel = (model: HouseModel, color: string | null) => {
+  switch (model.family) {
+    case 'tube': return houseTube({ wall: color || model.wall, floors: model.floors, w: model.width, d: model.depth });
+    case 'village': return houseVillage({ wall: color || model.wall, tile: model.tile, w: model.width, d: model.depth, palms: model.palms });
+    case 'villa': return houseVilla();
+    case 'cottage': return houseCottage({ wall: color || model.wall, yard: model.yard });
+    case 'raised': return raisedHouse(model.width, model.depth);
+  }
+};
+type HouseBuild = { mk: BuildMaker, kind: string, room: string, home: true,
+  culture: BuildCulture, name: readonly [string, string], icon: string };
+// what can be built (Sparkle Studio shows the same list): [id] → how to make it, in both languages. The 30 house
+// types (15 Vietnamese, 15 Australian) come from js/content/build-types.ts; the first six ids are the older ones
+// and build exactly as before, so saved homes keep their look.
 export const BUILD_TYPES = {
-  tube: { ...house(o => houseTube({ wall: o.color || '#9fd8c8', floors: 3 }), 'tube', 'tube'), culture: 'vietnam', name: ['Tube house (Vietnam)', 'Nhà ống'], icon: '🏠' },
-  tube2: { ...house(o => houseTube({ wall: o.color || '#ffb3a0', floors: 2 }), 'tube', 'tube'), culture: 'vietnam', name: ['Small tube house', 'Nhà ống nhỏ'], icon: '🏠' },
-  village: { ...house(o => houseVillage({ wall: o.color || '#efe0bf' }), 'village', 'village'), culture: 'vietnam', name: ['Village house with tiled roof', 'Nhà ngói ở làng'], icon: '🏡' },
-  villa: { ...house(() => houseVilla(), 'villa', 'villa'), name: ['French villa', 'Biệt thự Pháp'], icon: '🏛️' },
-  cottage: { ...house(o => houseCottage({ wall: o.color || '#cfe6ee' }), 'cottage', 'cottage'), culture: 'australia', name: ['Australian cottage', 'Nhà gỗ kiểu Úc'], icon: '🏘️' },
-  raised: { ...house(() => raisedHouse(), 'raised', 'raised'), culture: 'australia', name: ['Queenslander on stilts', 'Nhà sàn kiểu Queensland'], icon: '🛖' },
+  ...Object.fromEntries(Object.entries(BUILD_TYPE_CATALOG).map(([id, t]): [string, HouseBuild] => [id, {
+    mk: o => houseModel(t.model, o?.color || null), kind: t.model.family, room: t.model.family, home: true,
+    culture: t.culture, name: t.name, icon: ('icon' in t && t.icon) || '🏠' }])),
   pagoda: { ...landmark('chuadau'), name: ['Pagoda', 'Chùa'], icon: '🛕' },
   clocktower: { ...landmark('bnclock'), name: ['Clock tower', 'Tháp đồng hồ'], icon: '🕰️' },
   cathedral: { ...landmark('cathedral'), name: ['Red-brick church', 'Nhà thờ gạch đỏ'], icon: '⛪' },
   postoffice: { ...landmark('postoffice'), name: ['Post office', 'Bưu điện'], icon: '🏤' },
   communal: { ...landmark('dendo'), name: ['Temple', 'Đền'], icon: '⛩️' },
   // (a power pole: shown and wired to its neighbours only while Studio's power-pole switch is on; js/powerlines.js)
-  powerpole: { pole: true, mk: () => ({ parts: [] }), name: ['Power pole', 'Cột điện'], icon: '⚡' }
+  powerpole: { pole: true, mk: maker(() => ({ parts: [] })), name: ['Power pole', 'Cột điện'], icon: '⚡' }
 };
 const W = () => STUDIO_ON_MAP && CUSTOM.world && typeof CUSTOM.world === 'object' ? CUSTOM.world : {}; // (round T: content made on an older layout is parked, js/world.js)
 const num = v => typeof v === 'number' && isFinite(v);
