@@ -10,6 +10,8 @@ The landscape banners introduce the game to parents of children aged 2–8. They
 
 The updated combined background clearly places Vietnam on the left with Cầu Rồng, Hồ Gươm/Tháp Rùa and Chùa Một Cột, and Australia on the right with Sydney Opera House and Sydney Harbour Bridge.
 
+Its festive decorations use Vietnamese five-pointed **đèn ông sao**, following the owner's latest art direction.
+
 ## Designs and combined banner
 
 The current combined design follows the owner's request to combine themes 2 and 3, use the game references, and add more information about Vietnamese folk games and stories. The earlier options are preserved for comparison. All designs use the source-backed feature and learning information below, with different selections of examples.

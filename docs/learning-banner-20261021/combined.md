@@ -33,6 +33,12 @@ The previous combined design is preserved in Git history at commit `c7977ada`.
 
 The revised PNG was visually inspected on 22 October 2026 AEDT: all three Vietnamese landmarks are visible on the left, Sydney's landmarks remain on the right, and the game/story names, explanations, parent footer, logo and website copy remain present and legible. File validation confirms 1672 × 941 pixels. This image-only revision was checked visually and for file/document-link integrity; the prior 9/9 game checks below refer to the preceding banner batch, with no game-code change in this revision.
 
+### Vietnamese star lanterns
+
+On 22 October 2026 AEDT, the owner requested Vietnamese **đèn ông sao** instead of the banner's round decorative lanterns. The primary PNG now uses five-pointed bamboo-frame star lanterns with coloured cellophane facets and a warm glow. All four visible round hanging decorations were replaced: beside the folk-games panel, by the left lakeside path, near the upper red-roof house, and beside the story panel. The existing kite illustrations remain kites.
+
+The result was visually inspected for the star shapes, the four replacements, retained Vietnamese/Australian landmarks, wording and game illustrations. PNG dimensions remain 1672 × 941. File integrity, local document links and whitespace were checked; no runtime game check was rerun for this artwork-only object replacement. The preceding landmark version remains in Git history at `42fcbb9b`.
+
 ## Vietnamese folk games
 
 | Existing game | How the game plays | Practice and family connection |
