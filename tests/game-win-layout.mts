@@ -9,7 +9,7 @@ export async function gameWinLayoutCheck(browser: Browser): Promise<string> {
   const dir = 'out/game-win-layout'; fs.mkdirSync(dir, { recursive: true });
   const page = await browser.newPage();
   try {
-    await page.route('**/__win_layout__', route => route.fulfill({ contentType: 'text/html', body: '<!doctype html><html><head><link rel="stylesheet" href="/css/style.css"></head><body></body></html>' }));
+    await page.route('**/__win_layout__', route => route.fulfill({ contentType: 'text/html', body: '<!doctype html><html><head><link rel="stylesheet" href="/css/fonts.css"><link rel="stylesheet" href="/css/style.css"></head><body></body></html>' }));
     await page.goto('http://localhost:8765/__win_layout__');
     await page.evaluate(async () => {
       const u = '/js/games/frame.js', F: typeof import('../js/games/frame.js') = await import(u);
@@ -31,7 +31,7 @@ export async function gameWinLayoutCheck(browser: Browser): Promise<string> {
           // A transformed pane is the containing block for its fixed celebration, as in split screen.
           layer.style.transform = 'translateZ(0)'; layer.style.top = height - pane + 'px';
         }, { lang, pane, height });
-        await page.locator('.begin-layout').click(); await page.locator('.gl-win.ask').waitFor(); await page.waitForTimeout(400);
+        await page.locator('.begin-layout').click(); await page.locator('.gl-win.ask').waitFor(); await page.evaluate(() => document.fonts.ready); await page.waitForTimeout(400);
         const result = await page.evaluate(() => {
           const pane = document.querySelector('.gl').getBoundingClientRect(), buttons = [...document.querySelectorAll<HTMLButtonElement>('.gl-nx')];
           const instruction = document.querySelector('.gl-tapout').getBoundingClientRect();
