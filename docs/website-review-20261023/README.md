@@ -1,0 +1,106 @@
+# Sparkle Valley website: review and proposed design
+
+Reviewed 23 October 2026 AEDT. The latest GitHub `main` is [`f1dc57cd`](https://github.com/nguyentuanphu/Sparkle-Valley/commit/f1dc57cd), recording **r88**. The live service worker at [sparklevalley.au/sw.js](https://sparklevalley.au/sw.js) also serves `sv-2026-10-19-r88`. The current website is [sparklevalley.au/home/](https://sparklevalley.au/home/).
+
+[Download/open the interactive concept](prototype.html) · [Desktop first screen](evidence/first-screen-desktop.png) · [Phone first screen](evidence/first-screen-phone.png) · [Phone floating view](evidence/overlay-phone.png) · [New Welcome-screen entry](evidence/welcome-desktop.png)
+
+This is a **design proposal**, rather than a deployed website or an implemented game overlay. The self-contained HTML works after download: try Website, Welcome and In game in its preview bar, switch English/Vietnamese, open Menu, and open/close the website from Welcome or Settings. The background is game artwork; it does not run a game session or read family saves.
+
+## What the current website needs
+
+The live site was inspected on a 390 × 844 phone, 820 × 1180 tablet and 1440 × 1000 computer, in English and Vietnamese. [Measured results](evidence/live-findings.json) and [screenshots](evidence/live-phone-en.png) are saved with the proposal.
+
+| Finding | Evidence | Recommended improvement |
+| --- | --- | --- |
+| Phone menu is almost invisible | Its scrolling area measures **4 px wide** in both languages; the links themselves need 606–645 px | Give navigation its own usable space. Use a compact Menu button and a side drawer on phones; retain four short primary links on larger screens |
+| Play competes with all navigation | Brand, six links, language and Play share one flex row; the phone Play link is only 28 px high in EN / 34 px in VI | Put Play on a separate line below the hero introduction. Use a clear green game-style button, with generous touch area |
+| The homepage does not show the game's visual identity | The inspected homepage has **zero image/SVG elements** and uses generic emoji in text cards | Use the real game SVG artwork, rounded fonts, cream panels, pink/purple branding and a Vietnamese/Australian illustrated hero |
+| Every page follows a sparse text-card pattern | The home page has a text-only introduction and three generic cards | Build a useful visitor journey: introduction, real game examples, stories/heritage, family guidance, places, help and privacy |
+| Consent banner duplicates on language change | A fresh visit shows one banner; switching language produces **two** on all three tested sizes | Keep one persistent consent component; update its language without appending another, and reserve space for it |
+| Current Home icon is an information symbol | `js/hud.js` uses `ICONS.info` with a Home label | Use a recognisable house-and-star icon, labelled **Website / Trang web** to distinguish it from the child's in-game house |
+| Website browsing is a separate tab | Current HUD handler calls `window.open('/home', '_blank', ...)` | Add a floating website view inside the game, with a persistent Close / Back to game action |
+| Sharing and discovery need a stronger foundation | `/home/index.html` contains a generic title and no page description or social-card metadata | Add appropriate bilingual page titles/descriptions, canonical URLs and real artwork for shared links; preserve readable routes |
+
+The new-tab approach already avoids replacing the game tab. The proposed overlay improves the browsing experience while retaining that protection against an accidental game restart.
+
+## Recommended look
+
+**A polished family game website, recognisably Sparkle Valley.** Use the actual Fredoka and Baloo 2 fonts, dark purple outlines, cream surfaces, restrained pink/purple accents and the game's green Play button. Use more space around fewer useful elements, rather than shrinking text or tap targets.
+
+The hero illustration connects Vietnam on the left—Cầu Rồng, Hồ Gươm/Tháp Rùa and Chùa Một Cột—to Australia on the right—Sydney Opera House and Harbour Bridge. Vietnamese festive decoration uses five-pointed **đèn ông sao**. This new marketing illustration is derived from the approved banner and game references; it is identified as illustration, not an actual gameplay screenshot.
+
+The content sequence:
+
+1. **Discover:** a clear family-facing headline, age/language context, attractive world art, and Play on its own line.
+2. **Games & learning:** named examples and the actions children take, using actual game illustrations. Describe practice opportunities rather than guaranteed educational outcomes.
+3. **Vietnamese stories & traditions:** Thánh Gióng, Cây khế, Ô Ăn Quan and Thả Diều, with concise explanations and links to more detail.
+4. **For parents:** age/difficulty choices, family missions, shared play, rest/bedtime and sound guidance.
+5. **Places and family stories:** preserve the current Countries and Memory Villages sections, with factual feature availability and clear private-family boundaries. These remain destinations in the final navigation; the concept focuses on the main landing page.
+6. **Help, privacy and updates:** useful instructions and concise policies, with release/internal testing notes kept in the appropriate support area.
+
+The approved [bilingual game banner](../learning-banner-20261021/README.md) appears as an illustrated overview further down the concept page. It supports exploration without making the entire homepage a text-heavy poster.
+
+## Smaller navigation and a separate Play row
+
+Desktop: a compact bar with the brand, **Discover · Games · Stories · For parents**, language switch and Menu for the other destinations. Phone/tablet: brand, Menu and language controls, with a full-height side drawer containing every destination. The current Memory Villages, Countries, Help and Privacy content must remain reachable.
+
+The owner's word “sliceable” is still awaiting clarification. **Slide-out navigation is a design recommendation**, not an assumed instruction to implement it. If sideways-scrolling tabs were intended, they should get a full-width row of their own, with visible overflow hints and enough room to swipe. The Play button should not compete for that row.
+
+Play sits below the hero introduction on a new line. On phones it fills the available width. Compact visual navigation still needs at least 44 px targets; child-facing controls retain 64 px targets.
+
+## A recognisable website icon
+
+The concept proposes a cream house, warm roof and small gold star, drawn with the game's dark-purple outline. Label it **Website / Trang web**; accessible names can use “Sparkle Valley website”.
+
+- **Welcome:** one clearly placed website entry with a generous target, away from the main Start button.
+- **In-game Settings:** a matching illustrated Website entry. Its label explains where it goes.
+- **Existing HUD button:** keep its current function during integration, then apply the same icon/overlay behavior. Do not silently remove an existing control; agree on placement before changing it.
+
+## Floating website behavior
+
+Desktop/tablet: a centred, stable, rounded panel above a dimmed game. Phone: a full-height sheet with safe-area spacing. The header and Close action remain visible; only the website body scrolls. Opening a drawer must keep that drawer's close action reachable.
+
+The real implementation should:
+
+- Keep the existing game canvas, current session, player state and saves intact. Opening the website must not navigate the game document to `/home/` or start another game instance.
+- Lazy-load the public website into an isolated frame/host. The current website stylesheet changes global body layout; injecting it directly into the game would risk changing the game's layout. An isolated same-origin `/home/?embedded=1` frame is the simplest starting point.
+- Use the game's established modal/input lifecycle: suspend local movement, camera gestures and autoplay input while browsing, and restore the prior state when closed. Online/server activity may continue; do not promise a global multiplayer pause.
+- Change an embedded Play action into **Back to game**, which closes the panel. Standalone `/home/` retains the normal Play destination.
+- Support Close, Escape and appropriate mobile Back behavior; restore focus to the opener and preserve the website's own route/language/scroll position separately from game saves.
+- Load images as needed, use responsive production assets and avoid autoplay video. Disposing the frame on close while retaining its small website state is worth considering for memory-limited phones.
+- Show a recoverable offline/loading state with a working Close action. Website availability must never block returning to the game.
+- Preserve current analytics consent and reporting boundaries. If parent/child messages are used, validate message origin and source; do not expose family data to the marketing page.
+
+## Implementation scope for a later approved round
+
+| Area | Likely files on r88 | Work |
+| --- | --- | --- |
+| Website | `home/index.html`, `home/app.ts`, `home/style.css` | Content structure, responsive navigation, imagery, language, consent fix and embedded mode |
+| Welcome/settings entries | `js/ui.ts`, `js/ui-settings.ts`, `js/icons.js` | Matching labelled icon and entry placement using existing shells |
+| Existing HUD entry | `js/hud.js` | Replace the new-tab action with the common website opener |
+| Floating shell | A small deferred TypeScript module plus existing modal/input wiring | Open/close/focus, isolation, lifecycle and return behavior |
+| Release integration | Existing bundle/offline/check mapping | Ensure the new optional website view does not add mandatory game-startup work |
+
+Before release: verify EN/VI, 320 px and normal phone sizes, tablet/computer, portrait/landscape, keyboard, offline, repeated open/close, unchanged saved progress, multiplayer/input behavior and memory. Run the appropriate game checks, GitHub release suite and local speed checks under the existing release process. No game integration or deployment is authorized by this proposal.
+
+## Verification and limits
+
+- Live website: browser inspection/screenshots in both languages at the three sizes above; no JavaScript page errors. Menu compression, short Play targets and consent duplication were reproduced.
+- Prototype: language switch, drawer, Welcome entry, Settings entry, Escape, Close, focus return and retention of the underlying sample Settings panel checked on phone/tablet/computer. [Interaction results](evidence/prototype-checks.json).
+- Additional layouts: 320 px phone, 844 × 390 phone landscape and 1180 × 820 tablet landscape checked alongside the normal phone/computer sizes; no horizontal overflow and the modal Close control remains visible with at least a 44 px target. [Layout results](evidence/additional-layout-checks.json).
+- Visual review: phone, tablet and computer screenshots inspected. The first concept review found a 34 px-wide phone Menu button; it was corrected to a 44 px minimum before the final check.
+- This demonstrates the proposed website interaction with artwork only. It does not prove actual game-session preservation, input suspension, network behavior, physical iPhone behavior or performance after runtime integration.
+- The downloadable HTML embeds artwork/fonts for convenient offline review. Its size is **not** the proposed production startup payload; production should use separately cached, appropriately sized assets.
+- No game suite was run for this documentation/prototype proposal; browser checks exercise the proposal and the read-only live website.
+
+## Source references
+
+- [r88 main snapshot](https://github.com/nguyentuanphu/Sparkle-Valley/tree/f1dc57cd)
+- [Current website app](https://github.com/nguyentuanphu/Sparkle-Valley/blob/f1dc57cd/home/app.ts)
+- [Current website styles](https://github.com/nguyentuanphu/Sparkle-Valley/blob/f1dc57cd/home/style.css)
+- [Current Home button](https://github.com/nguyentuanphu/Sparkle-Valley/blob/f1dc57cd/js/hud.js)
+- [Actual game SVG artwork reused in the concept](https://github.com/nguyentuanphu/Sparkle-Valley/blob/f1dc57cd/js/art.js)
+- [Live website](https://sparklevalley.au/home/)
+- [Editable concept template](prototype.template.html) and [self-contained preview builder](build-preview.mjs)
+
+The Sites design guidance was used for presentation and local-preview planning. No Sites-hosted project was created or published; the existing GitHub/Netlify site remains the deployment target.

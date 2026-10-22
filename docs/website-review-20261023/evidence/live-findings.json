@@ -1,0 +1,170 @@
+[
+  {
+    "name": "phone",
+    "en": {
+      "title": "Welcome to Sparkle Valley | Sparkle Valley",
+      "viewport": 390,
+      "pageWidth": 390,
+      "nav": {
+        "x": 16,
+        "y": 20,
+        "width": 358,
+        "height": 54
+      },
+      "menu": {
+        "x": 144,
+        "y": 29,
+        "width": 4,
+        "height": 36
+      },
+      "menuScrollWidth": 606,
+      "play": {
+        "x": 201,
+        "y": 33,
+        "width": 160,
+        "height": 28
+      },
+      "consentBanners": 1,
+      "images": 0
+    },
+    "vi": {
+      "title": "Chào mừng đến Thung Lũng Lấp Lánh | Sparkle Valley",
+      "viewport": 390,
+      "pageWidth": 390,
+      "nav": {
+        "x": 16,
+        "y": 20,
+        "width": 358,
+        "height": 60
+      },
+      "menu": {
+        "x": 137,
+        "y": 29,
+        "width": 4,
+        "height": 42
+      },
+      "menuScrollWidth": 645,
+      "play": {
+        "x": 200,
+        "y": 33,
+        "width": 161,
+        "height": 34
+      },
+      "consentBanners": 2,
+      "images": 0
+    },
+    "errors": []
+  },
+  {
+    "name": "tablet",
+    "en": {
+      "title": "Welcome to Sparkle Valley | Sparkle Valley",
+      "viewport": 820,
+      "pageWidth": 820,
+      "nav": {
+        "x": 16,
+        "y": 20,
+        "width": 788,
+        "height": 61
+      },
+      "menu": {
+        "x": 210,
+        "y": 31,
+        "width": 345,
+        "height": 39
+      },
+      "menuScrollWidth": 670,
+      "play": {
+        "x": 609,
+        "y": 35,
+        "width": 178,
+        "height": 32
+      },
+      "consentBanners": 1,
+      "images": 0
+    },
+    "vi": {
+      "title": "Chào mừng đến Thung Lũng Lấp Lánh | Sparkle Valley",
+      "viewport": 820,
+      "pageWidth": 820,
+      "nav": {
+        "x": 16,
+        "y": 20,
+        "width": 788,
+        "height": 68
+      },
+      "menu": {
+        "x": 210,
+        "y": 31,
+        "width": 339,
+        "height": 46
+      },
+      "menuScrollWidth": 700,
+      "play": {
+        "x": 609,
+        "y": 35,
+        "width": 178,
+        "height": 38
+      },
+      "consentBanners": 2,
+      "images": 0
+    },
+    "errors": []
+  },
+  {
+    "name": "desktop",
+    "en": {
+      "title": "Welcome to Sparkle Valley | Sparkle Valley",
+      "viewport": 1440,
+      "pageWidth": 1440,
+      "nav": {
+        "x": 170,
+        "y": 20,
+        "width": 1100,
+        "height": 61
+      },
+      "menu": {
+        "x": 364,
+        "y": 31,
+        "width": 657,
+        "height": 39
+      },
+      "menuScrollWidth": 670,
+      "play": {
+        "x": 1075,
+        "y": 35,
+        "width": 178,
+        "height": 32
+      },
+      "consentBanners": 1,
+      "images": 0
+    },
+    "vi": {
+      "title": "Chào mừng đến Thung Lũng Lấp Lánh | Sparkle Valley",
+      "viewport": 1440,
+      "pageWidth": 1440,
+      "nav": {
+        "x": 170,
+        "y": 20,
+        "width": 1100,
+        "height": 68
+      },
+      "menu": {
+        "x": 364,
+        "y": 31,
+        "width": 651,
+        "height": 46
+      },
+      "menuScrollWidth": 700,
+      "play": {
+        "x": 1075,
+        "y": 35,
+        "width": 178,
+        "height": 38
+      },
+      "consentBanners": 2,
+      "images": 0
+    },
+    "errors": []
+  }
+]
