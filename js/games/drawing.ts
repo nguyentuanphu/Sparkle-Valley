@@ -8,6 +8,7 @@ import { T } from '../i18n.js';
 import { saveProfiles } from '../state.js';
 import { pic } from '../art.js';
 import { el, wait, pick, rand, shuffle, local, flip } from '../util.js';
+import { cornersOf } from './drawshape.js';
 
 type Pt = { x: number; y: number };
 const NS = 'http://www.w3.org/2000/svg';
@@ -377,21 +378,6 @@ register({
 });
 
 // ---------- 9. Draw a Shape: the game knows a circle, a triangle and a square ----------
-// how many corners a closed stroke has (0 for a round one), or -1 when it is not closed or too small
-export function cornersOf(pts: Pt[]): number {
-  if (pts.length < 8) return -1;
-  const xs = pts.map(p => p.x), ys = pts.map(p => p.y), size = Math.max(Math.max(...xs) - Math.min(...xs), Math.max(...ys) - Math.min(...ys));
-  if (size < 40 || Math.hypot(pts[0].x - pts[pts.length - 1].x, pts[0].y - pts[pts.length - 1].y) > size * .3) return -1;
-  const cx = xs.reduce((a, b) => a + b, 0) / xs.length, cy = ys.reduce((a, b) => a + b, 0) / ys.length, rs = pts.map(p => Math.hypot(p.x - cx, p.y - cy)), mr = rs.reduce((a, b) => a + b, 0) / rs.length;
-  if (Math.sqrt(rs.reduce((a, r) => a + (r - mr) ** 2, 0) / rs.length) / mr < .1) return 0;
-  // the stroke made simple (Ramer–Douglas–Peucker), then the sharp turns counted
-  const rdp = (P: Pt[], e: number): Pt[] => { let d = 0, k = 0; const a = P[0], b = P[P.length - 1], L = Math.hypot(b.x - a.x, b.y - a.y) || 1;
-    for (let i = 1; i < P.length - 1; i++) { const di = Math.abs((b.y - a.y) * P[i].x - (b.x - a.x) * P[i].y + b.x * a.y - b.y * a.x) / L; if (di > d) { d = di; k = i; } }
-    return d > e ? [...rdp(P.slice(0, k + 1), e).slice(0, -1), ...rdp(P.slice(k), e)] : [a, b]; };
-  const far = rs.indexOf(Math.max(...rs)), loop = [...pts.slice(far), ...pts.slice(0, far), pts[far]], S = rdp(loop, size * .09).slice(0, -1);
-  let n = 0; for (let i = 0; i < S.length; i++) { const a = S[(i - 1 + S.length) % S.length], b = S[i], q = S[(i + 1) % S.length], ang = Math.abs(Math.atan2(a.y - b.y, a.x - b.x) - Math.atan2(q.y - b.y, q.x - b.x)), turn = Math.min(ang, Math.PI * 2 - ang); if (turn < Math.PI * .8) n++; }
-  return n;
-}
 const SHAPES: { key: string; corners: number; name: [string, string]; pts: (cx: number, cy: number, r: number) => Pt[] }[] = [
   { key: 'circle', corners: 0, name: ['a circle', 'hình tròn'], pts: (cx, cy, r) => Array.from({ length: 37 }, (_, i) => ({ x: cx + Math.cos(i / 36 * Math.PI * 2) * r, y: cy + Math.sin(i / 36 * Math.PI * 2) * r })) },
   { key: 'triangle', corners: 3, name: ['a triangle', 'hình tam giác'], pts: (cx, cy, r) => edges([{ x: cx, y: cy - r }, { x: cx + r, y: cy + r * .8 }, { x: cx - r, y: cy + r * .8 }]) },
