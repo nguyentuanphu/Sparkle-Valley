@@ -1,0 +1,49 @@
+# Website and game consistency contract
+
+Owner requirement, 23 October 2026 AEDT: fewer visible categories without losing information; bind the website to the game's UI, artwork and releases, and keep it updated when the game changes.
+
+## Navigation and content
+
+1. Four top-level destinations only: Discover; Play & Learn; Guides & Rewards; For Parents. A section's detailed links belong inside its group. The complete Quest Guide retains its own destination and bilingual search/printing.
+2. Preserve detailed learning descriptions, Vietnamese folk games and stories, parent guidance, family-authored questions, festival participation, completion requirements, prizes and badges. Move information into relevant pages and expandable cards; do not shorten it to make the home page fit.
+3. English and Vietnamese stay paired. Every supported deep link must open the correct page. Keep pictures, enlarge controls, keyboard access, focus return and phone/tablet/computer layouts.
+
+## Shared UI and artwork
+
+4. Use the game's own illustrated icon renderer and bundled fonts. Read shared colour tokens from `css/style.css`; do not maintain a separate copy of the game's brand palette. Do not import its global layout rules into the website: the game's fixed canvas and the website's scrolling document have different layout needs.
+5. Source references, artwork and capture manifests identify their game commit. Game captures remain distinguishable from storybook illustrations. Update affected captures when appearance changes; do not label an old capture as a new release. Vietnamese imagery retains the five-pointed đèn ông sao.
+6. Integration must use the game's approved shared shells and accessible controls. The website opens from Welcome and Settings in a floating view, closes predictably, and preserves play state. A preview mock-up is not proof that the live integration exists.
+
+## One release source
+
+7. Build a website from one immutable game commit. `SV_WEBSITE_SOURCE` selects that commit. Version label, art renderer, theme tokens, quest/daily/family catalogues, reward lists, festival activities and calendar data come from that same source. Never mix a newer marketing claim with an older game build.
+8. `sync-website.mjs` regenerates all three snapshots, full guides, preview and hosted assets. Missing sources, unexpected data formats and mixed-source snapshots fail the build. JavaScript-to-TypeScript source renames are resolved without silently falling back to an older release.
+9. Every change to tracked game scripts, game/website styles, content, fonts, icons, sounds, voice packs, photos, videos, vendor resources, service worker, entry point or release metadata triggers a review gate. The saved source-tree fingerprints in `game-review-lock.json` detect additions, deletions and edits. Changed gameplay, rewards, availability, settings, UI or art require reviewing the bilingual explanations and affected screenshots, then recording the reviewed source lock in the same change. Changing a lock is an assertion of completed review, not a way to silence a failure.
+10. Structured facts can rebuild automatically. An automatic generator cannot infer a correct parent-friendly explanation from arbitrary gameplay code changes. `website-drift.json` names affected files and fails closed when explanations/images need review. Fixed catalogue counts in existing editorial copy also have an explicit coverage check. Update that copy and the coverage check together when a catalogue grows; never discard new entries to preserve a count.
+
+## Automation and publication
+
+11. `.github/workflows/website-consistency.yml` is staged to rebuild on main pushes and relevant pull requests. It uploads the static website and drift report even when the review gate is red. No credentials, family answers, saved progress or child identifiers enter these artifacts. A failed extraction may leave no complete website; such an artifact must not ship.
+12. Release must require the consistency result and package the verified website with the exact game commit before shipping the integrated website. Website and game then ship in one release, with the same build label. Configure the workflow as a required branch-protection check; a workflow file alone does not enforce merge protection. Do not auto-merge or bypass the owner's per-round deployment approval.
+13. This branch currently contains a design preview and a proposed consistency workflow. It does **not** replace the production `/home/` application, modify `build-netlify.sh` or enable a production publishing hook. Release integration, required-check configuration and live deployment remain pending. The private Sites preview is a separately published review copy; it does not automatically track main.
+
+## Commands
+
+From the repository root, after fetching the intended release:
+
+```sh
+SV_WEBSITE_SOURCE=origin/main node docs/website-review-20261023/sync-website.mjs
+```
+
+The static output defaults to `/tmp/sparkle-website-preview`; set `SV_WEBSITE_OUTPUT` for release packaging. A red result lists changed game files. After actually reviewing affected bilingual content and artwork:
+
+```sh
+SV_WEBSITE_SOURCE=<reviewed-release-sha> node docs/website-review-20261023/sync-website.mjs --record-reviewed
+SV_WEBSITE_SOURCE=<reviewed-release-sha> node docs/website-review-20261023/sync-website.mjs
+```
+
+Commit the lock, explanations, regenerated assets and evidence together. The release's build command must use its own commit rather than the moving `origin/main` reference. Automation does this with `github.sha`.
+
+## Verification
+
+Run the preview, rewards and festival browser checks one at a time, including EN/VI, exact quest links, filters, printing, floating-view close/focus and state preservation. Inspect phone/tablet/computer images. Run a negative source-drift check: an unreviewed game source change must produce a red result and name that file. Production integration additionally requires the game's release checks and an actual same-version/offline/update test; the design preview does not establish these.

@@ -1,5 +1,7 @@
 # Sparkle Valley: rules for the assistant
 
+**Website consistency (owner, 23 Oct 2026 AEDT):** read [the website/game contract](docs/website-review-20261023/WEBSITE-RULES.md) before editing game-facing website content, navigation, UI or a release. Keep four main destinations, all detailed EN/VI content, shared game art/fonts/tokens and a single source release. Regenerate facts; review changed gameplay explanations and captures. The staged workflow does not yet update the live website.
+
 **Owner-approved UI and future-feature rules (14 Oct 2026 AEDT):** read the section “Owner-approved interface and feature rules” in [the design handbook](docs/SO-TAY-THIET-KE.md) (UX-001–UX-010) before planning or changing a feature. Work order and implementation sequence: [owner UI audit](docs/cores/tasks/owner-ui-audit-20261014.md). Approval to write these rules does not deploy runtime changes.
 
 

@@ -377,3 +377,8 @@ The owner approved writing these rules at 9:03 am AEDT. They apply to new work a
 - **UX-010 HARD — Demonstrated release quality.** Each feature brief names owners, dependencies, affected screens, shared contracts, entry/exit paths, failure recovery, migration and resource budgets. Use existing changed-check/full-suite policy in CLAUDE.md, relevant meaningful tests, and visual/device review. Check EN/VI, phone/tablet/computer, portrait/landscape, keyboard, overlap and cold/warm/offline/update behaviour where applicable. Record failures/skips and uncovered device cases. Do not loosen checks merely to pass or declare zero bugs from automated passes.
 
 Enforcement status: specification approved; automated coverage and physical-device verification must be mapped during implementation. Do not label these rules already checked by a test until that coverage is implemented and verified.
+
+
+## Website tied to the game (owner, 23 October 2026 AEDT)
+
+[Website/game consistency contract](website-review-20261023/WEBSITE-RULES.md): four main destinations with full bilingual details retained; shared game icons, fonts and colour tokens; one source commit for version/catalogue/reward/calendar facts; automatic regeneration plus a blocking review report for changed game rules or artwork. Release must integrate the same-version website into its package and require the consistency check before shipping. The private design preview is separate; production integration is pending.

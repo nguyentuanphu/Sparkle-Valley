@@ -1,0 +1,14 @@
+{
+  "source": "781089d6f1c3533a226d4a49271baa61142b940d",
+  "reviewedSource": "781089d6f1c3533a226d4a49271baa61142b940d",
+  "coverage": {
+    "valley": 17,
+    "lantern": 24,
+    "daily": 56,
+    "family": 15,
+    "festivals": 24
+  },
+  "changed": [],
+  "coverageChanged": [],
+  "requiresEditorialReview": false
+}

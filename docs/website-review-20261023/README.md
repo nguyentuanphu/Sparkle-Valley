@@ -1,3 +1,29 @@
+# Current private website preview
+
+[Open the website normally](https://sparkle-valley-family-preview-20261023.henry-tpnguyen.chatgpt.site) — this HTTPS link renders the design; GitHub's HTML file view shows source code.
+
+## Simpler navigation, full information (23 October 2026 AEDT)
+
+Four top-level sections: **Discover**, **Play & Learn**, **Guides & Rewards**, **For Parents**. The side menu groups detailed destinations under those four headings. Learning activities, Vietnamese folk games and stories have their own page; rewards/festival introduction and parent/family information also have their own pages. The searchable complete Quest Guide and festival directory keep their separate views and deep links. Pictures, expandable details, parent-authored quiz guidance and all substantive EN/VI copy remain available. Static content comparison against `26b4829f`: 1,163 unique bilingual text pairs before, 1,175 after; the only removed/relabelled pairs are navigation labels and the menu's introduction.
+
+[Website/game rules](WEBSITE-RULES.md) now govern navigation, shared UI, art/capture provenance, one-release data, automatic regeneration, review gates and publication. `CLAUDE.md` and the design handbook link those rules. `sync-website.mjs` reads a supplied immutable game commit, refreshes all catalogues, renders the guides, imports that source's icon renderer/theme tokens/fonts, checks game/cache/editor version agreement, and exports hosted assets. A recorded game-source fingerprint detects added/deleted/changed game files. It names unreviewed changes and fails rather than assuming an old gameplay explanation remains correct.
+
+The proposed `website-consistency.yml` builds on main pushes and relevant PRs and keeps the static artifact plus drift report. This workflow is staged on the design branch. **Production `/home/`, the game package, required branch protection and automatic production publication are not integrated yet.** Release must package the verified site and game together and retain the owner's explicit release approval. The private Sites preview is a separate review deployment, not an automatic main mirror.
+
+Current game source: `781089d6f1c3533a226d4a49271baa61142b940d` (r88). Review Site: `appgprj_6ada78c4d6648191a5bdfd47aea3e24a`; local static checkout `/workspace/sites/sparkle-valley-family-preview-20261023`. Tokens are not saved in the repository.
+
+Checks: navigation, original photo/quest/Family Quiz/printing, rewards and festivals pass in EN/VI on phone, tablet, desktop, small phone and landscape. Phone/tablet/desktop screenshots inspected; the initial black focus outline and heading scroll offset were adjusted. A real temporary Git source change to `js/adventure.ts` correctly fails the consistency gate and names that file; the baseline rebuild passes. Early test adaptations counted two directory image duplicates and attempted to click a photo after navigating away; assertions now retain the original 14-picture scope and navigate to the proper page. One reward run was interrupted after an overlapping check was noticed, then rerun alone successfully. Changed-file suite: **9/9 pass** (`--changed --jobs 1`, five minutes), including 175 unit tests; evidence in `evidence/changed-checks.json`. Private preview v2 published successfully, source commit `2079d68da1cd9299676702c22dba3e271029ba10` (23 October, 8:24 am AEDT). No game runtime or saves changed.
+
+Rebuild against the intended release:
+
+```sh
+SV_WEBSITE_SOURCE=origin/main node docs/website-review-20261023/sync-website.mjs
+```
+
+For full commands, review-lock requirements and pending release integration, read [WEBSITE-RULES.md](WEBSITE-RULES.md).
+
+---
+
 # Sparkle Valley website: review and proposed design
 
 Reviewed 23 October 2026 AEDT. The initial review used GitHub `main` at [`f1dc57cd`](https://github.com/nguyentuanphu/Sparkle-Valley/commit/f1dc57cd), recording **r88**. The live service worker at [sparklevalley.au/sw.js](https://sparklevalley.au/sw.js) also serves `sv-2026-10-19-r88`. The current website is [sparklevalley.au/home/](https://sparklevalley.au/home/).
@@ -24,7 +50,7 @@ The quest snapshot was checked against `main` at [`781089d6`](https://github.com
 
 **Access limitation:** the existing question editor is a protected content-management page. It requires editing permission; this proposal does not claim every parent already has a self-service editor inside the game. If the owner wants that new in-game flow, it remains runtime work requiring implementation, account/permission review and release checks.
 
-To rebuild: `node docs/website-review-20261023/build-preview.mjs` writes the self-contained preview, parent guide and quest guide. To deliberately refresh quest data after reviewing a newer source, update the pinned ref in `refresh-quest-snapshot.mjs`, run it, review coverage and rebuild. Serve the repo root on port 8765, then run `node docs/website-review-20261023/check-preview.cjs` for the visual-guide interaction checks. It uses the existing Playwright dependency and runs serially across device sizes.
+To rebuild: `node docs/website-review-20261023/build-preview.mjs` writes the self-contained preview, parent guide and quest guide. To refresh against a newer release, use `SV_WEBSITE_SOURCE=<release-sha> node docs/website-review-20261023/sync-website.mjs`, review the drift report and follow `WEBSITE-RULES.md`. Serve the repo root on port 8765, then run `node docs/website-review-20261023/check-preview.cjs` for the visual-guide interaction checks. It uses the existing Playwright dependency and runs serially across device sizes.
 
 ## Pictured prizes and badges
 

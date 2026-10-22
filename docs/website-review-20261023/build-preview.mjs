@@ -1,8 +1,11 @@
 // Rebuild the self-contained design proposal; this does not touch game files.
 import fs from 'node:fs';
+import {simplifyNavigation} from './navigation.mjs';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {execFileSync} from 'node:child_process';
+import {createRequire} from 'node:module';
+const ts=createRequire(new URL('../../tests/package.json',import.meta.url))('typescript');
 import {learning,folk,stories,parentBenefits,faq} from './parent-content.mjs';
 import {enrichment} from './visual-guide.mjs';
 import {familyQuiz} from './family-quiz-content.mjs';
@@ -12,10 +15,12 @@ import './build-rewards-guide.mjs';
 import {festivalSections} from './festival-content.mjs';
 import './build-festival-guide.mjs';
 const here=path.dirname(fileURLToPath(import.meta.url)),root=path.resolve(here,'../..');
-const data=(file,mime)=>`data:${mime};base64,${fs.readFileSync(path.join(root,file)).toString('base64')}`;
-const source=execFileSync('git',['show','f1dc57cd:js/art.js'],{cwd:root,encoding:'utf8'});
+const data=(file,mime)=>`data:${mime};base64,${(file.startsWith('fonts/')?execFileSync('git',['show',snapshot.source+':'+file],{cwd:root}):fs.readFileSync(path.join(root,file))).toString('base64')}`;
+const snapshot=JSON.parse(fs.readFileSync(path.join(here,'quest-snapshot.json')));
+const readGame=file=>{for(const candidate of [...new Set([file,file.replace(/\.js$/,'.ts'),file.replace(/\.ts$/,'.js')])]){try{return execFileSync('git',['show',snapshot.source+':'+candidate],{cwd:root,encoding:'utf8',stdio:['ignore','pipe','pipe']})}catch{}}throw Error('Missing shared game source: '+file)};
+const source=ts.transpileModule(readGame('js/art.js'),{compilerOptions:{module:ts.ModuleKind.ES2020,target:ts.ScriptTarget.ES2020}}).outputText;
 const {artSVG}=await import('data:text/javascript;base64,'+Buffer.from(source).toString('base64'));
-let html=fs.readFileSync(path.join(here,'prototype.template.html'),'utf8');
+let html=simplifyNavigation(fs.readFileSync(path.join(here,'prototype.template.html'),'utf8'));
 const home=`<svg viewBox="0 0 48 48" aria-hidden="true"><path d="M5 24L24 9l19 15" fill="#ff8a5a" stroke="#3b2a4f" stroke-width="2.6" stroke-linejoin="round"/><path d="M10 23h28v20H10z" fill="#fff3d0" stroke="#3b2a4f" stroke-width="2.6"/><path d="M21 43V31h8v12" fill="#b07a4a" stroke="#3b2a4f" stroke-width="2.6"/><rect x="14" y="27" width="5" height="5" rx="1" fill="#8ed7f3" stroke="#3b2a4f" stroke-width="1.5"/><path d="M37 2l2.1 4.4 4.9.7-3.5 3.4.8 4.8-4.3-2.2-4.3 2.2.8-4.8L30 7.1l4.9-.7z" fill="#ffd23f" stroke="#3b2a4f" stroke-width="1.6" stroke-linejoin="round"/></svg>`;
 const keys={CROWN:'👑',OWL:'🦉',BOOK:'📖',NUMBERS:'🔢',MUSIC:'🎵',BRAIN:'🧩',PIG:'🐷',HEART:'💛',GEAR:'⚙️',CLOCK:'🕒',KITE:'🪁',HORSE:'🐴',BIRD:'🐦',MELON:'🍉'};
 for(const [key,value]of Object.entries(keys)){const art=artSVG(value);if(!art)throw new Error('Missing actual game art: '+key);html=html.replaceAll(`/*${key}*/`,art)}
@@ -50,6 +55,13 @@ const imageKeys={HERO:'docs/website-review-20261023/assets/hero-vietnam-australi
 for(const [key,file]of Object.entries(imageKeys))html=html.replaceAll(`/*${key}*/`,data(file,file.endsWith('.png')?'image/png':'image/jpeg'));
 let fonts='';for(const [name,file]of [['Fredoka','Fredoka-latin-500.woff2'],['Baloo','Baloo2-latin-600.woff2'],['Baloo','Baloo2-latin-ext-600.woff2'],['Baloo','Baloo2-vietnamese-600.woff2']])fonts+=`@font-face{font-family:${name};font-style:normal;font-weight:400 800;font-display:swap;src:url(${data('fonts/'+file,'font/woff2')}) format('woff2');${file.includes('vietnamese')?'unicode-range:U+0102-0103,U+0110-0111,U+0128-0129,U+0168-0169,U+01A0-01A1,U+01AF-01B0,U+0300-0301,U+0303-0304,U+0308-0309,U+0323,U+0329,U+1EA0-1EF9;':''}}`;
 html=html.replace('<!-- FESTIVAL-PAGE -->',festivals.directory);
+const gameCSS=readGame('css/style.css');
+const tokens=gameCSS.match(/:root\s*\{([\s\S]*?)\}/)?.[1];if(!tokens)throw Error('Missing shared game UI tokens');
+const buildText=readGame('js/build.ts'),version=buildText.match(/BUILD\s*=\s*['"]([^'"]+)/)?.[1];if(!version)throw Error('Missing game release');
+html=html.replace('</style>',`:root{${tokens}}.website{color:var(--text)}.topic-intro h1,.journey-card h3,.menu-group summary{color:var(--text)}.pill.dark,.play{border-color:var(--cyan2)}html[lang=vi]{--font:'Baloo','Segoe UI',system-ui,sans-serif}.website{font-family:var(--font)}\n</style>`);
+const swSource=readGame('sw.ts'),studioVersion=JSON.parse(readGame('studio/version.json')).studio;if(!swSource.match(/\bVERSION\s*=\s*['"]([^'"]+)/)?.[1].endsWith('-'+version)||studioVersion!==version)throw Error('Game, offline cache and editor versions disagree');
+html=html.replace('</head>',`<meta name="sparkle-game-release" content="${version}"><meta name="sparkle-source-commit" content="${snapshot.source}"></head>`);
+html=html.replace('<div class="container home-page">',`<div class="container home-page"><p class="release-note" style="font-size:13px;color:#69566e;padding-top:18px" data-en="Game guide · ${version} · design preview" data-vi="Hướng dẫn trò chơi · ${version} · bản xem thiết kế"></p>`);
 html=html.replace('/*FONTS*/',fonts).replace('</style>',fs.readFileSync(path.join(here,'rewards.css'),'utf8')+fs.readFileSync(path.join(here,'festivals.css'),'utf8')+'\n</style>');
 if(/\/\*[A-Z-]+\*\//.test(html))throw new Error('Unfilled asset placeholder');
 fs.writeFileSync(path.join(here,'prototype.html'),html);
