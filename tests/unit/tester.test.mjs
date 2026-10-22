@@ -125,6 +125,12 @@ test('a new issue only for a problem seen on the live build or the one before it
   assert.equal(recentEnough([], 83), false); assert.equal(recentEnough(['?'], 83), false);
   assert.equal(recentEnough(['r40'], 0), true, 'no live build known: every problem as before');
 });
+test('issue text never mentions a GitHub account (#472: "tap: Send @45,375" pinged the user 45)', async () => {
+  const { noMention } = await import('../../tools/tester-issues.mts');
+  const out = noMention('- -0.1 s tap: Send @45,375\nnote from @someone, mail a@b.com');
+  assert.equal(/(^|[^\w/.])@[A-Za-z0-9]/m.test(out), false, out);
+  assert.equal(out.replace(/​/g, ''), '- -0.1 s tap: Send @45,375\nnote from @someone, mail a@b.com', 'the visible text is unchanged');
+});
 
 
 test('a report retry with its client ID returns the receipt without counting another report', async () => {

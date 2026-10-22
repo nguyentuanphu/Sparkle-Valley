@@ -15,8 +15,13 @@ const arg = k => { const i = process.argv.indexOf(k); return i > 0 ? process.arg
 const SITE = (arg('--site') || process.env.SV_SITE || 'https://sparklevalley.au').replace(/\/$/, ''), KEY = process.env.STUDIO_KEY || '';
 const GH = process.env.GITHUB_TOKEN || '', REPO = process.env.GITHUB_REPOSITORY || 'nguyentuanphu/Sparkle-Valley', DRY = process.argv.includes('--dry');
 
+// (#472) report text such as "tap: Send @45,375" mentioned real GitHub accounts; a zero-width space after every @ keeps
+// the text readable but never mentions anyone
+export const noMention = (s: string) => s.replace(/@(?=[A-Za-z0-9])/g, '@​');
 const site = async (p: string, body?: object) => { const r = await fetch(`${SITE}/studio/api/${p}`, body ? { method: 'POST', headers: { 'X-Studio-Key': KEY, 'X-Studio': '1', 'Content-Type': 'application/json' }, body: JSON.stringify(body) } : { headers: { 'X-Studio-Key': KEY } }); if (!r.ok) throw new Error(`website ${r.status} for ${p}`); return r.json(); };
-const gh = async (p: string, method = 'GET', body?: { title?: string, state?: string, [field: string]: unknown }) => { if (DRY && method !== 'GET') { console.log('[dry]', method, p, body && (body.title || body.state || '')); return { number: 0 }; }
+const gh = async (p: string, method = 'GET', body?: { title?: string, body?: string, state?: string, [field: string]: unknown }) => {
+  if (body) body = { ...body, ...(typeof body.title === 'string' ? { title: noMention(body.title) } : {}), ...(typeof body.body === 'string' ? { body: noMention(body.body) } : {}) };
+  if (DRY && method !== 'GET') { console.log('[dry]', method, p, body && (body.title || body.state || '')); return { number: 0 }; }
   const r = await fetch(`https://api.github.com/repos/${REPO}/${p}`, { method, headers: { Authorization: `Bearer ${GH}`, Accept: 'application/vnd.github+json', 'Content-Type': 'application/json' }, body: body ? JSON.stringify(body) : undefined }); if (!r.ok) throw new Error(`GitHub ${r.status} for ${p}`); return r.status === 204 ? {} : r.json(); };
 
 // which core a problem most likely belongs to (the Front Desk's map, docs/cores/front-desk.md), from its files and place
