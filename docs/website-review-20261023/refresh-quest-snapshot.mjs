@@ -1,0 +1,23 @@
+// Read-only catalogue extraction. Refresh deliberately after reviewing changes on main.
+import fs from 'node:fs';
+import vm from 'node:vm';
+import {execFileSync} from 'node:child_process';
+import {createRequire} from 'node:module';
+const require=createRequire(import.meta.url),ts=require('typescript');
+export const SOURCE_REF='781089d6';
+const read=file=>execFileSync('git',['show',`${SOURCE_REF}:${file}`],{encoding:'utf8'});
+const run=(text,deps={})=>{const exports={};vm.runInNewContext(ts.transpileModule(text,{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2020}}).outputText,{exports,require:id=>{if(!(id in deps))throw Error('Unexpected import '+id);return deps[id]},Intl,Date,console},{timeout:2000});return exports};
+const chapters=run(read('js/content/chapters.ts'));
+run(read('js/content/chapter2text.ts'),{'./chapters.js':chapters});
+run(read('js/content/chapter3text.js'),{'./chapters.js':chapters});
+const adventures=run(read('js/content/adventures.js'));
+const family=run(read('js/content/familymissions.js'));
+const hunts=run(read('js/content/festhunt.js'));
+const festivals=run(read('js/content/festcal.js'));
+const questSource=read('js/data.js').split('export const QUESTS = ')[1];
+const quests=run('const T=(en,vi)=>[en,vi]; export const QUESTS = '+questSource).QUESTS;
+const storySource=read('js/story.js').split('export const QUEST_TALES = ')[1].split('// One page,')[0];
+const tales=run('export const QUEST_TALES = '+storySource).QUEST_TALES;
+const snapshot={source:SOURCE_REF,reviewed:'23 October 2026 AEDT',quests:quests.map(q=>({id:q.id,icon:q.icon,title:q.title(),at:q.at,hint:tales[q.id]?.slice(2)||null})),chapters:chapters.CHAPTERS,adventures:adventures.ADVENTURES.map(a=>({...a,title:adventures.titleOf(a,Object.fromEntries(festivals.FESTCAL.map(f=>[f.id,[f.en,f.vi]]))),giverName:adventures.GIVERS[a.giver],steps:a.steps.map(s=>({...s,little:adventures.stepText(s,'little'),older:adventures.stepText(s,'big')}))})),weekPrizes:adventures.WEEK_PRIZES,family:family.FAMILY_MISSIONS,hunts:Object.entries(hunts.HUNT).map(([id,h])=>({...h,...festivals.FESTCAL.find(f=>f.id===id),id,objectEn:h.en,objectVi:h.vi}))};
+fs.writeFileSync(new URL('./quest-snapshot.json',import.meta.url),JSON.stringify(snapshot,null,2)+'\n');
+console.log(JSON.stringify({quests:snapshot.quests.length,chapters:snapshot.chapters.map(c=>[c.id,c.steps.length]),daily:snapshot.adventures.length,family:snapshot.family.length,hunts:snapshot.hunts.length}));

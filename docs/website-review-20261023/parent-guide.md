@@ -62,7 +62,7 @@ Keep the game's friendly cartoon characters, original owl, rounded shapes, cream
 
 ### Feelings, routines & helping / Cảm xúc, nề nếp và giúp đỡ
 
-**Game examples / Ví dụ:** How Do They Feel? · Family missions · Days of the Week / Bạn Thấy Thế Nào? · Nhiệm vụ gia đình · Các Ngày Trong Tuần
+**Game examples / Ví dụ:** How Do They Feel? · Family Quiz · Family missions · Days of the Week / Bạn Thấy Thế Nào? · Đố Vui Gia Đình · Nhiệm vụ gia đình · Các Ngày Trong Tuần
 
 **What children do / Bé làm gì:** Notice feelings in picture situations, explore everyday words and complete a grown-up-set task in real life. / Nhận ra cảm xúc trong tình huống bằng tranh, khám phá từ ngữ hằng ngày và làm một việc thật do người lớn giao.
 
@@ -201,3 +201,7 @@ Each note explains what an activity invites children to explore. Use it to choos
 Copy checked against r88 sources: [game catalogue](https://github.com/nguyentuanphu/Sparkle-Valley/blob/f1dc57cd/js/games/catalog.ts), [age/category metadata](https://github.com/nguyentuanphu/Sparkle-Valley/blob/f1dc57cd/js/content/activities.js), [reading activities and how-to cards](https://github.com/nguyentuanphu/Sparkle-Valley/blob/f1dc57cd/js/games/readingmenu.ts), [folk-game rules](https://github.com/nguyentuanphu/Sparkle-Valley/blob/f1dc57cd/js/games/folk.ts), [Vietnamese game rules](https://github.com/nguyentuanphu/Sparkle-Valley/blob/f1dc57cd/js/games/vietnam.ts), [family missions and routines](https://github.com/nguyentuanphu/Sparkle-Valley/blob/f1dc57cd/js/parents.ts), [settings](https://github.com/nguyentuanphu/Sparkle-Valley/blob/f1dc57cd/js/ui-settings.ts) and [bilingual tales](https://github.com/nguyentuanphu/Sparkle-Valley/blob/f1dc57cd/js/tales-content.js).
 
 The examples describe opportunities for practice and parent-child discussion. They do not promise a reading age, curriculum qualification, clinical benefit or measured learning improvement. No formal parent assessment dashboard is advertised. The unfinished drawing-game set is excluded. Family content remains private and parent-managed; marketing pages do not expose family photos, names or voices.
+
+## Family questions written by parents / Câu hỏi gia đình do cha mẹ thêm
+
+See the [Family Quiz setup guide](quest-guide.md#family-quiz--đố-vui-gia-đình). Parents with family-content editing access can write bilingual questions, add two to four answers and optional game artwork, select the correct answer, save and publish. Children receive the published questions on their next online opening. An in-game self-service editor for every parent is not implemented. / Cha mẹ có quyền sửa nội dung gia đình có thể viết câu hỏi song ngữ, thêm hai đến bốn đáp án và hình trò chơi tùy chọn, chọn đáp án đúng, lưu và phát hành. Bé nhận câu hỏi khi mở có mạng lần tới. Chưa có trình tự thêm ngay trong trò chơi cho mọi cha mẹ.

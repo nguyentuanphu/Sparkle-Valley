@@ -1,6 +1,6 @@
 # Sparkle Valley website: review and proposed design
 
-Reviewed 23 October 2026 AEDT. The latest GitHub `main` is [`f1dc57cd`](https://github.com/nguyentuanphu/Sparkle-Valley/commit/f1dc57cd), recording **r88**. The live service worker at [sparklevalley.au/sw.js](https://sparklevalley.au/sw.js) also serves `sv-2026-10-19-r88`. The current website is [sparklevalley.au/home/](https://sparklevalley.au/home/).
+Reviewed 23 October 2026 AEDT. The initial review used GitHub `main` at [`f1dc57cd`](https://github.com/nguyentuanphu/Sparkle-Valley/commit/f1dc57cd), recording **r88**. The live service worker at [sparklevalley.au/sw.js](https://sparklevalley.au/sw.js) also serves `sv-2026-10-19-r88`. The current website is [sparklevalley.au/home/](https://sparklevalley.au/home/).
 
 [Download/open the interactive concept](prototype.html) · [Desktop first screen](evidence/first-screen-desktop.png) · [Phone first screen](evidence/first-screen-phone.png) · [Phone floating view](evidence/overlay-phone.png) · [New Welcome-screen entry](evidence/welcome-desktop.png)
 
@@ -11,6 +11,20 @@ This is a **design proposal**, rather than a deployed website or an implemented 
 The owner asked for considerably more information about what the game offers, Vietnamese folk games, learning and the value to parents. The updated concept now contains six learning areas, five detailed folk games, three Vietnamese story examples, six parent benefits, age guidance, practical follow-ups and six parent FAQs. [Read the complete bilingual parent guide](parent-guide.md) or [edit the content](parent-content.mjs).
 
 Each learning area explains **what children do → what they can practise → something to try together afterwards**. The friendly cartoon style stays, while expandable details let parents explore the information without crowding the first screen. The final production site should give the learning directory, folk games, stories and parent guidance their own pages, with a shorter overview on Home. The downloadable concept collects the material in one place for review.
+
+## More pictures, a separate Quest Guide and Family Quiz
+
+The owner requested more imagery, a complete quest guide in its own menu, and Family Questions that parents can write. The updated preview adds **12 bilingual screenshot sets** (24 unchanged project captures): places, learning, folk games, stories, daily adventures and family missions. Pictures open in a keyboard-accessible enlargement dialog, change with EN/VI and return focus when closed. [Image provenance](assets/game-previews/manifest.json). These are saved marketing captures; they are not labelled as new r88 test evidence.
+
+**Quest Guide / Hướng dẫn nhiệm vụ** has a dedicated primary-navigation and drawer entry and a separate view, with its own section menu. It covers all **136 entries** in the reviewed catalogues: 17 valley goals, 24 lantern-story steps including the prologue, 56 daily adventures (including seasonal entries), 15 family missions and 24 festival hunts. It includes numbered actions, age differences, chapter rewards, expandable clues, bilingual search, help and printing. It also includes a Family Quiz setup entry, bringing searchable guide entries to **137**. The guide does not read or change child progress. [Full bilingual guide](quest-guide.md) · [Open the guide directly](prototype.html#quest-guide).
+
+The quest snapshot was checked against `main` at [`781089d6`](https://github.com/nguyentuanphu/Sparkle-Valley/tree/781089d6), fetched explicitly on 23 October AEDT. [Snapshot](quest-snapshot.json) and [reviewed walkthrough explanations](quest-help.mjs) keep coverage auditable. No future chapters or proposed quests are presented as available.
+
+**Family Questions / Family Quiz / Đố Vui Gia Đình** now has its own homepage section, menu link, playable website example and parent setup instructions. The game already supports grown-up-authored questions: EN/VI question text, optional game drawing, two to four answers, correct-answer selection, Save and authorised Publish, then delivery on the next online game opening. It appears only when valid questions are supplied and age/family settings permit it. Source: `js/games/more.ts`, `js/games/catalog.ts`, `js/custom.js`, `studio/ui/app.ts` at the pinned snapshot. The website example has two answers and makes no game saves. No real family questions are entered or collected by this public preview.
+
+**Access limitation:** the existing question editor is a protected content-management page. It requires editing permission; this proposal does not claim every parent already has a self-service editor inside the game. If the owner wants that new in-game flow, it remains runtime work requiring implementation, account/permission review and release checks.
+
+To rebuild: `node docs/website-review-20261023/build-preview.mjs` writes the self-contained preview, parent guide and quest guide. To deliberately refresh quest data after reviewing a newer source, update the pinned ref in `refresh-quest-snapshot.mjs`, run it, review coverage and rebuild. Serve the repo root on port 8765, then run `node docs/website-review-20261023/check-preview.cjs` for the visual-guide interaction checks. It uses the existing Playwright dependency and runs serially across device sizes.
 
 ## What the current website needs
 
@@ -48,7 +62,7 @@ The approved [bilingual game banner](../learning-banner-20261021/README.md) appe
 
 ## Smaller navigation and a separate Play row
 
-Desktop: a compact bar with the brand, **Discover · Games · Stories · For parents**, language switch and Menu for the other destinations. Phone/tablet: brand, Menu and language controls, with a full-height side drawer containing every destination. The current Memory Villages, Countries, Help and Privacy content must remain reachable.
+Desktop: a compact bar with the brand, **Discover · Games · Quest Guide · For parents**, language switch and Menu for the other destinations. Phone/tablet: brand, Menu and language controls, with a full-height side drawer containing every destination. The current Memory Villages, Countries, Help and Privacy content must remain reachable.
 
 The owner's word “sliceable” is still awaiting clarification. **Slide-out navigation is a design recommendation**, not an assumed instruction to implement it. If sideways-scrolling tabs were intended, they should get a full-width row of their own, with visible overflow hints and enough room to swipe. The Play button should not compete for that row.
 
@@ -91,6 +105,7 @@ Before release: verify EN/VI, 320 px and normal phone sizes, tablet/computer, po
 
 ## Verification and limits
 
+- Photo/guide update: [five-layout results](evidence/visual-guide-checks.json), covering bilingual search, no-results recovery, picture enlargement, focus return, guide navigation, retained expanded content, Family Quiz sample/setup, print expansion and the floating guide with retained sample Settings. Phone, tablet, desktop, 320 px phone and phone landscape screenshots inspected.
 - Live website: browser inspection/screenshots in both languages at the three sizes above; no JavaScript page errors. Menu compression, short Play targets and consent duplication were reproduced.
 - Prototype: language switch, drawer, Welcome entry, Settings entry, Escape, Close, focus return and retention of the underlying sample Settings panel checked on phone/tablet/computer. [Interaction results](evidence/prototype-checks.json).
 - Parent content: six learning areas, five folk games, three stories, six parent benefits and six FAQs checked on phone/tablet/computer; every bilingual entry has English and Vietnamese text. Learning, folk-game and FAQ expanders work, and changing language retains expanded content. [Parent content results](evidence/parent-content-checks.json).
