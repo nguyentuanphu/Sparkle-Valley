@@ -31,6 +31,9 @@ register({
         shout.textContent = T(en, vi); shout.classList.remove('pop'); void shout.offsetWidth; shout.classList.add('pop'); api.say(en, vi);
       };
       place(); await wait(400); hint();
+      // (r89) auto play listens like a child: it steps the way the friends shout, then smashes on "HERE"
+      const btn = (c: string) => w.querySelector<HTMLElement>(`.nieu-btns .${c}`);
+      api.plan(() => w.isConnected ? btn(i < t ? 'r' : i > t ? 'l' : 'hit') : null, { maxActions: rounds * (N + 2) });
       for (;;) {
         const b = await tapOne([...w.querySelectorAll('.nieu-btns button')]); if (api.closed) return;
         if (b.classList.contains('l')) { i = Math.max(0, i - 1); api.sfx.tap(); place(); hint(); continue; }
