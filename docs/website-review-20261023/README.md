@@ -6,6 +6,12 @@ Reviewed 23 October 2026 AEDT. The latest GitHub `main` is [`f1dc57cd`](https://
 
 This is a **design proposal**, rather than a deployed website or an implemented game overlay. The self-contained HTML works after download: try Website, Welcome and In game in its preview bar, switch English/Vietnamese, open Menu, and open/close the website from Welcome or Settings. The background is game artwork; it does not run a game session or read family saves.
 
+## Expanded parent-first version
+
+The owner asked for considerably more information about what the game offers, Vietnamese folk games, learning and the value to parents. The updated concept now contains six learning areas, five detailed folk games, three Vietnamese story examples, six parent benefits, age guidance, practical follow-ups and six parent FAQs. [Read the complete bilingual parent guide](parent-guide.md) or [edit the content](parent-content.mjs).
+
+Each learning area explains **what children do → what they can practise → something to try together afterwards**. The friendly cartoon style stays, while expandable details let parents explore the information without crowding the first screen. The final production site should give the learning directory, folk games, stories and parent guidance their own pages, with a shorter overview on Home. The downloadable concept collects the material in one place for review.
+
 ## What the current website needs
 
 The live site was inspected on a 390 × 844 phone, 820 × 1180 tablet and 1440 × 1000 computer, in English and Vietnamese. [Measured results](evidence/live-findings.json) and [screenshots](evidence/live-phone-en.png) are saved with the proposal.
@@ -87,6 +93,7 @@ Before release: verify EN/VI, 320 px and normal phone sizes, tablet/computer, po
 
 - Live website: browser inspection/screenshots in both languages at the three sizes above; no JavaScript page errors. Menu compression, short Play targets and consent duplication were reproduced.
 - Prototype: language switch, drawer, Welcome entry, Settings entry, Escape, Close, focus return and retention of the underlying sample Settings panel checked on phone/tablet/computer. [Interaction results](evidence/prototype-checks.json).
+- Parent content: six learning areas, five folk games, three stories, six parent benefits and six FAQs checked on phone/tablet/computer; every bilingual entry has English and Vietnamese text. Learning, folk-game and FAQ expanders work, and changing language retains expanded content. [Parent content results](evidence/parent-content-checks.json).
 - Additional layouts: 320 px phone, 844 × 390 phone landscape and 1180 × 820 tablet landscape checked alongside the normal phone/computer sizes; no horizontal overflow and the modal Close control remains visible with at least a 44 px target. [Layout results](evidence/additional-layout-checks.json).
 - Visual review: phone, tablet and computer screenshots inspected. The first concept review found a 34 px-wide phone Menu button; it was corrected to a 44 px minimum before the final check.
 - This demonstrates the proposed website interaction with artwork only. It does not prove actual game-session preservation, input suspension, network behavior, physical iPhone behavior or performance after runtime integration.
