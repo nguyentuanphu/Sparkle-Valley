@@ -57,9 +57,22 @@ function bodyOf(p, d) {
     '', 'Screenshots, every report and the status: Studio → Analytics → Tester reports. Mark it fixed there (or say "Fixed in rNN" in the round) and the testers\' devices replay it on the new version.'].filter(x => x !== '').join('\n');
 }
 
+// (r89, owner 23 Oct AEDT: "two-way sync") an issue Release or the owner closed on GitHub sets the problem's status in
+// Studio too: closed as done with a comment "Fixed in rNN" → fixed in rNN (the testers' devices then replay it); closed as
+// not planned → not a bug. The newest "Fixed in" or "came back" comment decides, so a problem that came back and was
+// fixed again is fixed again. Nothing is set for an open issue, or one closed with no version named.
+export function statusFromIssue(iss: { state?: string, state_reason?: string | null }, comments: { body?: string }[]): { status?: string, fixedIn?: string } | null {
+  if (iss.state !== 'closed') return null;
+  if (iss.state_reason === 'not_planned') return { status: 'notbug' };
+  for (const c of [...comments].reverse()) {
+    const b = String(c.body || ''); if (/came back on/i.test(b)) return null;
+    const m = /\bfixed in (r\d{1,4})\b/i.exec(b); if (m) return { fixedIn: m[1].toLowerCase() };
+  }
+  return null;
+}
 async function main() {
   if (!KEY) { console.log('No STUDIO_KEY: nothing to do.'); return; }
-  const { problems, summary } = await site('testers'); let made = 0, closed = 0, updated = 0, old = 0;
+  const { problems, summary } = await site('testers'); let made = 0, closed = 0, updated = 0, old = 0, synced = 0;
   const live = await liveBuild(problems);
   for (const p of problems) {
     if (p.auto === 'novoice' || p.status === 'dup' || p.status === 'notbug') continue;
@@ -75,6 +88,10 @@ async function main() {
       const nb = String(iss.body || '').replace(/<!-- count -->[\s\S]*?<!-- \/count -->/, `<!-- count -->${countLine(p)}<!-- /count -->`);
       if (nb !== iss.body) { await gh('issues/' + p.issue, 'PATCH', { body: nb }); updated++; }
       if (['fixed', 'confirmed'].includes(p.status) && iss.state === 'open') { await gh(`issues/${p.issue}/comments`, 'POST', { body: `Fixed in ${p.fixedIn || 'a new version'}${p.status === 'confirmed' ? ', and the tester devices checked it' : ''}.` }); await gh('issues/' + p.issue, 'PATCH', { state: 'closed', state_reason: 'completed' }); closed++; }
+      if (open && iss.state === 'closed') {
+        const set = statusFromIssue(iss, await gh(`issues/${p.issue}/comments?per_page=100`).catch(() => []));
+        if (set) { await site('testers/set', { k: p.k, ...set }); synced++; continue; }
+      }
       if (p.status === 'back' && iss.state === 'closed') { await gh(`issues/${p.issue}/comments`, 'POST', { body: `It came back on ${(p.builds || []).slice(-1)[0] || 'a newer version'}.` }); await gh('issues/' + p.issue, 'PATCH', { state: 'open' }); }
     }
   }
@@ -84,6 +101,6 @@ async function main() {
     const found = (await gh('issues?state=open&labels=tester-summary&per_page=1'))[0];
     if (found) await gh(`issues/${found.number}`, 'PATCH', { body: text }); else await gh('issues', 'POST', { title: 'Tester daily summary', body: text, labels: ['tester-summary'] });
   }
-  console.log(`Issues: ${made} new, ${updated} counts updated, ${closed} closed; ${old} problems seen only before r${live - 1} not filed.`);
+  console.log(`Issues: ${made} new, ${updated} counts updated, ${closed} closed, ${synced} statuses taken back to Studio; ${old} problems seen only before r${live - 1} not filed.`);
 }
 if (import.meta.url === `file://${process.argv[1]}`) main().catch(e => { console.error(e.message); process.exit(1); });

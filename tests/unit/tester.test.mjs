@@ -160,3 +160,13 @@ test('the problem list reads the store many at a time (r89: the robot got 504 fr
   assert.equal(list.length, 60); assert.equal(list[0].title, 't59', 'newest first as before');
   assert.ok(most >= 8, `at most ${most} reads at once`);
 });
+
+test('a GitHub issue closed with "Fixed in rNN" sets the Studio problem (r89 two-way sync)', async () => {
+  const { statusFromIssue } = await import('../../tools/tester-issues.mts');
+  assert.equal(statusFromIssue({ state: 'open' }, [{ body: 'Fixed in r89' }]), null, 'an open issue sets nothing');
+  assert.deepEqual(statusFromIssue({ state: 'closed', state_reason: 'completed' }, [{ body: 'looked at it' }, { body: 'Fixed in R89 (autoplay plans).' }]), { fixedIn: 'r89' });
+  assert.deepEqual(statusFromIssue({ state: 'closed', state_reason: 'not_planned' }, []), { status: 'notbug' });
+  assert.equal(statusFromIssue({ state: 'closed', state_reason: 'completed' }, [{ body: 'no version' }]), null, 'no version named: nothing set');
+  assert.equal(statusFromIssue({ state: 'closed', state_reason: 'completed' }, [{ body: 'Fixed in r88' }, { body: 'It came back on r89.' }]), null, 'came back after the fix: still open');
+  assert.deepEqual(statusFromIssue({ state: 'closed', state_reason: 'completed' }, [{ body: 'It came back on r89.' }, { body: 'Fixed in r90' }]), { fixedIn: 'r90' });
+});
