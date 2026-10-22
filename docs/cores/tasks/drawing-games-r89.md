@@ -1,8 +1,8 @@
 # Ten drawing games (new brief, r89)
 
 Owner, 23 Oct 2026 AEDT: the helper chat's ten drawing games (`work/drawing-games-20261018`, commits `69df8314` and
-`ec932129`) were never pushed and are lost, so this is a new brief. **Plan only: nothing is built until the owner says
-"go" (pop-up).** Play owns the games; Kid UI the Pictures area; Voice & Audio the spoken lines.
+`ec932129`) were never pushed and are lost, so this is a new brief. **Owner's go, 23 Oct 2026 AEDT (pop-up): build all
+ten for r89; finished lanterns and cards are kept on the device in that child's Album (never uploaded).** Play owns the games; Kid UI the Pictures area; Voice & Audio the spoken lines.
 
 ## Where they go
 
@@ -42,6 +42,6 @@ celebration with autoplay and fails on a page error, a small target, a missing t
 plus `games`, `gameflow`, `gamewinlayout`, `phone`, `bilingual`, `emoji`, `noemoji`, `preload`, `types`, `unit`, and
 the GitHub full suite.
 
-## Open questions for the owner
-1. Are these ten the right ones, or should any be swapped?
-2. Should the cards (game 6) and lanterns (game 5) be kept, so a child can see them again later?
+## Owner's answers (23 Oct 2026 AEDT)
+1. The ten as listed: go.
+2. Lanterns (game 5) and cards (game 6) are kept in the child's Album on the device.
