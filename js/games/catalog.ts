@@ -91,7 +91,18 @@ export const GAME_CATALOG = [
   { id: 'sayfind', icon: '🗣️', learn: true, name: () => T('Say It, Find It', 'Nói Rồi Tìm') },
   { id: 'marketcount', icon: '🧺', learn: true, name: () => T('Market Counting', 'Đếm Ở Chợ') },
   { id: 'feelings', icon: '😊', learn: true, name: () => T('How Do They Feel?', 'Bạn Thấy Thế Nào?') },
-  { id: 'soundhunt', icon: '🔤', learn: true, name: () => T('First Sound Hunt', 'Săn Âm Đầu') }
+  { id: 'soundhunt', icon: '🔤', learn: true, name: () => T('First Sound Hunt', 'Săn Âm Đầu') },
+  // (r89, owner's go 23 Oct AEDT) the ten drawing games, js/games/drawing.ts
+  { id: 'dotdot', icon: '🔢', name: () => T('Dot to Dot', 'Nối Điểm') },
+  { id: 'trace', icon: '✏️', name: () => T('Trace the Picture', 'Tô Theo Nét') },
+  { id: 'mirror', icon: '🦋', name: () => T('Mirror Painting', 'Vẽ Đối Xứng') },
+  { id: 'colournum', icon: '🎨', name: () => T('Colour by Number', 'Tô Màu Theo Số') },
+  { id: 'lanternart', icon: '🏮', name: () => T('Decorate a Lantern', 'Trang Trí Đèn Lồng') },
+  { id: 'card', icon: '💌', name: () => T('Make a Card', 'Làm Thiệp') },
+  { id: 'sand', icon: '🏖️', name: () => T('Sand Drawing', 'Vẽ Trên Cát') },
+  { id: 'drawpath', icon: '🦆', name: () => T('Draw the Way', 'Vẽ Đường Đi') },
+  { id: 'shapedraw', icon: '🔺', name: () => T('Draw a Shape', 'Vẽ Hình') },
+  { id: 'copygrid', icon: '🖼️', name: () => T('Copy the Picture', 'Vẽ Lại Tranh') }
 ].filter(def => def.id !== 'familyquiz' || customQuiz().length > 0);
 export const GAME_LOADERS = {
   'thinking.js': { ids: ["pattern","counting","letters","numbers","shapes","colors","sorting","memory"], load: () => import('./thinking.js') },
@@ -110,5 +121,6 @@ export const GAME_LOADERS = {
   'money.js': { ids: ["heodat","coinnote","needwant","bahu","lixi","shopkeep","shoplist","cheaper","waitgrow","barter"], load: () => import('./money.js') },
   'bigthinkers.js': { ids: ["rulefinder","gardenorder","steppingpath"], load: () => import('./bigthinkers.js') },
   'bigthinkers2.js': { ids: ["patternpicnic","shapebuilders","remembergarden"], load: () => import('./bigthinkers2.js') },
-  'talkgames.js': { ids: ["sayfind","marketcount","feelings","soundhunt"], load: () => import('./talkgames.js') }
+  'talkgames.js': { ids: ["sayfind","marketcount","feelings","soundhunt"], load: () => import('./talkgames.js') },
+  'drawing.js': { ids: ["dotdot","trace","mirror","colournum","lanternart","card","sand","drawpath","shapedraw","copygrid"], load: () => import('./drawing.js') }
 };
