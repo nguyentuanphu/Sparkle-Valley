@@ -32,7 +32,7 @@ register({
       };
       place(); await wait(400); hint();
       // (r89) auto play listens like a child: it steps the way the friends shout, then smashes on "HERE"
-      const btn = (c: string) => w.querySelector<HTMLElement>(`.nieu-btns .${c}`);
+      const btn = (c: string) => { const b = w.querySelector(`.nieu-btns .${c}`); return b instanceof HTMLElement ? b : null; };
       api.plan(() => w.isConnected ? btn(i < t ? 'r' : i > t ? 'l' : 'hit') : null, { maxActions: rounds * (N + 2) });
       for (;;) {
         const b = await tapOne([...w.querySelectorAll('.nieu-btns button')]); if (api.closed) return;
