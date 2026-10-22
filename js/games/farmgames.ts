@@ -32,12 +32,16 @@ register({
       const got = {}; const sumEl = tray.querySelector('.sum'), inTray = tray.querySelector('.coins');
       const show = () => { sumEl.textContent = Object.entries(got).map(([k, v]) => `${v} × ${k}`).join('   ') || T('Tap the food to put it in the basket', 'Chạm vào đồ ăn để cho vào giỏ'); };
       show();
+      // (r89) auto play fills the order like a child: takes back anything extra, then adds what is still missing
+      const kindOf = new Map<Element, string>(), ofKind = (box: Element, k: string) => [...box.children].find((e): e is HTMLElement => e instanceof HTMLElement && kindOf.get(e) === k) || null;
+      api.plan(() => { if (!pile.isConnected) return null; const over = Object.keys(got).find(k => got[k] > (want[k] || 0)); if (over) return ofKind(inTray, over);
+        const need = Object.keys(want).find(k => (got[k] || 0) < want[k]); return need ? ofKind(pile, need) : null; }, { maxActions: rounds * (max + 6) * 2 });
       await new Promise<void>(res => {
         Object.keys(want).concat(shuffle(FARM.filter(x => !want[x])).slice(0, api.level >= 3 ? 2 : 1)).forEach(k => {
-          const b = el('button', 'choice', k); pile.appendChild(b);
+          const b = el('button', 'choice', k); kindOf.set(b, k); pile.appendChild(b);
           b.onclick = () => {
             got[k] = (got[k] || 0) + 1; const total = got[k];
-            const t = el('span', 'tray-item', k); t.onclick = () => { got[k]--; if (!got[k]) delete got[k]; t.remove(); show(); }; inTray.appendChild(t);
+            const t = el('span', 'tray-item', k); kindOf.set(t, k); t.onclick = () => { got[k]--; if (!got[k]) delete got[k]; t.remove(); show(); }; inTray.appendChild(t);
             sayIn(settings.lang, numWord(total)); SFX.pop(total); show();
             const ok = Object.keys(want).every(x => got[x] === want[x]) && Object.keys(got).every(x => want[x]);
             if (ok) { api.right(tray); res(); }
@@ -135,6 +139,10 @@ register({
     const draw = () => { grid.innerHTML = ''; order.forEach((v, i) => { const b = el('button', 'jp' + (v === i ? ' ok' : '')); b._i = i; b.style.backgroundImage = `url(${src})`; b.style.backgroundSize = `${n * 100}% ${n * 100}%`; b.style.backgroundPosition = `${(v % n) / (n - 1) * 100}% ${Math.floor(v / n) / (n - 1) * 100}%`; grid.appendChild(b); }); };
     draw();
     let first = null;
+    // (r89) auto play mends the picture like a child: a piece in the wrong place, then the piece that belongs there
+    const piece = (i: number) => { const e = grid.children[i]; return e instanceof HTMLElement ? e : null; };
+    api.plan(() => { if (!grid.isConnected) return null; if (first == null) { const i = order.findIndex((v, j) => v !== j); return i < 0 ? null : piece(i); }
+      return piece(order.indexOf(first)); }, { maxActions: n * n * 3 });
     while (!order.every((v, i) => v === i)) {
       const b = await tapOne([...grid.children]); if (api.closed) return;
       if (first == null) { first = b._i; b.classList.add('held'); SFX.tap(); continue; }
@@ -184,7 +192,9 @@ register({
       api.say('Listen and watch…', 'Nghe và nhìn nhé…'); xy.classList.add('busy'); await wait(1200);
       for (const i of seq) { if (api.closed) return; await play(i); }
       xy.classList.remove('busy'); api.say('Your turn! Play it back.', 'Đến lượt con! Chơi lại nhé.');
-      for (let k = 0; k < seq.length;) {
+      // (r89) auto play plays the tune back note by note, and waits while the tune is played again
+      let k = 0; api.plan(() => xy.isConnected && !xy.classList.contains('busy') && k < seq.length ? bars[seq[k]] : null, { maxActions: rounds * (start + rounds) * 2 });
+      for (; k < seq.length;) {
         const b = await tapOne(bars); if (api.closed) return;
         play(b._i);
         if (b._i === seq[k]) k++;

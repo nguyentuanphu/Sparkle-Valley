@@ -33,9 +33,13 @@ register({
       const sumEl = tray.querySelector('.sum'), coins = tray.querySelector('.coins');
       const show = () => { sumEl.innerHTML = `${T('You gave', 'Con đưa')}: <b>${fmtMinor(sum, code)}</b>`; tray.classList.toggle('over', sum > price); };
       show();
+      const pay = new Map<number, HTMLElement>();
+      // (r89) auto play pays like a child counting out money: the biggest one that still fits, a coin back if it went over
+      api.plan(() => { if (!wallet.isConnected || sum === price) return null; if (sum > price) { const c = coins.lastElementChild; return c instanceof HTMLElement ? c : null; }
+        const v = [...pay.keys()].filter(x => x <= price - sum).sort((x, y) => y - x)[0]; return v ? pay.get(v) : null; }, { maxActions: rounds * 40 });
       await new Promise<void>(res => {
         denoms.forEach(v => {
-          const d = cur.denoms.find(x => x.v === v); const b = el('button', 'wallet-btn'); b.appendChild(moneyEl(d));
+          const d = cur.denoms.find(x => x.v === v); const b = el('button', 'wallet-btn'); b.appendChild(moneyEl(d)); pay.set(v, b);
           b.onclick = () => {
             if (sum >= price) return;
             sum += v; api.sfx.coin();
