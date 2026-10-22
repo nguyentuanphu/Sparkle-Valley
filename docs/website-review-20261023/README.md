@@ -38,6 +38,18 @@ Validation: [reward checks](evidence/reward-checks.json) passed at 390 px, 820 p
 
 The prize pictures reuse the game's SVG artwork. Festival medallion frames are website presentation around the actual festival symbols, not new in-game badges. These are design-document changes only; the website does not grant prizes or alter child saves.
 
+## Festivals to join or watch, with softer cartoon scenery
+
+The owner asked whether festivals, decorations, folk games and participation were all included, then requested more artistic/cartoon treatment of game photos and clarification of festival-exclusive prizes. The preview now has a dedicated **Festivals & celebrations / Lễ hội và ngày kỷ niệm** menu destination and separate directory view, rather than only the hunt/badge list. [Complete bilingual festival guide](festival-guide.md) · [Default calendar and activity snapshot](festival-snapshot.json).
+
+All **24 festival entries** explain locations, decorations, the festival-table activity, any scheduled display, the five-object hunt and rewards. Filters show Vietnam (10), Australia and friends (8) or other celebrations (6). The year selector shows default game dates for 2026/2027 using the game's lunar/Easter/weekday/year-table rules. Dates are explanatory defaults, not a live reading of family settings. Quiet remembrance days have no evening show. Party-day times follow the device clock used by the game: 08:00 greeting/present, 15:00 game, 18:30 show or 17:30 when an under-five is playing. Opening the in-game calendar does not launch a festival or travel.
+
+The directory separates three systems: festival-table games; seasonal five-object hunts with an **event-specific Passport badge and hunt keepsake**; and three-step daily festival adventures with their sticker, 10 coins and stamp. Ordinary coins and some stickers are not festival-exclusive. Halloween trick-or-treat (five different doors/treats for a pumpkin-lantern keepsake) is explained separately from its five-object hunt. Existing featured folk-game explanations remain reachable; festival games include Rồng Rắn Lên Mây for Tết, Kéo Co for Đoan Ngọ and Thả Diều for Trung Thu.
+
+Two new storybook illustrations soften the scenic presentation: a composite valley inspired by the Hội An/Hà Nội/Sydney game captures and a painted Tết village. Cream buildings, rounded trees, flowers and **five-pointed đèn ông sao** retain the game identity. Both are captioned as artistic interpretations; their original game captures remain accessible in expandable comparison sections. Learning/game-interface screenshots remain clear factual views. [Illustration provenance](assets/storybook-manifest.json) · [Saved festival-capture provenance](assets/festivals/manifest.json). The homepage now retains 14 original game captures plus the two new storybook illustrations.
+
+[Festival checks](evidence/festival-checks.json) cover all five device layouts, group counts, year switching, EN/VI, retained expanded cards, original-scene enlargement, festival-to-hunt links, Back, folk-guide navigation and floating-view close/focus/settings preservation. Existing photo/guide/Family Quiz/printing checks were rerun serially. The first illustration regression check caught the missing valley-art insertion in the template; that insertion was fixed, the check now requires both storybook images, and the five-layout regression passed. No live game changes, festival scheduling or deployment is performed by the proposal.
+
 ## What the current website needs
 
 The live site was inspected on a 390 × 844 phone, 820 × 1180 tablet and 1440 × 1000 computer, in English and Vietnamese. [Measured results](evidence/live-findings.json) and [screenshots](evidence/live-phone-en.png) are saved with the proposal.

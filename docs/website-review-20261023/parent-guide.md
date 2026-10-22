@@ -209,3 +209,7 @@ See the [Family Quiz setup guide](quest-guide.md#family-quiz--đố-vui-gia-đì
 ## Prizes and badges / Quà thưởng và huy hiệu
 
 [Explore what children can earn and how](rewards-guide.md): pictured stickers, stamp-chest pets and companion hats, lantern keepsakes, festival badges, country wearables and page-completion prizes. / [Xem bé nhận quà gì và cần làm gì](rewards-guide.md): hình dán, thú cưng và mũ bạn đồng hành từ rương dấu, đèn lưu niệm, huy hiệu lễ hội, quà Hộ chiếu và quà hoàn thành trang.
+
+## Festivals to join or watch / Lễ hội để tham gia hoặc xem
+
+[Explore all 24 festival entries](festival-guide.md), including decorations, games, shows, default calendar dates and the seasonal hunt rewards. / [Khám phá đủ 24 dịp lễ hội](festival-guide.md), gồm trang trí, trò chơi, màn trình diễn, ngày lịch mặc định và quà săn đồ theo mùa.
