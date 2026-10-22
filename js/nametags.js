@@ -39,7 +39,9 @@ export function createNameTags(G) {
         const t = tagOf(V, p), text = p.name();
         if (t.text !== text) { t.text = text; t.el.textContent = text; t.w = t.el.offsetWidth || text.length * 9 + 24; t.h = t.el.offsetHeight || 30; }
         const x = q.x + (v.x + 1) / 2 * q.w, y = q.y + (1 - v.y) / 2 * q.h;
-        const TOP = topBand(q); let r = { x: x - t.w / 2, y: Math.max(q.y + TOP, y - t.h), w: t.w, h: t.h };
+        const TOP = topBand(q), left = q.x + 8, right = q.x + q.w - RIGHT;
+        if (t.w > right - left) continue;
+        let r = { x: Math.max(left, Math.min(right - t.w, x - t.w / 2)), y: Math.max(q.y + TOP, y - t.h), w: t.w, h: t.h };
         const hits = a => placed.some(o => a.x < o.x + o.w + 4 && o.x < a.x + a.w + 4 && a.y < o.y + o.h + 4 && o.y < a.y + a.h + 4);
         if (hits(r)) { const top = Math.min(...placed.map(o => o.y)) - t.h - 6, down = Math.max(...placed.map(o => o.y + o.h)) + 6, up = { ...r, y: top }, dn = { ...r, y: down };
           if (top >= q.y + TOP && !hits(up)) r = up; else if (down + t.h < q.y + q.h - 120 && !hits(dn)) r = dn; else continue; }

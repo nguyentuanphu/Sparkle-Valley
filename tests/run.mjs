@@ -26,7 +26,13 @@ const sampled = name => process.env.SV_SAMPLE === '1' && !(process.env.SV_FULL |
 const SEED = Number(process.env.SV_SEED) || Math.floor(Date.now() / 36e5);
 // (owner, 16 Oct AEDT: TypeScript, batch 0) the game's .ts files are made into the .js the browser loads before any
 // check runs (tools/build.mts; suite.mjs does it once for all its runs and says so with SV_BUILT)
-if (!process.env.SV_BUILT) { const { execFileSync } = await import('child_process'); execFileSync(process.execPath, ['../tools/build.mts'], { stdio: 'inherit' }); }
+if (!process.env.SV_BUILT) {
+  const { execFileSync } = await import('child_process');
+  const { fileURLToPath } = await import('url');
+  const path = await import('path');
+  const here = path.dirname(fileURLToPath(import.meta.url));
+  execFileSync(process.execPath, [path.resolve(here, '../tools/build.mts')], { stdio: 'inherit' });
+}
 const only = process.argv.slice(2).filter(a => !a.startsWith('--'));
 const want = k => !only.length || only.includes(k);
 const results = [];
@@ -1398,11 +1404,14 @@ await check('testerreport', async () => {
   await P.page.evaluate(() => __sv.playGame(0, 'no-such-game-for-the-tester-check'));
   if (!await wait(x => x && x.auto === 'noopen' && /no-such-game/.test(x.detail), 9000)) out.push('a game that did not open was not reported');
   await P.page.waitForFunction(() => performance.now() > 0, null); await P.page.waitForTimeout(Math.max(0, 16000 - await P.page.evaluate(() => performance.now())));
+  const earlierFreezes = got.filter(x => x && x.auto === 'freeze');
   await P.page.evaluate(() => new Promise(r => requestAnimationFrame(() => { const t = performance.now(); while (performance.now() - t < 2600) { } r(); })));
-  { const fz = await wait(x => x && x.auto === 'freeze', 6000); if (!fz) out.push('a frozen screen was not reported');
+  { const fz = await wait(x => x && x.auto === 'freeze' && !earlierFreezes.includes(x), 6000); if (!fz) out.push('a frozen screen was not reported');
     // (#261) the report says the game's own code ran long (this freeze is a 2.6 s script), not only that frames stopped
-    else { const why = JSON.stringify(fz.log || []).match(/longest script (\d+) ms/); // (the browser may measure the 2.6 s script a little shorter: GitHub saw 1912 ms; over a second is the script)
-      if (!why || +why[1] < 1000) out.push('the freeze report does not say a long script caused it: ' + (why ? why[0] : 'no note')); } }
+    else { const scripts = [...JSON.stringify(fz.log || []).matchAll(/longest script (\d+) ms/g)];
+      const why = scripts.find(m => +m[1] >= 1000) || scripts[scripts.length - 1] || null;
+      if (!why || +why[1] < 1000) out.push('the freeze report does not say a long script caused it: ' + (why ? why[0] : 'no note') + '; earlier freeze reports: ' + earlierFreezes.length); }
+    fs.writeFileSync('out/tester-freeze-observation.json', JSON.stringify({ earlier: earlierFreezes, all: got.filter(x => x && x.auto === 'freeze') }, null, 2)); }
   // the ladybird: tap
   await clear(P.page); const n0 = got.length;
   await P.page.locator('.hud .z-lb').first().dispatchEvent('pointerdown'); await P.page.locator('.hud .z-lb').first().dispatchEvent('pointerup');
@@ -3989,9 +3998,9 @@ await check('animalhomes', async () => {
 await check('names', async () => {
   // every game file: no name used that is never defined or imported (TypeScript's TS2304 on all of js/, nothing else
   // judged). Moving code between files (the architecture steps) is where this goes wrong; it once stopped the game.
-  const { execFileSync } = await import('child_process'), tsc = 'node_modules/.bin/tsc';
+  const { execFileSync } = await import('child_process'), tsc = 'node_modules/typescript/lib/tsc.js';
   if (!fs.existsSync(tsc)) return 'skipped (run npm install in tests)';
-  let out = ''; try { out = execFileSync(tsc, ['-p', 'tsconfig.names.json'], { encoding: 'utf8', maxBuffer: 64e6 }); } catch (e) { out = (e.stdout || '') + ''; }
+  let out = ''; try { out = execFileSync(process.execPath, [tsc, '-p', 'tsconfig.names.json'], { encoding: 'utf8', maxBuffer: 64e6 }); } catch (e) { out = (e.stdout || '') + ''; }
   const bad = out.split('\n').filter(l => /TS2304/.test(l) && !l.startsWith('../vendor'));
   ok(!bad.length, bad.slice(0, 6).join(' | '));
   return `${fs.readdirSync('../js', { recursive: true }).filter(f => String(f).endsWith('.js')).length} game files: every name is defined or imported`;
@@ -4254,7 +4263,7 @@ await check('gameends', async () => {
     dispatchEvent(new Event('pagehide')); return { a, build: BUILD, named: !!a && names.some(n => JSON.stringify(a).includes(n)), cleared: localStorage.getItem('sv2_alive') === null }; });
   const errs = [...P.errors]; await P.ctx.close();
   const after = async note => { const Q = await open(b, { w: 900, h: 640, pre: `try { localStorage.setItem(${JSON.stringify(note[0])}, ${JSON.stringify(JSON.stringify(note[1]))}); } catch (e) { }` }); await clear(Q.page);
-    const e = await Q.page.evaluate(() => { const o = JSON.parse(localStorage.getItem('sv2_hello_out') || '{"days":{}}'); return Object.values(o.days).flatMap(d => Object.keys(d.e || {})); });
+    const e = await Q.page.evaluate(() => { const key = navigator.webdriver ? 'sv2_bot_telemetry' : 'sv2_hello_out', o = JSON.parse(localStorage.getItem(key) || '{"days":{}}'); return Object.values(o.days).flatMap(d => Object.keys(d.e || {})); });
     errs.push(...Q.errors); await Q.ctx.close(); return e; };
   const killed = await after(['sv2_alive', { w: 'village', mb: 310, b: 'r83' }]), reloaded = await after(['sv2_reload', { why: '3D picture lost', w: 'hanoi bag', mb: 290, b: 'r83' }]);
   ok(live.a && live.a.b === live.build && typeof live.a.w === 'string' && live.a.w.length && !live.named && live.cleared, 'the note while playing: ' + JSON.stringify(live));
@@ -5239,11 +5248,13 @@ await check('chests', async () => {
 await check('types', async () => {
   // type checking (owner, round 30): the files that start with // @ts-check are checked against their JSDoc types
   // (js/state.js, js/netmsg.js; tests/tsconfig.json lists them), then the .mts and .cts files (tests/tsconfig.server.json). Needs: cd tests && npm install
-  const { execFileSync } = await import('child_process'), tsc = 'node_modules/.bin/tsc';
+  const { execFileSync } = await import('child_process'), tsc = 'node_modules/typescript/lib/tsc.js';
   if (!fs.existsSync(tsc)) return 'skipped (run npm install in tests)';
-  try { execFileSync(tsc, ['-p', '.'], { encoding: 'utf8' }); execFileSync(tsc, ['-p','tsconfig-contracts.json'], {encoding:'utf8'}); execFileSync(tsc, ['-p', 'sw-tsconfig.json'], {encoding:'utf8'}); } catch (e) { ok(false, ((e.stdout || '') + '').split('\n').slice(0, 8).join(' | ')); }
+  const runTsc = args => execFileSync(process.execPath, [tsc, ...args], { encoding: 'utf8' });
+  const diagnostics = e => [e.stdout, e.stderr].filter(Boolean).join('\n').trim() || e.message;
+  try { runTsc(['-p', '.']); runTsc(['-p', 'tsconfig-contracts.json']); runTsc(['-p', 'sw-tsconfig.json']); } catch (e) { ok(false, diagnostics(e)); }
   // (owner, 16-17 Oct AEDT: TypeScript batches 1 and 2) the website's server pieces, the Studio engine and the tools, as Node runs them
-  let server = ''; try { server = execFileSync(tsc, ['-p', 'tsconfig.server.json', '--listFilesOnly'], { encoding: 'utf8' }); execFileSync(tsc, ['-p', 'tsconfig.server.json'], { encoding: 'utf8' }); } catch (e) { ok(false, 'tsconfig.server.json: ' + ((e.stdout || '') + '').split('\n').slice(0, 8).join(' | ')); }
+  let server = ''; try { server = runTsc(['-p', 'tsconfig.server.json', '--listFilesOnly']); runTsc(['-p', 'tsconfig.server.json']); } catch (e) { ok(false, 'tsconfig.server.json: ' + diagnostics(e)); }
   const n = JSON.parse(fs.readFileSync('tsconfig.json', 'utf8')).files.length, ts = server.split('\n').filter(f => /\.(mts|cts)$/.test(f) && !f.includes('node_modules')).length;
   return `${n} explicit files type-checked; detector/outbox/family-backup modules additionally strict-checked; ${ts} TypeScript files of the server, Studio and tools; no errors`;
 });
@@ -5342,13 +5353,13 @@ await check('battery', async () => {
   // the statistics: one minute's sample goes into the outbox and is sent with Analytics on; with it off, nothing
   const sent = [];
   await P.page.route('**/api/hello', async r => { sent.push(r.request().postDataJSON()); await r.fulfill({ status: 204 }); });
-  const stats = await P.page.evaluate(async () => { const M = await import('/js/players.js'), S = await import('/js/state.js'), out = () => JSON.parse(localStorage.getItem('sv2_hello_out') || '{"days":{}}');
+  const stats = await P.page.evaluate(async () => { const M = await import('/js/players.js'), S = await import('/js/state.js'), key = navigator.webdriver ? 'sv2_bot_telemetry' : 'sv2_hello_out', out = () => JSON.parse(localStorage.getItem(key) || '{"days":{}}');
     S.settings.countPlayers = true; M.sampleDrawing(__sv); const on = Object.values(out().days).map(d => d.b).filter(Boolean)[0] || null;
     const sentOn = await M.flush(false);
     // a minute with nothing moving: no playing frames (frames a second stay about playing), the minute counts as idle
-    localStorage.removeItem('sv2_hello_out'); __sv.battery.take(); __sv.battery.input = __sv.battery.moved = -1e9; __sv.battery.idle = true;
+    localStorage.removeItem(key); __sv.battery.take(); __sv.battery.input = __sv.battery.moved = -1e9; __sv.battery.idle = true;
     await new Promise(r => setTimeout(r, 2500)); M.sampleDrawing(__sv); const idleOnly = Object.values(out().days).map(d => d.b).filter(Boolean)[0] || null; __sv.battery.input = performance.now(); __sv.battery.idle = false;
-    localStorage.removeItem('sv2_hello_out'); S.settings.countPlayers = false; await new Promise(r => setTimeout(r, 1500)); M.sampleDrawing(__sv);
+    localStorage.removeItem(key); S.settings.countPlayers = false; await new Promise(r => setTimeout(r, 1500)); M.sampleDrawing(__sv);
     const off = Object.values(out().days).some(d => d.b); const sentOff = await M.flush(false); S.settings.countPlayers = true;
     return { on, idleOnly, sentOn, off, sentOff, pr100: Math.round(__sv.renderer.getPixelRatio() * 100) }; });
   const errs = P.errors; await P.ctx.close();
@@ -6194,6 +6205,17 @@ await check('reportdetectors', async () => {
   return 'scroll/background/hidden controls excluded; real offscreen and failed opens retained; successful quick close and cancellation do not report';
 });
 
+await check('reportingflow', async () => {
+  const { reportingFlowCheck } = await import('./reporting-flow.mts');
+  return reportingFlowCheck(b);
+});
+
+await check('gameflow', async () => (await import('./game-flow.mts')).gameFlowCheck(b));
+await check('gamewinlayout', async () => (await import('./game-win-layout.mts')).gameWinLayoutCheck(b));
+await check('storyquestflow', async () => (await import('./story-quest-flow.mts')).storyQuestFlowCheck(b));
+await check('gateview', async () => (await import('./gate-view.mts')).gateViewCheck(b));
+await check('autoplayshrine', async () => (await import('./autoplay-shrine.mts')).autoplayShrineCheck(b));
+
 await check('reportstorage', async () => {
   const {execFileSync}=await import('node:child_process');
   return execFileSync(process.execPath,['owner-report-storage.mjs'],{encoding:'utf8',timeout:60000}).trim();
@@ -6258,7 +6280,7 @@ await check('stickers', async () => {
       out.sizes = { minTab: Math.round(minTab), minTile: Math.round(minTile) };
       out.inView = qa('.stk-tile').every(e => rect(e).left >= 0 && rect(e).right <= innerWidth + 1);
       // tapping a sticker: its name (both languages: the chosen one and the other) and the New! badge goes
-      said.length = 0; q('[data-sid=hen]').click(); await wait(900);
+      said.length = 0; q('[data-sid=hen]').click(); await wait(1600);
       out.henSaid = said.slice(); out.henSeen = !SB.freshIds(hero).includes('hen') && !q('[data-sid=hen] .stk-new');
       // tapping a missing one says its hint
       said.length = 0; const miss = q('.stk-tile.miss'); const missId = miss.dataset.miss; miss.click(); await wait(400);

@@ -3,7 +3,7 @@
 // The family's files are kept in GitHub: saves go to the "studio-draft" branch, Publish puts them live (main).
 // Set these in Netlify → Site configuration → Environment variables (never in the code):
 //   STUDIO_PASSWORD   the grown-ups' password (12 characters or more, not used anywhere else)  required
-//   GITHUB_TOKEN      fine-grained token: this repository only, Contents read and write  for saving
+//   GITHUB_TOKEN      fine-grained token: this repository only, Contents read/write and Actions write for bot dispatch
 //   GITHUB_REPO       e.g. nguyentuanphu/Sparkle-Valley (the default)                    optional
 //   AZURE_KEY, AZURE_REGION                            to make voices online             optional
 //   NETLIFY_TOKEN                                      the Website page                  optional
@@ -23,6 +23,7 @@ import * as accessLog from '../lib/accesslog.mts';
 import { ipOf, ipKey, locked, failed, cleared, tidy } from '../lib/guard.mts';
 import { readLive, saveLive, readContent as readLiveContent, saveContent as saveLiveContent, LiveError } from '../lib/live.mts';
 import * as tester from '../lib/tester.mts';
+import { cleanBotConfig } from '../lib/child-bots.mts';
 // (TypeScript sees nothing of a CommonJS file's module.exports: the engine is checked once here and then has its own type)
 const isEngine = (m: unknown): m is StudioEngine => typeof m === 'object' && m !== null && 'createStudio' in m && 'githubStore' in m;
 if (!isEngine(core)) throw new Error('studio/core.cts: the Studio engine did not load');
@@ -49,6 +50,7 @@ const store = name => () => import('@netlify/blobs').then(m => m.getStore({ name
 const LIVE_PART = { message: 'Message', missions: 'Missions', quiz: 'Quiz', tales: 'Our stories', names: 'Villagers', plots: 'Memory Villages', looks: 'Story characters', ads: 'Ads', album: 'Family album' };
 const blobs = store('players'), adminBlobs = store('studio-admins'), liveBlobs = store('live'), heldBlobs = store('studio-pending');
 const familyBlobs = store('family-photos'), guardBlobs = store('guard'), logBlobs = store('studio-log'), testerBlobs = store('testers');
+const parentAnalyticsBlobs = store('parent-analytics');
 // (round R privacy) what signs a cookie: the owner's with the password, the sign-out generation and part of the two-step
 // secret; an admin's with the password and the generation (plus their own hash and secret, admins.mts)
 const ownerKey = (pw, gen, t, off) => `${pw}\u0000${gen}\u0000${t && t.secret ? String(t.secret).slice(0, 8) : ''}${off ? '\u0000p' : ''}`;
@@ -72,7 +74,7 @@ export const heldOn = S => ({
 export const familyOn = F => ({ where: 'site', put: (n, b) => family.put(F, n, b), get: n => family.get(F, n), remove: n => family.remove(F, n), code: () => family.code(F), newCode: () => family.newCode(F) });
 const isJpeg = b => b && b.length > 3 && b[0] === 0xff && b[1] === 0xd8;
 
-export const makeStudio = ({ playersStore = blobs, adminStore = adminBlobs, heldStore = heldBlobs, liveStore = liveBlobs, familyStore = familyBlobs, guardStore = guardBlobs, logStore = logBlobs, testerStore = testerBlobs, now = () => Date.now() } = {}) => { const handle = async (req, ctx, out) => {
+export const makeStudio = ({ playersStore = blobs, adminStore = adminBlobs, heldStore = heldBlobs, liveStore = liveBlobs, familyStore = familyBlobs, guardStore = guardBlobs, logStore = logBlobs, testerStore = testerBlobs, parentAnalyticsStore = parentAnalyticsBlobs, now = () => Date.now() } = {}) => { const handle = async (req, ctx, out) => {
   const url = new URL(req.url), p = url.pathname, pw = env('STUDIO_PASSWORD'), post = req.method === 'POST';
   if (!pw) return json({ error: 'The online Studio is not set up yet: add STUDIO_PASSWORD in Netlify (Site configuration → Environment variables), then deploy again.', setup: true }, 503);
   const A: Store & { set(key: string, value: string): Promise<unknown> } = await adminStore(), gen = +(await A.get('gen').catch(() => 0)) || 0, t = now();
@@ -209,7 +211,23 @@ export const makeStudio = ({ playersStore = blobs, adminStore = adminBlobs, held
     catch (e) { if (!(e instanceof LiveError)) throw e;
       return json({ error: e.why === 'big' ? `Too much to go live at once (${e.n} KB; 200 KB at most): make the stories or the quiz shorter, then Save again.` : `Some words are too long to go live (${LIVE_PART[e.where] || e.where}: ${e.n} letters at most): make them shorter, then Save again.` }, 400); }
   }
-  if (p === '/studio/api/live') return json(post ? await saveLive(await liveStore(), await req.json().catch(() => ({})), me.name) : await readLive(await liveStore()));
+  if (p === '/studio/api/live') {
+    const S = await liveStore();
+    if (!post) {
+      const v = await readLive(S);
+      return json(admins.allowed(me, 'bot/run', true)
+        ? { ...v, releases: { ...v.releases, nightlyBots: await S.get('bot-schedule', { type: 'json' }).catch(() => null) || undefined } }
+        : v);
+    }
+    const b = await body();
+    if (Object.prototype.hasOwnProperty.call(b.releases || {}, 'nightlyBots')) {
+      if (!admins.allowed(me, 'bot/run', true)) return json({ error: 'Website permission required to change the bot schedule.' }, 403);
+      const schedule = cleanBotConfig(b.releases.nightlyBots);
+      if (!schedule) return json({ error: 'Invalid bot configuration.' }, 400);
+      await S.setJSON('bot-schedule', schedule);
+    }
+    return json(await saveLive(S, b, me.name));
+  }
   const players = async () => report(await playersStore());
   if (p === '/studio/api/players') { await log(me.name, me.role, 'analytics'); return json(await players()); }
   if (p === '/studio/api/inbox') return json(await inbox(await playersStore()));
@@ -221,8 +239,33 @@ export const makeStudio = ({ playersStore = blobs, adminStore = adminBlobs, held
   if (p === '/studio/api/testers/set' && post) { const b = await body(); const r = await tester.setProblem(await testerStore(), b.k, b, now()); return r ? json(r) : json({ error: 'No such problem.' }, 404); }
   // a name for a device in the play report ("Na's iPad"), round L
   if (p === '/studio/api/players/label' && post) { const b = await body(); return json({ ok: await setLabel(await playersStore(), b.id, b.label) }); }
-  const conf = { azureKey: env('AZURE_KEY'), azureRegion: env('AZURE_REGION'), githubToken: env('GITHUB_TOKEN'), githubRepo: env('GITHUB_REPO') || 'nguyentuanphu/Sparkle-Valley', githubBranch: env('GITHUB_BRANCH') || 'main',
-    netlifyToken: env('NETLIFY_TOKEN'), netlifySite: env('NETLIFY_SITE') || env('SITE_ID'), siteUrl: env('URL') };
+    // Parent website analytics (privacy-first, consent-gated, no PII)
+    if (p === '/studio/api/parent-analytics') {
+      if (!admins.allowed(me, 'analytics', false)) return json({ error: 'Analytics permission required.' }, 403);
+      const S = await parentAnalyticsStore();
+      const days = 30;
+      const out: any = { days: [], totals: { totalEvents: 0, pageViews: {}, actionClicks: {}, linkClicks: 0, scrollMilestones: {}, activeTimeTotalSec: 0, playConversions: 0, languages: {}, devices: {} } };
+      for (let i = 0; i < days; i++) {
+        const d = new Date(Date.now() - i * 864e5).toISOString().slice(0, 10);
+        const sum = await S.get(`sum/${d}`, { type: 'json' }).catch(() => null);
+        if (sum) {
+          out.days.push(sum);
+          out.totals.totalEvents += sum.totalEvents || 0;
+          for (const [k, v] of Object.entries(sum.pageViews || {})) out.totals.pageViews[k] = (out.totals.pageViews[k] || 0) + (v as number);
+          for (const [k, v] of Object.entries(sum.actionClicks || {})) out.totals.actionClicks[k] = (out.totals.actionClicks[k] || 0) + (v as number);
+          out.totals.linkClicks += sum.linkClicks || 0;
+          for (const [k, v] of Object.entries(sum.scrollMilestones || {})) out.totals.scrollMilestones[k] = (out.totals.scrollMilestones[k] || 0) + (v as number);
+          out.totals.activeTimeTotalSec += sum.activeTimeTotalSec || 0;
+          out.totals.playConversions += sum.playConversions || 0;
+          for (const [k, v] of Object.entries(sum.languages || {})) out.totals.languages[k] = (out.totals.languages[k] || 0) + (v as number);
+          for (const [k, v] of Object.entries(sum.devices || {})) out.totals.devices[k] = (out.totals.devices[k] || 0) + (v as number);
+        }
+      }
+      out.days.reverse();
+      return json(out);
+    }
+    const conf = { azureKey: env('AZURE_KEY'), azureRegion: env('AZURE_REGION'), githubToken: env('GITHUB_TOKEN'), githubRepo: env('GITHUB_REPO') || 'nguyentuanphu/Sparkle-Valley', githubBranch: env('GITHUB_BRANCH') || 'main',
+      netlifyToken: env('NETLIFY_TOKEN'), netlifySite: env('NETLIFY_SITE') || env('SITE_ID'), siteUrl: env('URL') };
   if (!conf.githubToken) return json({ error: 'Add GITHUB_TOKEN in Netlify (Site configuration → Environment variables) so the online Studio can read and save the family’s files.', setup: true }, 503);
   const gstore = githubStore({ token: conf.githubToken, repo: conf.githubRepo, branch: conf.githubBranch, held: heldOn(await heldStore()) });
   // the changes waiting for Publish, and dropping them (round P)

@@ -98,15 +98,16 @@ export function memoryBlobs() {
 // ---------- a pretend Netlify: the site's files, netlify.toml's redirects and the two functions ----------
 // (round R privacy) a clock the tests move on, so every sign-in has a fresh two-step code
 export const testClock = { t: Date.now() };
-export async function fakeNetlify({ port, env, players, adminStore = memoryBlobs(), heldStore = memoryBlobs(), liveStore = memoryBlobs(), familyStore = memoryBlobs(), guardStore = memoryBlobs(), logStore = memoryBlobs(), testerStore = memoryBlobs() }) {
+const toURL = p => pathToFileURL(p).href;
+export async function fakeNetlify({ port, env, players, adminStore = memoryBlobs(), heldStore = memoryBlobs(), liveStore = memoryBlobs(), familyStore = memoryBlobs(), guardStore = memoryBlobs(), logStore = memoryBlobs(), testerStore = memoryBlobs(), parentAnalyticsStore = memoryBlobs() }) {
   Object.assign(process.env, env);
-  const { makeStudio } = await import(path.join(ROOT, 'netlify/functions/studio.mts'));
-  const { makeHello } = await import(path.join(ROOT, 'netlify/functions/hello.mts'));
-  const { makeLive } = await import(path.join(ROOT, 'netlify/functions/live.mts'));
-  const { makeFamily } = await import(path.join(ROOT, 'netlify/functions/family.mts'));
-  const { makeTester } = await import(path.join(ROOT, 'netlify/functions/tester.mts')); // (owner, 12 Oct) tester reports
+  const { makeStudio } = await import(toURL(path.join(ROOT, 'netlify/functions/studio.mts')));
+  const { makeHello } = await import(toURL(path.join(ROOT, 'netlify/functions/hello.mts')));
+  const { makeLive } = await import(toURL(path.join(ROOT, 'netlify/functions/live.mts')));
+  const { makeFamily } = await import(toURL(path.join(ROOT, 'netlify/functions/family.mts')));
+  const { makeTester } = await import(toURL(path.join(ROOT, 'netlify/functions/tester.mts'))); // (owner, 12 Oct) tester reports
   const now = () => testClock.t, tester = makeTester({ testerStore: async () => testerStore, liveStore: async () => liveStore, guardStore: async () => guardStore, now }), family = makeFamily({ familyStore: async () => familyStore, guardStore: async () => guardStore, now });
-  const studio = makeStudio({ playersStore: async () => players, adminStore: async () => adminStore, heldStore: async () => heldStore, liveStore: async () => liveStore, familyStore: async () => familyStore, guardStore: async () => guardStore, logStore: async () => logStore, testerStore: async () => testerStore, now }), hello = makeHello({ playersStore: async () => players, guardStore: async () => guardStore }), live = makeLive({ liveStore: async () => liveStore });
+  const studio = makeStudio({ playersStore: async () => players, adminStore: async () => adminStore, heldStore: async () => heldStore, liveStore: async () => liveStore, familyStore: async () => familyStore, guardStore: async () => guardStore, logStore: async () => logStore, testerStore: async () => testerStore, parentAnalyticsStore: async () => parentAnalyticsStore, now }), hello = makeHello({ playersStore: async () => players, botStore: async () => players, guardStore: async () => guardStore }), live = makeLive({ liveStore: async () => liveStore });
   const MIME = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.png': 'image/png', '.jpg': 'image/jpeg', '.svg': 'image/svg+xml', '.mp3': 'audio/mpeg', '.woff2': 'font/woff2' };
   const server = http.createServer(async (req, res) => {
     const url = new URL(req.url, `http://localhost:${port}`); let p = decodeURIComponent(url.pathname);
@@ -135,7 +136,7 @@ export async function studioCheck(browser, open) {
   const seed = {}; for (const f of ['index.html', 'sw.js', 'js/main.js', 'js/i18n.js', 'js/build.js', 'js/packhash.js']) seed[f] = fs.readFileSync(path.join(ROOT, f));
   seed['content/custom.json'] = JSON.stringify({ message: { en: 'Hello', vi: 'Xin chào' } }); seed['voices/en/f/0000aaaa.mp3'] = 'x'; seed['voices/manifest.json'] = JSON.stringify({ version: 2, cast: { en: ['f'] }, voices: {}, lines: { '0000aaaa': 'f' }, langOf: { '0000aaaa': 'en' } }); // (like the real pack: it lists what is recorded)
   const gh = fakeGitHub(repo, seed), unroute = routeGitHub(gh), players = memoryBlobs(), adminStore = memoryBlobs(), familyStore = memoryBlobs(), logStore = memoryBlobs(), heldStore = memoryBlobs();
-  const admins = await import(path.join(ROOT, 'netlify/lib/admins.mts')), secrets = {};
+  const admins = await import(toURL(path.join(ROOT, 'netlify/lib/admins.mts'))), secrets = {};
   const net = await fakeNetlify({ port: NPORT, players, adminStore, familyStore, logStore, heldStore, env: { STUDIO_PASSWORD: PW, GITHUB_TOKEN: 'test-token', GITHUB_REPO: repo, URL: site, AZURE_KEY: '', NETLIFY_TOKEN: '' } });
   // the exe's own server, on a copy of a small game folder, with its settings in a folder of its own
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'sv-studio-')), game = path.join(tmp, 'game'), appdata = path.join(tmp, 'appdata');
@@ -245,7 +246,7 @@ export async function studioCheck(browser, open) {
       ok(d && !d.online && d.seenAt, 'a device that left still shows online: ' + JSON.stringify(d));
       notes.push('online now: 🟢 while playing (with the child), ⚪ after leaving'); }
     // 1d. the voice relay (round O): with Cloudflare's key in Netlify the game gets short-lived relay details (never the key)
-    { const { makeTurn } = await import(path.join(ROOT, 'netlify/functions/turn.mts'));
+    { const { makeTurn } = await import(toURL(path.join(ROOT, 'netlify/functions/turn.mts')));
       const empty = await (await makeTurn({ fetchFn: async () => { throw new Error('no'); } })(new Request('http://x/api/turn'))).json();
       ok(Array.isArray(empty.iceServers) && !empty.iceServers.length, 'the relay answered something without a key');
       Object.assign(process.env, { CF_TURN_KEY_ID: 'kid123', CF_TURN_KEY_TOKEN: 'secret-token' }); let asked = null;
@@ -287,7 +288,7 @@ export async function studioCheck(browser, open) {
     ok(!(await call('/studio/api/pending', { cookie: C })).j.files.length, 'changes still waiting after Publish');
     // (owner, 12 Oct: real photos would not publish, "error 504") many waiting photos go in steps of a dozen, each its
     // own short request, and a busy GitHub (504) is tried again instead of failing the Publish
-    { const { heldOn } = await import(path.join(ROOT, 'netlify/functions/studio.mts')), ch = new Map();
+    { const { heldOn } = await import(toURL(path.join(ROOT, 'netlify/functions/studio.mts'))), ch = new Map();
       for (let i = 1; i <= 30; i++) ch.set(`photos/test${i % 5}/${i}.jpg`, Buffer.from('JPG' + i));
       await heldOn(heldStore).put(ch); gh.failBlobsNext(1);
       let steps = 0, r; do { r = (await call('/studio/api/github/publish', { cookie: C, headers: X, body: { message: 'Photos', step: true } })).j; steps++; } while (r && r.more && steps < 20);
@@ -344,23 +345,24 @@ export async function studioCheck(browser, open) {
       await ctx.setOffline(true);
       const off = await pg.evaluate(async ([today, yday]) => { const P = await import('/js/players.js'); P.countPlay('game', 'caro'); P.countPlay('tale');
         const { BUILD } = await import('/js/build.js');
-        const o = JSON.parse(localStorage.getItem('sv2_hello_out')); o.days[today+'|'+BUILD].m = 12;
+        const key = navigator.webdriver ? 'sv2_bot_telemetry' : 'sv2_hello_out';
+        const o = JSON.parse(localStorage.getItem(key)); o.days[today+'|'+BUILD].m = 12;
         // Deliberately retain an old date-only bucket to prove migration does not invent its originating build.
-        o.days[yday] = { m: 20, g: { oanquan: 1 }, t: 0, o: 0 }; localStorage.setItem('sv2_hello_out', JSON.stringify(o));
-        const sent = await P.flush(false); return { sent, out: JSON.parse(localStorage.getItem('sv2_hello_out')), me: localStorage.getItem('sv2_playerid'),build:BUILD }; }, [today, yday]);
+        o.days[yday] = { m: 20, g: { oanquan: 1 }, t: 0, o: 0 }; localStorage.setItem(key, JSON.stringify(o));
+        const sent = await P.flush(false); return { sent, out: JSON.parse(localStorage.getItem(key)), me: localStorage.getItem('sv2_playerid'),build:BUILD }; }, [today, yday]);
       ok(!off.sent && off.out.pending && off.out.pending.days.length === 2, 'offline: the outbox did not keep the play: ' + JSON.stringify(off));
       ok(off.out.pending.days.find(d=>d.d===today)?.build===off.build && off.out.pending.days.find(d=>d.d===yday)?.build==='?', 'offline: current build must be retained and a legacy build must stay unknown');
       const before = players._m.size;
       await ctx.setOffline(false);
-      const on = await pg.evaluate(async () => { const P = await import('/js/players.js'); const sent = await P.flush(false); return { sent, out: JSON.parse(localStorage.getItem('sv2_hello_out')), me: localStorage.getItem('sv2_playerid') }; });
+      const on = await pg.evaluate(async () => { const P = await import('/js/players.js'), key = navigator.webdriver ? 'sv2_bot_telemetry' : 'sv2_hello_out'; const sent = await P.flush(false); return { sent, out: JSON.parse(localStorage.getItem(key)), me: localStorage.getItem('sv2_playerid') }; });
       const rec = d => JSON.parse(players._m.get(`d/${d}/${on.me}`) || 'null');
       ok(players._m.size > before && on.sent && !on.out.pending && on.me===off.me && rec(yday) && rec(yday).mins === 20 && rec(yday).games.oanquan === 1 && rec(today).mins === 12 && rec(today).games.caro === 1 && rec(today).tales === 1, 'back online: the waiting play was not counted on its own days/installation: ' + JSON.stringify({ on, y: rec(yday), t: rec(today) }));
       // the website gets it but the answer is lost: the device keeps the batch and sends the same one again
       await pg.route('**/api/hello', async route => { await route.fetch(); await route.fulfill({ status: 500, body: '' }); });
-      const lost = await pg.evaluate(async today => { const P = await import('/js/players.js'), {BUILD}=await import('/js/build.js'); const o = JSON.parse(localStorage.getItem('sv2_hello_out')); o.days[today+'|'+BUILD] = { build:BUILD,m: 5, g: {}, t: 0, o: 0 }; localStorage.setItem('sv2_hello_out', JSON.stringify(o)); return { sent: await P.flush(false), out: JSON.parse(localStorage.getItem('sv2_hello_out')) }; }, today);
+      const lost = await pg.evaluate(async today => { const P = await import('/js/players.js'), {BUILD}=await import('/js/build.js'), key = navigator.webdriver ? 'sv2_bot_telemetry' : 'sv2_hello_out'; const o = JSON.parse(localStorage.getItem(key)); o.days[today+'|'+BUILD] = { build:BUILD,m: 5, g: {}, t: 0, o: 0 }; localStorage.setItem(key, JSON.stringify(o)); return { sent: await P.flush(false), out: JSON.parse(localStorage.getItem(key)) }; }, today);
       ok(!lost.sent && lost.out.pending && rec(today).mins === 17, 'lost answer: ' + JSON.stringify({ lost, t: rec(today) }));
       await pg.unroute('**/api/hello');
-      const again = await pg.evaluate(async () => { const P = await import('/js/players.js'); const pending=JSON.parse(localStorage.getItem('sv2_hello_out')).pending;return { batch:pending.h,sent: await P.flush(false), out: JSON.parse(localStorage.getItem('sv2_hello_out')) }; });
+      const again = await pg.evaluate(async () => { const P = await import('/js/players.js'), key = navigator.webdriver ? 'sv2_bot_telemetry' : 'sv2_hello_out'; const pending=JSON.parse(localStorage.getItem(key)).pending;return { batch:pending.h,sent: await P.flush(false), out: JSON.parse(localStorage.getItem(key)) }; });
       ok(again.sent && again.batch===lost.out.pending.h && !again.out.pending && rec(today).mins === 17, 'the same batch was changed or counted twice: ' + JSON.stringify({ again, t: rec(today) }));
       await ctx.close();
       notes.push('offline play waits in an outbox and is counted on its own days; a re-sent batch counts once');
@@ -471,7 +473,7 @@ export async function studioCheck(browser, open) {
       const { [kE]: _big, ...rest } = pub; gh.commitOnMain('photos/index.json', JSON.stringify(rest), 'photos'); await new Promise(r => setTimeout(r, 15500));
       notes.push(`real photos: ${need.length} kinds of saved photo open online and in the exe (a Vietnamese-named folder, a PNG, one not yet published); a 5 MB one is marked online; one whose file is gone is taken off the list`); }
     // a fetched photo over 1.5 MB is left out for the next one (the photo sites are pretended)
-    { const { createStudio, folderStore } = (await import(path.join(ROOT, 'studio/core.cts'))).default, d = fs.mkdtempSync(path.join(os.tmpdir(), 'sv-ph-'));
+    { const { createStudio, folderStore } = (await import(toURL(path.join(ROOT, 'studio/core.cts')))).default, d = fs.mkdtempSync(path.join(os.tmpdir(), 'sv-ph-'));
       fs.writeFileSync(path.join(d, 'index.html'), ''); fs.mkdirSync(path.join(d, 'js')); fs.writeFileSync(path.join(d, 'js/main.js'), '');
       const real = globalThis.fetch, small = Buffer.concat([Buffer.from([0xff, 0xd8, 0xff]), Buffer.alloc(9e4)]), huge = Buffer.concat([Buffer.from([0xff, 0xd8, 0xff]), Buffer.alloc(2e6)]);
       const J = o => new Response(JSON.stringify(o), { status: 200, headers: { 'content-type': 'application/json' } });
@@ -484,7 +486,7 @@ export async function studioCheck(browser, open) {
       notes.push('a fetched photo over 1.5 MB is skipped for the next one'); }
     // (owner, 17 Oct AEDT: "point photos to Wikimedia") a photo on Wikimedia or Flickr is listed by its address and nothing
     // is saved; one that does not answer is skipped; a photo from another site is still saved (the last resort, above)
-    { const { createStudio, folderStore } = (await import(path.join(ROOT, 'studio/core.cts'))).default, d = fs.mkdtempSync(path.join(os.tmpdir(), 'sv-pl-'));
+    { const { createStudio, folderStore } = (await import(toURL(path.join(ROOT, 'studio/core.cts')))).default, d = fs.mkdtempSync(path.join(os.tmpdir(), 'sv-pl-'));
       fs.writeFileSync(path.join(d, 'index.html'), ''); fs.mkdirSync(path.join(d, 'js')); fs.writeFileSync(path.join(d, 'js/main.js'), '');
       const real = globalThis.fetch, asked = [], J = o => new Response(JSON.stringify(o), { status: 200, headers: { 'content-type': 'application/json' } });
       const urls = ['https://live.staticflickr.com/1/gone_b.jpg', 'https://live.staticflickr.com/1/a_b.jpg', 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/ab/B.jpg/1280px-B.jpg'];
@@ -532,7 +534,7 @@ export async function studioCheck(browser, open) {
         await pg.screenshot({ path: path.join(ROOT, 'tests/out', `studio-admins-${w}.png`) }); }
       { await pg.evaluate(() => document.querySelector('#tabs [data-k="players"]').click()); await pg.waitForSelector('.tiles .tile', { timeout: 15000 });
         // (r65, owner: "cleaner but still the details") five tiles, a row per child and per kind of device, the rest folded and closed at first
-        const look = await pg.evaluate(() => ({ tiles: document.querySelectorAll('.tiles .tile').length, top: document.querySelector('#page').innerText, more: document.querySelectorAll('details.more').length, open: document.querySelectorAll('details.more[open]').length, kinds: document.querySelectorAll('table.kinds tbody tr').length }));
+        const look = await pg.evaluate(() => ({ tiles: document.querySelectorAll('#page > .tiles .tile').length, top: document.querySelector('#page').innerText, more: document.querySelectorAll('details.more').length, open: document.querySelectorAll('details.more[open]').length, kinds: document.querySelectorAll('table.kinds tbody tr').length }));
         const t = await pg.evaluate(() => (document.querySelectorAll('details.more').forEach(d => { d.open = true; }), document.querySelector('#page').innerText));
         ok(/3/.test(t), 'online players page');
         if (!(look.tiles === 5 && look.more >= 5 && !look.open && look.kinds >= 2 && /(not reported yet|chưa có số liệu)/.test(look.top) && !/(usually ready in|thường sẵn sàng sau)/.test(look.top))) bad.push(`online ${w}px: the Analytics page is not five tiles, rows and folded detail: ` + JSON.stringify({ ...look, top: look.top.slice(0, 200) }));

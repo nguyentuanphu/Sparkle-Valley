@@ -11,7 +11,7 @@
 //    only players who were let in get. Knowing the room code no longer lets anyone read or write the room's traffic.
 //  · No account, no server of ours. Voice still needs a direct link or a TURN relay (see net.js).
 const enc = new TextEncoder(), dec = new TextDecoder();
-export const BROKERS = () => window.SV_MQTT || ['wss://broker.emqx.io:8084/mqtt', 'wss://broker.hivemq.com:8884/mqtt', 'wss://test.mosquitto.org:8081/mqtt', 'wss://mqtt.eclipseprojects.io/mqtt'];
+export const BROKERS = () => (typeof window !== 'undefined' && window.SV_MQTT) || ['wss://broker.emqx.io:8084/mqtt', 'wss://broker.hivemq.com:8884/mqtt', 'wss://test.mosquitto.org:8081/mqtt', 'wss://mqtt.eclipseprojects.io/mqtt'];
 
 // ---------- a tiny MQTT 3.1.1 client (QoS 0) over WebSocket ----------
 const str = s => { const b = enc.encode(s); return [b.length >> 8, b.length & 255, ...b]; };

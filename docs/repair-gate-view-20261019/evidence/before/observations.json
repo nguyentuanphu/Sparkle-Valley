@@ -1,0 +1,23 @@
+[
+  {
+    "name": "phone",
+    "hit": true,
+    "faded": false,
+    "collidersIntact": true,
+    "restored": true
+  },
+  {
+    "name": "tablet",
+    "hit": true,
+    "faded": false,
+    "collidersIntact": true,
+    "restored": true
+  },
+  {
+    "name": "computer",
+    "hit": true,
+    "faded": false,
+    "collidersIntact": true,
+    "restored": true
+  }
+]

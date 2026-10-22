@@ -1,0 +1,43 @@
+{
+  "target": {
+    "x": 190.51364923966074,
+    "z": -67.94409264493744
+  },
+  "complete": false,
+  "stopped": true,
+  "trail": [
+    [
+      1792409318856,
+      "start",
+      "Treo đèn lồng"
+    ],
+    [
+      1792409318860,
+      "tap",
+      "Treo đèn lồng"
+    ]
+  ],
+  "report": {
+    "at": "2026-10-19T11:28:40.542Z",
+    "build": "r87",
+    "speed": "x5",
+    "total": 1,
+    "done": [
+      {
+        "g": "things",
+        "key": "tap:story_c1_hang",
+        "name": "Treo đèn lồng",
+        "ok": true,
+        "skipped": false,
+        "problems": [],
+        "notes": [],
+        "said": "",
+        "secs": 1.7,
+        "fps": 3
+      }
+    ],
+    "perRun": false,
+    "reportIds": [],
+    "reportState": "no-problems"
+  }
+}

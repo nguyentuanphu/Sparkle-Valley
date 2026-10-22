@@ -1,0 +1,110 @@
+[
+  {
+    "path": "voices/en/f/5eae0d76-765f0f7f.mp3",
+    "bytes": 7344,
+    "programs": [],
+    "stream_groups": [],
+    "streams": [
+      {
+        "codec_name": "mp3",
+        "sample_rate": "16000",
+        "channels": 1
+      }
+    ],
+    "format": {
+      "duration": "1.836000"
+    },
+    "peak": 0.49824,
+    "rms": 0.080382
+  },
+  {
+    "path": "voices/en/f/d5660db037c89abb.mp3",
+    "bytes": 6336,
+    "programs": [],
+    "stream_groups": [],
+    "streams": [
+      {
+        "codec_name": "mp3",
+        "sample_rate": "16000",
+        "channels": 1
+      }
+    ],
+    "format": {
+      "duration": "1.584000"
+    },
+    "peak": 0.527669,
+    "rms": 0.084351
+  },
+  {
+    "path": "voices/en/m/5eae0d76-765f0f7f.mp3",
+    "bytes": 6480,
+    "programs": [],
+    "stream_groups": [],
+    "streams": [
+      {
+        "codec_name": "mp3",
+        "sample_rate": "16000",
+        "channels": 1
+      }
+    ],
+    "format": {
+      "duration": "1.620000"
+    },
+    "peak": 0.607501,
+    "rms": 0.076787
+  },
+  {
+    "path": "voices/en/m/d5660db037c89abb.mp3",
+    "bytes": 6768,
+    "programs": [],
+    "stream_groups": [],
+    "streams": [
+      {
+        "codec_name": "mp3",
+        "sample_rate": "16000",
+        "channels": 1
+      }
+    ],
+    "format": {
+      "duration": "1.692000"
+    },
+    "peak": 0.57861,
+    "rms": 0.075834
+  },
+  {
+    "path": "voices/vi/f/30d77de4-4c84a513.mp3",
+    "bytes": 6480,
+    "programs": [],
+    "stream_groups": [],
+    "streams": [
+      {
+        "codec_name": "mp3",
+        "sample_rate": "16000",
+        "channels": 1
+      }
+    ],
+    "format": {
+      "duration": "1.620000"
+    },
+    "peak": 0.576577,
+    "rms": 0.081134
+  },
+  {
+    "path": "voices/vi/m/30d77de4-4c84a513.mp3",
+    "bytes": 7056,
+    "programs": [],
+    "stream_groups": [],
+    "streams": [
+      {
+        "codec_name": "mp3",
+        "sample_rate": "16000",
+        "channels": 1
+      }
+    ],
+    "format": {
+      "duration": "1.764000"
+    },
+    "peak": 0.561781,
+    "rms": 0.073918
+  }
+]

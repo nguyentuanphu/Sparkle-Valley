@@ -1,0 +1,332 @@
+[
+  {
+    "name": "phone",
+    "lang": "en",
+    "fits": true,
+    "instruction": true,
+    "targets": true,
+    "hit": true,
+    "geometry": {
+      "pane": {
+        "x": 0,
+        "y": 0,
+        "width": 430,
+        "height": 517,
+        "top": 0,
+        "right": 430,
+        "bottom": 517,
+        "left": 0
+      },
+      "instruction": {
+        "x": 101.140625,
+        "y": 395.453125,
+        "width": 227.703125,
+        "height": 22,
+        "top": 395.453125,
+        "right": 328.84375,
+        "bottom": 417.453125,
+        "left": 101.140625
+      },
+      "font": "600 15px / 18px Fredoka, \"Baloo 2\", \"Segoe UI\", system-ui, -apple-system, sans-serif",
+      "lineHeight": "18px",
+      "fontStatus": "loaded"
+    }
+  },
+  {
+    "name": "phone",
+    "lang": "vi",
+    "fits": true,
+    "instruction": true,
+    "targets": true,
+    "hit": true,
+    "geometry": {
+      "pane": {
+        "x": 0,
+        "y": 0,
+        "width": 430,
+        "height": 517,
+        "top": 0,
+        "right": 430,
+        "bottom": 517,
+        "left": 0
+      },
+      "instruction": {
+        "x": 101.65625,
+        "y": 395.453125,
+        "width": 226.6875,
+        "height": 22,
+        "top": 395.453125,
+        "right": 328.34375,
+        "bottom": 417.453125,
+        "left": 101.65625
+      },
+      "font": "600 15px / 18px Fredoka, \"Baloo 2\", \"Segoe UI\", system-ui, -apple-system, sans-serif",
+      "lineHeight": "18px",
+      "fontStatus": "loaded"
+    }
+  },
+  {
+    "name": "phone-split",
+    "lang": "en",
+    "fits": true,
+    "instruction": true,
+    "targets": true,
+    "hit": true,
+    "geometry": {
+      "pane": {
+        "x": 0,
+        "y": 259,
+        "width": 430,
+        "height": 258,
+        "top": 259,
+        "right": 430,
+        "bottom": 517,
+        "left": 0
+      },
+      "instruction": {
+        "x": 101.140625,
+        "y": 484.609375,
+        "width": 227.703125,
+        "height": 22,
+        "top": 484.609375,
+        "right": 328.84375,
+        "bottom": 506.609375,
+        "left": 101.140625
+      },
+      "font": "600 15px / 18px Fredoka, \"Baloo 2\", \"Segoe UI\", system-ui, -apple-system, sans-serif",
+      "lineHeight": "18px",
+      "fontStatus": "loaded"
+    }
+  },
+  {
+    "name": "phone-split",
+    "lang": "vi",
+    "fits": true,
+    "instruction": true,
+    "targets": true,
+    "hit": true,
+    "geometry": {
+      "pane": {
+        "x": 0,
+        "y": 259,
+        "width": 430,
+        "height": 258,
+        "top": 259,
+        "right": 430,
+        "bottom": 517,
+        "left": 0
+      },
+      "instruction": {
+        "x": 101.65625,
+        "y": 484.609375,
+        "width": 226.6875,
+        "height": 22,
+        "top": 484.609375,
+        "right": 328.34375,
+        "bottom": 506.609375,
+        "left": 101.65625
+      },
+      "font": "600 15px / 18px Fredoka, \"Baloo 2\", \"Segoe UI\", system-ui, -apple-system, sans-serif",
+      "lineHeight": "18px",
+      "fontStatus": "loaded"
+    }
+  },
+  {
+    "name": "small-phone-split",
+    "lang": "en",
+    "fits": true,
+    "instruction": true,
+    "targets": true,
+    "hit": true,
+    "geometry": {
+      "pane": {
+        "x": 0,
+        "y": 320,
+        "width": 320,
+        "height": 320,
+        "top": 320,
+        "right": 320,
+        "bottom": 640,
+        "left": 0
+      },
+      "instruction": {
+        "x": 46.140625,
+        "y": 609.4375,
+        "width": 227.703125,
+        "height": 22,
+        "top": 609.4375,
+        "right": 273.84375,
+        "bottom": 631.4375,
+        "left": 46.140625
+      },
+      "font": "600 15px / 18px Fredoka, \"Baloo 2\", \"Segoe UI\", system-ui, -apple-system, sans-serif",
+      "lineHeight": "18px",
+      "fontStatus": "loaded"
+    }
+  },
+  {
+    "name": "small-phone-split",
+    "lang": "vi",
+    "fits": true,
+    "instruction": true,
+    "targets": true,
+    "hit": true,
+    "geometry": {
+      "pane": {
+        "x": 0,
+        "y": 320,
+        "width": 320,
+        "height": 320,
+        "top": 320,
+        "right": 320,
+        "bottom": 640,
+        "left": 0
+      },
+      "instruction": {
+        "x": 46.65625,
+        "y": 601.390625,
+        "width": 226.6875,
+        "height": 22,
+        "top": 601.390625,
+        "right": 273.34375,
+        "bottom": 623.390625,
+        "left": 46.65625
+      },
+      "font": "600 15px / 18px Fredoka, \"Baloo 2\", \"Segoe UI\", system-ui, -apple-system, sans-serif",
+      "lineHeight": "18px",
+      "fontStatus": "loaded"
+    }
+  },
+  {
+    "name": "tablet-split",
+    "lang": "en",
+    "fits": true,
+    "instruction": true,
+    "targets": true,
+    "hit": true,
+    "geometry": {
+      "pane": {
+        "x": 0,
+        "y": 590,
+        "width": 820,
+        "height": 590,
+        "top": 590,
+        "right": 820,
+        "bottom": 1180,
+        "left": 0
+      },
+      "instruction": {
+        "x": 296.140625,
+        "y": 1028.171875,
+        "width": 227.703125,
+        "height": 22,
+        "top": 1028.171875,
+        "right": 523.84375,
+        "bottom": 1050.171875,
+        "left": 296.140625
+      },
+      "font": "600 15px / 18px Fredoka, \"Baloo 2\", \"Segoe UI\", system-ui, -apple-system, sans-serif",
+      "lineHeight": "18px",
+      "fontStatus": "loaded"
+    }
+  },
+  {
+    "name": "tablet-split",
+    "lang": "vi",
+    "fits": true,
+    "instruction": true,
+    "targets": true,
+    "hit": true,
+    "geometry": {
+      "pane": {
+        "x": 0,
+        "y": 590,
+        "width": 820,
+        "height": 590,
+        "top": 590,
+        "right": 820,
+        "bottom": 1180,
+        "left": 0
+      },
+      "instruction": {
+        "x": 296.65625,
+        "y": 1028.171875,
+        "width": 226.6875,
+        "height": 22,
+        "top": 1028.171875,
+        "right": 523.34375,
+        "bottom": 1050.171875,
+        "left": 296.65625
+      },
+      "font": "600 15px / 18px Fredoka, \"Baloo 2\", \"Segoe UI\", system-ui, -apple-system, sans-serif",
+      "lineHeight": "18px",
+      "fontStatus": "loaded"
+    }
+  },
+  {
+    "name": "computer-split",
+    "lang": "en",
+    "fits": true,
+    "instruction": true,
+    "targets": true,
+    "hit": true,
+    "geometry": {
+      "pane": {
+        "x": 0,
+        "y": 400,
+        "width": 1280,
+        "height": 400,
+        "top": 400,
+        "right": 1280,
+        "bottom": 800,
+        "left": 0
+      },
+      "instruction": {
+        "x": 526.140625,
+        "y": 706.671875,
+        "width": 227.703125,
+        "height": 22,
+        "top": 706.671875,
+        "right": 753.84375,
+        "bottom": 728.671875,
+        "left": 526.140625
+      },
+      "font": "600 15px / 18px Fredoka, \"Baloo 2\", \"Segoe UI\", system-ui, -apple-system, sans-serif",
+      "lineHeight": "18px",
+      "fontStatus": "loaded"
+    }
+  },
+  {
+    "name": "computer-split",
+    "lang": "vi",
+    "fits": true,
+    "instruction": true,
+    "targets": true,
+    "hit": true,
+    "geometry": {
+      "pane": {
+        "x": 0,
+        "y": 400,
+        "width": 1280,
+        "height": 400,
+        "top": 400,
+        "right": 1280,
+        "bottom": 800,
+        "left": 0
+      },
+      "instruction": {
+        "x": 526.65625,
+        "y": 706.671875,
+        "width": 226.6875,
+        "height": 22,
+        "top": 706.671875,
+        "right": 753.34375,
+        "bottom": 728.671875,
+        "left": 526.65625
+      },
+      "font": "600 15px / 18px Fredoka, \"Baloo 2\", \"Segoe UI\", system-ui, -apple-system, sans-serif",
+      "lineHeight": "18px",
+      "fontStatus": "loaded"
+    }
+  }
+]

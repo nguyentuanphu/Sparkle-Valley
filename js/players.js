@@ -29,6 +29,10 @@ import { events } from './core/events.js';
 import { id as makeId } from './core/ids.js';
 
 const KEY = 'sv2_playerid', OUT = 'sv2_hello_out', SENT = 'sv2_voicesent', EVERY = 10 * 60e3;
+const BOT_OUT = 'sv2_bot_telemetry';
+// (Analytics Telemetry Isolation, bot-3) detect synthetic bot environments so telemetry is strictly segregated
+const isBotEnv = () => typeof window !== 'undefined' && !!(window.__svBot || (typeof navigator !== 'undefined' && navigator.webdriver) || (typeof process !== 'undefined' && process.env && process.env.SYNTHETIC_BOT));
+const outKey = () => isBotEnv() ? BOT_OUT : OUT;
 let lastSent = 0, sending = false; // (lastSent: the last confirmed send)
 // (Analytics & Infra, 11 Oct, #36) was this start served from the device's saved copy (the service worker)?
 const warmStart = typeof navigator !== 'undefined' && !!(navigator.serviceWorker && navigator.serviceWorker.controller);
@@ -42,11 +46,11 @@ const installed = () => matchMedia('(display-mode: standalone)').matches || navi
 const today = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; }; // the child's own day
 
 // the outbox: { days: { 'YYYY-MM-DD': { m, g: {game: n}, t, o } }, pending?: { h, days[], v[] } }, kept on the device until the website has it
-const readOut = () => { try { const o = JSON.parse(localStorage.getItem(OUT) || '{}'); return o && o.days ? o : { days: {} }; } catch (e) { return { days: {} }; } };
+const readOut = () => { try { const o = JSON.parse(localStorage.getItem(outKey()) || '{}'); return o && o.days ? o : { days: {} }; } catch (e) { return { days: {} }; } };
 // (r80, owner 17 Oct AEDT: devices offline for a long time) the last 30 days played are kept until sent (was 14: a
 // device away for 3 weeks lost its first week), as many as the website takes (netlify/lib/hello-clean.mts, 30 days);
 // they go in batches of 42 (flush)
-const writeOut = o => { const dates=[...new Set(Object.keys(o.days).map(k=>k.slice(0,10)))].sort(); const keep=new Set(dates.slice(-30));for(const k of Object.keys(o.days))if(!keep.has(k.slice(0,10)))delete o.days[k];try { localStorage.setItem(OUT, JSON.stringify(o)); } catch (e) { } };
+const writeOut = o => { const dates=[...new Set(Object.keys(o.days).map(k=>k.slice(0,10)))].sort(); const keep=new Set(dates.slice(-30));for(const k of Object.keys(o.days))if(!keep.has(k.slice(0,10)))delete o.days[k];try { localStorage.setItem(outKey(), JSON.stringify(o)); } catch (e) { } };
 const bump = f => { if (settings.countPlayers === false) return; const o = readOut(), key=today()+'|'+BUILD, d = o.days[key] = o.days[key] || { build:BUILD, m: 0, g: {}, t: 0, o: 0 }; for (const k of ['h', 'c', 'e', 's', 'q']) d[k] = d[k] || {}; d.f = d.f || [0, 0, 0]; f(d); writeOut(o); };
 // one child's bucket for the day (by profile; the first name only when the family allows it)
 const kidOf = (d, p) => { const k = String(p.id || p.name || 'guest').replace(/[^\w-]/g, '').slice(0, 24) || 'guest'; const c = d.c[k] = d.c[k] || { n: '', a: '', m: 0, g: {}, p: {}, t: 0, sm: 0 }; c.n = settings.reportNames === false ? '' : String(p.name || '').trim().split(/\s+/)[0].slice(0, 20); c.a = p.age === 'big' ? 'big' : 'little'; return c; };
@@ -94,7 +98,10 @@ export async function flush(closing) {
   }
   if (navigator.onLine === false) return false; // waits for the 'online' event
   const me = id(); if (!me) return false;
-  const P = o.pending, body = JSON.stringify({ id: me, h: P.h, b: BUILD, sid:SESSION, started:SESSION_STARTED, l: settings.lang, k: (profiles || []).length, d: kind(), a: installed(), os: osOf(), br: browserOf(), sc: `${Math.round(screen.width)}x${Math.round(screen.height)}`, days: P.days.map(d=>({...d,build:d.build||'?'})), v: P.v });
+  const bot = isBotEnv();
+  const P = o.pending, payload = { id: me, h: P.h, b: BUILD, sid:SESSION, started:SESSION_STARTED, l: settings.lang, k: (profiles || []).length, d: kind(), a: installed(), os: osOf(), br: browserOf(), sc: `${Math.round(screen.width)}x${Math.round(screen.height)}`, days: P.days.map(d=>({...d,build:d.build||'?'})), v: P.v };
+  if (bot) { payload.isRobot = true; payload.traffic = 'synthetic_bot'; }
+  const body = JSON.stringify(payload);
   if (closing) { try { navigator.sendBeacon && navigator.sendBeacon('/api/hello', new Blob([body], { type: 'application/json' })); } catch (e) { } return false; } // confirmed by the next send
   sending = true;
   try {
@@ -148,7 +155,10 @@ export function sendLive(on, G) {
   if (settings.countPlayers === false || !onSite()) return;
   const me = id(); if (!me) return;
   const p = G && G.heroes && G.heroes[0] && G.heroes[0].profile, kid = p && settings.reportNames !== false ? String(p.name || '').trim().split(/\s+/)[0].slice(0, 20) : ''; // (audit: no name when names are off)
-  const body = JSON.stringify({ id: me, live: on ? 1 : 0, kid, sid:SESSION, b:BUILD, started:SESSION_STARTED });
+  const bot = isBotEnv();
+  const payload = { id: me, live: on ? 1 : 0, kid, sid:SESSION, b:BUILD, started:SESSION_STARTED };
+  if (bot) { payload.isRobot = true; payload.traffic = 'synthetic_bot'; }
+  const body = JSON.stringify(payload);
   try { if (!on && navigator.sendBeacon) { navigator.sendBeacon('/api/hello', new Blob([body], { type: 'application/json' })); return; } } catch (e) { }
   if (navigator.onLine !== false) fetch('/api/hello', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body, keepalive: true }).catch(() => { });
 }

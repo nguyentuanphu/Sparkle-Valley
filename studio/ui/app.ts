@@ -761,6 +761,7 @@ async function drawReleases(P, lab) {
     ${groups.map(G => `<details class="relg" data-g="${G.g}" ${closed[gkey(G.g)] ? '' : 'open'}><summary><span class="gi">${REL_ICON[G.g] || '📦'}</span><b>${T(G.en, G.vi)}</b><span class="relg-n"></span>
       <span class="relg-all"><button type="button" class="btn small ghost" data-all="1">${T('All on', 'Bật hết')}</button><button type="button" class="btn small ghost" data-all="0">${T('All off', 'Tắt hết')}</button></span></summary>
       <div class="relgrid">${G.items.map(card).join('')}</div></details>`).join('')}
+    ${lab && CAN('site') ? `<section class="card bot-config"><h3>🤖 ${T('Nightly Cloud Bot Testing', 'Kiểm thử bot đám mây ban đêm')}</h3><p class="note">${T('Set a nightly schedule and bot profile. Save to persist these settings.', 'Thiết lập lịch ban đêm và hồ sơ bot. Bấm Lưu để lưu cài đặt.')}</p><div class="bot-fields"><label class="chk"><input id="bot-enabled" type="checkbox"> ${T('Enable scheduled testing', 'Bật kiểm thử theo lịch')}</label><label>${T('Schedule', 'Lịch')}<select id="bot-schedule"><option value="day-night">${T('Day & night', 'Ngày và đêm')}</option><option value="custom">${T('Custom UTC time', 'Giờ UTC tùy chỉnh')}</option></select><input id="bot-time" type="time" value="02:00" aria-label="UTC time"></label><label>${T('Bot count', 'Số bot')} <input id="bot-count" type="number" min="1" max="10" value="5"></label><label>${T('Minutes per bot', 'Số phút mỗi bot')} <input id="bot-duration" type="number" min="1" max="30" value="5"></label><label>${T('Behavior profile', 'Hồ sơ hành vi')}<select id="bot-profile"><option value="chaos-toddler">${T('Chaotic Toddler Mashing', 'Bé nghịch ngợm')}</option><option value="gentle-explorer">${T('Gentle Explorer', 'Nhà thám hiểm nhẹ nhàng')}</option><option value="max-competence">${T('Max Competence', 'Thành thạo tối đa')}</option></select></label></div><div class="bar"><button type="button" class="btn" id="bot-run">▶️ ${T('Run Headless Bot Test Now', 'Chạy kiểm thử bot ngay')}</button><span class="note" id="bot-result"></span></div></section>` : ''}
     <div class="bar relsave"><span class="note" id="relch"></span><button class="btn" id="save">💾 ${T('Save', 'Lưu')}</button></div>`;
   P.querySelector('.sub').after(document.createRange().createContextualFragment(liveNote()));
   if (lab) { P.querySelector('.sub').textContent = T('Report problems and run automatic checks. Choose tester devices, checking speed and how their progress is restored.', 'Báo lỗi và chạy tự kiểm tra. Chọn máy thử, tốc độ kiểm tra và cách khôi phục tiến trình.'); if (canSee('testers')) { const link = document.createElement('button'); link.className = 'btn ghost'; link.textContent = T('Open tester reports', 'Mở báo cáo người thử'); link.onclick = () => go('testers'); P.querySelector('.sub').after(link); } }
@@ -835,6 +836,49 @@ async function drawReleases(P, lab) {
         card.querySelectorAll('[data-open]').forEach(x => x.setAttribute('aria-expanded', String(open && x === b))); card.querySelectorAll<HTMLElement>('.dpanel').forEach(x => { x.hidden = !(open && x.dataset.panel === k); }); });
       card.querySelectorAll('[data-tdev], [data-dev]').forEach(i => i.addEventListener('change', paint)); });
     devFilter($('#tdl')); }
+  if (lab && CAN('site')) {
+    const nb = (R as any).nightlyBots || {};
+    const be = P.querySelector('#bot-enabled') as HTMLInputElement | null;
+    if (be) be.checked = !!nb.enabled;
+    const bs = P.querySelector('#bot-schedule') as HTMLSelectElement | null;
+    if (bs && nb.schedule) bs.value = nb.schedule;
+    const bt = P.querySelector('#bot-time') as HTMLInputElement | null;
+    if (bt && nb.time) bt.value = nb.time;
+    const bc = P.querySelector('#bot-count') as HTMLInputElement | null;
+    if (bc && nb.count) bc.value = String(nb.count);
+    const bp = P.querySelector('#bot-profile') as HTMLSelectElement | null;
+    if (bp && nb.profile) bp.value = nb.profile;
+    const bd = P.querySelector('#bot-duration') as HTMLInputElement | null;
+    if (bd && nb.duration) bd.value = String(nb.duration);
+    const brun = P.querySelector('#bot-run') as HTMLButtonElement | null;
+    const bres = P.querySelector('#bot-result') as HTMLElement | null;
+    if (brun) {
+      brun.onclick = async () => {
+        brun.disabled = true;
+        if (bres) bres.textContent = '⏳ ' + T('Starting…', 'Đang chạy…');
+        try {
+          const payload = {
+            enabled: (P.querySelector('#bot-enabled') as HTMLInputElement | null)?.checked ?? false,
+            schedule: (P.querySelector('#bot-schedule') as HTMLSelectElement | null)?.value ?? 'day-night',
+            time: (P.querySelector('#bot-time') as HTMLInputElement | null)?.value ?? '02:00',
+            count: +((P.querySelector('#bot-count') as HTMLInputElement | null)?.value ?? '5'),
+            duration: +((P.querySelector('#bot-duration') as HTMLInputElement | null)?.value ?? '5'),
+            profile: (P.querySelector('#bot-profile') as HTMLSelectElement | null)?.value ?? 'chaos-toddler',
+          };
+          const res = await api('bot/run', payload);
+          if (bres) {
+            bres.textContent = res.ok
+              ? ('✅ ' + T('Started', 'Đã khởi chạy') + (res.workflow ? ` (${res.workflow})` : ''))
+              : ('❌ ' + (res.error || 'Failed'));
+          }
+        } catch (e: any) {
+          if (bres) bres.textContent = '❌ ' + (e?.raw || e?.message || 'Error');
+        } finally {
+          brun.disabled = false;
+        }
+      };
+    }
+  }
   $('#save').onclick = async () => {
     try {
       const latest = await loadLive(), out = { ...(latest.releases || {}) };
@@ -848,9 +892,23 @@ async function drawReleases(P, lab) {
           const pk = [...P.querySelectorAll('[data-peek]:checked')].map(i => i.dataset.peek); if (pk.length) r.peeks = pk;
           const revert = P.querySelector('[data-trevert]:checked')?.dataset.trevert; if (['keep', 'autoplay'].includes(revert)) r.revert = revert; }
         if (Object.keys(r).length) out[id] = r; });
-      await saveLive({ releases: out, festivals: latest.festivals || {} });
-    } catch (e) { fail(e); }
-  };
+        // Nightly Cloud Bot Testing config (lab only)
+        if (lab && CAN('site')) {
+          const botEnabled = (P.querySelector('#bot-enabled') as HTMLInputElement | null)?.checked ?? false;
+          const botSchedule = (P.querySelector('#bot-schedule') as HTMLSelectElement | null)?.value ?? 'day-night';
+          const botTime = (P.querySelector('#bot-time') as HTMLInputElement | null)?.value ?? '02:00';
+          const botCount = +((P.querySelector('#bot-count') as HTMLInputElement | null)?.value ?? '5');
+          const botProfile = (P.querySelector('#bot-profile') as HTMLSelectElement | null)?.value ?? 'chaos-toddler';
+          const botDuration = +((P.querySelector('#bot-duration') as HTMLInputElement | null)?.value ?? '5');
+          if (INFO?.online || botEnabled || latest.releases?.nightlyBots) {
+            out.nightlyBots = { enabled: botEnabled, schedule: botSchedule, time: botTime, count: botCount, profile: botProfile, duration: botDuration };
+          } else {
+            delete out.nightlyBots;
+          }
+        }
+        await saveLive({ releases: out, festivals: latest.festivals || {} });
+      } catch (e) { fail(e); }
+    };
 }
 PAGES.festivals = async P => {
   const [{ FESTCAL, GROUPS }, L] = await Promise.all([import(GAME + 'js/content/festcal.js'), import(GAME + 'js/lunar.js')]), live = await loadLive(), F = live.festivals || {};
@@ -1181,7 +1239,105 @@ PAGES.map = async P => {
     move: T('Tap a building (show the buildings first), then drag the green arrow end to where it should go. Everything inside the circle moves with it: people, stalls, trees.', 'Chạm vào một ngôi nhà (bấm hiện nhà cửa trước), rồi kéo đầu mũi tên xanh tới chỗ mới. Mọi thứ trong vòng tròn đi theo: người, sạp, cây.'),
     remove: T('Tap what should go. Everything inside the red circle is taken away (make the circle bigger or smaller on the right).', 'Chạm vào thứ cần bỏ. Mọi thứ trong vòng tròn đỏ sẽ bị xóa (chỉnh vòng to nhỏ ở bên phải).'),
     land: T('Drag a rectangle on the map to make it flat land for new houses, or grow a whole place on the right.', 'Kéo một hình chữ nhật trên bản đồ để làm đất bằng cho nhà mới, hoặc mở rộng cả một nơi ở bên phải.') };
-  let buildType = 'tube';
+  let buildType = Object.entries<BuildType>(TYPES).find(([, type]) => type.home && type.culture === 'vietnam')?.[0] || 'tube';
+  let buildCulture = (TYPES[buildType] as BuildType | undefined)?.culture || 'other-homes', buildSearch = '';
+  let previewRequest = 0;
+  const CULTURES = [
+    { id: 'vietnam', label: T('Vietnamese houses', 'Nhà Việt Nam') },
+    { id: 'australia', label: T('Australian houses', 'Nhà Úc') },
+    { id: 'other-homes', label: T('Other homes', 'Nhà khác') },
+    { id: 'other-buildings', label: T('Other buildings', 'Công trình khác') }
+  ];
+  const cultureOf = (type: BuildType) => type.culture === 'vietnam' || type.culture === 'australia'
+    ? type.culture : type.home ? 'other-homes' : 'other-buildings';
+  const typeName = (type: BuildType) => T(type.name?.[0] || '', type.name?.[1] || type.name?.[0] || '');
+  const searchingTypes = () => !!buildSearch.trim();
+  const matchedTypes = () => {
+    const query = buildSearch.trim().toLocaleLowerCase();
+    return Object.entries<BuildType>(TYPES)
+      .filter(([id, type]) => !query || `${id} ${type.name?.join(' ') || ''}`.toLocaleLowerCase().includes(query));
+  };
+  const typePicker = (selected: string, editable = false) => {
+    const entries = matchedTypes(), visibleCulture = buildCulture, showAllCultures = searchingTypes();
+    const groups = CULTURES.map(group => ({ ...group, items: entries.filter(([, type]) => cultureOf(type) === group.id) }))
+      .filter(group => group.items.length && (!visibleCulture || showAllCultures || group.id === visibleCulture));
+    const selectedType = TYPES[selected] as BuildType | undefined;
+    return `<div class="house-picker">
+      ${selectedType?.home ? `<div class="house-preview"><div class="house-preview-art" data-house-preview></div><div><b>${esc(typeName(selectedType))}</b><p class="note">${T('Preview of the selected house', 'Hình xem trước ngôi nhà đã chọn')}</p></div></div>` : ''}
+      ${editable ? `<details class="house-choices" ${buildSearch ? 'open' : ''}><summary>${T('Choose another style', 'Chọn kiểu nhà khác')}</summary>` : ''}
+      <label for="house-search">${T('Find a style', 'Tìm kiểu nhà')}</label>
+      <input id="house-search" type="search" data-house-search value="${esc(buildSearch)}" placeholder="${T('Search English or Vietnamese names', 'Tìm tên tiếng Anh hoặc tiếng Việt')}" autocomplete="off">
+      <div class="house-tabs" role="group" aria-label="${T('House groups', 'Nhóm nhà')}">${CULTURES.map(group => {
+        const count = Object.entries<BuildType>(TYPES).filter(([, type]) => cultureOf(type) === group.id).length;
+        return `<button type="button" class="btn small ${buildCulture === group.id ? '' : 'ghost'}" data-house-culture="${group.id}" aria-pressed="${buildCulture === group.id}" ${count ? '' : 'disabled'}>${esc(group.label)} <span class="note">(${count})</span></button>`;
+      }).join('')}</div>
+      <div class="house-type-list" aria-label="${T('Available building styles', 'Các kiểu công trình hiện có')}">${groups.map(group => `
+        <section class="house-type-group" data-house-group="${group.id}"><h4>${esc(group.label)}</h4><div class="house-type-grid">${group.items.map(([id, type]) =>
+          `<button type="button" class="house-type ${id === selected ? 'on' : ''}" data-house-type="${esc(id)}" aria-pressed="${id === selected}">
+            <span class="house-type-icon" aria-hidden="true">${type.icon || '⌂'}</span><span>${esc(typeName(type))}</span></button>`).join('')}</div></section>`).join('') || `<p class="note">${T('No styles match this search.', 'Không tìm thấy kiểu nhà phù hợp.')}</p>`}</div>
+      ${editable ? '</details>' : ''}
+    </div>`;
+  };
+  const showHousePreview = async (id: string) => {
+    const mount = $<HTMLDivElement>('[data-house-preview]');
+    const type = TYPES[id] as BuildType | undefined;
+    if (!mount || !type?.home) return;
+    const request = ++previewRequest;
+    try {
+      const { THREE, merge, toonVC } = await import(GAME + 'js/gfx.js');
+      if (request !== previewRequest || !mount.isConnected) return;
+      const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
+      try {
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2)); renderer.setSize(280, 160, false);
+        const scene = new THREE.Scene(), camera = new THREE.PerspectiveCamera(34, 280 / 160, .1, 500);
+        scene.add(new THREE.HemisphereLight(0xffffff, 0x776655, 2));
+        const key = new THREE.DirectionalLight(0xffffff, 2.2); key.position.set(-5, 9, 8); scene.add(key);
+        const model = type.mk({});
+        const builtGeometry = model.geo || (model.parts ? merge(model.parts) : null);
+        const previewModel = model.obj || (builtGeometry && new THREE.Mesh(builtGeometry, toonVC()));
+        if (!previewModel) throw new Error('This house type did not provide a preview model.');
+        try {
+          const bounds = new THREE.Box3().setFromObject(previewModel), size = bounds.getSize(new THREE.Vector3()), center = bounds.getCenter(new THREE.Vector3());
+          previewModel.position.sub(center); scene.add(previewModel);
+          const extent = Math.max(size.x, size.y, size.z, 1), distance = extent * 2.35;
+          camera.position.set(distance * .82, distance * .72, distance);
+          camera.near = Math.max(.1, extent / 100); camera.far = distance * 8;
+          camera.lookAt(0, 0, 0); camera.updateProjectionMatrix();
+          renderer.render(scene, camera);
+          const image = document.createElement('img');
+          image.src = renderer.domElement.toDataURL('image/png'); image.alt = T(`Preview of ${type.name?.[0] || 'house'}`, `Hình xem trước ${type.name?.[1] || 'ngôi nhà'}`);
+          if (request !== previewRequest || !mount.isConnected) return;
+          mount.replaceChildren(image);
+        } finally {
+          previewModel.traverse(node => {
+            if (!node.isMesh) return;
+            node.geometry?.dispose();
+            const materials = Array.isArray(node.material) ? node.material : [node.material];
+            materials.forEach(material => { if (!material.userData.shared) material.dispose(); });
+          });
+          if (model.parts) model.parts.forEach(part => part.g.dispose());
+        }
+      } finally { renderer.dispose(); }
+    } catch (error) {
+      if (request !== previewRequest || !mount.isConnected) return;
+      mount.textContent = T('The preview could not be shown. You can still choose this house.', 'Không thể hiện hình xem trước. Bạn vẫn có thể chọn ngôi nhà này.');
+      console.error('Studio house preview failed', error);
+    }
+  };
+  const bindTypePicker = (selected: string, changed: (id: string) => void, editable = false) => {
+    const F = $('#npcform');
+    F.querySelectorAll<HTMLButtonElement>('[data-house-culture]').forEach(button => button.onclick = () => {
+      buildCulture = button.dataset.houseCulture || 'vietnam'; form();
+    });
+    const search = F.querySelector<HTMLInputElement>('[data-house-search]');
+    if (search) search.oninput = () => { buildSearch = search.value; form(); const next = F.querySelector<HTMLInputElement>('[data-house-search]'); next?.focus(); next?.setSelectionRange(buildSearch.length, buildSearch.length); };
+    F.querySelectorAll<HTMLButtonElement>('[data-house-type]').forEach(button => button.onclick = () => {
+      const id = button.dataset.houseType;
+      if (!id || !TYPES[id]) return;
+      buildType = id; buildCulture = cultureOf(TYPES[id]); changed(id); form();
+    });
+    if (!editable || TYPES[selected]?.home) void showHousePreview(selected);
+  };
   const PL = k => { const p = ALBUM_PLACES.find(x => x[0] === k); return p ? T(p[1], p[2]) : k; };
   const places = [...W.CITIES.map(c => [c.x, c.z, T(c.name[0], c.name[1]), c.icon, c]), [W.VILLAGE.x, W.VILLAGE.z, PL('village'), '🪷'], [W.CHINA.x, W.CHINA.z, PL('china'), '🏮'], [W.INDIA.x, W.INDIA.z, PL('india'), '🪔'], [W.HOME.x, W.HOME.z, PL('home'), '🏡'], [(W.TOWN.x0 + W.TOWN.x1) / 2, W.TOWN.roadZ, PL('town'), '🏘️', W.TOWN], [(W.MARKET.x0 + W.MARKET.x1) / 2, W.MARKET.roadZ, PL('market'), '🧺', W.MARKET], [(W.AUSSIE.x0 + W.AUSSIE.x1) / 2, W.AUSSIE.roadZ, PL('aussie'), '🦘', W.AUSSIE]];
   const where = (x, z) => { if (W.heightAt(x, z) < W.WATER + .4) return ['bad', T('in the water', 'dưới nước')]; const rd = W.roadDist(x, z); if (rd.road && rd.d < rd.road.w / 2 + .8) return ['bad', T('on a road', 'giữa đường')]; return ['ok', '']; };
@@ -1270,7 +1426,10 @@ PAGES.map = async P => {
   function form() {
     const F = $('#npcform');
     if (!sel) {
-      if (mapMode === 'build') { F.innerHTML = `<h3>🏠 ${T('What to build', 'Xây gì')}</h3><div class="typelist">${Object.entries<BuildType>(TYPES).map(([id, t]) => `<button class="btn small ${id === buildType ? '' : 'ghost'}" data-type="${id}">${t.icon} ${esc(T(t.name[0], t.name[1]))}</button>`).join('')}</div><p class="note">${T('Then tap the map. Houses become homes the children can visit; give them a name and someone living there.', 'Rồi chạm vào bản đồ. Nhà sẽ thành nhà để các con ghé thăm; đặt tên và người ở trong đó.')}</p>`; F.querySelectorAll<HTMLInputElement>('[data-type]').forEach(b => b.onclick = () => { buildType = b.dataset.type; form(); }); return; }
+      if (mapMode === 'build') {
+        F.innerHTML = `<h3>🏠 ${T('What to build', 'Xây gì')}</h3>${typePicker(buildType)}<p class="note">${T('Then tap the map. Houses become homes the children can visit; give them a name and someone living there.', 'Rồi chạm vào bản đồ. Nhà sẽ thành nhà để các con ghé thăm; đặt tên và người ở trong đó.')}</p>`;
+        bindTypePicker(buildType, () => { }); return;
+      }
       if (mapMode === 'land') { F.innerHTML = `<h3>🟫 ${T('Grow a place', 'Mở rộng một nơi')}</h3><p class="note">${T('Adds flat land all round a town, village or city, ready for new buildings.', 'Thêm đất bằng quanh một phố, làng hay thành phố, sẵn sàng để xây thêm.')}</p><select id="gp">${places.filter(p => p[4]).map((p, i) => `<option value="${i}">${p[3]} ${esc(p[2])}</option>`).join('')}</select><label>${T('Metres all round', 'Số mét mỗi phía')}</label><input type="number" id="gm" value="15" min="5" max="40"><button class="btn" id="gadd" style="margin-top:8px">➕ ${T('Add the land', 'Thêm đất')}</button>`;
         $('#gadd').onclick = () => { const p = places.filter(q => q[4])[+$('#gp').value][4], m = Math.max(5, Math.min(40, +$('#gm').value || 15)); const x0 = p.x0 ?? p.x - (p.w || 13) / 2, x1 = p.x1 ?? p.x + (p.w || 13) / 2, z0 = p.z0 ?? p.z - (p.d || 13) / 2, z1 = p.z1 ?? p.z + (p.d || 13) / 2; WD.land.push({ x0: +(x0 - m).toFixed(1), x1: +(x1 + m).toFixed(1), z0: +(z0 - m).toFixed(1), z1: +(z1 + m).toFixed(1) }); sel = { list: 'land', i: WD.land.length - 1 }; draw(); form(); list(); }; return; }
       F.innerHTML = `<p class="note">${HELP[mapMode]}</p>`; return;
@@ -1280,13 +1439,13 @@ PAGES.map = async P => {
     const bindDone = () => { $('#fdel').onclick = del; $('#fdone').onclick = () => { sel = null; draw(); form(); list(); }; };
     if (sel.list === 'build') {
       const b = WD.build[sel.i], t = TYPES[b.type] || {}, [okc, why] = where(b.x, b.z); b.name = b.name || ['', '']; b.owner = b.owner || { name: '', line: ['', ''] }; b.owner.line = b.owner.line || ['', ''];
-      F.innerHTML = `<h3>${t.icon || '🏠'} ${esc(T(t.name[0], t.name[1]))}</h3><label>${T('Type', 'Loại')}</label><select id="bt">${Object.entries<BuildType>(TYPES).map(([id, x]) => `<option value="${id}" ${id === b.type ? 'selected' : ''}>${x.icon} ${esc(T(x.name[0], x.name[1]))}</option>`).join('')}</select>
+      F.innerHTML = `<h3>${t.icon || '🏠'} ${esc(T(t.name?.[0] || '', t.name?.[1] || t.name?.[0] || ''))}</h3>${typePicker(b.type, true)}
         <label>${T('Turn', 'Xoay')}: <span id="brv">${Math.round((b.rot || 0) * 180 / Math.PI)}°</span></label><input type="range" id="br" min="-180" max="180" step="15" value="${Math.round((b.rot || 0) * 180 / Math.PI)}">
         ${t.home ? `<label>${T('Name on the door', 'Tên trên cửa')}</label><div class="row"><input type="text" id="bn0" value="${esc(b.name[0])}" placeholder="English"><input type="text" id="bn1" value="${esc(b.name[1])}" placeholder="Tiếng Việt"></div>
         <label>${T('Who lives there', 'Ai ở đó')}</label><input type="text" id="bo" value="${esc(b.owner.name)}" placeholder="${T('e.g. Bà Tư', 'vd. Bà Tư')}"><label>${T('What they say', 'Họ nói gì')}</label><div class="row"><input type="text" id="bl0" value="${esc(b.owner.line[0])}" placeholder="English"><input type="text" id="bl1" value="${esc(b.owner.line[1])}" placeholder="Tiếng Việt"></div>
         <label>${T('Wall colour', 'Màu tường')}</label>${sw('c', ['#9fd8c8', '#ffb3a0', '#f2d6a0', '#efe0bf', '#cfe6ee', '#f6e27a', '#d9c3f0', '#ffffff'], b.color)}` : ''}
         <p class="${okc === 'ok' ? 'ok' : 'badtxt'}">📍 ${b.x}, ${b.z} ${okc === 'ok' ? '✅' : '⚠️ ' + why}</p>${done}`;
-      $('#bt').onchange = e => { b.type = val(e); draw(); form(); }; $('#br').oninput = e => { b.rot = +val(e) * Math.PI / 180; $('#brv').textContent = val(e) + '°'; };
+      bindTypePicker(b.type, id => { b.type = id; draw(); }, true); $('#br').oninput = e => { b.rot = +val(e) * Math.PI / 180; $('#brv').textContent = val(e) + '°'; };
       if (t.home) { $('#bn0').oninput = e => { b.name[0] = val(e); list(); }; $('#bn1').oninput = e => { b.name[1] = val(e); }; $('#bo').oninput = e => { b.owner.name = val(e); }; $('#bl0').oninput = e => { b.owner.line[0] = val(e); }; $('#bl1').oninput = e => { b.owner.line[1] = val(e); }; F.querySelectorAll<HTMLInputElement>('[data-c]').forEach(x => x.onclick = () => { b.color = x.dataset.c; form(); }); }
       bindDone(); return;
     }
@@ -1529,6 +1688,41 @@ PAGES.players = async P => {
     <div class="card"><h3>🧱 ${T('Where children got stuck', 'Chỗ các bé bị kẹt')}</h3>${pb.stuck.length ? `<table class="mini"><tbody>${pb.stuck.map(([k, n]) => `<tr><td>${esc(where(k))}</td><td>${n}×</td></tr>`).join('')}</tbody></table><p class="note">${T('Pushing to walk for 4 seconds without moving (area and map position).', 'Đẩy để đi 4 giây mà không nhúc nhích (khu và vị trí trên bản đồ).')}</p>` : `<p class="ok">✅ ${T('Nobody got stuck.', 'Không ai bị kẹt.')}</p>`}</div>
     <div class="card"><h3>🚪 ${T('Games left before the end', 'Trò bị bỏ dở')}</h3>${pb.quits.length ? `<table class="mini"><tbody>${pb.quits.map(([g, n, st, pc]) => `<tr><td>${esc(gname(g))}</td><td>${n}/${st}</td><td class="${pc >= 50 ? 'warn' : ''}">${pc}%</td></tr>`).join('')}</tbody></table>` : `<p class="ok">✅ ${T('None.', 'Không có.')}</p>`}</div>
     <div class="card"><h3>🐢 ${T('Slow devices', 'Máy chạy chậm')}</h3>${pb.slow.length ? `<table class="mini"><tbody>${pb.slow.map(([id, l, f, sm]) => { const d = r.devices.find(x => x.id === id) || { id, label: l, fps: f }; return `<tr class="devrow${isRobot(d) ? ' robot' : ''}"><td>${devHTML(d)}</td><td>${f} ${T('frames/s', 'khung/giây')}</td><td>${sm} ${T('slow min', 'phút chậm')}</td></tr>`; }).join('')}</tbody></table>` : `<p class="ok">✅ ${T('All smooth.', 'Đều mượt.')}</p>`}</div></div>`)}
+  ${await (async () => {
+    try {
+      const pa = await api('parent-analytics');
+      const tot = pa?.totals || {};
+      const pv = tot.pageViews || {};
+      const devs = tot.devices || {};
+      const langs = tot.languages || {};
+      const acts = tot.actionClicks || {};
+      const routeRows = Object.entries(pv).sort((a: any, b: any) => b[1] - a[1]).map(([rt, c]) => `<tr><td><code>${esc(rt)}</code></td><td><b>${c}</b></td></tr>`).join('') || `<tr><td colspan="2" class="note">${T('No parent website visits recorded yet.', 'Chưa có lượt truy cập website cha mẹ.')}</td></tr>`;
+      return more('parent-analytics', T('🌐 Parent website analytics (first-party)', '🌐 Phân tích website cha mẹ (trực tiếp)'), `
+        <p class="sub">${T('Privacy-conscious first-party measurement of sparklevalley.au/home. Separate from game telemetry and synthetic traffic. Consent-gated; visitors who opt out are never recorded, so numbers represent consenting visitors only.', 'Đo lường trực tiếp, bảo vệ quyền riêng tư cho sparklevalley.au/home. Tách biệt với số liệu trò chơi và lưu lượng tự động. Phải có đồng ý; khách từ chối không bao giờ bị ghi nhận, nên số liệu chỉ đại diện người đồng ý.')}</p>
+        <div class="tiles">
+          ${tile('👁️', tot.totalEvents || 0, T('consented events (30d)', 'sự kiện đồng ý (30 ngày)'))}
+          ${tile('▶️', tot.playConversions || 0, T('Play Sparkle Valley clicks', 'bấm Chơi Sparkle Valley'))}
+          ${tile('⏱️', Math.round((tot.activeTimeTotalSec || 0) / 60) + ' min', T('active reading time', 'thời gian đọc thực tế'))}
+          ${tile('🔗', tot.linkClicks || 0, T('link clicks', 'lượt bấm liên kết'))}
+        </div>
+        <div class="grid two">
+          <div class="card">
+            <h3>📄 ${T('Pages viewed', 'Trang đã xem')}</h3>
+            <table class="mini"><thead><tr><th>${T('Page', 'Trang')}</th><th>${T('Views', 'Lượt xem')}</th></tr></thead><tbody>${routeRows}</tbody></table>
+          </div>
+          <div class="card">
+            <h3>📱 ${T('Devices & Languages', 'Thiết bị & Ngôn ngữ')}</h3>
+            <p><strong>${T('Devices', 'Thiết bị')}:</strong> 📱 ${T('Phone', 'Điện thoại')}: ${devs.phone || 0} · 📲 ${T('Tablet', 'Máy tính bảng')}: ${devs.tablet || 0} · 💻 ${T('Desktop', 'Máy tính')}: ${devs.desktop || 0}</p>
+            <p><strong>${T('Languages', 'Ngôn ngữ')}:</strong> 🇬🇧 EN: ${langs.en || 0} · 🇻🇳 VI: ${langs.vi || 0}</p>
+            <p><strong>${T('Key actions', 'Thao tác chính')}:</strong> 🌐 ${T('Lang switch', 'Đổi ngôn ngữ')}: ${acts.lang_switch || 0} · ▶️ ${T('Nav play', 'Chơi từ thanh menu')}: ${acts.nav_play || 0}</p>
+            <p class="note">${T('No free text, full URLs, keystrokes, fingerprints or private family memories/photos/voices are ever measured.', 'Tuyệt đối không đo lường văn bản tự do, URL đầy đủ, phím gõ, dấu vân tay hay kỷ niệm/ảnh/giọng nói riêng tư của gia đình.')}</p>
+          </div>
+        </div>
+      `);
+    } catch {
+      return '';
+    }
+  })()}
   <p class="note">${T('Made', 'Lúc')} ${esc(new Date(r.made).toLocaleString(LANG === 'vi' ? 'vi-VN' : 'en-AU', { timeZone: 'Australia/Sydney' }))} ${sydneyZone(r.made)}</p>`;
   { const tt = P.querySelector<HTMLInputElement>('#totesters'); if (tt) tt.onclick = () => go('testers'); }
   devFilter($('#devlist')); // (owner, 13 Oct) find a device by a child's name, its name, the town or the kind of device

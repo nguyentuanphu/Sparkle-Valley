@@ -14,6 +14,18 @@ test('language shards preserve every line, gender and template without duplicati
     assert.deepEqual(JSON.parse(fs.readFileSync(new URL(`../../voices/manifest-${lang}.json`, import.meta.url))), JSON.parse(JSON.stringify(j)));
   }
 });
+test('every advertised recording exists in its language and slot', () => {
+  const missing = [];
+  for (const [lang, shard] of Object.entries(shards)) {
+    for (const [hash, slots] of Object.entries(shard.lines)) {
+      for (const slot of slots) {
+        const file = new URL(`../../voices/${lang}/${slot}/${hash}.mp3`, import.meta.url);
+        if (!fs.existsSync(file)) missing.push(`${lang}/${slot}/${hash}.mp3`);
+      }
+    }
+  }
+  assert.deepEqual(missing, [], 'Manifests must advertise real files, not pending recordings');
+});
 test('only selected languages are requested; bilingual and explicit learning languages join safely', async () => {
   const calls = [], index = createVoiceIndex(async url => { calls.push(url); return response(shards[url.match(/manifest-(\w+)/)[1]]); }, () => {});
   await Promise.all(voiceLanguages({ lang: 'en' }).map(index.load));

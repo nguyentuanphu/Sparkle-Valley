@@ -6,7 +6,7 @@
 // "activities": { id: { area, little, hide } }).
 import { T } from '../i18n.js';
 import { CUSTOM, keptOn, MONEY_GAMES } from '../custom.js';
-import { PLACES as MAP_PLACES } from './map.js';
+import { PLACES as MAP_PLACES, PLOTS as MAP_PLOTS } from './map.js';
 
 // the areas, in the order the path visits them; a child who can't read knows each one by its picture
 export const AREAS = [
@@ -81,7 +81,26 @@ export function withSitePlaces(list) {
   if (!list) return list;
   for (const s of SITE_PLACES) {
     const m = MAP_PLACES.find(p => p.id === s.id); if (!m || list.some(pl => pl.key === s.id)) continue;
-    list.push({ g: s.g, key: s.id, icon: s.icon, name: s.name || (() => T(m.name[0], m.name[1])), x: m.at[0], z: m.at[1] + (m.r || 10) + 3 });   // the stop just south of the place
+    // Memory Village anchors are intentionally outside the nearest city and must land at a
+    // clear lane entrance, not at the anchor's fixed south-side offset or a plot center.
+    // Use lane 1 centerline near the first plot along the lane to avoid plot interiors
+    // and to stay inside the village region (avoiding Saigon/HCM snap).
+    const lanePlots = MAP_PLOTS.filter(p => p.village === s.id).sort((a, b) => {
+      if (Math.abs(a.off[1] - b.off[1]) > 1e-6) return a.off[1] - b.off[1];
+      return a.off[0] - b.off[0];
+    });
+    const firstPlot = lanePlots[0];
+    let x = m.at[0], z = m.at[1];
+    if (firstPlot) {
+      // Land on the lane centerline (perp offset 0) at the first plot's along-lane position
+      const side = Math.sign(firstPlot.off[1]) || -1;
+      const laneDz = firstPlot.off[1] - side * (1.7 + 0.5 + 3.5);
+      x = m.at[0] + firstPlot.off[0];
+      z = m.at[1] + laneDz;
+    } else {
+      z = m.at[1] + (m.r || 10) + 3;
+    }
+    list.push({ g: s.g, key: s.id, icon: s.icon, name: s.name || (() => T(m.name[0], m.name[1])), x, z });
   }
   return list;
 }

@@ -52,7 +52,7 @@ export const AUSSIE = box('aussie'); // Aussie Corner: milk bar, fish and chips,
 // Cities around the valley: each a paved square with a welcome gate, landmarks, a game host and food kiosks (js/cities.js)
 // gates: where the roads come in (the first is the main gate); the main street runs straight through
 /** a city: its square (the corners are added just below), gates and look */
-export type SvCity = { id: string, cc: string, x: number, z: number, w: number, d: number, h: number, icon: string, name: unknown, gates: number[][], x0?: number, x1?: number, z0?: number, z1?: number };
+export type SvCity = { id: string, cc: string, x: number, z: number, w: number, d: number, h: number, icon: string, name: unknown, gates: number[][], layout?: { toward: number }, x0?: number, x1?: number, z0?: number, z1?: number };
 export const CITIES = MAP.PLACES.filter(p => p.kind === 'city').map((p): SvCity => { const [x, z] = p.at;
   return { id: p.id, cc: p.cc, x, z, w: p.w, d: p.d, h: p.h, icon: p.icon, name: p.name, gates: p.gates.map(([dx, dz]) => [x + dx, z + dz]) }; });
 CITIES.forEach(c => Object.assign(c, { x0: c.x - c.w, x1: c.x + c.w, z0: c.z - c.d, z1: c.z + c.d }));
@@ -495,7 +495,7 @@ export function createWorld(scene, quality) {
     groundAt?: (x: number, z: number, y?: number) => number, platformAt?: (x: number, z: number, y?: number) => unknown, collide?: (pos: { x: number, y?: number, z: number }, r?: number) => unknown,
     update?: (dt: number, t: number) => void, updateSky?: (dt: number, camPos: THREE.Vector3, focus?: THREE.Vector3) => void, isNight?: () => boolean,
     waterMap?: (cv: HTMLCanvasElement) => void, setShrineDone?: (id: string, done: boolean) => void, setTowerDone?: (id: string, done: boolean) => void, hideLeafy?: (id: string) => void,
-    solid?: unknown, solidAt?: (x: number, z: number) => boolean, solidGround?: unknown, solidStats?: Record<string, number>, busStops?: unknown[],
+    solid?: Uint8Array, solidAt?: (x: number, z: number) => boolean, solidGround?: (x: number, z: number) => number, solidStats?: import('./solids.js').SolidStats, busStops?: unknown[],
     familyBuilt?: unknown, familyEdits?: unknown, gates?: unknown[], heroesNear?: (x: number, z: number, r: number) => boolean, levelled?: unknown,
     priceTags?: unknown[], roadLines?: { kind: string, pts: number[][], [k: string]: unknown }[], roadTop?: Map<number, number> | null, roadside?: unknown, waterSites?: { id: string, x: number, z: number, r: number }[] };
   const W: typeof wParts & SvWorldMore = wParts;

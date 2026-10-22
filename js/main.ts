@@ -84,7 +84,7 @@ import { buildPowerLines } from './powerlines.js';
 import { CUSTOM } from './custom.js';
 import { createFolkShow } from './folkshow.js';
 import { createAds } from './ads.js';
-import { buildSolids } from './solids.js';
+import { buildSolids, solidCircleHit } from './solids.js';
 import { startCounting, countPlay, watchHero, noteReload } from './players.js';
 import { startPackBar } from './packbar.js';
 import { codeHTML, bindCode, padHTML, boxHTML, animalSay } from './roomcode.js';
@@ -172,7 +172,7 @@ type SvWalkClose = HTMLElement & { _from?: { x: number, z: number }[], _autoClos
 type SvPerson = { av: { root: THREE.Object3D, anim?(st: string, t: number, sp: number): void }, tag: THREE.Object3D, pos: THREE.Vector3, yaw: number };
 type SvFriend = SvPerson & { id: string, name: string, st: string, look: Record<string, unknown>, photoURL: string, [k: string]: unknown };
 /** a friend's game played online: who sits where, and which seat is mine (js/netgames.ts) */
-type SvOnline = { names: string[], mine: number, [k: string]: unknown };
+type SvOnline = import('./games/frame.js').GameOnline;
 /** something in the valley a child can walk up to and use (a person, a game, a door…) */
 interface SvItem { id?: string, x: number, z: number, r?: number, icon?: string, bubble?: string, slot?: string, auto?: boolean,
   y?: number, label?: () => string, short?: () => string, visible?: (h?: SvHeroT) => boolean, act(h: SvHeroT, game?: SvGame): void | Promise<unknown>, npc?: unknown, st?: unknown, [k: string]: unknown }
@@ -502,14 +502,15 @@ async function playGame(i: number, id: string, source: string, shrine?: (typeof 
   const p = h.profile, diff = (p.gameDiff && p.gameDiff[id]) || p.difficulty || 'easy', level = Math.min(5, (p.levels[id] || 1) + { easy: 0, medium: 1, hard: 2 }[diff]);
   const little = G.heroes.some(x => x.profile.age !== 'big'), strong = !little && diff !== 'easy';
   if (source === 'shrine') { SFX.secret(); say('A shrine! Let’s solve the puzzle.', 'Một ngôi đền! Cùng giải câu đố nào.'); await wait(600); }
-  const nextId = nextGameAfter(id);
+  const completion = source === 'hub' || source === 'pad' || source === 'simple' ? 'choose' : 'return';
+  const nextId = completion === 'choose' ? nextGameAfter(id) : null;
   // events alongside today's calls (architecture step 1): the activity, by id, and who plays it
   const actId = makeId('act', id, String(++G.actCount)), playerIds = players.map(q => makeId('player', q.id || 'guest'));
   events.emit('ActivityStarted', { activityId: actId, kind: 'game', defId: makeId('game', id), players: playerIds, source });
-  const res = await openGame(id, { players, level, little, strong, nextId, style: source === 'folk' || id === 'market' ? 'village' : 'shrine', levelPick: { value: diff } });
+  const res = await openGame(id, { players, level, little, strong, nextId, completion, style: source === 'folk' || id === 'market' ? 'village' : 'shrine', levelPick: { value: diff } });
   G.paused = false;
   // another level chosen inside the game: remember it for this game and start again
-  if (res.restart) { events.emit('ActivityAbandoned', { activityId: actId, reason: 'level' }); p.gameDiff = { ...(p.gameDiff || {}), [id]: res.restart }; save(); return playGame(i, id, source === 'shrine' ? 'replay' : source, shrine); }
+  if (res.restart) { events.emit('ActivityAbandoned', { activityId: actId, reason: 'level' }); p.gameDiff = { ...(p.gameDiff || {}), [id]: res.restart }; save(); return playGame(i, id, source, shrine); }
   if (res.won) events.emit('ActivityCompleted', { activityId: actId, defId: makeId('game', id), players: playerIds, result: { won: true, stars: res.stars || 0, level } });
   else events.emit('ActivityAbandoned', { activityId: actId, reason: 'left' });
   // (r79, owner point 7) a game opened from Play goes back to Play, one opened from the Pad's Games page back to that page;
@@ -517,7 +518,7 @@ async function playGame(i: number, id: string, source: string, shrine?: (typeof 
   const back = () => { if (source === 'hub') G.openGamesHub(i); else if (source === 'pad') G.openPad(i, 'games'); };
   if (!res.won) { back(); return; }
   // after the rewards: straight on to the next game, or this one again, if the child chose that
-  const then = () => { if (res.next === 'next' && nextId) playGame(i, nextId, source === 'hub' || source === 'pad' ? source : 'replay'); else if (res.next === 'again') playGame(i, id, source === 'shrine' ? 'replay' : source, shrine); else back(); };
+  const then = () => { if (res.next === 'next' && nextId) return playGame(i, nextId, source); if (res.next === 'again') return playGame(i, id, source, shrine); back(); };
   // winning Kite Flying earns the whistling kite (diều sáo), which then flies above you everywhere
   if (id === 'kite' && !p.kite) {
     p.kite = true; p.kiteOn = true; save(); G.kites.sync();
@@ -672,7 +673,7 @@ const npcLike = it => /^(npc_|g_|v_|pc_|cards$|dacau$|musiccorner$|bear$|stall$)
 // the nearest open spot to (x, z): not inside a building, tree or stall, not in water. Travelling lands there.
 G.clearSpot = (x, z, pad = .9) => {
   // (reports #251/#256) inside the valley's walkable edge, as G.goodSpot: past it the child is held at the edge beside what stands there
-  const W = G.world, free = (px, pz) => Math.abs(px) <= HALF - 10 && Math.abs(pz) <= HALF - 10 && heightAt(px, pz) > WATER + .3 && !(W.solidAt && (W.solidAt(px, pz) || W.solidAt(px + .6, pz) || W.solidAt(px - .6, pz) || W.solidAt(px, pz + .6) || W.solidAt(px, pz - .6))) && !W.colliders.some(c => c.r > 0 && Math.hypot(c.x - px, c.z - pz) < c.r + pad) && !W.boxes.some(b => px > b.x0 - pad && px < b.x1 + pad && pz > b.z0 - pad && pz < b.z1 + pad);
+  const W = G.world, free = (px, pz) => Math.abs(px) <= HALF - 10 && Math.abs(pz) <= HALF - 10 && heightAt(px, pz) > WATER + .3 && !(W.solidAt && (W.solidAt(px, pz) || W.solidAt(px + .6, pz) || W.solidAt(px - .6, pz) || W.solidAt(px, pz + .6) || W.solidAt(px, pz - .6))) && !solidCircleHit(W, px, pz) && !W.colliders.some(c => c.r > 0 && Math.hypot(c.x - px, c.z - pz) < c.r + pad) && !W.boxes.some(b => px > b.x0 - pad && px < b.x1 + pad && pz > b.z0 - pad && pz < b.z1 + pad);
   if (free(x, z)) return [x, z];
   for (let r = 1.5; r <= 14; r += 1.25) for (let k = 0; k < 16; k++) { const a = k / 16 * Math.PI * 2, px = x + Math.cos(a) * r, pz = z + Math.sin(a) * r; if (free(px, pz)) return [px, pz]; }
   return [x, z];
@@ -687,7 +688,7 @@ G.meetAndPlay = async (i, id, source = 'place') => {
 };
 // the villager nearest to a place on the map (within 20 m), so travelling lands you right next to them
 G.npcNear = (x, z, r = 20) => G.interactables.filter(it => npcLike(it) && Number.isFinite(it.x) && dist2(it.x, it.z, x, z) < r).sort((a, b) => dist2(a.x, a.z, x, z) - dist2(b.x, b.z, x, z))[0] || null;
-G.travelTo = async (h, x, z) => { const n = G.npcNear(x, z); if (n) { await G.landBy(h, n.x, n.z); hudFor(h).toast('👋 ' + n.label()); } else await G.travel(h, x, z); };
+G.travelTo = async (h, x, z, snapToNpc = true) => { const n = snapToNpc ? G.npcNear(x, z) : null; if (n) { await G.landBy(h, n.x, n.z); hudFor(h).toast('👋 ' + n.label()); } else await G.travel(h, x, z); };
 G.goToGame = (i, id) => { const h = G.heroes[i], it = G.gameSpot(id); if (!h || !it) return; (async () => { if (dist2(h.pos.x, h.pos.z, it.x, it.z) > 45) await G.travel(h, it.x - 1.5, it.z + 2); goAndDo(h, it); })(); };
 // ---------- objective helpers ----------
 G.objectiveIcon = h => { const q = currentQuest(h.profile); return q ? q.icon : '🏆'; };
@@ -972,7 +973,7 @@ G.toggleMute = async () => { if (!Net.micLive) { Net.resumeAudio(); await Net.ge
 // Keyboard shortcuts on computers (shown as little key badges on the buttons). Player 1's screen.
 addEventListener('keydown', e => {
   if (!playing || e.repeat || e.ctrlKey || e.metaKey || e.altKey || /INPUT|TEXTAREA|SELECT/.test((e.target instanceof Element && e.target.tagName) || '')) return;
-  const k = e.code;
+  const k = e.code === 'KeyG' || e.key === 'g' || e.key === 'G' ? 'KeyG' : e.code;
   // Escape closes the top pop-up, chat or game card
   if (k === 'Escape') { const x = [...document.querySelectorAll<HTMLElement>('.modal .x, .vc-pop .vc-x, .chatwin .x, .dlg-close')].pop(); if (x) { x.click(); e.preventDefault(); } return; }
   if (G.paused || gameOpen() || document.querySelector<HTMLElement>('.modal, .storybook, .vc-pop')) return;
@@ -1438,8 +1439,8 @@ G.rects = rects; G.faceToFace = () => G.heroes.length > 1 && faceToFace();
 // child's holder is turned half a turn, so their windows face them (round R, owner: "the other child can keep playing").
 G.lastPlayer = 0;
 const holders = [0, 1].map(() => { const w = document.createElement('div'); w.className = 'halfwrap'; return w; });
-G.halfBusy = i => !!holders[i] && holders[i].isConnected && [...holders[i].children].some(c => !c.classList.contains('out'));
-const NOT_A_WINDOW = /(^|\s)(hud|stick|facewrap|halfwrap|caption|title)(\s|$)/;
+G.halfBusy = i => !!holders[i] && holders[i].isConnected && [...holders[i].children].some(c => !c.classList.contains('out') && !c.classList.contains('confetti') && /(^|\s)(modal|gl|storybook|vc-pop|dialog|reward|chatwin|handpad)(\s|$)/.test(c.className));
+const NOT_A_WINDOW = /(^|\s)(hud|stick|facewrap|halfwrap|caption|title|confetti|fade|apfinger|testertoast|packbar)(\s|$)/;
 function placeHolders() {
   const r = rects(), two = twoHalves();
   holders.forEach((w, i) => {
@@ -1548,6 +1549,7 @@ G.goodSpot = (x, z) => {
   const W = G.world; if (!Number.isFinite(x) || !Number.isFinite(z) || Math.abs(x) > HALF - 10 || Math.abs(z) > HALF - 10) return false;
   if (heightAt(x, z) < WATER + .3) return false;
   if (W.solidAt && [[0, 0], [.6, 0], [-.6, 0], [0, .6], [0, -.6]].some(([dx, dz]) => W.solidAt(x + dx, z + dz))) return false;
+  if (solidCircleHit(W, x, z)) return false;
   return !W.colliders.some(c => c.r > 0 && c.top == null && Math.hypot(c.x - x, c.z - z) < c.r + .45) && !W.boxes.some(b => x > b.x0 - .45 && x < b.x1 + .45 && z > b.z0 - .45 && z < b.z1 + .45);
 };
 const keepSpot = () => G.heroes.forEach(h => { if (h.profile && h.onGround && !h.towerClimb && !h.indoors && G.goodSpot(h.lastSafe.x, h.lastSafe.z)) { h.profile.pos = { x: +h.lastSafe.x.toFixed(1), z: +h.lastSafe.z.toFixed(1) }; h.profile.posMap = MAP_VERSION; } }); // (round T: stamped with the layout)

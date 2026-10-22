@@ -1,0 +1,283 @@
+/* Sparkle Valley Parent Website Styles */
+:root {
+  --bg-gradient: radial-gradient(circle at 50% 15%, #f6f9fc 0%, #edf3f8 45%, #e2eaf2 100%);
+  --nav-bg: rgba(255, 255, 255, 0.94);
+  --card-bg: rgba(255, 255, 255, 0.95);
+  --foot-bg: rgba(255, 255, 255, 0.92);
+  --banner-bg: #2b3544;
+  --text-main: #2b223d;
+  --text-soft: #5b506b;
+  --brand-purple: #5c358f;
+  --card-heading: #7c4ec9;
+  --nav-active-bg: #29b6f6;
+  --nav-active-text: #05333f;
+  --nav-hover-bg: rgba(41, 182, 246, 0.15);
+  --light-shadow: 0 10px 28px rgba(90, 70, 130, 0.08), 0 2px 8px rgba(90, 70, 130, 0.05);
+}
+
+body {
+  background: var(--bg-gradient);
+  background-attachment: fixed;
+  color: var(--text-main);
+  font-family: var(--font, 'Fredoka', 'Baloo 2', 'Segoe UI', system-ui, -apple-system, sans-serif);
+  overflow-y: auto;
+  height: auto;
+  min-height: 100vh;
+  margin: 0;
+}
+.parent-wrap {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 20px 16px 60px;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+.p-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--nav-bg);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  border-radius: 20px;
+  padding: 10px 16px;
+  box-shadow: var(--light-shadow);
+  gap: 12px;
+}
+.p-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 21px;
+  font-weight: 900;
+  color: var(--brand-purple);
+  text-decoration: none;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.p-nav-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  flex: 1 1 auto;
+  justify-content: flex-end;
+}
+.p-links-scroll {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  white-space: nowrap;
+  flex-wrap: nowrap;
+  padding: 4px 2px;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(140, 110, 190, 0.3) transparent;
+}
+.p-links-scroll::-webkit-scrollbar {
+  height: 4px;
+}
+.p-links-scroll::-webkit-scrollbar-thumb {
+  background: rgba(140, 110, 190, 0.25);
+  border-radius: 999px;
+}
+.p-links-scroll button, .p-links-scroll a {
+  border: 0;
+  background: transparent;
+  padding: 7px 13px;
+  border-radius: 12px;
+  font-size: 14.5px;
+  font-weight: 700;
+  color: var(--text-main);
+  text-decoration: none;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: background .15s, color .15s, transform .1s;
+}
+.p-links-scroll button.on, .p-links-scroll a.on {
+  background: var(--nav-active-bg);
+  color: var(--nav-active-text);
+  box-shadow: 0 2px 6px rgba(41, 182, 246, 0.3);
+}
+.p-links-scroll button:hover, .p-links-scroll a:hover {
+  background: var(--nav-hover-bg);
+}
+.p-nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.p-nav-actions button, .p-nav-actions a {
+  border: 0;
+  background: transparent;
+  padding: 7px 13px;
+  border-radius: 12px;
+  font-size: 14.5px;
+  font-weight: 700;
+  color: var(--text-main);
+  text-decoration: none;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: background .15s, color .15s, transform .1s;
+}
+#lang {
+  background: rgba(140, 110, 190, 0.1);
+  color: var(--brand-purple);
+  padding: 6px 12px;
+  border-radius: 10px;
+  font-weight: 800;
+}
+#lang:hover {
+  background: rgba(140, 110, 190, 0.2);
+}
+.p-play-btn {
+  background: linear-gradient(180deg, #ffb020, #e08a00) !important;
+  color: #fff !important;
+  box-shadow: 0 3px 0 #b36b00;
+  padding: 7px 15px !important;
+}
+.p-hero {
+  background: var(--card-bg);
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  border-radius: 26px;
+  padding: 34px 26px;
+  box-shadow: var(--light-shadow);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  text-align: center;
+  align-items: center;
+}
+.p-hero h1 {
+  margin: 0;
+  font-size: clamp(30px, 5.5vw, 44px);
+  color: var(--brand-purple);
+}
+.p-hero p {
+  margin: 0;
+  font-size: clamp(16px, 2.2vw, 19px);
+  color: var(--text-soft);
+  max-width: 750px;
+  line-height: 1.55;
+}
+.p-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(310px, 1fr));
+  gap: 18px;
+}
+.p-card {
+  background: var(--card-bg);
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  border-radius: 20px;
+  padding: 22px;
+  box-shadow: var(--light-shadow);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.p-card h3 {
+  margin: 0;
+  font-size: 21px;
+  color: var(--card-heading);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.p-card p {
+  margin: 0;
+  color: var(--text-soft);
+  line-height: 1.5;
+  font-size: 15.5px;
+}
+.p-foot {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 20px;
+  background: var(--foot-bg);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  border-radius: 18px;
+  box-shadow: var(--light-shadow);
+  font-size: 14px;
+  color: var(--text-soft);
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.p-foot-links {
+  display: flex;
+  gap: 16px;
+}
+.p-foot-links a {
+  color: var(--brand-purple);
+  text-decoration: none;
+  font-weight: 700;
+}
+.p-foot-links a:hover {
+  text-decoration: underline;
+}
+.consent-banner {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--banner-bg);
+  color: #fff;
+  padding: 14px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  z-index: 100;
+  box-shadow: 0 -4px 20px rgba(0,0,0,0.18);
+  gap: 14px;
+  flex-wrap: wrap;
+}
+.consent-banner p {
+  margin: 0;
+  font-size: 14.5px;
+  max-width: 800px;
+  line-height: 1.4;
+}
+.consent-actions {
+  display: flex;
+  gap: 10px;
+}
+.consent-actions button {
+  padding: 7px 15px;
+  border-radius: 10px;
+  border: 0;
+  font-weight: 700;
+  cursor: pointer;
+}
+.consent-accept {
+  background: var(--nav-active-bg);
+  color: var(--nav-active-text);
+}
+.consent-decline {
+  background: rgba(255,255,255,0.18);
+  color: #fff;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .p-nav {
+    padding: 8px 12px;
+    gap: 8px;
+  }
+  .p-brand {
+    font-size: 18px;
+  }
+  .p-links-scroll button, .p-links-scroll a, .p-nav-actions button, .p-nav-actions a {
+    padding: 6px 10px;
+    font-size: 13.5px;
+  }
+  .p-play-btn {
+    padding: 6px 11px !important;
+  }
+}

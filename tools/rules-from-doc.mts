@@ -30,7 +30,8 @@ export const SEVERITIES = ['BLOCKER', 'MAJOR', 'MINOR'];
 export const ruleOf = id => RULES[id] || null;
 `;
 if (process.argv[1] && process.argv[1].endsWith('rules-from-doc.mts')) {
+  const norm = (s: string) => s.replace(/\r\n/g, '\n');
   const want = render(rulesFromDoc(fs.readFileSync(path.join(ROOT, 'docs/ARCHITECTURE.md'), 'utf8'))), file = path.join(ROOT, 'js/content/rules.js');
-  if (process.argv.includes('--check')) { const same = fs.existsSync(file) && fs.readFileSync(file, 'utf8') === want; console.log(same ? 'js/content/rules.js matches docs/ARCHITECTURE.md §9' : 'js/content/rules.js differs from docs/ARCHITECTURE.md §9: run node tools/rules-from-doc.mts'); process.exitCode = same ? 0 : 1; }
+  if (process.argv.includes('--check')) { const same = fs.existsSync(file) && norm(fs.readFileSync(file, 'utf8')) === norm(want); console.log(same ? 'js/content/rules.js matches docs/ARCHITECTURE.md §9' : 'js/content/rules.js differs from docs/ARCHITECTURE.md §9: run node tools/rules-from-doc.mts'); process.exitCode = same ? 0 : 1; }
   else { fs.writeFileSync(file, want); console.log('wrote js/content/rules.js:', Object.keys(rulesFromDoc(fs.readFileSync(path.join(ROOT, 'docs/ARCHITECTURE.md'), 'utf8'))).length, 'rules'); }
 }

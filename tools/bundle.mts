@@ -15,9 +15,10 @@ import os from 'os';
 import path from 'path';
 import { execFileSync } from 'child_process';
 import { createRequire } from 'module';
+import { fileURLToPath } from 'url';
 import { gzipSync, brotliCompressSync } from 'node:zlib';
 const ESBUILD = '0.25.10';
-const HERE = path.dirname(new URL(import.meta.url).pathname);
+const HERE = path.dirname(fileURLToPath(import.meta.url));
 // esbuild is installed outside the site (never published): the system's temp folder
 const TOOL = path.join(os.tmpdir(), 'sv-esbuild-' + ESBUILD);
 const dir = path.resolve(process.argv[2] || '');
@@ -30,7 +31,10 @@ async function loadEsbuild() {
   if (e) return e;
   try {
     fs.mkdirSync(TOOL, { recursive: true });
-    execFileSync(process.platform === 'win32' ? 'npm.cmd' : 'npm', ['install', '--no-audit', '--no-fund', '--no-save', '--prefix', TOOL, `esbuild@${ESBUILD}`], { stdio: 'inherit' });
+    const args = ['install', '--no-audit', '--no-fund', '--no-save', '--prefix', TOOL, `esbuild@${ESBUILD}`];
+    // Windows cannot start npm.cmd without a shell (EINVAL): run npm's own script, installed beside node.exe
+    if (process.platform === 'win32') execFileSync(process.execPath, [path.join(path.dirname(process.execPath), 'node_modules', 'npm', 'bin', 'npm-cli.js'), ...args], { stdio: 'inherit' });
+    else execFileSync('npm', args, { stdio: 'inherit' });
   } catch (err) { return null; }
   return tryReq(TOOL);
 }

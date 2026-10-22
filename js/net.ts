@@ -650,6 +650,8 @@ export const Net = {
     this._pt = setInterval(() => {
       if (!this.role) return;
       this.send({ t: 'ping', ts: Date.now() });
+      // Reintroduce an admitted guest after a relay outage outlasted the stale-peer timeout.
+      if (this.role === 'guest' && this.cloudOn && !this.knocking) this._helloCloud();
       if (this.role === 'host' && ++n % 5 === 0) this._shareMembers(); // (the members' list again every 10 s, in case one got lost)
       for (const [id, r] of Object.entries(this.remotes)) {
         const quiet = Date.now() - (r.last || Date.now());

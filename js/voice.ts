@@ -386,7 +386,21 @@ export const allowMobilePack = yes => voicePackMod().then(m => m.allowMobilePack
 // an English line with Vietnamese words has its own recording with both voices (js/packhash.js lineHash); an older pack
 // without it still plays its all-English recording
 const packKey = (lang, text) => { if (!PACK) return null; const h = lineHash(lang, text); if (PACK.lines[h]) return h; const o = packHash(lang, text); return PACK.lines[o] ? o : null; };
-const packSlot = (lang, text) => { const has = PACK && PACK.lines[packKey(lang, text)]; if (!has) return null; const k = speakerKind(); return k && k.gender === 'm' && has.includes('m') ? 'm' : has.includes('f') ? 'f' : has[0]; };
+let previewSlot = null;
+const packSlot = (lang, text) => {
+  const has = PACK && PACK.lines[packKey(lang, text)];
+  if (!has) return null;
+  if (previewSlot && has.includes(previewSlot)) return previewSlot;
+  const k = speakerKind();
+  // Female recordings cover every character until a grown-up deliberately downloads male recordings.
+  if (k && k.gender === 'm' && settings.voiceMale === true && has.includes('m')) return 'm';
+  return has.includes('f') ? 'f' : has[0];
+};
+export async function previewPackVoice(slot) {
+  previewSlot = slot === 'm' ? 'm' : 'f';
+  try { await say('Hello! Welcome to Sparkle Valley.', 'Xin chào! Chào mừng con đến Thung Lũng Lấp Lánh.'); }
+  finally { previewSlot = null; }
+}
 // (round P, owner: "the 3 voice styles sound the same") the recordings play for almost every line, so the style changes
 // them too: Cute a little higher and quicker, Grandparent lower and slower (playing faster or slower moves the pitch)
 const STYLE_RATE = { natural: 1, cute: 1.13, grandpa: .88 };

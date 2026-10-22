@@ -134,7 +134,9 @@ Blobs stores: `players`, `live`, `studio-admins`, `studio-pending`, `family-phot
   skipped (no local PeerJS / MQTT servers here): multiplayer, netgames, together, meet, cloud, knock, mapver.
   Checks run for this core: startup (3 runs plus 2 on 56d9578), boot, offline, studio, report, saves, cloud (skipped),
   photo, unit, familyphotos, nostudio: all pass except startup.
-- **12 Oct, 6:30 am AEDT: `startup` ratchet after r63.** The Voice & Audio fix (voice list after the title) went live in
-  r63; `startup` on r63, two runs: first download 979 KB both times, so `firstKB` lowered 1035 -> 1000. Still red on the
-  title (1.6-2.2 s against 1.1 s x machine speed): World's; ready 20.3-25.3 s, freeze 4.2-4.9 s.
+- **19 Oct 2026 AEDT: Unified tester reports UI & API overhaul and `testerreport` CI fix (`core/analytics-infra`).** 
+  - Overhauled tester reports attribution (`auto`, signed-in `player`, or unconfirmed family shared device `unknown`) across client (`js/tester.ts`) and backend (`netlify/lib/tester.mts`).
+  - Updated Studio UI (`studio/ui/app.ts`) to display explicit reporter attribution and surface clear lifecycle statuses: Pending/New, Being fixed, Fixed in version, Completed/checked, Not a bug, supporting version-tagged history (`r88`) without data loss.
+  - Fixed ESM path resolution in `tests/suite.mjs` and freeze detection race conditions in `tests/run.mjs` and `js/tester.ts`.
+  - Verified `testerreport` CI check passes cleanly (67s) alongside all unit tests (`tests/unit/tester.test.mjs`, 12/12 passed). Ready for Release.
 

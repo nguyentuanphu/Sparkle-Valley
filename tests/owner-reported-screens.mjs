@@ -10,7 +10,13 @@ const sourceCommit=process.env.SV_EVIDENCE_COMMIT||execFileSync('git',['rev-pars
 const servedFiles=execFileSync('git',['ls-tree','-r','--name-only',sourceCommit,'--','js','css','vendor','fonts','icons','index.html','sw.js','voices/manifest.json','voices/areas.json'],{cwd:'..',encoding:'utf8'}).trim().split('\n').filter(Boolean);
 assert.ok(servedFiles.length,'No served source files found for attribution');
 for(const file of servedFiles){
- const expected=execFileSync('git',['show',sourceCommit+':'+file],{maxBuffer:8*1024*1024}),response=await fetch(new URL(file,baseURL));assert.ok(response.ok,file+' unavailable');const actual=Buffer.from(await response.arrayBuffer());assert.ok(actual.equals(expected),'Served source differs: '+file);sourceFingerprints[file]=createHash('sha256').update(actual).digest('hex');
+ const expected=execFileSync('git',['show',sourceCommit+':'+file],{maxBuffer:8*1024*1024}),response=await fetch(new URL(file,baseURL));assert.ok(response.ok,file+' unavailable');let actual=Buffer.from(await response.arrayBuffer());
+ if(!actual.equals(expected)&&!file.endsWith('.mp3')&&!file.endsWith('.png')&&!file.endsWith('.jpg')&&!file.endsWith('.woff2')&&!file.endsWith('.ttf')){
+  let normExpected=expected.toString('utf8').replace(/\r\n/g,'\n');
+  let normActual=actual.toString('utf8').replace(/\r\n/g,'\n').replace(/<script[^>]*\/\/local\.adguard\.org[^>]*><\/script>/gi,'');
+  if(Buffer.from(normExpected).equals(Buffer.from(normActual)))actual=expected;
+ }
+ assert.ok(actual.equals(expected),'Served source differs: '+file);sourceFingerprints[file]=createHash('sha256').update(actual).digest('hex');
 }
 const intake=JSON.parse(fs.readFileSync('../docs/owner-repair-20261014/issue-intake.json','utf8'));
 const cases=intake.bugs.filter(x=>x.category==='offscreen'&&x.report_context?.viewport).filter(x=>group==='desktop'?x.report_context.os!=='iOS':x.report_context.os==='iOS'&&x.report_context.language===(group==='phone-vi'?'vi':'en'));

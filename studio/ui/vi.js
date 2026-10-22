@@ -11,6 +11,9 @@ export const VI_MESSAGES = [
   [/^Set the website and a Studio key in Settings to put these pages live at once\.$/, () => 'Hãy điền trang web và khóa Studio trong Cài đặt để các trang này có hiệu lực ngay.'],
   [/^Too much to go live at once \((\d+) KB; 200 KB at most\): make the stories or the quiz shorter, then Save again\.$/, (m) => `Quá nhiều để có hiệu lực ngay một lần (${m[1]} KB; tối đa 200 KB): hãy làm truyện hoặc câu đố ngắn lại, rồi bấm Lưu lần nữa.`],
   [/^Some words are too long to go live \((.+): (\d+) letters at most\): make them shorter, then Save again\.$/, (m) => `Có chữ quá dài để có hiệu lực ngay (${LIVE_PART_VI[m[1]] || m[1]}: tối đa ${m[2]} chữ cái): hãy viết ngắn lại, rồi bấm Lưu lần nữa.`],
+  [/^Configure a GitHub token and repository in Settings to dispatch bot tests\.$/, () => 'Hãy cấu hình token và kho lưu trữ GitHub trong Cài đặt để chạy thử nghiệm bot.'],
+  [/^Invalid bot configuration\.$/, () => 'Cấu hình bot không hợp lệ.'],
+  [/^Website permission required to change the bot schedule\.$/, () => 'Cần quyền quản lý trang web để thay đổi lịch chạy bot.'],
   // (owner, 12 Oct) tester reports
   [/^No such problem\.$/, () => 'Không có lỗi này.'],
   [/^Set the website address and the Studio password in Settings to see the tester reports\.$/, () => 'Hãy điền địa chỉ trang web và mật khẩu Studio trong Cài đặt để xem báo cáo của người thử.'],
@@ -42,6 +45,7 @@ export const VI_MESSAGES = [
   [/^The owner’s password is STUDIO_PASSWORD/, () => `Mật khẩu của chủ là STUDIO_PASSWORD: đổi trong ${ENV}.`],
   [/^The owner signs in with the password only: two-step is for admins\.$/, () => 'Chủ đăng nhập chỉ bằng mật khẩu: hai bước dành cho quản trị viên.'],
   [/^Your account can look at the Analytics only\.$/, () => 'Tài khoản của bạn chỉ xem được Phân tích.'],
+  [/^Analytics permission required\.$/, () => 'Cần quyền xem Phân tích.'],
   [/^Only an owner can do that\.$/, () => 'Chỉ chủ mới làm được việc này.'],
   // (owner, 14 Oct AEDT) a permission the account was not given; its Vietnamese name comes with the server's list (PERM_VI)
   [/^Your account may not do that\. Ask the owner for “(.+)” \(Setup → Admins\)\.$/, m => `Tài khoản của bạn không được làm việc này. Hãy xin chủ quyền “${PERM_VI[m[1]] || m[1]}” (Thiết lập → Quản trị viên).`],

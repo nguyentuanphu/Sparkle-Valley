@@ -4,8 +4,9 @@
 // speaks a fixed version instead (round F: dialog lines [shown en, shown vi, spoken en, spoken vi]).
 import fs from 'fs';
 import path from 'path';
+import { fileURLToPath } from 'url';
 
-const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..');
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const files = [...fs.readdirSync(path.join(ROOT, 'js')).map(f => 'js/' + f), ...fs.readdirSync(path.join(ROOT, 'js/games')).map(f => 'js/games/' + f), ...fs.readdirSync(path.join(ROOT, 'js/content')).map(f => 'js/content/' + f), ...fs.readdirSync(path.join(ROOT, 'js/content/films')).map(f => 'js/content/films/' + f)].filter(f => f.endsWith('.js'));
 const VI = /[ăâđêôơưáàảãạấầẩẫậắằẳẵặéèẻẽẹếềểễệíìỉĩịóòỏõọốồổỗộớờởỡợúùủũụứừửữựýỳỷỹỵ]/i;
 // a quoted string without ${…}

@@ -34,6 +34,9 @@ export function startPack(pack, emit, here) {
 }
 // the languages this device's children hear: the game's language, and the other one too when both are spoken
 export const packLangs = () => { const L = [settings.lang === 'vi' ? 'vi' : 'en']; if (settings.bilingual) L.push(L[0] === 'vi' ? 'en' : 'vi'); return L; };
+
+// whether male voice recordings are enabled (off by default)
+export const packMale = () => settings.voiceMale === true;
 // 'wifi', 'mobile' or 'off'. iPhones, iPads and most computers can't tell: a computer counts as Wi-Fi (or a cable), a
 // phone or tablet as mobile data, so a grown-up is asked once (owner, 10 Oct)
 export function packNet() {
@@ -168,7 +171,7 @@ async function askRest() {
   let bytes = 0; for (const g of rest) for (const L of packLangs().concat(['zh', 'hi'])) bytes += (AREAS && AREAS.size && AREAS.size[g] && AREAS.size[g][L]) || 0;
   packEmit({ state: 'ask', mb: Math.max(1, Math.round(bytes * miss / all.length / 1048576)) });
 }
-const packSig = () => voicePackSignature(PACK, packLangs());
+const packSig = () => voicePackSignature(PACK, packLangs()) + (packMale() ? ':m' : '');
 // the files of the pack in these areas (all areas when none are named), in the children's own languages (Chinese and
 // Hindi only come with the places and games that speak them)
 // (read fresh each time: the connection can drop while the pack downloads)
@@ -179,10 +182,15 @@ function packFiles(groups?: string[], mine = packLangs()) {
   // language (half the size of the old `langOf`, which named every line's language; older packs still have that)
   const other = new Map(); for (const [L, hs] of Object.entries(PACK.other || {})) for (const h of String(hs).split(' ')) if (h) other.set(h, L);
   const langOf = h => (PACK.langOf && PACK.langOf[h]) || other.get(h) || (PACK.other ? 'en' : null);
+  const maleEnabled = packMale();
   for (const [h, slots] of Object.entries(PACK.lines)) {
     if (want && !want.has(groupOf(h))) continue;
     const L1 = langOf(h);
-    for (const s of typeof slots === 'string' || Array.isArray(slots) ? slots : []) for (const L of L1 ? [L1] : langs) if (!(L === 'en' || L === 'vi') || mine.includes(L)) urls.push(`voices/${L}/${s}/${h}.mp3`);
+    for (const s of typeof slots === 'string' || Array.isArray(slots) ? slots : []) {
+      // Skip male voice files if male voices are not enabled
+      if (s === 'm' && !maleEnabled) continue;
+      for (const L of L1 ? [L1] : langs) if (!(L === 'en' || L === 'vi') || mine.includes(L)) urls.push(`voices/${L}/${s}/${h}.mp3`);
+    }
   }
   const first = 'voices/' + mine[0] + '/'; urls.sort((a, b) => b.startsWith(first) - a.startsWith(first));
   return urls;

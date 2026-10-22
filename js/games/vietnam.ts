@@ -11,9 +11,18 @@ import { el, wait, pick } from '../util.js';
 const isQuan = i => i === 0 || i === 6;
 const owner = i => (i >= 1 && i <= 5 ? 0 : i >= 7 ? 1 : -1);
 function simulate(st, from, dir) {
-  const s = { seeds: st.seeds.slice(), big: st.big.slice(), score: st.score.slice() }, me = owner(from), steps = [];
+  const s = { seeds: st.seeds.slice(), big: st.big.slice(), score: st.score.slice(), owe: (st.owe || [0, 0]).slice() }, me = owner(from), steps = [];
+  const seen = new Set();
   let hand = s.seeds[from], pos = from; s.seeds[from] = 0; steps.push({ k: 'pick', i: from });
   for (;;) {
+    // Cyclic relays must end promptly; keep every seed when ending a repeated/overlong turn.
+    const key = `${pos}:${hand}:${s.seeds.join(',')}`;
+    if (seen.has(key) || steps.length >= 240) {
+      s.seeds[pos] += hand;
+      steps.push({ k: 'restore', i: pos, n: hand });
+      break;
+    }
+    seen.add(key);
     while (hand > 0) { pos = (pos + dir + 12) % 12; s.seeds[pos]++; hand--; steps.push({ k: 'drop', i: pos }); }
     const next = (pos + dir + 12) % 12;
     if (isQuan(next) && (s.seeds[next] > 0 || s.big[next])) break;
@@ -76,6 +85,7 @@ register({
         const c = cells[stp.i];
         if (stp.k === 'pick') { view.seeds[stp.i] = 0; api.sfx.tap(); }
         if (stp.k === 'drop') { view.seeds[stp.i]++; api.sfx.pop(stp.i); }
+        if (stp.k === 'restore') view.seeds[stp.i] += stp.n;
         if (stp.k === 'take') { view.seeds[stp.i] = 0; view.big[stp.i] = false; api.sfx.coin(); c.classList.add('taken'); setTimeout(() => c.classList.remove('taken'), 600); }
         c.classList.add('hl'); setTimeout(() => c.classList.remove('hl'), 260);
         drawCell(stp.i, view);
@@ -233,7 +243,7 @@ register({
     for (let r = 0; r < rounds; r++) {
       api.dots(rounds, r); api.stage.innerHTML = '';
       const court = el('div', 'hop'); api.stage.appendChild(court);
-      const sq = {};
+      const sq: Record<number, HTMLButtonElement & { _n: number }> = {};
       LAYOUT.slice().reverse().forEach(row => { const rr = el('div', 'hop-row'); row.forEach(n => { const b = el('button', 'hop-sq', `<b>${n}</b>`); b._n = n; sq[n] = b; rr.appendChild(b); }); court.appendChild(rr); });
       const stone = 1 + Math.floor(Math.random() * N);
       await wait(400); api.sfx.whoosh();

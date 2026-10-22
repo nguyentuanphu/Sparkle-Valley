@@ -26,7 +26,7 @@ const START = '# --- made by tools/build.mts from .ts files (never committed; do
 export function sources(root = ROOT) {
   const out = [], walk = rel => { let ents; try { ents = fs.readdirSync(path.join(root, rel), { withFileTypes: true }); } catch (e) { return; }
     for (const d of ents) { const r = rel ? rel + '/' + d.name : d.name; if (d.isDirectory()) { if (d.name !== 'node_modules') walk(r); } else if (r.endsWith('.ts') && !r.endsWith('.d.ts')) out.push(r); } };
-  walk('js'); walk('studio/ui'); if (fs.existsSync(path.join(root, 'sw.ts'))) out.push('sw.ts');
+  walk('js'); walk('studio/ui'); walk('home'); if (fs.existsSync(path.join(root, 'sw.ts'))) out.push('sw.ts');
   return out.sort();
 }
 /** a .ts file's text as the JavaScript the browser runs (same lines and columns) */
@@ -53,9 +53,10 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
   const gi = path.join(ROOT, '.gitignore'), text = fs.existsSync(gi) ? fs.readFileSync(gi, 'utf8') : '';
   // (a list written before the tool was renamed, by tools/build.mjs, is taken over, not kept twice)
   const mark = (m: string) => m.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace('build\\.mts', 'build\\.m[jt]s');
-  const re = new RegExp(`${mark(START)}\\n([\\s\\S]*?)${mark(END)}\\n?`);
-  const old = ((re.exec(text) || [])[1] || '').split('\n').filter(Boolean).map(l => l.replace(/^\//, ''));
-  const block = outs.length ? `${START}\n${outs.map(o => '/' + o).join('\n')}\n${END}\n` : '';
+  const re = new RegExp(`${mark(START)}\\r?\\n([\\s\\S]*?)${mark(END)}\\r?\\n?`);
+  const old = ((re.exec(text) || [])[1] || '').split(/\r?\n/).filter(Boolean).map(l => l.replace(/^\//, ''));
+  const nl = text.includes('\r\n') ? '\r\n' : '\n';
+  const block = outs.length ? `${START}${nl}${outs.map(o => '/' + o).join(nl)}${nl}${END}${nl}` : '';
   const next = re.test(text) ? text.replace(re, block) : text + (block && !text.endsWith('\n') && text ? '\n' : '') + block;
   if (next !== text) { if (CHECK) problems.push('.gitignore does not list the made .js files: run node tools/build.mts'); else fs.writeFileSync(gi, next); }
   if (!CHECK) for (const o of old) if (!outs.includes(o) && !fs.existsSync(path.join(ROOT, o.replace(/\.js$/, '.ts')))) fs.rmSync(path.join(ROOT, o), { force: true });

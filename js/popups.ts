@@ -39,7 +39,11 @@ function floatEnds(card) {
 const floatWatch = new MutationObserver(list => { const seen = new Set(); for (const r of list) { const c = r.target instanceof Element && r.target.closest('.modal .card'); if (c && !seen.has(c)) { seen.add(c); floatEnds(c); } } });
 floatWatch.observe(document.documentElement, { childList: true, subtree: true });
 export function modal(cls, html) {
-  const m = el('div', 'modal ' + (cls || ''), `<div class="card">${html}</div>`);
+  const little = dialogHooks.little?.() === true;
+  const set = new Set((cls || '').split(/\s+/).filter(Boolean));
+  if (little) set.add('little');
+  const classStr = Array.from(set).join(' ');
+  const m = el('div', ('modal ' + classStr).trim(), `<div class="card" role="dialog" aria-modal="true">${html}</div>`);
   dispatchEvent(new Event('sv-hide-caption')); document.body.appendChild(m); requestAnimationFrame(() => floatEnds(m.querySelector('.card')));
   feel.open(); // a sound only: windows never move (UX-001)
   m.close = () => { if (!m.classList.contains('out')) { feel.close(); m.dispatchEvent(new Event('sv-modal-close')); } m.classList.add('out'); setTimeout(() => m.remove(), 200); };

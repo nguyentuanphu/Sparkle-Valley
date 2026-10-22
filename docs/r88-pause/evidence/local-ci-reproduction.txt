@@ -1,0 +1,8 @@
+build: 63 TypeScript files, 0 made
+only: gamewinlayout, testerreport
+2 checks: group 1 2 (~3 min)
+[1] FAIL testerreport: page.waitForSelector: Timeout 8000ms exceeded.
+[1] PASS gamewinlayout (31s) 10 EN/VI phone/full and phone/tablet/computer split panes, down to 320 px; both choices and finish instruction visible, choices hittable a
+
+1/2 checks passed in 2 min (1 at a time)
+FAILED testerreport: page.waitForSelector: Timeout 8000ms exceeded.

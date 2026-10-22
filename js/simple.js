@@ -269,6 +269,7 @@ export function createSimple(G) {
         <div class="sp-scroll"><div class="sp-path"></div></div>
         <nav class="sp-tabs">${TABS.map(x => `<button data-tab="${x.key}"><span>${pic(x.icon)}</span><small>${esc(x.label())}</small></button>`).join('')}
           <button class="sp-discover"><span>${pic('🔎')}</span><small>${T('Discover', 'Khám phá')}</small></button>
+          <button class="sp-home"><span>${pic('🏠')}</span><small>${T('Home', 'Trang chủ')}</small></button>
           <button class="sp-valley"><span>${pic('🌳')}</span><small>${T('Valley', 'Thung lũng')}</small></button></nav>
         <div class="sp-find" hidden></div>`;
       document.body.appendChild(m);
@@ -277,6 +278,8 @@ export function createSimple(G) {
       m.querySelector('.sp-sound').onclick = () => { SFX.tap(); G.openSound(); };   // (Round U) music, sounds and voice
       m.querySelector('.sp-again').onclick = () => { SFX.tap(); const x = TABS.find(y => y.key === tab); say(x.say[0], x.say[1]); };
       m.querySelector('.sp-discover').onclick = () => { if (busy) return; SFX.tap(); discover(!finding); if (finding) say('Where shall we go?', 'Mình đi đâu nào?'); };
+      // Parent website: it opens in a new tab, so this screen, the stars and the game behind it are all left as they are
+      m.querySelector('.sp-home').onclick = () => { if (busy) return; SFX.tap(); window.open('/home', '_blank', 'noopener,noreferrer'); };
       m.querySelector('.sp-valley').onclick = () => { if (busy) return; SFX.tap(); choose('valley'); leave(); say('Off you go! Explore the valley.', 'Đi nào! Khám phá thung lũng thôi.'); };
       holdButton(m.querySelector('.sp-grown'), () => openGrownups(() => draw()));
       addEventListener('resize', draw);

@@ -1,0 +1,82 @@
+{
+  "report": {
+    "at": "2026-10-19T12:10:25.419Z",
+    "build": "r88",
+    "speed": "fast",
+    "total": 1,
+    "done": [
+      {
+        "g": "games",
+        "key": "game:counting",
+        "name": "Count With Me",
+        "ok": true,
+        "skipped": false,
+        "problems": [],
+        "notes": [],
+        "said": "won: 4 ✓, 1 ✗, 10 taps",
+        "secs": 13.1,
+        "fps": 48
+      }
+    ],
+    "perRun": true,
+    "reportIds": [],
+    "reportState": "disabled"
+  },
+  "trail": [
+    [
+      1792411812311,
+      "start",
+      "Count With Me"
+    ],
+    [
+      1792411813540,
+      "tap",
+      "5"
+    ],
+    [
+      1792411814789,
+      "tap",
+      "count-item"
+    ],
+    [
+      1792411815917,
+      "tap",
+      "3"
+    ],
+    [
+      1792411816724,
+      "tap",
+      "2"
+    ],
+    [
+      1792411817767,
+      "tap",
+      "art"
+    ],
+    [
+      1792411818874,
+      "tap",
+      "3"
+    ],
+    [
+      1792411820087,
+      "tap",
+      "arti"
+    ],
+    [
+      1792411821216,
+      "tap",
+      "3"
+    ],
+    [
+      1792411822045,
+      "tap",
+      "art"
+    ],
+    [
+      1792411823056,
+      "tap",
+      "count-item done"
+    ]
+  ]
+}

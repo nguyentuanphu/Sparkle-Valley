@@ -10,7 +10,7 @@ declare global {
    *  (the whole shared game object gets its own type later in the TypeScript plan) */
   type SvHero = { profile: import('../js/state.js').Profile };
   type SvThing = { id?: string, x: number, z: number, act(hero: SvHero, game: SvGame): Promise<unknown> | void };
-  type SvGame = Partial<Pick<import('../js/main.js').SvMain, 'tester' | 'screenFacts' | 'parents' | 'farm' | 'addCoins' | 'listenFriends' | 'npcs' | 'changePlayer' | 'homes' | 'scene' | 'plots' | 'getViews' | 'setView' | 'snapshot' | 'zoomBy'>> & { heroes: import('../js/main.js').SvMain['heroes'], interactables: SvThing[], paused?: boolean, renderer?: { setPixelRatio(ratio: number): void },
+  type SvGame = Partial<Pick<import('../js/main.js').SvMain, 'tester' | 'screenFacts' | 'parents' | 'farm' | 'addCoins' | 'listenFriends' | 'npcs' | 'changePlayer' | 'homes' | 'scene' | 'plots' | 'getViews' | 'setView' | 'snapshot' | 'zoomBy' | 'currentQuest' | 'questTarget' | 'lanterns' | 'autoplay' | 'landBy' | 'seeThrough' | 'goodSpot' | 'gameSpot' | 'clearSpot' | 'solidsReady'>> & { heroes: import('../js/main.js').SvMain['heroes'], interactables: SvThing[], paused?: boolean, renderer?: { setPixelRatio(ratio: number): void },
     playGame?(player: number, id: string, how: string): void, openPad?(player: number, tab: string): void, _owlAuto?: boolean,
     bootTimes?: Record<string, number>,
     /** Studio's map view reads the valley's boxes and round colliders (studio/ui/app.ts) */
@@ -35,6 +35,8 @@ declare global {
     svFeatureOn?: (id: string, def?: boolean) => boolean;
     /** the start-up bar before the title (js/launch.js) */
     svLaunchProgress?: (value: number, total: number, label?: string) => void;
+    /** the checks: speed up story films */
+    __svFilmRate?: number;
     /** older Safari */
     webkitAudioContext?: typeof AudioContext;
   }

@@ -22,6 +22,16 @@
   node_bundler = "esbuild"
   included_files = ["studio/version.json"]
 
+# Parent website at /home (and direct URL sparklevalley.au/home)
+[[redirects]]
+  from = "/home"
+  to = "/home/index.html"
+  status = 200
+[[redirects]]
+  from = "/home/*"
+  to = "/home/index.html"
+  status = 200
+
 # Sparkle Studio online: the same dashboard as SparkleStudio.exe (studio/ui), at /studio/
 [[redirects]]
   from = "/studio"

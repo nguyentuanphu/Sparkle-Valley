@@ -1,0 +1,58 @@
+[
+  {
+    "name": "phone",
+    "lang": "en",
+    "fits": true,
+    "targets": true,
+    "hit": true
+  },
+  {
+    "name": "phone",
+    "lang": "vi",
+    "fits": true,
+    "targets": true,
+    "hit": true
+  },
+  {
+    "name": "phone-split",
+    "lang": "en",
+    "fits": false,
+    "targets": true,
+    "hit": true
+  },
+  {
+    "name": "phone-split",
+    "lang": "vi",
+    "fits": false,
+    "targets": true,
+    "hit": true
+  },
+  {
+    "name": "tablet-split",
+    "lang": "en",
+    "fits": true,
+    "targets": true,
+    "hit": true
+  },
+  {
+    "name": "tablet-split",
+    "lang": "vi",
+    "fits": true,
+    "targets": true,
+    "hit": true
+  },
+  {
+    "name": "computer-split",
+    "lang": "en",
+    "fits": false,
+    "targets": true,
+    "hit": true
+  },
+  {
+    "name": "computer-split",
+    "lang": "vi",
+    "fits": false,
+    "targets": true,
+    "hit": true
+  }
+]

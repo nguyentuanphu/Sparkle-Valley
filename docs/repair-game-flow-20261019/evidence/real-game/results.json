@@ -1,0 +1,43 @@
+[
+  {
+    "shrine": {
+      "taps": 4,
+      "won": true,
+      "choices": 0
+    },
+    "twoPlayerRewards": [
+      {
+        "wins": 1,
+        "orbs": 1,
+        "games": 1
+      },
+      {
+        "wins": 1,
+        "orbs": 1,
+        "games": 1
+      }
+    ]
+  },
+  {
+    "folk": {
+      "taps": 4,
+      "won": true,
+      "choices": 0
+    }
+  },
+  {
+    "hub": {
+      "taps": 4,
+      "won": true,
+      "choices": 2
+    }
+  },
+  {
+    "simple": {
+      "taps": 4,
+      "won": true,
+      "choices": 2
+    },
+    "next": "simple"
+  }
+]
