@@ -7,14 +7,18 @@
 /**
  * @typedef {(kind: string, element?: Element | null) => void} PlayListener
  * @typedef {{ els: Element[], check?: (element: Element) => boolean }} PlayAsk
- * @typedef {() => Element | null | undefined} PlayPlan
+ * @typedef {{ el: Element, x: number, y: number, ms: number }} PlayPress
+ * @typedef {() => Element | PlayPress | null | undefined} PlayPlan
  * @typedef {{ on: PlayListener | null, ask: PlayAsk | null, plan: PlayPlan | null, maxActions: number }} PlayWatch
  */
 
 /** @type {PlayWatch} */
 export type PlayListener = (kind: string, element?: Element | null) => void;
 export type PlayAsk = { els: Element[]; check?: (element: Element) => boolean };
-export type PlayPlan = () => Element | null | undefined;
+// (r89) a plan may also ask for a press: hold a finger down at (x, y) on el (screen pixels) for ms, for games played by
+// holding and steering (Kite Flying)
+export type PlayPress = { el: Element; x: number; y: number; ms: number };
+export type PlayPlan = () => Element | PlayPress | null | undefined;
 export type PlayWatch = { on: PlayListener | null; ask: PlayAsk | null; plan: PlayPlan | null; maxActions: number };
 export const playWatch: PlayWatch = { on: null, ask: null, plan: null, maxActions: 0 };
 

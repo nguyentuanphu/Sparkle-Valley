@@ -201,6 +201,14 @@ async function swipe(x0, y0, x1, y1) {
   for (let k = 1; k <= 8; k++) { const x = x0 + (x1 - x0) * k / 8, y = y0 + (y1 - y0) * k / 8; if (finger) { finger.style.left = x + 'px'; finger.style.top = y + 'px'; } t.dispatchEvent(new PointerEvent('pointermove', o(x, y, 1))); await wait(30); }
   t.dispatchEvent(new PointerEvent('pointerup', o(x1, y1, 0)));
 }
+// a finger held down in one place for a while (games played by holding, like the kite), as a plan asks
+async function press(p: { el: Element, x: number, y: number, ms: number }) {
+  await fingerTo(p.x, p.y); if (!p.el.isConnected) return;
+  const o = (b: number) => ({ bubbles: true, cancelable: true, clientX: p.x, clientY: p.y, pointerId: 7, pointerType: 'touch', isPrimary: true, buttons: b });
+  p.el.dispatchEvent(new PointerEvent('pointerdown', o(1))); step_('press', label(p.el));
+  for (let t = 0; t < p.ms && p.el.isConnected; t += 50) { p.el.dispatchEvent(new PointerEvent('pointermove', o(1))); await wait(50); }
+  p.el.dispatchEvent(new PointerEvent('pointerup', o(0)));
+}
 // where a spot in the valley is on the screen (null: behind the camera or off the screen)
 function onScreen(x, y, z) {
   const h = hero(), cam = h && h.cam; if (!cam || !G.renderer) return null;
@@ -389,6 +397,7 @@ async function playGame(note): Promise<PlayResult> {
         }
       } else if (playWatch.plan) {
         pick = playWatch.plan();
+        if (pick && !(pick instanceof Element)) { await press(pick); r.taps++; continue; }
         if (!pick || !shown(pick) || pick.disabled) {
           if (Date.now() - last > s.idle * 1000) { r.cant = true; break; }
           continue; // wait for the next legal turn; never tap an occupied board at random
