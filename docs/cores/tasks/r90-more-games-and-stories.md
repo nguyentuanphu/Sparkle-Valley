@@ -1,6 +1,6 @@
 # r90: twice the games and stories, unlocked by playing (brief)
 
-Owner, 23 Oct 2026 AEDT, in the Release chat (pop-ups). **This is the whole of round r90**; r89 ships first with what
+Owner, 23 Oct 2026 AEDT, in the Release chat (pop-ups). **The full plan: [r90-plan.md](r90-plan.md).** **This is the whole of round r90**; r89 ships first with what
 is ready (website, houses, drawing games, autoplay fixes, launch pictures). Nothing here is built yet: the plan with
 the exact new games and stories goes to the owner (pop-up) before building.
 
