@@ -300,7 +300,7 @@ function addUI() {
     const z = hud.q && hud.q('.zoomer'); if (!z || z.querySelector('.z-lb')) return;
     const b = el('button', 'z-lb', `${pic('🐞')}<i class="lb-n" hidden></i><i class="lb-ok" hidden>✓</i><kbd class="kb">L</kbd>`); b.setAttribute('aria-label', T('Report a problem (hold: quick report)', 'Báo lỗi (giữ: báo nhanh)'));
     let t0 = 0, quick = null;
-    b.addEventListener('pointerdown', e => { e.stopPropagation(); t0 = performance.now(); quick = setTimeout(() => { quick = null; quickReport(String(i)); }, 700); });
+    b.addEventListener('pointerdown', e => { e.stopPropagation(); t0 = performance.now(); quick = setTimeout(() => { quick = null; quickReport('quick'); }, 700); });
     b.addEventListener('pointerup', e => { e.stopPropagation(); if (quick) { clearTimeout(quick); quick = null; if (fixedToSee().length) showFixed(); else openPanel(i); } });
     b.addEventListener('pointerleave', () => { if (quick) { clearTimeout(quick); quick = null; } });
     b.addEventListener('keydown', e => { if (e.key === 'Enter') openPanel(i); });

@@ -80,6 +80,7 @@ export async function storyQuestFlowCheck(browser: Browser): Promise<string> {
       for (const [lang, text] of [['en', 'Rồng con'], ['en', 'Lấp Lánh'], ['vi', 'Rồng con']] as const) {
         state.settings.lang = lang;
         for (const [slot, speaker] of [['f', 'Cô Tam'], ['m', 'Ông Cú']] as const) {
+          state.settings.voiceMale = slot === 'm';
           V.setSpeaker(speaker);
           // sayIn intentionally keeps this exact fixed name; full EN narration translates it via swapNames.
           await new Promise<void>((resolve, reject) => {

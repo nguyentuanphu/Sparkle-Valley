@@ -117,7 +117,7 @@ export function createLotus(G, { say, toast }) {
     lines[key] = line;
     m.userData.react = h => { sound(); a.wait = 2.5; G.fx && G.fx(m.position.x, m.position.y + 1, m.position.z, '💛'); talk(h, key); };
   };
-  [[-13, -22], [-15, -21], [-12, -20.5], [-14.5, -23]].forEach((p, i) => addAnimal('chicken', at(p[0], p[1]), 2.6, .5, () => SFX.cluck(), 'hen', ['A hen! Cluck, cluck! She is looking for seeds.', 'Con gà mái! Cục ta cục tác! Nó đang tìm hạt thóc.']));
+  [at(-13, -22), at(-15, -21), at(-12, -20.5), at(-14.5, -23)].forEach((home, i) => addAnimal('chicken', home, 2.6, .5, () => SFX.cluck(), 'hen', ['A hen! Cluck, cluck! She is looking for seeds.', 'Con gà mái! Cục ta cục tác! Nó đang tìm hạt thóc.']));
   addAnimal('puppy', at(22, 6), 3, .9, () => SFX.woof(), 'dog', ['The village dog! Woof woof! He is happy to see you.', 'Chú chó của làng! Gâu gâu! Nó vui khi gặp con.']);
   world.updaters.push((dt, t) => {
     if (!G.heroes.some(h => Math.abs(h.pos.x - V.x) < 70 && Math.abs(h.pos.z - V.z) < 70)) return; // nobody is near: they rest

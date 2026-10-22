@@ -32,7 +32,7 @@ register({
       const got = {}; const sumEl = tray.querySelector('.sum'), inTray = tray.querySelector('.coins');
       const show = () => { sumEl.textContent = Object.entries(got).map(([k, v]) => `${v} × ${k}`).join('   ') || T('Tap the food to put it in the basket', 'Chạm vào đồ ăn để cho vào giỏ'); };
       show();
-      await new Promise(res => {
+      await new Promise<void>(res => {
         Object.keys(want).concat(shuffle(FARM.filter(x => !want[x])).slice(0, api.level >= 3 ? 2 : 1)).forEach(k => {
           const b = el('button', 'choice', k); pile.appendChild(b);
           b.onclick = () => {
@@ -105,7 +105,7 @@ register({
       const row = el('div', 'choices'); api.stage.appendChild(row);
       const give = el('button', 'choice', '🥕'), done = el('button', 'choice go', '✅'), back = el('button', 'choice', '↩️'); row.append(back, give, done);
       let fed = 0;
-      const ok = await new Promise(res => {
+      const ok = await new Promise<boolean>(res => {
         give.onclick = () => { fed++; tum.insertAdjacentHTML('beforeend', '<i>🥕</i>'); sayIn(settings.lang, numWord(fed)); SFX.pop(fed); bunny.querySelector('.b').classList.remove('nom'); void bunny.offsetWidth; bunny.querySelector('.b').classList.add('nom'); };
         back.onclick = () => { if (!fed) return; fed--; tum.lastChild && tum.lastChild.remove(); SFX.tap(); };
         done.onclick = () => {
@@ -161,7 +161,7 @@ register({
       const [same, odd] = pick(ODD_SETS), k = api.level >= 3 ? 4 : 3;
       const items = shuffle([...shuffle(same.concat(same)).slice(0, k), odd[0]]);
       api.say('Which one is different? Find the odd one out!', 'Cái nào khác loại? Tìm cái khác các bạn còn lại nhé!');
-      const btns = choiceButtons(api, items, i => i);
+      const btns = choiceButtons(api, items, i => i as string);
       const b = await untilRight(api, btns, e => e._v === odd[0]); if (!b) return;
       api.say('Yes! That one does not belong!', 'Đúng rồi! Cái đó khác loại!'); await wait(1400);
     }
@@ -210,8 +210,8 @@ register({
       const sizes = Array.from({ length: n }, (_, i) => n - i);
       const btns = shuffle(sizes).map(s => { const b = el('button', 'block'); b._v = s; b.style.width = (40 + s * 22) + 'px'; b.style.background = BARS[s % BARS.length]; pool.appendChild(b); return b; });
       for (let i = 0; i < n; i++) {
-        const b = await untilRight(api, btns.filter(x => !x.disabled), e => e._v === sizes[i]); if (!b) return;
-        b.disabled = true; tw.prepend(b); SFX.pop(i);
+        const b = await untilRight(api, btns.filter(x => !x.disabled), e => (e as HTMLButtonElement & { _v: number })._v === sizes[i]); if (!b) return;
+        (b as HTMLButtonElement).disabled = true; tw.prepend(b); SFX.pop(i);
       }
       SFX.chime(); api.say('What a tall tower!', 'Tháp cao quá!'); await wait(1400);
     }
@@ -222,7 +222,7 @@ register({
 // ---------- Duckling maze: the same maze game with ducks ----------
 register({
   id: 'duckmaze', icon: '🦆', name: () => T('Duckling Maze', 'Vịt Con Tìm Mẹ'),
-  run(api) { return GAMES.maze.run(Object.assign(Object.create(api), { theme: 'duck' })); }
+  run(api) { return (GAMES as Record<string, { run(api: unknown): unknown }>).maze.run(Object.assign(Object.create(api), { theme: 'duck' })); }
 });
 
 // ---------- Hot-air balloon: tap to rise, bounce off clouds, fly through rings ----------
@@ -236,11 +236,11 @@ register({
     const W = () => cv.width = cv.clientWidth * devicePixelRatio, H = () => cv.height = cv.clientHeight * devicePixelRatio;
     W(); H();
     let y = .5, vy = 0, x = 0, got = 0, rings = [], clouds = [], last = performance.now(), done = false, flash = 0;
-    const tap = e => { e.preventDefault(); vy = -.55; SFX.flap ? SFX.flap() : SFX.jump(); };
+    const tap = e => { e.preventDefault(); vy = -.55; (SFX as typeof SFX & { flap?: () => void }).flap ? (SFX as typeof SFX & { flap?: () => void }).flap() : SFX.jump(); };
     cv.addEventListener('pointerdown', tap);
     api.onCleanup(() => { done = true; cv.removeEventListener('pointerdown', tap); });
     const spawn = () => { if (!rings.length || rings[rings.length - 1].x < x + 1.2) rings.push({ x: x + 2 + Math.random() * .4, y: .25 + Math.random() * .5, hit: false }); if (Math.random() < .02) clouds.push({ x: x + 2.2, y: Math.random() < .5 ? .08 + Math.random() * .1 : .82 + Math.random() * .1, s: .5 + Math.random() * .5 }); };
-    await new Promise(res => {
+    await new Promise<void>(res => {
       const frame = now => {
         if (done) return res();
         const dt = Math.min(.05, (now - last) / 1000); last = now;
@@ -282,7 +282,7 @@ register({
     api.say('Pop the bubbles! Find the ones with a star for a surprise.', 'Chọc vỡ bong bóng nào! Tìm bong bóng có ngôi sao để nhận bất ngờ nhé.');
     const box = el('div', 'bubbles'); api.stage.appendChild(box);
     let popped = 0; api.dots(goal, 0);
-    await new Promise(res => {
+    await new Promise<void>(res => {
       const timer = setInterval(() => {
         if (api.closed) { clearInterval(timer); return res(); }
         if (box.children.length > 9) return;

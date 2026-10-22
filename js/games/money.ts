@@ -66,9 +66,9 @@ body.calm .mg-pay.hint, body.calm .mg-jar.hint, body.calm .mg-shelf button.hint 
 
 // tap coins or notes from the purse into the tray until they add up to `want` (Heo Đất, Bé Bán Hàng). Too much is
 // gently refused (nothing is lost); an under-5 who waits or misses twice sees the next right one wiggle.
-function fill(api, { code, vals, want, tray, purse, show, onAdd }) {
-  return new Promise(res => {
-    let sum = 0, misses = 0, t = 0, fin = false;
+function fill(api, { code, vals, want, tray, purse, show, onAdd = undefined as ((sum: number) => void) | undefined }) {
+  return new Promise<boolean>(res => {
+    let sum = 0, misses = 0, t: ReturnType<typeof setTimeout> | number = 0, fin = false;
     const done = ok => { if (fin) return; fin = true; clearTimeout(t); res(ok); };
     api.onCleanup(() => done(false));
     const btns = vals.map(v => { const b = el('button', 'mg-pay', cash(code, v)); b._v = v; b.setAttribute('aria-label', fmt(v, code)); purse.appendChild(b); return b; });
@@ -173,7 +173,7 @@ register({
 
 // ---------- 4. Ba Hũ: share what you earn between the Save, Spend and Share jars ----------
 const JARS = [['🐷', 'Save', 'Để dành'], ['🛒', 'Spend', 'Tiêu'], ['🤝', 'Share', 'Chia sẻ']];
-const JAR_PLAN = [[3, [[1, 1, 1]]], [6, [[1, 1, 1]]], [10, [[5, 3, 2]]], [10, [[5, 3, 2], [4, 4, 2], [6, 3, 1]]], [12, [[2, 1, 1]]]];
+const JAR_PLAN: [number, number[][]][] = [[3, [[1, 1, 1]]], [6, [[1, 1, 1]]], [10, [[5, 3, 2]]], [10, [[5, 3, 2], [4, 4, 2], [6, 3, 1]]], [12, [[2, 1, 1]]]];
 register({
   id: 'bahu', icon: '🫙', name: () => T('Three Jars', 'Ba Hũ'),
   async run(api) {
@@ -190,10 +190,10 @@ register({
       else if (L === 4) api.say(`You earned ${te}! Put half in Save, and split the rest evenly between Spend and Share.`, `Con kiếm được ${tv}! Bỏ một nửa vào hũ Để dành, phần còn lại chia đều cho hũ Tiêu và hũ Chia sẻ.`);
       else api.say(`You earned ${te}! Put ${a[0]} in Save, ${b[0]} in Spend and ${c[0]} in Share.`, `Con kiếm được ${tv}! Bỏ ${a[1]} vào hũ Để dành, ${b[1]} vào hũ Tiêu và ${c[1]} vào hũ Chia sẻ.`);
       // tap a jar to drop one coin in; a jar that already has its share says so kindly
-      let misses = 0, t = 0;
+      let misses = 0, t: ReturnType<typeof setTimeout> | number = 0;
       const hint = () => { const k = got.findIndex((g, i) => g < want[i]); jars.forEach(j => j.classList.remove('hint')); if (k >= 0 && !api.closed) jars[k].classList.add('hint'); };
       const arm = () => { clearTimeout(t); if (api.little) t = setTimeout(hint, misses >= 2 ? 0 : HINT_AFTER); };
-      const ok = await new Promise(res => {
+      const ok = await new Promise<boolean>(res => {
         let fin = false; const done = v => { if (!fin) { fin = true; clearTimeout(t); res(v); } }; api.onCleanup(() => done(false));
         jars.forEach(j => j.onclick = () => {
           if (fin) return; const k = j._k;
@@ -228,7 +228,7 @@ register({
       const row = el('div', 'mg-row'); api.stage.appendChild(row);
       const envs = inside.map(notes => { const b = el('button', 'mg-env', pic('lixi')); b._notes = notes; b.setAttribute('aria-label', T('Red envelope', 'Bao lì xì')); row.appendChild(b); return b; });
       api.say('Happy Tết! Tap each red envelope to open it.', 'Chúc mừng năm mới! Chạm vào từng bao lì xì để mở nhé.');
-      const ok = await new Promise(res => {
+      const ok = await new Promise<boolean>(res => {
         let left = n, fin = false; const done = v => { if (!fin) { fin = true; res(v); } }; api.onCleanup(() => done(false));
         envs.forEach(b => b.onclick = () => { if (fin || b.classList.contains('open')) return; b.classList.add('open'); api.sfx.coin(); b.insertAdjacentHTML('beforeend', `<span class="mg-row">${b._notes.map(v => cash(code, v)).join('')}</span>`); if (--left === 0) later(api, () => done(true), 700); });
       });
@@ -310,10 +310,10 @@ register({
       draw();
       if (mode) { const [be, bv] = sp(budget, code); api.say(`Buy everything on the picture list with ${be}. Choose carefully!`, `Mua hết đồ trong danh sách hình với ${bv}. Chọn cẩn thận nhé!`); }
       else api.say('Buy the things on the picture list. Tap them on the shelf.', 'Mua những thứ trong danh sách hình. Chạm vào chúng trên kệ nhé.');
-      let misses = 0, t = 0;
+      let misses = 0, t: ReturnType<typeof setTimeout> | number = 0;
       const hint = () => { const b = btns.find(x => list.includes(x._g.k) && !bought.has(x._g.k) && !x.classList.contains('gone') && (mode < 2 || !x._g.big)); btns.forEach(x => x.classList.remove('hint')); if (b && !api.closed) b.classList.add('hint'); };
       const arm = () => { clearTimeout(t); if (api.little) t = setTimeout(hint, misses >= 2 ? 0 : HINT_AFTER); };
-      const ok = await new Promise(res => {
+      const ok = await new Promise<boolean>(res => {
         let fin = false; const done = v => { if (!fin) { fin = true; clearTimeout(t); res(v); } }; api.onCleanup(() => done(false));
         btns.forEach(b => b.onclick = () => {
           if (fin) return; const g = b._g;
@@ -390,7 +390,7 @@ register({
       }
       // a sunny day at a time: the plant grows and new coins appear on it
       const go = el('button', 'mg-go', `${pic('☀️')}<span>${T('Next day', 'Ngày mai')}</span>`); api.stage.appendChild(go);
-      const ok = await new Promise(res => {
+      const ok = await new Promise<boolean>(res => {
         let d = 0, fin = false; const done = v => { if (!fin) { fin = true; res(v); } }; api.onCleanup(() => done(false));
         go.onclick = () => {
           if (fin || d >= days) return; d++; api.sfx.coin(); drawCoins(steps[d]);
@@ -416,7 +416,7 @@ register({
 
 // ---------- 10. Đổi Hàng: trade without money, fairly ----------
 // [picture, English, Vietnamese, worth]
-const GOODS = [['🥚', 'an egg', 'một quả trứng', 1], ['🥕', 'a carrot', 'một củ cà rốt', 1], ['🌽', 'some corn', 'một bắp ngô', 2], ['🍎', 'an apple', 'một quả táo', 2],
+const GOODS: [string, string, string, number][] = [['🥚', 'an egg', 'một quả trứng', 1], ['🥕', 'a carrot', 'một củ cà rốt', 1], ['🌽', 'some corn', 'một bắp ngô', 2], ['🍎', 'an apple', 'một quả táo', 2],
   ['🍌', 'some bananas', 'một nải chuối', 2], ['🐟', 'a fish', 'một con cá', 3], ['🥥', 'a coconut', 'một quả dừa', 3], ['🍯', 'some honey', 'một hũ mật ong', 4]];
 const TRADERS = [['🐔', 'Mrs Hen', 'Cô Gà'], ['🐶', 'Mr Dog', 'Chú Chó'], ['🐐', 'Mr Goat', 'Chú Dê'], ['🦆', 'Mrs Duck', 'Cô Vịt']];
 const dots = n => '●'.repeat(n);
@@ -447,13 +447,13 @@ register({
         const meter = el('div', 'mg-sum'), tray = el('div', 'mg-tray'), shelf = el('div', 'mg-shelf'); api.stage.append(meter, tray, shelf);
         const gw = offer.map(g => g[1]).join(' and '), gv = offer.map(g => g[2]).join(' và ');
         api.say(`${tn} gives ${gw}, worth ${want} dots. Give things that add up to ${want} dots!`, `${tv} đưa ${gv}, đáng giá ${want} chấm. Con đưa những thứ cộng lại bằng ${want} chấm nhé!`);
-        let give = 0, misses = 0, t = 0;
+        let give = 0, misses = 0, t: ReturnType<typeof setTimeout> | number = 0;
         const draw = () => { meter.innerHTML = `${pic('⚖️')} <span class="mg-dots">${dots(give)}</span> / <span class="mg-dots">${dots(want)}</span>`; };
         const btns = basket.map(g => { const b = el('button', '', `${pic(g[0])}<span class="mg-dots">${dots(g[3])}</span>`); b._g = g; b.setAttribute('aria-label', T(g[1], g[2])); shelf.appendChild(b); return b; });
         const hint = () => { const b = btns.find(x => give + x._g[3] <= want); btns.forEach(x => x.classList.remove('hint')); if (b && !api.closed) b.classList.add('hint'); };
         const arm = () => { clearTimeout(t); if (api.little) t = setTimeout(hint, misses >= 2 ? 0 : HINT_AFTER); };
         draw();
-        const ok = await new Promise(res => {
+        const ok = await new Promise<boolean>(res => {
           let fin = false; const done = v => { if (!fin) { fin = true; clearTimeout(t); res(v); } }; api.onCleanup(() => done(false));
           btns.forEach(b => b.onclick = () => {
             if (fin) return; const g = b._g;

@@ -48,7 +48,7 @@ register({
       else api.say(`Today is ${DAYS[k][0]}. What is tomorrow?`, `Hôm nay là ${DAYS[k][1]}. Ngày mai là thứ mấy?`);
       const opts = shuffle([want, ...shuffle([0, 1, 2, 3, 4, 5, 6].filter(i => i !== want && i !== k)).slice(0, 2)]);
       // (tester's notes, 12 Oct) whole day names, never "THai" or "Mon", in cards that fit them
-      const btns = choiceButtons(api, opts, i => `<b>${T(DAYS[i][0], DAYS[i][1])}</b>`, 'choice big day');
+      const btns = choiceButtons(api, opts, i => `<b>${T(DAYS[i as number][0], DAYS[i as number][1])}</b>`, 'choice big day');
       const ok = await untilRight(api, btns, e => e._v === want); if (!ok) return;
       api.say(`${DAYS[want][0]}!`, `${DAYS[want][1]}!`); await wait(1200);
     }
@@ -147,7 +147,7 @@ register({
       const basket = el('div', 'eggbasket', `🧺 <b>0</b>`); api.stage.append(hay, basket);
       api.say(`The hens laid eggs in the hay! Find all ${n} eggs.`, `Gà mái đẻ trứng trong rơm! Tìm đủ ${numWord(n)} quả trứng nhé.`);
       let got = 0;
-      await new Promise(res => hay.querySelectorAll('.eggspot').forEach(s => s.onclick = () => {
+      await new Promise<void>(res => hay.querySelectorAll('.eggspot').forEach(s => s.onclick = () => {
         if (s._egg) { s._egg = false; s.textContent = '✨'; got++; basket.querySelector('b').textContent = got; api.right(s); api.say(`${got}`, numWord(got)); if (got === n) res(); }
         else { api.sfx.tap(); s.classList.add('wiggle'); setTimeout(() => s.classList.remove('wiggle'), 400); }
       }));
@@ -208,7 +208,7 @@ register({
       let x = 0, dir = 1, raf = 0, left = n, used = 0, speed = api.little ? .35 : .45 + api.level * .12, last = performance.now();
       const loop = now => { const dt = (now - last) / 1000; last = now; x += dir * speed * dt; if (x > 1) { x = 1; dir = -1; } if (x < 0) { x = 0; dir = 1; } aim.style.left = x * 100 + '%'; raf = requestAnimationFrame(loop); };
       raf = requestAnimationFrame(loop); api.onCleanup(() => cancelAnimationFrame(raf));
-      await new Promise(res => {
+      await new Promise<void>(res => {
         btn.onclick = async () => {
           if (btn.disabled) return; btn.disabled = true; used++;
           sandal.style.transition = 'none'; sandal.style.left = x * 100 + '%'; sandal.style.bottom = '0%'; void sandal.offsetWidth;

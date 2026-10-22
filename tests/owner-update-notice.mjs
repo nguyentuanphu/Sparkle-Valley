@@ -5,7 +5,8 @@
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { spawn, execFileSync } from 'node:child_process';
+import http from 'node:http';
+import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 const repoRoot = fileURLToPath(new URL('../', import.meta.url)), port = 8790 + Math.floor(Math.random() * 100), origin = `http://127.0.0.2:${port}`;
 import { chromium } from 'playwright';
@@ -18,11 +19,24 @@ for (const f of execFileSync('git', ['-C', repoRoot, 'ls-files', '-co', '--exclu
   if (f && !/^(voices|docs|tests|tools|studio|marketing|netlify)\//.test(f) && fs.existsSync(path.join(repoRoot, f)) && fs.statSync(path.join(repoRoot, f)).isFile()) { fs.mkdirSync(path.dirname(path.join(copy, f)), { recursive: true }); fs.copyFileSync(path.join(repoRoot, f), path.join(copy, f)); }
 // (r82, TypeScript) the .js made from each .ts is never committed, so the copy is built as the website builds it
 execFileSync(process.execPath, [path.join(repoRoot, 'tools/build.mts'), copy], { stdio: 'ignore' });
-const server = spawn('python3', ['-m', 'http.server', String(port), '--bind', '127.0.0.2'], { cwd: copy, stdio: 'ignore' });
+const types = { '.js': 'text/javascript', '.mjs': 'text/javascript', '.css': 'text/css', '.html': 'text/html', '.json': 'application/json', '.webmanifest': 'application/manifest+json', '.woff2': 'font/woff2', '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.mp3': 'audio/mpeg', '.mp4': 'video/mp4', '.svg': 'image/svg+xml' };
+const server = http.createServer((req, res) => {
+  try {
+    const pathname = decodeURIComponent(new URL(req.url, origin).pathname);
+    let f = pathname.endsWith('/') ? pathname + 'index.html' : pathname;
+    f = path.resolve(copy, '.' + f);
+    if (!f.startsWith(path.resolve(copy) + path.sep) && f !== path.resolve(copy)) { res.writeHead(403); return res.end(); }
+    if (!fs.existsSync(f) || !fs.statSync(f).isFile()) { res.writeHead(404); return res.end(); }
+    res.writeHead(200, { 'Content-Type': types[path.extname(f)] || 'application/octet-stream', 'Cache-Control': 'no-cache' });
+    fs.createReadStream(f).pipe(res);
+  } catch (e) { res.writeHead(500); res.end(); }
+});
+await new Promise((resolve, reject) => { server.once('error', reject); server.listen(port, '127.0.0.2', resolve); });
 const fail = m => { throw Error(m); }, result = {};
 const browser = await launch();
 try {
-  for (let i = 0; i < 50; i++) { try { await fetch(`${origin}/sw.js`); break; } catch { await new Promise(r => setTimeout(r, 200)); } }
+  const response = await fetch(`${origin}/sw.js`);
+  if (!response.ok) fail(`static server not ready at ${origin}: ${response.status}`);
   const A = await open(browser, { w: 390, h: 844, touch: true, url: origin + '/', play: false });
   const ready = p => p.waitForFunction(() => !!navigator.serviceWorker.controller, null, { timeout: 120000 });
   // the first visit installs the worker; reload once so it controls the page, then play
@@ -99,7 +113,7 @@ try {
   const errors = [...A.errors, ...B.errors].filter(e => !/peerjs|WebSocket/i.test(e)); if (errors.length) fail('errors: ' + errors.join(' | '));
   result.versions = [oldVersion, newVersion];
 } finally {
-  await browser.close(); server.kill(); fs.rmSync(copy, { recursive: true, force: true });
+  await browser.close(); server.closeAllConnections(); await new Promise(resolve => server.close(resolve)); fs.rmSync(copy, { recursive: true, force: true });
   if (shots) fs.writeFileSync(path.join(shots, 'update-notice-results.json'), JSON.stringify({ sourceCommit: execFileSync('git', ['-C', repoRoot, 'rev-parse', 'HEAD'], { encoding: 'utf8' }).trim(), capturedAt: new Date().toISOString(), result }, null, 2) + '\n');
 }
 console.log(JSON.stringify(result));

@@ -31,7 +31,7 @@ const TL = {
     const bPlay = t.querySelector('.play'), bPass = t.querySelector('.pass'), bHint = t.querySelector('.hint');
     const names = [T('You', 'Con'), T('Big Brother Ba', 'Anh Ba'), 'Con Vật'], faces = ['🙂', '🧑🏻', '👦🏻'];
     const cardHTML = (c, cls = '') => `<div class="tl-card ${c.s >= 2 ? 'red' : ''} ${cls}" data-v="${c.v}"><b>${RANKS[c.r]}</b><i>${SUITS[c.s]}</i></div>`;
-    const sleep = ms => new Promise(r => setTimeout(r, ms));
+    const sleep = ms => new Promise<void>(r => setTimeout(r, ms));
     const HANDS = little ? 2 : 3;
     let hands, table, lastBy, passed, turn, sel, finished, game = 0, firstHand = true, shown = null; // shown: cards dealt so far, while dealing
 
@@ -123,7 +123,7 @@ const TL = {
         if (turn === 0) {
           if (!table) say('Your turn: start a new round with any play.', 'Tới lượt con: đánh gì cũng được.'); else say('Your turn: beat it, or pass.', 'Tới lượt con: chặn bài, hay bỏ lượt.');
           if (little || api.level <= 1) hint();
-          await new Promise(r => { resolveTurn = r; }); resolveTurn = null;
+          await new Promise<void>(r => { resolveTurn = r; }); resolveTurn = null;
         } else {
           await sleep(little ? 1200 : 900); if (api.closed) return;
           const lazy = !strong && Math.random() < (little ? .45 : [.3, .2, .12, .06, 0][api.level - 1]);
@@ -193,7 +193,7 @@ async function tienlenOnline(api) {
     let cs = null;
     if (turn === me) {
       if (api.little) { const h = choose(hands[me], table && table.k, { strong: true }); sel = new Set(h ? h.map(c => c.v) : []); draw(); }
-      cs = await new Promise(res => {
+      cs = await new Promise<ReturnType<typeof card>[] | null>(res => {
         bPlay.onclick = () => { const x = hands[me].filter(c => sel.has(c.v)); if (beats(classify(x), table && table.k)) res(x); };
         bPass.onclick = () => { if (table) res(null); };
         bHint.onclick = () => { const h = choose(hands[me], table && table.k, { strong: true }); sel = new Set(h ? h.map(c => c.v) : []); draw(); api.sfx.tap(); };
@@ -201,7 +201,7 @@ async function tienlenOnline(api) {
       if (api.closed) return; sel = new Set(); O.move(step, cs ? enc(me, cs) : 0);
     } else {
       const m = await O.next(step, turn); if (api.closed) return;
-      if (m == null) { api.say('A friend left the game.', 'Một bạn đã rời trò chơi.'); await new Promise(r2 => setTimeout(r2, 1500)); return api.win({ title: T('Good game!', 'Chơi vui lắm!') }); }
+      if (m == null) { api.say('A friend left the game.', 'Một bạn đã rời trò chơi.'); await new Promise<void>(r2 => setTimeout(r2, 1500)); return api.win({ title: T('Good game!', 'Chơi vui lắm!') }); }
       cs = m ? dec(turn, m) : null; if (cs && !beats(classify(cs), table && table.k)) cs = null;
     }
     step++;

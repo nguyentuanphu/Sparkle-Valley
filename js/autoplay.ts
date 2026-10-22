@@ -187,7 +187,7 @@ async function tap(b, note) {
   // (#337-#349, r82: a tester filing a report while auto play ran) the tester's own report window and ladybird are not a
   // problem of the game's
   const tester = top && top.closest && top.closest('.tpanel, .z-lb');
-  if (top && top !== b && !b.contains(top) && !top.contains(b) && !(root && root.contains(top)) && !(box && box.contains(top)) && !tester && note) note(T('a button covered by something: ', 'một nút bị che: ') + label(b) + ' (' + label(top) + ')');
+    if (top && top !== b && !b.contains(top) && !top.contains(b) && !(root && root.contains(top)) && !(box && box.contains(top)) && !tester && note) note(T('a button covered by something: ', 'một nút bị che: ') + label(b) + ' (' + label(top) + ')');
   if (x < 0 || y < 0 || x > innerWidth || y > innerHeight) { if (note) note(T('a button off the screen: ', 'một nút ngoài màn hình: ') + label(b)); }
   step_('tap', label(b)); fire(b, x, y); click(b);
   return true;
@@ -197,8 +197,9 @@ async function swipe(x0, y0, x1, y1) {
   await fingerTo(x0, y0); const t = document.elementFromPoint(x0, y0); if (!t) return;
   const o = (x, y, b) => ({ bubbles: true, cancelable: true, clientX: x, clientY: y, pointerId: 7, pointerType: 'touch', isPrimary: true, buttons: b });
   t.dispatchEvent(new PointerEvent('pointerdown', o(x0, y0, 1))); step_('drag', label(t));
-  for (let k = 1; k <= 8; k++) { const x = x0 + (x1 - x0) * k / 8, y = y0 + (y1 - y0) * k / 8; if (finger) { finger.style.left = x + 'px'; finger.style.top = y + 'px'; } (document.elementFromPoint(x, y) || t).dispatchEvent(new PointerEvent('pointermove', o(x, y, 1))); await wait(30); }
-  (document.elementFromPoint(x1, y1) || t).dispatchEvent(new PointerEvent('pointerup', o(x1, y1, 0)));
+  // Synthetic pointers cannot acquire native capture; keep the drag on its initial target.
+  for (let k = 1; k <= 8; k++) { const x = x0 + (x1 - x0) * k / 8, y = y0 + (y1 - y0) * k / 8; if (finger) { finger.style.left = x + 'px'; finger.style.top = y + 'px'; } t.dispatchEvent(new PointerEvent('pointermove', o(x, y, 1))); await wait(30); }
+  t.dispatchEvent(new PointerEvent('pointerup', o(x1, y1, 0)));
 }
 // where a spot in the valley is on the screen (null: behind the camera or off the screen)
 function onScreen(x, y, z) {
@@ -365,8 +366,8 @@ async function playGame(note): Promise<PlayResult> {
   playWatch.on = k => { last = Date.now(); if (k === 'right') r.rights++; if (k === 'wrong') r.wrongs++; if (k === 'win') r.won = true; };
   const mo = new MutationObserver(() => { last = Date.now(); }); mo.observe(stage, { childList: true, subtree: true, attributes: true, characterData: true });
   const started = Date.now(); // A legal plan's bound includes normal thinking/finger time, not faster play.
-  try {
-    while ((Date.now() < started + apGameSeconds(s, playWatch.maxActions, run.quest ? 3 : 1) * 1000 || gl.querySelector('.gl-win')) && gl.isConnected && !gl.classList.contains('out')) {
+    try {
+      while ((Date.now() < started + apGameSeconds(s, playWatch.maxActions, run.quest ? 3 : 1) * 1000 || gl.querySelector('.gl-win')) && gl.isConnected && !gl.classList.contains('out')) {
       await hold(think()); if (!gl.isConnected) break;
       const win = gl.querySelector('.gl-win');
       if (win) { if (win.classList.contains('ask')) { const t = [win.querySelector('.gl-tapout'), win.querySelector('p'), win].find(shown); if (!t || !await tap(t, note)) await until(() => !gl.isConnected, 1); } continue; }
@@ -397,7 +398,7 @@ async function playGame(note): Promise<PlayResult> {
         if (all.length && !fresh.length) tried.clear();
         pick = fresh.length ? any(fresh) : all.length ? any(all) : null;
       }
-      const action = childAction(selectedProfile);
+            const action = playWatch.plan ? 'tap' : childAction(selectedProfile);
       if (pick && (action === 'tap' || action === 'wander')) {
         tried.add(pick);
         if (action === 'wander') await hold(rnd(.8, 2.2));
@@ -619,6 +620,11 @@ function style() {
 .ap-float .ap-float-speed span{white-space:nowrap}
 .ap-float{box-sizing:border-box;max-width:calc(100vw - 24px);flex-wrap:wrap;justify-content:center;border-radius:20px}.ap-float button{flex-shrink:0}.ap-float button:focus-visible{outline:3px solid #fff;outline-offset:2px}
 @media (max-width:480px){.ap-float{bottom:12px;padding:6px 8px;gap:6px}.ap-float button{min-width:64px;min-height:64px;padding:6px 8px;font-size:13px}.ap-float .ap-float-speed{padding:0 6px;font-size:12px}}
+/* In landscape there is little vertical room; keep the control rail out of the centred game controls. */
+body:has(.ap-float) .gl{bottom:calc(100px + env(safe-area-inset-bottom))}
+.ap-float{flex-wrap:nowrap;justify-content:flex-start;overflow-x:auto;bottom:calc(8px + env(safe-area-inset-bottom))}
+/* Reserve a separate lane rather than hiding genuine hit-target obstructions from the checker. */
+@media (orientation:landscape) and (max-height:600px){.ap-float{left:calc(8px + env(safe-area-inset-left));right:auto;top:calc(8px + env(safe-area-inset-top));bottom:calc(8px + env(safe-area-inset-bottom));transform:none;width:116px;max-width:116px;flex-direction:column;align-items:stretch;overflow-y:auto;border-radius:18px;padding:6px;gap:6px}.ap-float button{min-width:0;min-height:48px;padding:6px;font-size:12px}body:has(.ap-float) .gl{left:calc(132px + env(safe-area-inset-left));bottom:0}}
 @media (prefers-reduced-motion:reduce){.ap-float button{transition:none}}`;
   document.head.appendChild(s);
 }

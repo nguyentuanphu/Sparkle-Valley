@@ -117,7 +117,7 @@ register({
         const t = air ? air * (1 + misses * .3) : 0;
         ball.style.setProperty('--t', (t || 1600) + 'ms'); ball.classList.add(t ? 'toss' : 'float');
         let picked = [];
-        const caught = await new Promise(res => {
+        const caught = await new Promise<boolean>(res => {
           let timer = t ? setTimeout(() => finish(false), t) : null;
           const finish = v => { clearTimeout(timer); sticks.forEach(s => s.onclick = null); ball.onclick = null; res(v); };
           sticks.forEach(s => s.onclick = () => {
@@ -168,7 +168,7 @@ register({
       ans.innerHTML = '';
       const opts = api.little ? [right] : shuffle([right, wrong]);
       const bs = opts.map(o => { const b = el('button', 'pill big', '🐲 ' + T(o[0], o[1])); b._ok = o === right; ans.appendChild(b); return b; });
-      for (;;) { const b = await tapOne(bs); if (api.closed) return; if (b._ok) { api.right(b); lineSay.textContent = T(right[0], right[1]); api.say(right[0], right[1]); break; } api.wrong(b, 'Hmm, what does the dragon say?', 'Ừm, rồng rắn trả lời sao nhỉ?'); }
+      for (;;) { const b = await tapOne<HTMLButtonElement & { _ok?: boolean; _c?: string; _o?: number; _v?: number }>(bs); if (api.closed) return; if (b._ok) { api.right(b); lineSay.textContent = T(right[0], right[1]); api.say(right[0], right[1]); break; } api.wrong(b, 'Hmm, what does the dragon say?', 'Ừm, rồng rắn trả lời sao nhỉ?'); }
       await wait(2200); if (api.closed) return;
     }
     // Part 2: the doctor chases the tail. Tap the doctor to block him!
@@ -201,7 +201,7 @@ register({
     const { c, g, w, h } = makeCanvas(api, 1.05);
     const R = w * .3, cx = w / 2, cy = h * .4, mr = w * .032, home = { x: w / 2, y: h * .86 };
     const COLS = ['#ff5f7e', '#3cc7e8', '#ffd23f', '#7ee35a', '#b598ff', '#ff9f43', '#5fd3c9', '#ff7eb8'];
-    const balls = [{ x: home.x, y: home.y, vx: 0, vy: 0, r: mr * 1.3, col: '#f4f4ff', shooter: true }];
+    const balls: { x: number; y: number; vx: number; vy: number; r: number; col: string; shooter?: boolean; gone?: boolean; fade?: number }[] = [{ x: home.x, y: home.y, vx: 0, vy: 0, r: mr * 1.3, col: '#f4f4ff', shooter: true }];
     for (let i = 0; i < n; i++) { const a = i / n * Math.PI * 2 + rand(-.2, .2), d = i === 0 ? 0 : R * rand(.15, .55); balls.push({ x: cx + Math.cos(a) * d, y: cy + Math.sin(a) * d, vx: 0, vy: 0, r: mr, col: COLS[i % COLS.length] }); }
     // keep them from starting on top of each other
     for (let it = 0; it < 30; it++) for (const a of balls) for (const b of balls) if (a !== b) { const dx = b.x - a.x, dy = b.y - a.y, d = Math.hypot(dx, dy) || 1, m = a.r + b.r + 3; if (d < m) { const p = (m - d) / 2; a.x -= dx / d * p; a.y -= dy / d * p; b.x += dx / d * p; b.y += dy / d * p; } }
@@ -238,7 +238,7 @@ register({
       const sp = 6 + L / (w * .3) * 16; sh.vx = Math.cos(a) * sp * 60; sh.vy = Math.sin(a) * sp * 60; moving = true; shots++; api.sfx.whoosh();
     };
     let done;
-    const finished = new Promise(r => done = r);
+    const finished = new Promise<void>(r => done = r);
     const tick = now => {
       if (api.closed) return;
       const dt = Math.min(.033, (now - last) / 1000); last = now;
@@ -289,7 +289,7 @@ register({
     const key = e => { if (e.code === 'Space' || e.key === 'ArrowUp') { e.preventDefault(); jump(); } };
     addEventListener('keydown', key); api.onCleanup(() => removeEventListener('keydown', key));
     const J = .62; // seconds in the air
-    let done; const finished = new Promise(r => done = r);
+    let done; const finished = new Promise<void>(r => done = r);
     const kidY = () => jumpT < 0 ? 0 : Math.sin(Math.min(1, jumpT / J) * Math.PI) * h * .2;
     const drawRope = front => {
       const s = Math.sin(phase); if ((s >= 0) !== front) return;
@@ -343,8 +343,8 @@ register({
     const t = el('div', 'snap', `<div class="sn-uncles">👨🏻‍🦳 👴 👵</div><div class="sn-pile"><div class="sn-card prev"></div><div class="sn-card top"></div></div><div class="sn-score">🃏 <b>0</b>/${need}</div><button class="sn-btn">SNAP!</button>`);
     api.stage.appendChild(t);
     const prevEl = t.querySelector('.prev'), topEl = t.querySelector('.top'), btn = t.querySelector('.sn-btn'), scoreEl = t.querySelector('.sn-score b'), uncles = t.querySelector('.sn-uncles');
-    let won = 0, prev = null, top = null, since = 0, armed = false, timer = 0, done;
-    const finished = new Promise(r => done = r);
+    let won = 0, prev = null, top = null, since = 0, armed = false, timer: ReturnType<typeof setTimeout> | number = 0, done;
+    const finished = new Promise<void>(r => done = r);
     const show = () => { prevEl.textContent = prev || ''; topEl.textContent = top || ''; prevEl.classList.toggle('empty', !prev); topEl.classList.remove('flip'); void topEl.offsetWidth; topEl.classList.add('flip'); };
     const flip = () => {
       if (api.closed) return;
@@ -379,7 +379,7 @@ register({
     api.say('Tap the shuttlecock to kick it up! Do not let it touch the ground. Count your kicks!', 'Chạm vào quả cầu để đá lên! Đừng để cầu rơi xuống đất. Đếm số lần đá nhé!');
     const { c, g, w, h } = makeCanvas(api, .75);
     let x = w / 2, y = h * .3, vx = 0, vy = 0, kicks = 0, last = performance.now(), msg = '', msgT = 0, foot = 0, done;
-    const finished = new Promise(r => done = r), ground = h * .9;
+    const finished = new Promise<void>(r => done = r), ground = h * .9;
     const hitR = api.little ? 70 : 52;
     c.onpointerdown = e => {
       const q = local(c, e), r = q.r, px = q.x * w / r.width, py = q.y * h / r.height;

@@ -9,7 +9,7 @@ import { events } from './core/events.js';
 
 import { T, applyLang, nm, NPC_NAMES, defaultName } from './i18n.js';
 import { settings, saveSettings, profiles, exportBackup, importBackup, backupAge, farm, resetFarm, saveFarm, MAX_KIDS } from './state.js';
-import { say, voicePack, voiceDiag, allowMobilePack, voiceMisses, clearVoiceMisses, voicesFor, onVoices, hasVietnamese, FAMILY_PHRASES } from './voice.js';
+import { say, voicePack, voiceDiag, allowMobilePack, voiceMisses, clearVoiceMisses, voicesFor, onVoices, hasVietnamese, FAMILY_PHRASES, previewPackVoice } from './voice.js';
 
 import { SFX, Music } from './audio.js';
 import { fmt, cur } from './money.js';
@@ -110,6 +110,7 @@ function packStatusHTML() {
     ${voiceDiag.lastMiss ? `<p class="note warn">⚠️ ${T('Last time a recording could not play here', 'Lần trước máy này không phát được bản ghi')} (${esc(voiceDiag.lastMiss)}). ${T('Tap anywhere on the screen once, check the side switch is not on silent, then press ▶ below.', 'Chạm vào màn hình một lần, kiểm tra nút gạt bên hông không ở chế độ im lặng, rồi bấm ▶ bên dưới.')}</p>` : ''}
     <div class="actions"><button class="btn" data-pv="f">▶ 👩 ${T('Woman', 'Giọng nữ')}</button><button class="btn" data-pv="m">▶ 👨 ${T('Man', 'Giọng nam')}</button></div>
     <p class="note">${T('Women, girls and grandmas speak with the woman’s voice; men, boys and grandpas with the man’s.', 'Phụ nữ, bé gái và bà nói bằng giọng nữ; đàn ông, bé trai và ông nói bằng giọng nam.')}</p>
+    <label class="tog"><input type="checkbox" id="gVoiceMale" ${settings.voiceMale === true ? 'checked' : ''}> ${T('Download and use optional male voice recordings (off by default: female voices are used for all characters)', 'Tải và sử dụng bản ghi giọng nam tùy chọn (tắt mặc định: dùng giọng nữ cho tất cả nhân vật)')}</label>
     ${P ? `<label class="tog"><input type="checkbox" id="gPackCell" ${settings.packCell === true ? 'checked' : ''}> ${T('Download the rest of the voices on mobile data too (on Wi-Fi they download by themselves)', 'Tải phần giọng đọc còn lại cả bằng dữ liệu di động (khi có Wi-Fi giọng đọc tự tải)')}</label>` : ''}
     ${miss.length ? `<details class="g-miss"><summary>📝 ${T(`${miss.length} lines on this device had no recording yet`, `${miss.length} câu trên máy này chưa có bản ghi`)}</summary>
       <p class="note">${settings.countPlayers !== false ? T('They are sent by themselves, without children’s names, and recorded for the next update.', 'Các câu này tự được gửi đi, không kèm tên các con, và sẽ được thu cho bản cập nhật sau.') : T('Analytics is off on this device, so they are not sent. They are kept in the backup file (below).', 'Phân tích đang tắt trên máy này nên các câu không được gửi. Các câu được giữ trong tệp sao lưu (bên dưới).')}</p>
@@ -117,8 +118,21 @@ function packStatusHTML() {
       <button class="btn" id="gMissClear">🧹 ${T('Clear the list', 'Xóa danh sách')}</button></details>` : `<p class="note">✅ ${T('Every line said on this device so far had a recording.', 'Mọi câu đã nói trên máy này đều có bản ghi.')}</p>`}`;
 }
 function bindPackStatus(card, redraw) {
-  card.querySelectorAll('[data-pv]').forEach(b => b.onclick = () => { setSpeaker(b.dataset.pv === 'm' ? 'Chú Tư' : 'Cô Mai'); say('Hello! Welcome to Sparkle Valley.', 'Xin chào! Chào mừng con đến Thung Lũng Lấp Lánh.'); setTimeout(() => setSpeaker(null), 300); });
+  card.querySelectorAll('[data-pv]').forEach(b => b.onclick = () => {
+    previewPackVoice(b.dataset.pv);
+  });
   const c = card.querySelector('#gMissClear'); if (c) c.onclick = () => { clearVoiceMisses(); redraw(); };
+  const vm = card.querySelector('#gVoiceMale'); 
+  if (vm) vm.onchange = async () => { 
+    settings.voiceMale = vm.checked; 
+    saveSettings(); 
+    try {
+      const { startPack } = await import('./voicepack.js');
+      const P = voicePack();
+      if (P) startPack(P, () => {}, () => null);
+    } catch (e) {}
+    redraw(); 
+  };
   // (round R item 12, Voice & Audio) the voice pack on mobile data: a grown-up's yes or no (js/voice.js allowMobilePack)
   const pc = card.querySelector('#gPackCell'); if (pc) pc.onchange = () => allowMobilePack(pc.checked);
 }

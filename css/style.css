@@ -623,6 +623,35 @@ button { color: var(--text); }
 .hud.small .act { font-size: 14px; } .hud.small .act .ai { width: 44px; height: 44px; font-size: 24px; }
 @media (max-width: 700px) { .dk small { display: none; } .dk { width: 52px; height: 52px; } .dk.games { width: 66px; height: 66px; } .quest { max-width: 60%; } }
 
+/* Short phone landscape: keep every HUD cluster in its own edge lane. */
+@media (max-height: 480px) and (orientation: landscape) {
+  .hud { --pad: 6px; }
+  .hud-tl { max-width: 34%; gap: 2px; }
+  .hud .hearts { margin: -10px 0; }
+  .hud .chips { gap: 3px; }
+  .hud .chips .chip { height: 24px; padding: 0 6px; font-size: 11px; }
+  .hud-tr { gap: 2px; }
+  .hud .mini-wrap { width: 72px; height: 72px; }
+  .hud .zoom { gap: 3px; }
+  .hud .zoom button { width: 30px; height: 30px; font-size: 17px; }
+  .hud .clock { padding: 2px 7px; font-size: 11px; }
+  .hud .objective { top: calc(env(safe-area-inset-top) + 4px); max-width: 38%; padding: 4px 8px; font-size: 12px; }
+  .hud .dock { max-width: 48%; gap: 4px; }
+  .hud .dk { width: 46px; height: 46px; border-radius: 14px; }
+  .hud .dk.games { width: 56px; height: 56px; border-radius: 18px; }
+  .hud .dk span { font-size: 21px; }
+  .hud .dk.games span { font-size: 28px; }
+  .hud-br { max-width: 46%; gap: 5px; }
+  .hud .moves { gap: 6px; }
+  .hud .mv { width: 54px; height: 54px; font-size: 22px; }
+  .hud .mv.jump { width: 62px; height: 62px; font-size: 28px; }
+  .hud .act { max-width: 210px; padding: 5px 12px 5px 5px; font-size: 13px; }
+  .hud .act .ai { width: 40px; height: 40px; font-size: 21px; }
+  .hud .quest { top: calc(env(safe-area-inset-top) + 46px); max-width: 42%; }
+  .hud .htoast { bottom: 23%; max-width: 48%; white-space: normal; }
+  .hud .emotes { bottom: calc(env(safe-area-inset-bottom) + 64px); }
+}
+
 /* ---------- Games hub ---------- */
 .hub .card { max-width: 900px; }
 .hubgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
@@ -680,6 +709,9 @@ button { color: var(--text); }
 
 /* small screens and split screen: objective sits under the player card, clear of the minimap */
 .hud.small .quest { top: calc(var(--pad) + env(safe-area-inset-top) + 48px); left: var(--pad); transform: none; max-width: calc(100% - 122px); }
+@media (max-width: 500px) {
+  .hud.small .hud-tl:has(.kidrow:not(:empty)) ~ .quest { top: calc(var(--pad) + env(safe-area-inset-top) + 104px); }
+}
 .hud.small .quest.new { animation: none; }
 .hud.small .chips { display: none; }
 .hud.small .dk.chat, .hud.small .dk.mus, .hud.small .dk.snd { display: none; }
@@ -2643,11 +2675,12 @@ details.ocard.friends:not([open]) > summary::after { transform: rotate(-90deg); 
 }
 
 /* Settings keep their header/footer outside the scrolling body, so Save never covers a note. */
-.grownups .card { height:min(900px,calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 28px)); overflow:hidden; padding-bottom:18px; }
-.grownups .card > h2, .grownups .card > .x { flex:none; }
-.grownups-body { flex:1; min-height:0; overflow-y:auto; display:flex; flex-direction:column; gap:16px; padding-bottom:16px; }
+.grownups .card { height:min(900px,calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 28px)); overflow:hidden; padding-top:14px; padding-bottom:18px; }
+.grownups .card > h2 { flex:none; background:transparent; padding:0 58px 0 4px; box-shadow:none; border:none; text-shadow:none; }
+.grownups .card > .x { position:absolute; top:12px; right:12px; z-index:3; flex:none; background:rgba(255, 255, 255, .85); backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px); box-shadow:var(--shadow); }
+.grownups-body { flex:1; min-height:0; overflow-y:auto; display:flex; flex-direction:column; gap:16px; padding:6px 4px 16px; }
 .grownups-body > * { flex-shrink:0; }
-.grownups #gDone { position:static; flex:none; margin:4px auto 0; box-shadow:none; }
+.grownups #gDone { position:static; flex:none; margin:8px auto 0; background:var(--cyan); box-shadow:var(--shadow); z-index:2; }
 .wardrobe-content .whead .x { font-size:16px; min-width:64px; }
 
 /* Shared ladybird shell: tab state is separate from a running check or report draft. */
@@ -2803,11 +2836,18 @@ body:has(.modal:not(.out), .gl, .wardrobe, .audio-tray, .dialog:not(.out), .stor
 /* (r79 A6, owner 16 Oct: "Big pictures" and "Trick" sat lower than the player card and off centre) on a phone they sit
    on the same level as the player card, centred on it, and "Big pictures" keeps its whole name */
 .hud.small .hud-tl { align-items: center; }
-.hud.small .hud-tl > .simplesw, .hud.small .hud-tl > .kidrow { align-self: center; margin-top: 0; }
+.hud.small .hud-tl > .hud-btns { display: flex; flex-direction: row; gap: 4px; align-items: center; }
+.hud.small .hud-tl > .hud-btns > .simplesw, .hud.small .hud-tl > .hud-btns > .homebtn, .hud.small .hud-tl > .kidrow { align-self: center; margin-top: 0; }
 .hud.small .hud-tl > .kidrow { flex-wrap: nowrap; }
+/* Stack Home below Big pictures to leave room beside the player card for companion actions. */
+@media (max-width: 500px) {
+  .hud.small .hud-tl { flex-wrap: nowrap; max-width: calc(100vw - 108px); align-items: flex-start; }
+  .hud.small .hud-tl > .hud-btns { flex-direction: column; flex: none; }
+  .hud.small .hud-tl > .pcard, .hud.small .hud-tl > .kidrow { align-self: flex-start; margin-top: 2px; flex: none; }
+}
 .hud.small .simplesw { width: auto; min-width: 56px; min-height: 48px; padding: 4px 8px; }
 /* the parent website Home button on a phone: a small picture with its name under it, beside "Big pictures" */
-.hud.small .hud-tl > .homebtn { align-self: center; margin-top: 0; }
+.hud.small .hud-tl > .hud-btns > .homebtn { align-self: center; margin-top: 0; }
 .hud.small .homebtn { flex-direction: column; gap: 0; width: 52px; min-height: 48px; padding: 4px 2px; border-radius: 16px; font-size: 10px; line-height: 1.1; }
 .hud.small .homebtn .ico { width: 26px; height: 26px; }
 .hud.small .homebtn b { font-weight: 800; white-space: nowrap; }

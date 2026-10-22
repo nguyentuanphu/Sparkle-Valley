@@ -56,7 +56,7 @@ register({
     api.say('Hold your finger down to pull the string and make the kite fly up. Move your finger to steer. Catch the stars!', 'Giữ ngón tay để kéo dây cho diều bay lên. Di ngón tay để lái diều. Bắt các ngôi sao nhé!');
     const { c, g, w, h } = makeCanvas(api, .72);
     let kx = w / 2, ky = h * .5, vx = 0, vy = 0, hold = false, fx = w / 2, got = 0, last = performance.now(), wind = 0, windT = 0, done;
-    const finished = new Promise(r => done = r);
+    const finished = new Promise<void>(r => done = r);
     const stars = [], birds = [];
     const addStar = () => stars.push({ x: rand(30, w - 30), y: rand(20, h * .55), t: 0 });
     for (let k = 0; k < 3; k++) addStar();
@@ -112,7 +112,7 @@ register({
     const hop = k => { if (air[k] > 0 || place.includes(k)) return false; air[k] = .45; pos[k] = Math.min(100, pos[k] + (k === 0 ? 4.5 : 4.2)); return true; };
     btn.onclick = () => { if (hop(0)) api.sfx.jump(); else { api.sfx.no(); btn.classList.remove('wrong'); void btn.offsetWidth; btn.classList.add('wrong'); } };
     let last = performance.now(), aiT = [0, 0], done;
-    const finished = new Promise(r => done = r);
+    const finished = new Promise<void>(r => done = r);
     const tick = now => {
       if (api.closed) return;
       const dt = Math.min(.05, (now - last) / 1000); last = now;
@@ -141,7 +141,7 @@ register({
     const { c, g, w, h } = makeCanvas(api, .75);
     const btn = el('button', 'pill big swingbtn', '🏏 ' + T('Swing!', 'Vung gậy!')); api.stage.appendChild(btn);
     let runs = 0, ball = null, swingT = -1, msg = '', msgT = 0, bowled = 0, last = performance.now(), wait0 = 1, hitBall = null, done;
-    const finished = new Promise(r => done = r);
+    const finished = new Promise<void>(r => done = r);
     const speed = api.little ? .45 : [.55, .65, .75, .85, .95][api.level - 1];
     const win0 = api.little ? .22 : [.17, .14, .12, .1, .09][api.level - 1];
     btn.onclick = () => { if (swingT < 0) { swingT = 0; api.sfx.whoosh(); } };
@@ -226,7 +226,7 @@ register({
         const n = 2 + Math.floor(Math.random() * (api.level + 3)), opts = shuffle([n, n + 1, Math.max(1, n - 1)]);
         msg.innerHTML = `${T('How many?', 'Có bao nhiêu?')} <span class="pq">${pz.repeat(n)}</span>`;
         const row = el('div', 'choices'); const bs = opts.map(o => { const b = el('button', 'choice', String(o)); b._v = o; row.appendChild(b); return b; }); w.appendChild(row);
-        for (;;) { const b = await tapOne(bs); if (api.closed) return; if (b._v === n) { api.right(b); break; } api.wrong(b); }
+        for (;;) { const b = await tapOne<HTMLButtonElement & { _ok?: boolean; _c?: string; _o?: number; _v?: number }>(bs); if (api.closed) return; if (b._v === n) { api.right(b); break; } api.wrong(b); }
         await wait(700); row.remove();
       } else { await wait(1700); card.remove(); }
     }
@@ -281,14 +281,14 @@ register({
         api.stage.appendChild(el('div', 'wq', `<div class="wq-flag">🇦🇺</div><div class="wq-word">"${s[0]}"</div><div class="wq-ex">${s[4]}</div>`));
         api.say(`What does ${s[0]} mean?`, `"${s[0]}" nghĩa là gì?`);
         const row = el('div', 'choices'); const bs = opts.map(o => { const b = el('button', 'choice wq-opt', `<b>${o[3]}</b>${T(o[1], o[2])}`); b._ok = o === s; row.appendChild(b); return b; }); api.stage.appendChild(row);
-        for (;;) { const b = await tapOne(bs); if (api.closed) return; if (b._ok) { api.right(b); api.say(`Yes! ${s[0]} means ${s[1]}.`, `Đúng rồi! "${s[0]}" nghĩa là ${s[2]}.`); break; } api.wrong(b); }
+        for (;;) { const b = await tapOne<HTMLButtonElement & { _ok?: boolean; _c?: string; _o?: number; _v?: number }>(bs); if (api.closed) return; if (b._ok) { api.right(b); api.say(`Yes! ${s[0]} means ${s[1]}.`, `Đúng rồi! "${s[0]}" nghĩa là ${s[2]}.`); break; } api.wrong(b); }
       } else {
         const wd = pick(VN_WORDS.filter(x => x[2] !== x[4] || x[2] !== x[3])), rg = pick(REG), right = wd[rg[3]];
         const opts = shuffle([...new Set([wd[2], wd[3], wd[4]])]);
         api.stage.appendChild(el('div', 'wq', `<div class="wq-flag">🇻🇳</div><div class="wq-pic">${wd[0]}</div><div class="wq-word">${T(`In ${rg[2]} of Vietnam, what do people call this?`, `${rg[1]} gọi cái này là gì?`)}</div>`));
         api.say(`In ${rg[2]} of Vietnam, what do people call a ${wd[1]}?`, `${rg[1]} gọi cái này là gì?`);
         const row = el('div', 'choices'); const bs = opts.map(o => { const b = el('button', 'choice wq-opt', o); b._ok = o === right || right.split(' / ').includes(o); row.appendChild(b); return b; }); api.stage.appendChild(row);
-        for (;;) { const b = await tapOne(bs); if (api.closed) return; if (b._ok) { api.right(b); break; } api.wrong(b, 'Close! Each region has its own word.', 'Gần đúng rồi! Mỗi miền có một từ riêng.'); }
+        for (;;) { const b = await tapOne<HTMLButtonElement & { _ok?: boolean; _c?: string; _o?: number; _v?: number }>(bs); if (api.closed) return; if (b._ok) { api.right(b); break; } api.wrong(b, 'Close! Each region has its own word.', 'Gần đúng rồi! Mỗi miền có một từ riêng.'); }
         api.stage.appendChild(el('div', 'wq-all', `Bắc: <b>${wd[2]}</b> · Trung: <b>${wd[3]}</b> · Nam: <b>${wd[4]}</b>`));
         sayIn('vi', `Miền Bắc: ${wd[2]}. Miền Trung: ${wd[3]}. Miền Nam: ${wd[4]}.`);
       }

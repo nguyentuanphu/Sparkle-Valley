@@ -34,9 +34,11 @@ export class Hud {
       <div class="hud-tl">
         <div class="pcard" role="button" aria-label="${T('Settings', 'Cài đặt')}"><img class="pav" alt=""><i class="pgear">${ICONS.gear}</i><div class="pinfo"><b class="pname"></b><div class="hearts"></div></div></div>
         <div class="chips"><button class="chip c-money" data-chip="money" title="${T('Coins', 'Đồng xu')}"></button><button class="chip c-orbs" data-chip="orbs" title="${T('Sparkle Orbs', 'Ngọc Lấp Lánh')}"></button><button class="chip c-leafy" data-chip="leafy" title="${T('Leafies', 'Bạn Lá')}"></button></div>
-        <button class="simplesw" aria-label="${T('Big pictures screen', 'Màn hình hình to')}"><span>${ICONS.bigTiles}</span><b>${T('Big pictures', 'Hình to')}</b></button>
-            <button class="homebtn" aria-label="${T('Parent website', 'Trang web phụ huynh')}"><span>${ICONS.info}</span><b>${T('Home', 'Trang chủ')}</b></button>
-          </div>
+        <div class="hud-btns">
+          <button class="simplesw" aria-label="${T('Big pictures screen', 'Màn hình hình to')}"><span>${ICONS.bigTiles}</span><b>${T('Big pictures', 'Hình to')}</b></button>
+          <button class="homebtn" aria-label="${T('Parent website', 'Trang web phụ huynh')}"><span>${ICONS.info}</span><b>${T('Home', 'Trang chủ')}</b></button>
+        </div>
+      </div>
       <div class="quest">
         <button class="q-say" aria-label="${T('Hear the goal again', 'Nghe lại nhiệm vụ')}"><span class="q-icon">📍</span><span class="q-text"></span></button>
         <button class="q-go">▶ ${T('Go', 'Đi')}<kbd class="kb">F</kbd></button>

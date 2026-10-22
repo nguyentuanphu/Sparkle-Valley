@@ -4263,7 +4263,7 @@ await check('gameends', async () => {
     dispatchEvent(new Event('pagehide')); return { a, build: BUILD, named: !!a && names.some(n => JSON.stringify(a).includes(n)), cleared: localStorage.getItem('sv2_alive') === null }; });
   const errs = [...P.errors]; await P.ctx.close();
   const after = async note => { const Q = await open(b, { w: 900, h: 640, pre: `try { localStorage.setItem(${JSON.stringify(note[0])}, ${JSON.stringify(JSON.stringify(note[1]))}); } catch (e) { }` }); await clear(Q.page);
-    const e = await Q.page.evaluate(() => { const o = JSON.parse(localStorage.getItem('sv2_hello_out') || '{"days":{}}'); return Object.values(o.days).flatMap(d => Object.keys(d.e || {})); });
+    const e = await Q.page.evaluate(() => { const key = navigator.webdriver ? 'sv2_bot_telemetry' : 'sv2_hello_out', o = JSON.parse(localStorage.getItem(key) || '{"days":{}}'); return Object.values(o.days).flatMap(d => Object.keys(d.e || {})); });
     errs.push(...Q.errors); await Q.ctx.close(); return e; };
   const killed = await after(['sv2_alive', { w: 'village', mb: 310, b: 'r83' }]), reloaded = await after(['sv2_reload', { why: '3D picture lost', w: 'hanoi bag', mb: 290, b: 'r83' }]);
   ok(live.a && live.a.b === live.build && typeof live.a.w === 'string' && live.a.w.length && !live.named && live.cleared, 'the note while playing: ' + JSON.stringify(live));
@@ -5353,13 +5353,13 @@ await check('battery', async () => {
   // the statistics: one minute's sample goes into the outbox and is sent with Analytics on; with it off, nothing
   const sent = [];
   await P.page.route('**/api/hello', async r => { sent.push(r.request().postDataJSON()); await r.fulfill({ status: 204 }); });
-  const stats = await P.page.evaluate(async () => { const M = await import('/js/players.js'), S = await import('/js/state.js'), out = () => JSON.parse(localStorage.getItem('sv2_hello_out') || '{"days":{}}');
+  const stats = await P.page.evaluate(async () => { const M = await import('/js/players.js'), S = await import('/js/state.js'), key = navigator.webdriver ? 'sv2_bot_telemetry' : 'sv2_hello_out', out = () => JSON.parse(localStorage.getItem(key) || '{"days":{}}');
     S.settings.countPlayers = true; M.sampleDrawing(__sv); const on = Object.values(out().days).map(d => d.b).filter(Boolean)[0] || null;
     const sentOn = await M.flush(false);
     // a minute with nothing moving: no playing frames (frames a second stay about playing), the minute counts as idle
-    localStorage.removeItem('sv2_hello_out'); __sv.battery.take(); __sv.battery.input = __sv.battery.moved = -1e9; __sv.battery.idle = true;
+    localStorage.removeItem(key); __sv.battery.take(); __sv.battery.input = __sv.battery.moved = -1e9; __sv.battery.idle = true;
     await new Promise(r => setTimeout(r, 2500)); M.sampleDrawing(__sv); const idleOnly = Object.values(out().days).map(d => d.b).filter(Boolean)[0] || null; __sv.battery.input = performance.now(); __sv.battery.idle = false;
-    localStorage.removeItem('sv2_hello_out'); S.settings.countPlayers = false; await new Promise(r => setTimeout(r, 1500)); M.sampleDrawing(__sv);
+    localStorage.removeItem(key); S.settings.countPlayers = false; await new Promise(r => setTimeout(r, 1500)); M.sampleDrawing(__sv);
     const off = Object.values(out().days).some(d => d.b); const sentOff = await M.flush(false); S.settings.countPlayers = true;
     return { on, idleOnly, sentOn, off, sentOff, pr100: Math.round(__sv.renderer.getPixelRatio() * 100) }; });
   const errs = P.errors; await P.ctx.close();
@@ -6280,7 +6280,7 @@ await check('stickers', async () => {
       out.sizes = { minTab: Math.round(minTab), minTile: Math.round(minTile) };
       out.inView = qa('.stk-tile').every(e => rect(e).left >= 0 && rect(e).right <= innerWidth + 1);
       // tapping a sticker: its name (both languages: the chosen one and the other) and the New! badge goes
-      said.length = 0; q('[data-sid=hen]').click(); await wait(900);
+      said.length = 0; q('[data-sid=hen]').click(); await wait(1600);
       out.henSaid = said.slice(); out.henSeen = !SB.freshIds(hero).includes('hen') && !q('[data-sid=hen] .stk-new');
       // tapping a missing one says its hint
       said.length = 0; const miss = q('.stk-tile.miss'); const missId = miss.dataset.miss; miss.click(); await wait(400);

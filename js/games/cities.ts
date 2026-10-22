@@ -20,7 +20,7 @@ register({
       const pond = el('div', 'cg-pond', `<div class="cg-pavilion">🏯</div><div class="cg-water"></div>`); api.stage.appendChild(pond);
       const bs = pool.map((p, k) => { const b = el('button', 'cg-puppet', p[0]); b.style.setProperty('--d', (k * .35) + 's'); b._ok = p === want; pond.querySelector('.cg-water').appendChild(b); return b; });
       api.say(`Where is ${want[1]}?`, `${want[2].charAt(0).toUpperCase() + want[2].slice(1)} đâu rồi?`);
-      for (;;) { const b = await tapOne(bs); if (api.closed) return; if (b._ok) { api.right(b); b.classList.add('jump'); api.say(`Splash! ${want[1]} dances!`, `Tõm! ${want[2]} nhảy múa!`); break; } api.wrong(b, `That is not ${want[1]}. Look again!`, `Không phải ${want[2]}. Nhìn lại nhé!`); }
+      for (;;) { const b = await tapOne<HTMLButtonElement & { _ok?: boolean; _c?: string; _o?: number; _v?: number }>(bs); if (api.closed) return; if (b._ok) { api.right(b); b.classList.add('jump'); api.say(`Splash! ${want[1]} dances!`, `Tõm! ${want[2]} nhảy múa!`); break; } api.wrong(b, `That is not ${want[1]}. Look again!`, `Không phải ${want[2]}. Nhìn lại nhé!`); }
       await wait(1700);
     }
     api.dots(rounds, rounds); return api.win({ title: T('Bravo, puppet master!', 'Hoan hô nghệ nhân múa rối!') });
@@ -64,7 +64,7 @@ register({
         const row = el('div', 'choices'); const bs = shuffle(choices).map(c => { const b = el('button', 'choice dh-col', `<i style="background:${DH_COLS[c][0]}"></i>`); b._c = c; row.appendChild(b); return b; });
         wrap.querySelector('.dh-pal')?.remove(); row.classList.add('dh-pal'); api.stage.appendChild(row);
         api.show('Which colour goes on the glowing part?', 'Phần đang sáng tô màu gì?');
-        for (;;) { const b = await tapOne(bs); if (api.closed) return; if (b._c === want) { api.right(b); shape.setAttribute('fill', DH_COLS[want][0]); shape.classList.remove('dh-now'); api.say(T(DH_COLS[want][1], DH_COLS[want][2]), DH_COLS[want][2]); break; } api.wrong(b, 'Look at the sample picture!', 'Nhìn tranh mẫu nhé!'); }
+        for (;;) { const b = await tapOne<HTMLButtonElement & { _ok?: boolean; _c?: string; _o?: number; _v?: number }>(bs); if (api.closed) return; if (b._c === want) { api.right(b); shape.setAttribute('fill', DH_COLS[want][0]); shape.classList.remove('dh-now'); api.say(T(DH_COLS[want][1], DH_COLS[want][2]), DH_COLS[want][2]); break; } api.wrong(b, 'Look at the sample picture!', 'Nhìn tranh mẫu nhé!'); }
         row.remove(); await wait(700);
       }
       api.say(`Beautiful! You printed ${pic.en}, just like Đông Hồ painters.`, `Đẹp quá! Con đã in tranh ${pic.vi}, giống nghệ nhân Đông Hồ.`);
@@ -90,7 +90,7 @@ register({
       const opts = shuffle([n, ...shuffle([n - 1, n + 1, n + 2, n - 2].filter(x => x > 0 && x <= max + 2)).slice(0, api.little ? 1 : 2)]);
       const row = el('div', 'choices'); const bs = opts.map(o => { const b = el('button', 'choice big', String(o)); b._o = o; row.appendChild(b); return b; }); api.stage.appendChild(row);
       api.say(`How many ${water ? 'splashes of water' : 'puffs of fire'}?`, `Rồng phun mấy lần ${water ? 'nước' : 'lửa'}?`);
-      for (;;) { const b = await tapOne(bs); if (api.closed) return; if (b._o === n) { api.right(b); api.say(`${numWord(n, 'en')}! Roar!`, `${numWord(n, 'vi')}! Gầm gừ!`); break; } api.wrong(b, 'Count them again!', 'Đếm lại nhé!'); }
+      for (;;) { const b = await tapOne<HTMLButtonElement & { _ok?: boolean; _c?: string; _o?: number; _v?: number }>(bs); if (api.closed) return; if (b._o === n) { api.right(b); api.say(`${(numWord as (n: number, lang?: string) => string)(n, 'en')}! Roar!`, `${(numWord as (n: number, lang?: string) => string)(n, 'vi')}! Gầm gừ!`); break; } api.wrong(b, 'Count them again!', 'Đếm lại nhé!'); }
       await wait(1600);
     }
     api.dots(rounds, rounds); return api.win({ title: T('The dragon is your friend!', 'Rồng là bạn của con rồi!') });
@@ -138,7 +138,7 @@ register({
       api.stage.appendChild(el('div', 'cg-ferry', `<div class="cg-boat">⛴️<b>${want[0]}</b></div>`));
       const row = el('div', 'choices'); const bs = ws.map(w => { const b = el('button', 'choice cg-wharf', `<span>${w[0]}</span><small>${T('Wharf', 'Bến')}</small>`); b._ok = w === want; row.appendChild(b); return b; }); api.stage.appendChild(row);
       api.say(`This ferry goes to ${want[1]}. Which wharf?`, `Phà này đi ${want[2]}. Bến nào nhỉ?`);
-      for (;;) { const b = await tapOne(bs); if (api.closed) return; if (b._ok) { api.right(b); api.stage.querySelector('.cg-boat').classList.add('sail'); api.say('Toot toot! All aboard!', 'Tu tu! Lên phà nào!'); break; } api.wrong(b, 'Look at the picture on the ferry!', 'Nhìn hình trên phà nhé!'); }
+      for (;;) { const b = await tapOne<HTMLButtonElement & { _ok?: boolean; _c?: string; _o?: number; _v?: number }>(bs); if (api.closed) return; if (b._ok) { api.right(b); api.stage.querySelector('.cg-boat').classList.add('sail'); api.say('Toot toot! All aboard!', 'Tu tu! Lên phà nào!'); break; } api.wrong(b, 'Look at the picture on the ferry!', 'Nhìn hình trên phà nhé!'); }
       await wait(1600);
     }
     api.dots(rounds, rounds); return api.win({ title: T('Ferry captain!', 'Thuyền trưởng giỏi!') });

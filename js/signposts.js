@@ -87,7 +87,9 @@ function postSpot(J, colliders, BOXES) {
   for (const r of [6, 7.5, 9, 11, 13]) for (let a = 0; a < 16; a++) {
     const ang = (a + .5) / 16 * Math.PI * 2, x = J.x + Math.cos(ang) * r, z = J.z + Math.sin(ang) * r, q = roadDist(x, z);
     if (q.d <= (q.road ? q.road.w / 2 : 0) + 1.2 || heightAt(x, z) <= WATER + .3) continue;
-    if (BOXES.some(B => x > B.x0 - 1 && x < B.x1 + 1 && z > B.z0 - 1 && z < B.z1 + 1)) continue;
+    // Reserve the full arrow reach plus a solid-grid cell, not just the post: raised plot ground can meet a board.
+    const clearance = .15 + BOARD_L + TIP + .5;
+    if (BOXES.some(B => x > B.x0 - clearance && x < B.x1 + clearance && z > B.z0 - clearance && z < B.z1 + clearance)) continue;
     if (colliders.some(c => Math.hypot(c.x - x, c.z - z) < c.r + .9)) continue;
     return { x, z };
   }

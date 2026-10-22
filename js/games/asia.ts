@@ -25,7 +25,7 @@ register({
       api.stage.querySelector('.fw-hear').onclick = hear;
       api.say(`In ${L.name.en}, how do you say this word? Listen!`, `Trong ${L.name.vi}, từ này là gì? Nghe nhé!`); await wait(1600); hear();
       const row = el('div', 'choices'); const bs = opts.map(o => { const b = el('button', 'choice', o[0]); b._ok = o === w; row.appendChild(b); return b; }); api.stage.appendChild(row);
-      for (;;) { const b = await tapOne(bs); if (api.closed) return; if (b._ok) { api.right(b); api.say(`Yes! ${w[4]} means ${w[1]}.`, `Đúng rồi! ${w[4]} nghĩa là ${w[2]}.`); break; } api.wrong(b); }
+      for (;;) { const b = await tapOne<HTMLButtonElement & { _ok?: boolean; _c?: string; _o?: number; _v?: number }>(bs); if (api.closed) return; if (b._ok) { api.right(b); api.say(`Yes! ${w[4]} means ${w[1]}.`, `Đúng rồi! ${w[4]} nghĩa là ${w[2]}.`); break; } api.wrong(b); }
       await wait(2400);
     }
     api.dots(rounds, rounds); return api.win({ title: T('You can say hello to the whole world!', 'Con chào được cả thế giới rồi!') });
@@ -67,7 +67,7 @@ register({
       const opts = shuffle([{ pts: mp, ok: true, rot: turn }, ...wrongs.map(p => ({ pts: p, ok: false, rot: pick([0, 90]) }))]);
       const row = el('div', 'choices tg-choices'); const bs = opts.map(o => { const b = el('button', 'choice tg-piece', pieceSVG(o.pts, mc, o.rot)); b._ok = o.ok; row.appendChild(b); return b; }); api.stage.appendChild(row);
       if (turn) api.say('Tip: you can imagine turning the shape around!', 'Mẹo: con thử tưởng tượng xoay mảnh ghép xem!');
-      for (;;) { const b = await tapOne(bs); if (api.closed) return; if (b._ok) { api.right(b); break; } api.wrong(b, 'Look at the corners and the sides!', 'Nhìn kỹ các góc và các cạnh nhé!'); }
+      for (;;) { const b = await tapOne<HTMLButtonElement & { _ok?: boolean; _c?: string; _o?: number; _v?: number }>(bs); if (api.closed) return; if (b._ok) { api.right(b); break; } api.wrong(b, 'Look at the corners and the sides!', 'Nhìn kỹ các góc và các cạnh nhé!'); }
       api.stage.querySelector('.tg-board svg').innerHTML = pz.pieces.map(([p, c]) => svgPoly(p, c)).join('');
       api.say(`You made ${pz.en}!`, `Con xếp được ${pz.vi} rồi!`);
       await wait(1800);
@@ -103,7 +103,7 @@ register({
     };
     for (;;) {
       if (api.closed) return;
-      await new Promise(res => { rollB.disabled = false; rollB.onclick = () => { rollB.disabled = true; res(); }; });
+      await new Promise<void>(res => { rollB.disabled = false; rollB.onclick = () => { rollB.disabled = true; res(); }; });
       const n = rand(1, max); die.textContent = ['⚀', '⚁', '⚂', '⚃', '⚄', '⚅'][n - 1]; die.classList.remove('spin'); void die.offsetWidth; die.classList.add('spin');
       api.say(`You rolled ${n}! Count with me.`, `Con được ${n}! Đếm cùng nhé.`); await wait(900);
       await move(0, n);
@@ -143,7 +143,7 @@ register({
       const pal = el('div', 'rg-pal', cols.map((c, i) => `<button data-c="${c}" class="${i ? '' : 'on'}" style="background:${c}" aria-label="colour"></button>`).join(''));
       pal.querySelectorAll('button').forEach(b => b.onclick = () => { brush = b.dataset.c; pal.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); });
       api.stage.append(el('div', 'rg-tip', T('Tap a colour, then tap the squares on the right to copy the left side like a mirror.', 'Chọn màu, rồi chạm vào ô bên phải để tô giống bên trái như soi gương.')), grid, pal);
-      let done; const finished = new Promise(res => done = res);
+      let done; const finished = new Promise<void>(res => done = res);
       function check() { if (cells.every(c => (c._has || null) === (c._want || null))) done(); }
       check(); await finished; if (api.closed) return;
       api.right(); api.say('Beautiful! Both sides match.', 'Đẹp quá! Hai bên giống hệt nhau.'); grid.classList.add('glow'); await wait(1800);

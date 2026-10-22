@@ -12,17 +12,21 @@
  */
 
 /** @type {PlayWatch} */
-export const playWatch = { on: null, ask: null, plan: null, maxActions: 0 };
+export type PlayListener = (kind: string, element?: Element | null) => void;
+export type PlayAsk = { els: Element[]; check?: (element: Element) => boolean };
+export type PlayPlan = () => Element | null | undefined;
+export type PlayWatch = { on: PlayListener | null; ask: PlayAsk | null; plan: PlayPlan | null; maxActions: number };
+export const playWatch: PlayWatch = { on: null, ask: null, plan: null, maxActions: 0 };
 
 /** tell the auto play check what happened (a broken listener never breaks the game) @param {string} kind @param {Element | null} [element] */
-export function tell(kind, element) { if (playWatch.on) try { playWatch.on(kind, element); } catch (x) { } }
+export function tell(kind: string, element?: Element | null) { if (playWatch.on) try { playWatch.on(kind, element); } catch (x) { } }
 
 /**
  * A game's plan for the auto play check; returns the cleanup the game window runs when it closes. A later game's plan is
  * never cleared by an earlier game's cleanup. The allowance is a count of taps: anything else counts as none.
  * @param {PlayPlan} plan @param {unknown} [maxActions] @returns {() => void}
  */
-export function setPlan(plan, maxActions = 0) {
+export function setPlan(plan: PlayPlan, maxActions: unknown = 0) {
   playWatch.plan = plan; playWatch.maxActions = typeof maxActions === 'number' && Number.isFinite(maxActions) && maxActions > 0 ? maxActions : 0;
   return () => { if (playWatch.plan === plan) { playWatch.plan = null; playWatch.maxActions = 0; } };
 }

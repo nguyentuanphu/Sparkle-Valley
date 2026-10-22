@@ -24,6 +24,8 @@ export interface Farm { coins: number; plots: any[]; seeds: Record<string, numbe
 export interface Settings {
   lang: 'en' | 'vi'; currency: string; curPinned: boolean; sound: boolean; music: boolean; voice: boolean; tapSounds: boolean;
   bilingual: boolean; quality: string; online: boolean;
+  /** whether male voice recordings are downloaded and used (off by default; female voices are used for all characters) */
+  voiceMale?: boolean;
   /** family missions done: mission id → child id → when (ms) */
   missionsDone?: Record<string, Record<string, number>>;
   [k: string]: any;

@@ -45,6 +45,7 @@ export const VI_MESSAGES = [
   [/^The owner’s password is STUDIO_PASSWORD/, () => `Mật khẩu của chủ là STUDIO_PASSWORD: đổi trong ${ENV}.`],
   [/^The owner signs in with the password only: two-step is for admins\.$/, () => 'Chủ đăng nhập chỉ bằng mật khẩu: hai bước dành cho quản trị viên.'],
   [/^Your account can look at the Analytics only\.$/, () => 'Tài khoản của bạn chỉ xem được Phân tích.'],
+  [/^Analytics permission required\.$/, () => 'Cần quyền xem Phân tích.'],
   [/^Only an owner can do that\.$/, () => 'Chỉ chủ mới làm được việc này.'],
   // (owner, 14 Oct AEDT) a permission the account was not given; its Vietnamese name comes with the server's list (PERM_VI)
   [/^Your account may not do that\. Ask the owner for “(.+)” \(Setup → Admins\)\.$/, m => `Tài khoản của bạn không được làm việc này. Hãy xin chủ quyền “${PERM_VI[m[1]] || m[1]}” (Thiết lập → Quản trị viên).`],

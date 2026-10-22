@@ -74,7 +74,7 @@ export const heldOn = S => ({
 export const familyOn = F => ({ where: 'site', put: (n, b) => family.put(F, n, b), get: n => family.get(F, n), remove: n => family.remove(F, n), code: () => family.code(F), newCode: () => family.newCode(F) });
 const isJpeg = b => b && b.length > 3 && b[0] === 0xff && b[1] === 0xd8;
 
-export const makeStudio = ({ playersStore = blobs, adminStore = adminBlobs, heldStore = heldBlobs, liveStore = liveBlobs, familyStore = familyBlobs, guardStore = guardBlobs, logStore = logBlobs, testerStore = testerBlobs, now = () => Date.now() } = {}) => { const handle = async (req, ctx, out) => {
+export const makeStudio = ({ playersStore = blobs, adminStore = adminBlobs, heldStore = heldBlobs, liveStore = liveBlobs, familyStore = familyBlobs, guardStore = guardBlobs, logStore = logBlobs, testerStore = testerBlobs, parentAnalyticsStore = parentAnalyticsBlobs, now = () => Date.now() } = {}) => { const handle = async (req, ctx, out) => {
   const url = new URL(req.url), p = url.pathname, pw = env('STUDIO_PASSWORD'), post = req.method === 'POST';
   if (!pw) return json({ error: 'The online Studio is not set up yet: add STUDIO_PASSWORD in Netlify (Site configuration → Environment variables), then deploy again.', setup: true }, 503);
   const A: Store & { set(key: string, value: string): Promise<unknown> } = await adminStore(), gen = +(await A.get('gen').catch(() => 0)) || 0, t = now();
@@ -242,7 +242,7 @@ export const makeStudio = ({ playersStore = blobs, adminStore = adminBlobs, held
     // Parent website analytics (privacy-first, consent-gated, no PII)
     if (p === '/studio/api/parent-analytics') {
       if (!admins.allowed(me, 'analytics', false)) return json({ error: 'Analytics permission required.' }, 403);
-      const S = await parentAnalyticsBlobs();
+      const S = await parentAnalyticsStore();
       const days = 30;
       const out: any = { days: [], totals: { totalEvents: 0, pageViews: {}, actionClicks: {}, linkClicks: 0, scrollMilestones: {}, activeTimeTotalSec: 0, playConversions: 0, languages: {}, devices: {} } };
       for (let i = 0; i < days; i++) {

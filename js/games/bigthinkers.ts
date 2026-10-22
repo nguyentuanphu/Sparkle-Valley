@@ -46,7 +46,7 @@ register({ id: 'rulefinder', icon: '🧩', learn: true, name: () => T('Find the 
   // Hard keeps one colour or "can fly" rule in every game, so it really is harder than Medium
   // (r79 learning, I2) the rule this child missed most comes first
   const hardOne = start === 3 ? pick(RULES.filter(r => r.from === 3), 1)[0] : null;
-  const order = api.favour ? api.favour(shuffle(RULES), r => r.id) : shuffle(RULES), used = new Set();
+  const order = api.favour ? api.favour(shuffle(RULES), r => r.id) : shuffle(RULES), used = new Set<(typeof RULES)[number]>();
   for (let round = 0; round < rounds; round++) {
     if (api.closed) return; api.dots(rounds, round); api.stage.innerHTML = '';
     // (r79 learning, I1) examples shown, choices offered and the rules that may appear follow the level now

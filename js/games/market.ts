@@ -33,7 +33,7 @@ register({
       const sumEl = tray.querySelector('.sum'), coins = tray.querySelector('.coins');
       const show = () => { sumEl.innerHTML = `${T('You gave', 'Con đưa')}: <b>${fmtMinor(sum, code)}</b>`; tray.classList.toggle('over', sum > price); };
       show();
-      await new Promise(res => {
+      await new Promise<void>(res => {
         denoms.forEach(v => {
           const d = cur.denoms.find(x => x.v === v); const b = el('button', 'wallet-btn'); b.appendChild(moneyEl(d));
           b.onclick = () => {
