@@ -23,7 +23,7 @@ when the owner says so.
    Fix or send back every failure. A branch that only adds films or fixes a
    button gets `node suite.mjs --changed` in its own chat; the release still gets one full suite.
 5. Update `HANDOFF.md` (round history and checks table) and `docs/ARCHITECTURE.md` §9 if rules changed (`node tools/rules-from-doc.mts`).
-6. Packages: the Netlify zip (`git archive --format=zip -o <dir>/sparkle-valley-netlify-rNN-game.zip HEAD index.html sw.js manifest.webmanifest netlify.toml css js fonts icons vendor videos content sounds`). **No local bundle** (owner, 11 Oct: the offline files are on GitHub and the Google Drive mirror). No Studio exe (owner, 23 Oct AEDT: no longer built or published; Studio is online only).
+6. Packages: the Netlify zip, made by `sh build-netlify.sh` (it builds the TypeScript first, packs the start-up scripts and includes `home/`, the family website, plus voices, photos and sounds; r89: `git archive` of the sources misses the built `.js` files and `home/`). **No local bundle** (owner, 11 Oct: the offline files are on GitHub and the Google Drive mirror). No Studio exe (owner, 23 Oct AEDT: no longer built or published; Studio is online only).
 7. Report to the owner: what changed (plain words), how it was tested, the Netlify zip, times in Sydney time (AEDT/AEST).
 8. Ask one pop-up question per round: “yes, deploy”. It covers pushing the release branch and merging it into main
    (which makes Netlify publish), for that round only (owner, 10 Oct: Release is the master release; helper chats push
