@@ -1,4 +1,6 @@
 // Generates release facts and a fail-closed review gate, never publishes the game.
+// (r89, Release) home/ is not a game source any more: it is this folder's design made real by tools/build-website.mts,
+// checked by `node tools/build-website.mts --check` in the website workflow.
 import fs from 'node:fs';
 import path from 'node:path';
 import {execFileSync} from 'node:child_process';
@@ -6,7 +8,7 @@ import {fileURLToPath} from 'node:url';
 const here=path.dirname(fileURLToPath(import.meta.url)),root=path.resolve(here,'../..');
 const git=args=>execFileSync('git',args,{cwd:root,encoding:'utf8',maxBuffer:32*1024*1024}).trim();
 const source=git(['rev-parse',process.env.SV_WEBSITE_SOURCE||'origin/main']);
-const tree=git(['ls-tree','-r',source,'--','js','css','home','fonts','icons','content','sounds','voices','photos','videos','vendor','manifest.webmanifest','sw.ts','sw.js','index.html','studio/version.json']).split('\n').map(l=>{const [info,file]=l.split('\t');return{file,hash:info.split(' ')[2]}}).filter(x=>/^(js\/|css\/|home\/|fonts\/|icons\/|content\/|sounds\/|voices\/|photos\/|videos\/|vendor\/|manifest\.webmanifest$|sw\.|index\.html$|studio\/version\.json$)/.test(x.file));
+const tree=git(['ls-tree','-r',source,'--','js','css','fonts','icons','content','sounds','voices','photos','videos','vendor','manifest.webmanifest','sw.ts','sw.js','index.html','studio/version.json']).split('\n').map(l=>{const [info,file]=l.split('\t');return{file,hash:info.split(' ')[2]}}).filter(x=>/^(js\/|css\/|home\/|fonts\/|icons\/|content\/|sounds\/|voices\/|photos\/|videos\/|vendor\/|manifest\.webmanifest$|sw\.|index\.html$|studio\/version\.json$)/.test(x.file));
 const lockFile=path.join(here,'game-review-lock.json'),previous=fs.existsSync(lockFile)?JSON.parse(fs.readFileSync(lockFile)):null;
 const old=new Map((previous?.files||[]).map(x=>[x.file,x.hash])),current=new Map(tree.map(x=>[x.file,x.hash]));
 const changed=[...new Set([...old.keys(),...current.keys()])].filter(f=>old.get(f)!==current.get(f));

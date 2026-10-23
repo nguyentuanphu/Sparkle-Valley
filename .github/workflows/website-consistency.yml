@@ -21,6 +21,7 @@ on:
       - 'index.html'
       - 'studio/version.json'
       - '.github/workflows/website-consistency.yml'
+      - 'tools/build-website.mts'
   workflow_dispatch:
 permissions:
   contents: read
@@ -46,6 +47,8 @@ jobs:
           SV_WEBSITE_SOURCE: ${{ github.sha }}
           SV_WEBSITE_OUTPUT: ${{ runner.temp }}/sparkle-website-preview
         run: node docs/website-review-20261023/sync-website.mjs
+      - name: The family website at /home is the reviewed design (tools/build-website.mts)
+        run: node tools/build-website.mts --check
       - name: Keep rebuilt website and review report
         if: always()
         uses: actions/upload-artifact@v4
