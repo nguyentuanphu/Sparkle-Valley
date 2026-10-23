@@ -204,16 +204,12 @@ register({
     const stage = el('div', 'mu2-stage'); wrap.appendChild(stage);
     const butterfly = el('div', '', pic('🦋')); butterfly.style.fontSize = '80px'; stage.appendChild(butterfly);
 
-    const lines = [
-      { text: ['Kìa con bướm vàng', 'Kìa con bướm vàng'] },
-      { text: ['Xòe đôi cánh', 'Xòe đôi cánh'] },
-      { text: ['Bươm bướm bay', 'Tung cánh bay'] },
-      { text: ['Lượn vòng quanh', 'Lượn vòng quanh'] }
-    ];
+    // the song's own words, sung in Vietnamese in both languages
+    const lines = ['Kìa con bướm vàng', 'Xòe đôi cánh', 'Tung cánh bay lên trời', 'Em ngồi xem'];
 
     const controls = el('div', 'mu2-controls'); wrap.appendChild(controls);
     const btns = lines.map((l, idx) => {
-      const b = el('button', 'mu2-btn', `<span>${idx + 1}. ${l.text[0]}</span>`);
+      const b = el('button', 'mu2-btn', `<span>${idx + 1}. ${l}</span>`);
       b.dataset.idx = String(idx);
       controls.appendChild(b);
       return b;

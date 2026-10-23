@@ -2,7 +2,7 @@
 // pictures and how-to cards. js/main.js loads this file only while Studio's `readingTrial` switch is on, so with the
 // switch off none of the trial is downloaded or shown; the games themselves (js/games/reading.js) and their words
 // (js/content/reading.js) load when one opens. Their area and ages are in js/content/activities.js ("Reading corner").
-import { register } from './registry.js';
+import { register, GAMES } from './registry.js';
 import { HOWTO } from '../howto.js';
 import { T } from '../i18n.js';
 import { GAME_INFO } from '../content/activities.js';
@@ -22,6 +22,22 @@ game({ id: 'rd_syllable', icon: '🥁', name: () => T('Syllable Drum', 'Trống 
 game({ id: 'rd_match', icon: '🖼️', name: () => T('Word and Picture', 'Chữ và Hình') });
 game({ id: 'rd_sentence', icon: '🚂', name: () => T('Sentence Train', 'Tàu Câu') });
 game({ id: 'rd_readalong', icon: '📖', name: () => T('Read With Me', 'Cùng Đọc') });
+// (r90) the twelve new reading games (js/games/reading2.ts) belong to the same trial: registered here, so with the
+// switch off they are neither listed nor downloaded; their code loads when one opens (it registers the real game).
+const game2 = def => { const lazy = async api => { await import('./reading2.js'); const run = GAMES[def.id]?.run; if (!run || run === lazy) throw new Error('Game implementation unavailable: ' + def.id); return run(api); }; register({ ...def, run: lazy }); };
+game2({ id: 'rd_blend', icon: '🔤', name: () => T('Blend the Sounds', 'Ghép Âm') });
+game2({ id: 'rd_hats', icon: '🎩', name: () => T('Vowel Hats', 'Mũ Cho Chữ') });
+game2({ id: 'rd_endings', icon: '🔚', name: () => T('Word Endings', 'Vần Cuối') });
+game2({ id: 'rd_compound', icon: '🧩', name: () => T('Two Words Make One', 'Ghép Hai Từ') });
+game2({ id: 'rd_labels', icon: '🏷️', name: () => T('Label the Picture', 'Gắn Tên Cho Tranh') });
+game2({ id: 'rd_signs', icon: '🚸', name: () => T('Signs in Town', 'Biển Báo Trong Phố') });
+game2({ id: 'rd_questions', icon: '❓', name: () => T('Who, What, Where', 'Ai, Gì, Ở Đâu') });
+game2({ id: 'rd_many', icon: '🔢', name: () => T('One and Many', 'Một và Nhiều') });
+game2({ id: 'rd_caps', icon: '🔠', name: () => T('Big and Small Letters', 'Chữ Hoa Chữ Thường') });
+game2({ id: 'rd_poem', icon: '📜', name: () => T('Read a Little Poem', 'Đọc Bài Thơ Nhỏ') });
+game2({ id: 'rd_missing', icon: '🧩', name: () => T('Missing Letter', 'Điền Chữ Còn Thiếu') });
+game2({ id: 'rd_book', icon: '📖', name: () => T('Make a Little Book', 'Làm Sách Nhỏ') });
+
 // (owner, 18 Oct AEDT) read a page, help in the picture, read on (js/games/storyhelp.ts; for 2 to 8)
 register({ id: 'rd_storyhelp', icon: '🏡', name: () => T('Story Helpers', 'Cùng Giúp Trong Truyện'), async run(api) { const m = await import('./storyhelp.js'); return m.play(api); } });
 

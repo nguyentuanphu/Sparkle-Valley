@@ -165,18 +165,6 @@ export const GAME_CATALOG = [
   { id: "tetmarket", icon: "🏮", name: () => T("Tết Shopping", "Đi Chợ Tết") },
   { id: "bank", icon: "🏦", name: () => T("At the Bank", "Ở Ngân Hàng") },
   { id: 'sharefair', icon: '🤝', name: () => T('Share Fairly', 'Chia Đều') },
-  { id: 'rd_blend', icon: '🔤', name: () => T('Blend the Sounds', 'Ghép Âm') },
-  { id: 'rd_hats', icon: '🎩', name: () => T('Vowel Hats', 'Mũ Cho Chữ') },
-  { id: 'rd_endings', icon: '🔚', name: () => T('Word Endings', 'Vần Cuối') },
-  { id: 'rd_compound', icon: '🧩', name: () => T('Two Words Make One', 'Ghép Hai Từ') },
-  { id: 'rd_labels', icon: '🏷️', name: () => T('Label the Picture', 'Gắn Tên Cho Tranh') },
-  { id: 'rd_signs', icon: '🚸', name: () => T('Signs in Town', 'Biển Báo Trong Phố') },
-  { id: 'rd_questions', icon: '❓', name: () => T('Who, What, Where', 'Ai, Gì, Ở Đâu') },
-  { id: 'rd_many', icon: '🔢', name: () => T('One and Many', 'Một và Nhiều') },
-  { id: 'rd_caps', icon: '🔠', name: () => T('Big and Small Letters', 'Chữ Hoa Chữ Thường') },
-  { id: 'rd_poem', icon: '📜', name: () => T('Read a Little Poem', 'Đọc Bài Thơ Nhỏ') },
-  { id: 'rd_missing', icon: '🧩', name: () => T('Missing Letter', 'Điền Chữ Còn Thiếu') },
-  { id: 'rd_book', icon: '📖', name: () => T('Make a Little Book', 'Làm Sách Nhỏ') },
   // (r89, owner's go 23 Oct AEDT) the ten drawing games, js/games/drawing.ts
   { id: 'dotdot', icon: '🔢', name: () => T('Dot to Dot', 'Nối Điểm') },
   { id: 'trace', icon: '✏️', name: () => T('Trace the Picture', 'Tô Theo Nét') },
@@ -219,6 +207,5 @@ export const GAME_LOADERS = {
   'places2.js': { ids: ['cyclo', 'reunification', 'lighthouse', 'operaseats', 'outback', 'floating', 'airport', 'postcard'], load: () => import('./places2.js') },
   'outside.js': { ids: ['hideseek', 'duckgoose', 'redgreen', 'simon', 'eggspoon', 'chairs', 'kicktokick', 'nippers', 'hoops', 'tag'], load: () => import('./outside.js') },
     'money2.js': { ids: ['savegoal', 'pocketweek', 'pricetags', 'busfare', 'lemonade', 'party', 'recycle', 'tetmarket', 'bank', 'sharefair'], load: () => import('./money2.js') },
-  'reading2.js': { ids: ['rd_blend', 'rd_hats', 'rd_endings', 'rd_compound', 'rd_labels', 'rd_signs', 'rd_questions', 'rd_many', 'rd_caps', 'rd_poem', 'rd_missing', 'rd_book'], load: () => import('./reading2.js') },
   'drawing.js': { ids: ["dotdot","trace","mirror","colournum","lanternart","card","sand","drawpath","shapedraw","copygrid"], load: () => import('./drawing.js') }
 };
