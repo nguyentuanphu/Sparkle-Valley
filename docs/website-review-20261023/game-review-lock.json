@@ -1,9 +1,9 @@
 {
-  "source": "6f5de0736a6d66eeed50ef0302cf666d7ba36c4f",
+  "source": "4f6eb217ac1cdd79311200083a13ea7931c7e315",
   "files": [
     {
       "file": "content/custom.json",
-      "hash": "b140babeccce492bba374b90ec037aea87c15cc4"
+      "hash": "349528879819f9f94e86623b21616e99883f55a7"
     },
     {
       "file": "content/faces/.keep",
@@ -15,7 +15,7 @@
     },
     {
       "file": "css/style.css",
-      "hash": "2e699939cdb5a64d51abf6067085284004edcb7c"
+      "hash": "d171b1ec801458c1db76c88e3f49d79b43d77d30"
     },
     {
       "file": "fonts/Baloo2-latin-600.woff2",
@@ -1179,7 +1179,7 @@
     },
     {
       "file": "js/ui.ts",
-      "hash": "29f99291d3a94f67fc13b420ca082f5d647e358f"
+      "hash": "6aac6ea125957afb3bb0dc82ee486780d5ba35fe"
     },
     {
       "file": "js/util.js",
