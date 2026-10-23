@@ -1,3 +1,11 @@
+# Superseded screenshot-card draft
+
+**The owner rejected this screenshot-card approach. Use the [current illustrated campaign](illustrated/README.md) instead: eleven storybook illustrations following the supplied reference, including the under-five Simple screen, landmarks, food stalls and hàng gánh.**
+
+The files below remain only as a historical draft; do not use the old ZIP for the Facebook post.
+
+---
+
 # Seven Vietnamese Facebook cards
 
 Owner request and art direction, 23 October 2026 AEDT: seven Facebook images and a short Vietnamese caption. Make the presentation playful and cartoon-like while preserving Sparkle Valley’s own artwork and theme. The earlier generated illustration direction is excluded from this package.

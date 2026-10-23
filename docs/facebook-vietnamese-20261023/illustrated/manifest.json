@@ -1,0 +1,81 @@
+{
+  "images": [
+    {
+      "file": "images/01-learning.png",
+      "width": 1672,
+      "height": 941,
+      "sha256": "91190b2129ff31d4ec14442d0cb139eb0e47e4ec52cd9dc5055e48ef78ff4058",
+      "visualReview": "pass: Vietnamese text, public URL, requested art style and topic checked"
+    },
+    {
+      "file": "images/02-sounds-thinking.png",
+      "width": 1672,
+      "height": 941,
+      "sha256": "1f323983d7ff421a2ebc7396a534c6b7699b0990d23584e71a913c5037a3318b",
+      "visualReview": "pass: Vietnamese text, public URL, requested art style and topic checked"
+    },
+    {
+      "file": "images/03-folk-games.png",
+      "width": 1672,
+      "height": 941,
+      "sha256": "5a256dfdcb948a4ce905e3b99a5db90d31456c0bca115a8361ef41794387d478",
+      "visualReview": "pass: Vietnamese text, public URL, requested art style and topic checked"
+    },
+    {
+      "file": "images/04-vietnamese-stories.png",
+      "width": 1672,
+      "height": 941,
+      "sha256": "d70f109b1d6418a7b270be3c41f137636b45ae2fcf5b5bf49dd89064fc1fbaea",
+      "visualReview": "pass: Vietnamese text, public URL, requested art style and topic checked"
+    },
+    {
+      "file": "images/05-festivals-rewards.png",
+      "width": 1672,
+      "height": 941,
+      "sha256": "d29f23e583e8d528fc3fd2876d8f7ceb794d13ccd044bef246567ec4cf27711f",
+      "visualReview": "pass: Vietnamese text, public URL, requested art style and topic checked"
+    },
+    {
+      "file": "images/06-parent-controls.png",
+      "width": 1672,
+      "height": 941,
+      "sha256": "e8fb402c893039f7c063fa4615b994af60f2a544bcad7a4adcfc5bcb0b6ad993",
+      "visualReview": "pass: Vietnamese text, public URL, requested art style and topic checked"
+    },
+    {
+      "file": "images/07-parent-report.png",
+      "width": 1672,
+      "height": 941,
+      "sha256": "21e8b5053c086bb764a52b362469180854fb32611ab396e5ec9efaeb6dccce63",
+      "visualReview": "pass: Vietnamese text, public URL, requested art style and topic checked"
+    },
+    {
+      "file": "images/08-landmarks.png",
+      "width": 1672,
+      "height": 941,
+      "sha256": "8d4cf79071c80b11ad36270d71fc5f55a48957206a3c03d5a4b38d03a27b8147",
+      "visualReview": "pass: Vietnamese text, public URL, requested art style and topic checked"
+    },
+    {
+      "file": "images/09-food-stalls.png",
+      "width": 1672,
+      "height": 941,
+      "sha256": "2211d06153c9cbfbbfe3ad25a3dbfac9aa8c6a28a80ff8aeb0a2b5d0a9d275f8",
+      "visualReview": "pass: Vietnamese text, public URL, requested art style and topic checked"
+    },
+    {
+      "file": "images/10-hang-ganh.png",
+      "width": 1672,
+      "height": 941,
+      "sha256": "3a5044fe93b39fe19425dd017bf58f50d0fb074d35ea52541d7d802b3f9d8d6f",
+      "visualReview": "pass: Vietnamese text, public URL, requested art style and topic checked"
+    },
+    {
+      "file": "images/11-under-five-simple-screen.png",
+      "width": 1672,
+      "height": 941,
+      "sha256": "f2beb5e4876673de0370d01bf862847fd42cad3173cb55507e093a3a95e1877d",
+      "visualReview": "pass: Vietnamese text, public URL, requested art style and topic checked"
+    }
+  ]
+}
