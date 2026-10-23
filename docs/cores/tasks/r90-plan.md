@@ -144,7 +144,7 @@ Azure in both languages, its own 3D film look (`js/content/film-looks.js`, `js/t
 - **India** (+6): The Tortoise and the Geese / Rùa và Đôi Ngỗng · The Four Friends / Bốn Người Bạn · Birbal's Clever
   Answer / Câu Trả Lời Thông Minh Của Birbal · Tenali Raman and the Cats / Tenali Raman và Những Chú Mèo · The Golden
   Swan / Thiên Nga Vàng · The Mouse and the Lion's Net / Chuột Gỡ Lưới Cho Sư Tử.
-- **World** (new shelf, 12; flag drawing 🌍 in `js/art.js`): The Tortoise and the Hare (Greece) / Rùa và Thỏ · The
+- **World** (new shelf, 12; a globe drawing in `js/art.js`): The Tortoise and the Hare (Greece) / Rùa và Thỏ · The
   Lion and the Mouse (Greece) / Sư Tử và Chuột · The Ant and the Grasshopper (Greece) / Kiến và Châu Chấu · The Little
   Red Hen (England) / Cô Gà Mái Đỏ · The Gingerbread Man (United States) / Chú Bé Bánh Gừng · Anansi and the Pot of
   Wisdom (Ghana) / Anansi và Hũ Trí Khôn · Stone Soup (Europe) / Món Súp Đá · The Enormous Turnip (Russia) / Củ Cải
