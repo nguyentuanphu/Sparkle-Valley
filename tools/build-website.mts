@@ -58,6 +58,8 @@ export function makeWebsite(html: string): { page: string, files: Map<string, Bu
     files.set(name, data); return '/home/assets/' + name;
   });
   if (/class="demo-bar"|data-mode-button=|id="game-stage"|id="site-dialog"|setMode\(/.test(h)) throw Error('a review-only control is still in the website');
+  // (owner, 23 Oct AEDT: "no where in website or game should be sent to github, they are my source code")
+  if (/github\.com|githubusercontent/i.test(h)) throw Error('the website links to GitHub: ' + (h.match(/.{60}github.{40}/i) || [''])[0]);
   return { page: h, files };
 }
 
