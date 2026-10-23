@@ -25,7 +25,7 @@ import { openReport } from './report.js';
 import { extrasHTML, bindExtras, privacyHTML, netListHTML } from './extras.js';
 
 import { installButton } from './install.js';
-import { BUILD } from './build.js';
+import { SHOWN } from './build.js';
 import { easyName } from './content/devname.js';
 import { clipCountFor, setSpeaker, sayDevice } from './voice.js';
 
@@ -147,7 +147,7 @@ export function openGrownups(after: (() => void) | undefined = undefined) {
     const vEn = voicesFor('en'), vVi = voicesFor('vi');
     card.innerHTML = `
       <button class="x" aria-label="${T('Close', 'Đóng')}">✕</button>
-      <h2>${T('Grown-ups', 'Phụ huynh')} <small class="buildtag">${T('Build', 'Bản')} ${BUILD}</small></h2>
+      <h2>${T('Grown-ups', 'Phụ huynh')} <small class="buildtag">${T('Version', 'Phiên bản')} ${SHOWN}</small></h2>
       <div class="grownups-body"><div class="g-install"></div>
       ${privacyHTML()}
       ${familyTrialOn() ? familyDevicesHTML() : ''}

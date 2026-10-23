@@ -41,7 +41,7 @@ import { snackOf, eatSnack } from './snacks.js';
 import { saveToDevice, savesByShare } from './photos.js';
 
 import { installButton } from './install.js';
-import { BUILD } from './build.js';
+import { SHOWN } from './build.js';
 
 import { VOICE_STYLES, hush, sayIn } from './voice.js';
 import { LEARN } from './words2.js';
@@ -118,7 +118,7 @@ export function showTitle(onStart) {
     </div>
     <button class="press"><span class="tt-play">▶</span><span class="tt-press" elementtiming="title"></span></button>
     <div class="tt-panel"><div class="title-foot"></div><div class="title-learn"></div></div>
-    <div class="tt-build" aria-hidden="true">${BUILD}</div>`);
+    <div class="tt-build" aria-hidden="true">${SHOWN}</div>`);
   document.body.appendChild(s);
   const redraw = () => {
     // (r78, owner: windows stay still) the title's words hold both languages, the other one invisible, so switching
@@ -254,7 +254,7 @@ export function openQuick(game, i) {
   const row = (k, icon, label, on, hint = '') => `<button class="qrow qset ${on ? 'on' : ''}" data-k="${k}" aria-pressed="${on}"><span class="qi">${icon}</span><b>${label}${hint ? `<small>${hint}</small>` : ''}</b><i class="qsw"></i></button>`;
   const draw = () => {
     const s = settings, view = (hero && hero.view) || 'follow';
-    card.innerHTML = `<div class="qs-head">${p ? `<img class="qs-av" src="${avatarURL(p)}" alt="">` : ''}<div class="qs-title"><h2>${T('Settings', 'Cài đặt')}</h2>${p ? `<small>${esc(nm(p.name || ''))}</small>` : ''}<small class="buildtag">${T('Build', 'Bản')} ${BUILD}</small></div><button class="x" aria-label="${T('Close', 'Đóng')}">✕</button></div>
+    card.innerHTML = `<div class="qs-head">${p ? `<img class="qs-av" src="${avatarURL(p)}" alt="">` : ''}<div class="qs-title"><h2>${T('Settings', 'Cài đặt')}</h2>${p ? `<small>${esc(nm(p.name || ''))}</small>` : ''}<small class="buildtag">${T('Version', 'Phiên bản')} ${SHOWN}</small></div><button class="x" aria-label="${T('Close', 'Đóng')}">✕</button></div>
       <div class="qs-sec"><h4>🌏 ${T('Language', 'Ngôn ngữ')}</h4>${flagBtns()}</div>
       <div class="qs-sec"><h4>🔊 ${T('Sound', 'Âm thanh')}</h4>
         ${row('music', '🎵', T('Music', 'Nhạc'), s.music)}${row('sound', '🔔', T('Sounds', 'Tiếng động'), s.sound)}${row('voice', '🗣️', T('Talking', 'Giọng nói'), s.voice)}
