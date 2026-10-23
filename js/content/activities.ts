@@ -7,6 +7,7 @@
 import { T } from '../i18n.js';
 import { CUSTOM, keptOn, MONEY_GAMES } from '../custom.js';
 import { PLACES as MAP_PLACES, PLOTS as MAP_PLOTS } from './map.js';
+import { heldGame } from './secondset.js';
 
 // the areas, in the order the path visits them; a child who can't read knows each one by its picture
 export const AREAS = [
@@ -26,7 +27,7 @@ export const AREAS = [
 ];
 
 // id: [area, youngest age (2 = everyone, 5 = big kids), how hard (1 easy · 2 a bit harder · 3 hardest)]
-export const GAME_INFO = {
+export const GAME_INFO: Record<string, [string, number, number]> = {
   bunny: ['animals', 2, 1], koala: ['animals', 2, 1], animalsounds: ['animals', 2, 1], duckmaze: ['animals', 2, 1], eggs: ['animals', 2, 1], oddone: ['animals', 3, 2], goat: ['animals', 3, 2],
   catchfish: ['animals', 2, 1], emueggs: ['animals', 2, 1], reefclean: ['animals', 3, 1],
   crabwalk: ['animals', 2, 1], whohome: ['animals', 2, 1], mumbaby: ['animals', 2, 1], feedzoo: ['animals', 3, 1], buffalo: ['animals', 3, 1], reefcount: ['animals', 3, 1], tracks: ['animals', 4, 2],
@@ -61,7 +62,8 @@ export function gameInfo(id) {
   const [area, age, level] = GAME_INFO[id] || ['thinking', 5, 2], c = custom(id);
   // (batch rollout) each money game has its own Studio switch (money_<id>): off or not started yet, it is hidden unless a
   // child playing has already played it
-  const held = MONEY_GAMES.includes(id) && !keptOn('money_' + id);
+  // (r90) the second set of games is held back while Studio's New games switch is off (js/content/secondset.ts)
+  const held = (MONEY_GAMES.includes(id) && !keptOn('money_' + id)) || heldGame(id);
   return { id, area: AREAS.some(a => a.key === c.area) ? c.area : area, ageMin: c.little === true ? 2 : c.little === false ? 5 : age, level, hidden: c.hide === true || held };
 }
 // the games of one area for a child: under-5s only see the ones made for them

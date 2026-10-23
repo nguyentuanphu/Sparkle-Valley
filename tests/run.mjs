@@ -4402,6 +4402,38 @@ await check('talk', async () => {
   return 'every person in the valley answers a tap; the villagers without their own words tell a fact or a saying of their region, in English or Vietnamese; a child whose character is rebuilt gets no "Say hello" and no job picture';
 });
 
+await check('secondset', async () => {
+  // (r90, owner 24 Oct AEDT) the second set of games and stories: held in Studio (New games / New stories off) it shows as
+  // one "Coming soon" tile and can't be opened anywhere (the Simple screen and the story list leave it out); switched on,
+  // the games still to unlock fold into one padlock tile that one tap opens, and the same on the story shelves
+  const P = await open(b, { w: 820, h: 1180 }); await clear(P.page);
+  const r = await P.page.evaluate(async () => {
+    const C = (await import('/js/custom.js')).CUSTOM, U = await import('/js/content/unlocks.js'), A = await import('/js/content/activities.js'), F = await import('/js/games/frame.js');
+    const p = __sv.heroes[0].profile, newIds = Object.values(U.SECOND_SET_GAMES).flat(), wait = ms => new Promise(r => setTimeout(r, ms));
+    const shut = async () => { document.querySelectorAll('.modal.hub .x').forEach(x => x.click()); await wait(300); };
+    const hub = async tab => { await shut(); __sv.openGamesHub(0); await wait(400); document.querySelector(`.hubtabs [data-tab="${tab}"]`)?.click(); await wait(300); return document.querySelector('.hubbody'); };
+    const plays = root => [...root.querySelectorAll('[data-play]')].map(b => b.dataset.play);
+    const out = {};
+    C.releases = { ...(C.releases || {}), newGames: { on: false }, newStories: { on: false } };
+    let body = await hub('learn');
+    out.offSoon = !!body.querySelector('[data-soon="game"]'); out.offNoNew = !plays(body).some(id => newIds.includes(id)); out.offNoFold = !body.querySelector('[data-fold]');
+    out.offSimple = !A.gamesIn(F.GAMES, 'numbers', false).some(g => newIds.includes(g.id)); out.offTales = !__sv.TALES.some(t => Object.values(U.SECOND_SET_TALES).flat().includes(t.id));
+    out.offShut = !U.isOpen({ unlockAll: true }, 'numline', 'game', 'numbers');
+    body = await hub('tales'); out.offTaleSoon = !!body.querySelector('[data-soon="tale"]');
+    C.releases.newGames = { on: true }; C.releases.newStories = { on: true }; p.unlockAll = false; p.admin = false;
+    body = await hub('learn');
+    const fold = body.querySelector('[data-fold]'); out.onFold = !!fold; out.onHidden = !body.querySelector('.hcard.locked'); out.onNoSoon = !body.querySelector('[data-soon="game"]');
+    fold?.click(); await wait(300); body = document.querySelector('.hubbody'); out.onShown = body.querySelectorAll('.hcard.locked').length;
+    body = await hub('tales'); const tf = body.querySelector('[data-fold-tale]'); out.taleFold = !!tf; tf?.click(); await wait(300); out.taleShown = document.querySelectorAll('.hubbody .talecard.locked').length;
+    await shut();
+    return out;
+  });
+  await P.ctx.close();
+  const bad = Object.entries(r).filter(([k, v]) => k === 'onShown' || k === 'taleShown' ? !(v > 0) : !v).map(([k]) => k);
+  ok(!bad.length, 'failed: ' + bad.join(', ') + ' ' + JSON.stringify(r));
+  return `held: one Coming soon tile (games and stories), no new game in the menu, the Simple screen or the story list, none can be opened; on: the games to unlock fold into one padlock tile (${r.onShown} shown on a tap), the stories too (${r.taleShown})`;
+});
+
 await check('rollout', async () => {
   // (batch rollout, owner 13 Oct AEDT; docs/cores/FEATURES.md "Batch calendar") every new Studio switch: off (or not started
   // yet) hides its feature from a child who never used it, keeps it for a child who did (profile.tried), and brings it back

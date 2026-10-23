@@ -1,4 +1,4 @@
-import { isOpen, progressOf } from './content/unlocks.js';
+import { isOpen, isHeld, progressOf, secondSetOf } from './content/unlocks.js';
 // Screens and pop-ups: title, who's playing, grown-ups settings, photo editor, NPC dialogue,
 // the Sparkle Pad (map, backpack, adventure log, album, camera), cooking, shop and online play.
 import { AREAS, gamesIn, withSitePlaces } from './content/activities.js';
@@ -990,7 +990,7 @@ export function nextGameAfter(id) {
   return null;
 }
 const HUB_COLORS = ['#ff7eb8', '#ffb52e', '#5fd39a', '#3cc7e8', '#9a6bff', '#ff8a5a'];
-const openGamesHubProperties: { last?: string; scroll?: number } = {};
+const openGamesHubProperties: { last?: string; scroll?: number; unfolded: Set<string> } = { unfolded: new Set() };
 export const openGamesHub = Object.assign(function (game, i, onClose) {
   const p = game.heroes[i].profile;
   const m = modal('hub', ''), card = m.querySelector('.card');
@@ -1000,10 +1000,20 @@ export const openGamesHub = Object.assign(function (game, i, onClose) {
   const SECS = hubSections();
   const tabs = [...SECS, ...(game.taleShelfHTML ? [{ key: 'tales', icon: '📖', short: () => T('Stories', 'Truyện') }] : []), ...(game.openSongs ? [{ key: 'songs', icon: '🎵', short: () => T('Songs', 'Bài hát') }] : []), ...(game.festivals ? [{ key: 'fest', icon: '📅', short: () => T('Festivals', 'Lễ hội') }] : [])];
   let cur = tabs.find(t => t.key === openGamesHub.last) ? openGamesHub.last : 'learn';
-  const card2 = sec => `<div class="hubgrid">${sec.games.filter(id => GAMES[id]).map((id, k) => {
-      const g = GAMES[id], lv = p.levels[id] || 1, open = isOpen(p, id, 'game', sec.area || sec.key);
-      return `<div class="hcard ${open ? "" : "locked"}" style="--hc:${HUB_COLORS[(k + sec.key.length) % HUB_COLORS.length]}"><button class="hplay" data-play="${id}" ${open ? "" : "disabled"}><span class="hi">${pic(open ? g.icon : '\u{1F512}')}</span><b>${esc(g.name())}</b><small>${'⭐'.repeat(lv)}${'☆'.repeat(5 - lv)}</small></button><button class="hgo" data-go="${id}" aria-label="${T('Go there', 'Đi đến đó')}">📍</button><button class="hhow" data-how="${id}" aria-label="${T('How to play', 'Cách chơi')}">📺</button>${g.origin ? `<span class="hflag">${originFlags(g.origin)}</span>` : ''}</div>`;
-    }).join('')}</div>`;
+  // (r90, owner 24 Oct AEDT) a card per game a child can play; the games still to unlock fold into one padlock tile
+  // (one tap shows them), and the new games held back in Studio (New games off) into one "Coming soon" tile
+  const gameCard = (id, k, key, open) => {
+      const g = GAMES[id], lv = p.levels[id] || 1;
+      return `<div class="hcard ${open ? "" : "locked"}" style="--hc:${HUB_COLORS[(k + key.length) % HUB_COLORS.length]}"><button class="hplay" data-play="${id}" ${open ? "" : "disabled"}><span class="hi">${pic(open ? g.icon : '\u{1F512}')}</span><b>${esc(g.name())}</b><small>${'⭐'.repeat(lv)}${'☆'.repeat(5 - lv)}</small></button><button class="hgo" data-go="${id}" aria-label="${T('Go there', 'Đi đến đó')}">📍</button><button class="hhow" data-how="${id}" aria-label="${T('How to play', 'Cách chơi')}">📺</button>${g.origin ? `<span class="hflag">${originFlags(g.origin)}</span>` : ''}</div>`;
+  };
+  const card2 = sec => {
+    const area = sec.area || sec.key, ids = sec.games.filter(id => GAMES[id]);
+    const open = ids.filter(id => isOpen(p, id, 'game', area)), locked = ids.filter(id => !open.includes(id));
+    const held = secondSetOf('game', area).filter(id => GAMES[id] && isHeld(id, 'game')).length, shown = openGamesHub.unfolded.has(area);
+    const lockTile = locked.length ? `<div class="hcard hfold" style="--hc:#b9a6e8"><button class="hplay" data-fold="${area}" aria-expanded="${shown}"><span class="hi">${pic('\u{1F512}')}</span><b>${shown ? T('Hide', 'Thu gọn') : T(`${locked.length} more to unlock`, `Còn ${locked.length} trò để mở`)}</b><small>${shown ? '' : T('Tap to see', 'Chạm để xem')} ${progressOf(p, 'game', area).done}/3</small></button></div>` : '';
+    const soonTile = held ? `<div class="hcard hsoon" style="--hc:#9ad0ff"><button class="hplay" data-soon="game"><span class="hi">${pic('\u{1F51C}')}</span><b>${T('Coming soon', 'Sắp ra mắt')}</b><small>${T(`${held} new games`, `${held} trò mới`)}</small></button></div>` : '';
+    return `<div class="hubgrid">${open.map((id, k) => gameCard(id, k, sec.key, true)).join('')}${lockTile}${shown ? locked.map((id, k) => gameCard(id, k + open.length, sec.key, false)).join('') : ''}${soonTile}</div>`;
+  };
   const body = key => {
     if (key === 'fest') return `<h3>📅 ${T('Festival calendar', 'Lịch lễ hội')}</h3>${festCalendarHTML(game)}`;
     if (key === 'tales') return `<h3>📖 ${T('Fairy tales', 'Truyện cổ tích')}</h3><p class="sub">${T('Tap a story: you fly to Grandma Storyteller and she reads it to you.', 'Chạm vào truyện: con bay đến chỗ Bà Kể Chuyện và bà kể cho con nghe.')}</p><div class="talelib">${game.taleShelfHTML(p)}</div>`;
@@ -1026,7 +1036,10 @@ export const openGamesHub = Object.assign(function (game, i, onClose) {
   card.querySelector('.x').onclick = close;
   const bind = root => {
     root.querySelectorAll('[data-tale]').forEach(b => b.onclick = () => { close(); game.readTale(i, b.dataset.tale); });
+    if (game.bindTaleShelf) game.bindTaleShelf(root, () => { openGamesHub.scroll = root.scrollTop; draw(); });
     root.querySelectorAll('[data-songs]').forEach(b => b.onclick = () => { SFX.tap(); close(); game.openSongs(b.dataset.songs); });
+    root.querySelectorAll('[data-fold]').forEach(b => b.onclick = () => { SFX.tap(); const k = b.dataset.fold; if (openGamesHub.unfolded.has(k)) openGamesHub.unfolded.delete(k); else { openGamesHub.unfolded.add(k); say('Finish the games above 3 times each to unlock these.', 'Chơi xong mỗi trò ở trên 3 lần để mở những trò này nhé.'); } openGamesHub.scroll = root.scrollTop; draw(); });
+    root.querySelectorAll('[data-soon]').forEach(b => b.onclick = () => { SFX.tap(); say('New games are coming soon!', 'Trò chơi mới sắp ra mắt rồi!'); });
     root.querySelectorAll('[data-play]').forEach(b => b.onclick = () => { const id = b.dataset.play; close(); openGamesHub.scroll = root.scrollTop; game.meetAndPlay(i, id, 'hub'); });
     root.querySelectorAll('[data-go]').forEach(b => b.onclick = () => { close(); game.goToGame(i, b.dataset.go); });
     root.querySelectorAll('[data-how]').forEach(b => b.onclick = () => { const id = b.dataset.how; openHowTo(id, { onPlay: () => { close(); game.playGame(i, id, 'hub'); } }); });

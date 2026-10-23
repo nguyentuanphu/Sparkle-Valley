@@ -1,4 +1,4 @@
-import { isOpen, progressOf } from './content/unlocks.js';
+import { isHeld, isOpen, progressOf, secondSetOf } from './content/unlocks.js';
 // Learning that feels like play:
 // · Story time under the big banyan tree: short folk tales from Vietnam, Australia, China and India.
 // · Counting hunts in each village: find 5 hidden things, counting out loud (and in Chinese or Hindi
@@ -103,7 +103,8 @@ export function createLearning(G) {
     if (first && Object.keys(p.tales).length === 10) { const st = G.giveSticker(p); await G.reward(st || '📚', T('Ten tales!', 'Mười truyện rồi!'), T('You are a real story explorer.', 'Con là nhà thám hiểm truyện cổ tích thật sự.')); }
   };
   // from the Games hub (or anywhere): fly to the storyteller grandma, and she starts the tale
-  G.TALES = TALES; G.readTaleNow = readTale;
+  // (r90) the stories a child can be offered: the second set is left out while Studio holds it (the Simple screen reads this)
+  Object.defineProperty(G, 'TALES', { configurable: true, get: () => TALES.filter(t => !isHeld(t.id, 'tale')) }); G.readTaleNow = readTale;
   G.readTale = async (i, id) => {
     const h = G.heroes[i], t = TALES.find(x => x.id === id); if (!h || !t) return;
     if (G.storyteller && dist2(h.pos.x, h.pos.z, G.storyteller.x, G.storyteller.z) > 5) await G.landBy(h, G.storyteller.x, G.storyteller.z);
@@ -111,15 +112,28 @@ export function createLearning(G) {
     await new Promise(r => setTimeout(r, 1300));
     readTale(h, t);
   };
+  // (r90, owner 24 Oct AEDT) the stories still to unlock fold into one padlock tile per shelf (one tap shows them), and
+  // the new stories held back in Studio (New stories off) into one "Coming soon" tile
+  G.taleFolds = G.taleFolds || new Set();
+  const taleCard = (t, open, read) => `<button class="talecard ${read ? 'read' : ''} ${open ? '' : 'locked'}" ${open ? `data-tale="${t.id}"` : `data-locked-tale="${t.id}"`}><span>${open ? shelfPics(t.pages[0][0]) : pic('\u{1F512}')}</span><small>${esc(t.title())}${read ? ' ' + pic('\u2705') : ''}</small></button>`;
   G.taleShelfHTML = p => TALE_FLAGS.map(([f, en, vi]) => {
-    const cards = TALES.filter(t => t.flag === f).map(t => {
-      const open = isOpen(p, t.id, 'tale', f), read = (p.tales || {})[t.id];
-      return `<button class="talecard ${read ? 'read' : ''} ${open ? '' : 'locked'}" ${open ? `data-tale="${t.id}"` : `data-locked-tale="${t.id}"`}><span>${open ? shelfPics(t.pages[0][0]) : pic('\u{1F512}')}</span><small>${esc(t.title())}${read ? ' ' + pic('\u2705') : ''}</small></button>`;
-    }).join('');
+    const shelf = TALES.filter(t => t.flag === f && !isHeld(t.id, 'tale')), reads = p.tales || {};
+    const open = shelf.filter(t => isOpen(p, t.id, 'tale', f)), locked = shelf.filter(t => !open.includes(t));
+    const held = secondSetOf('tale', f).filter(id => TALES.some(t => t.id === id) && isHeld(id, 'tale')).length, shown = G.taleFolds.has(f);
+    const fold = locked.length ? `<button class="talecard talefold" data-fold-tale="${f}" aria-expanded="${shown}"><span>${pic('\u{1F512}')}</span><small>${shown ? T('Hide', 'Thu gọn') : T(`${locked.length} more to unlock · Tap to see`, `Còn ${locked.length} truyện để mở · Chạm để xem`)}</small></button>` : '';
+    const soon = held ? `<button class="talecard talesoon" data-soon="tale"><span>${pic('\u{1F51C}')}</span><small>${T(`Coming soon: ${held} new stories`, `Sắp ra mắt: ${held} truyện mới`)}</small></button>` : '';
+    const cards = open.map(t => taleCard(t, true, reads[t.id])).join('') + fold + (shown ? locked.map(t => taleCard(t, false, reads[t.id])).join('') : '') + soon;
+    if (!cards) return '';
     const progress = progressOf(p, 'tale', f);
-    const note = progress.done >= 3 ? '' : `<div class="unlock-note">${T('To unlock more stories, finish each story here 3 times.', '\u0110\u1ec3 m\u1edf th\u00eam truy\u1ec7n, con h\u00e3y xem xong m\u1ed7i truy\u1ec7n \u1edf \u0111\u00e2y 3 l\u1ea7n.')}<small>${progress.done}/3</small></div>`;
+    const note = progress.done >= 3 || !locked.length ? '' : `<div class="unlock-note">${T('To unlock more stories, finish each story here 3 times.', '\u0110\u1ec3 m\u1edf th\u00eam truy\u1ec7n, con h\u00e3y xem xong m\u1ed7i truy\u1ec7n \u1edf \u0111\u00e2y 3 l\u1ea7n.')}<small>${progress.done}/3</small></div>`;
     return `<h3>${f} ${T('Tales from ' + en, 'Truy\u1ec7n ' + vi)}</h3><div class="talegrid">${cards}</div>${note}`;
   }).join('');
+  /** the fold and Coming soon taps on a shelf; `redraw` paints the shelves again */
+  G.bindTaleShelf = (root, redraw) => {
+    root.querySelectorAll('[data-fold-tale]').forEach(b => b.onclick = () => { const f = b.dataset.foldTale; if (G.taleFolds.has(f)) G.taleFolds.delete(f); else G.taleFolds.add(f); redraw(); });
+    root.querySelectorAll('[data-soon="tale"]').forEach(b => b.onclick = () => say('New stories are coming soon!', 'Truyện mới sắp ra mắt rồi!'));
+    root.querySelectorAll('[data-locked-tale]').forEach(b => b.onclick = () => say('Finish each story in this shelf 3 times to unlock more.', '\u0110\u1ecdc xong m\u1ed7i truy\u1ec7n trong k\u1ec7 n\u00e0y 3 l\u1ea7n \u0111\u1ec3 m\u1edf th\u00eam nh\u00e9.'));
+  };
   const openTales = h => {
     G.paused = true;
     const m = modal('tales', ''), card = m.querySelector('.card'), p = h.profile; p.tales = p.tales || {};
@@ -127,8 +141,9 @@ export function createLearning(G) {
     card.innerHTML = `<button class="x" aria-label="${T('Close', 'Đóng')}">✕</button><h2>📖 ${T('Story time', 'Giờ kể chuyện')}</h2><p class="sub">${T('Folk tales from Vietnam, Australia, China and India. Tap a picture and Grandma reads it to you!', 'Truyện cổ tích Việt Nam, Úc, Trung Quốc và Ấn Độ. Chạm vào hình, bà sẽ kể cho con nghe!')}</p>
       <div class="talelib">${G.taleShelfHTML(p)}</div>`;
     card.querySelector('.x').onclick = close;
-    card.querySelectorAll('[data-locked-tale]').forEach(b => b.onclick = () => say('Finish each story in this shelf 3 times to unlock more.', '\u0110\u1ecdc xong m\u1ed7i truy\u1ec7n trong k\u1ec7 n\u00e0y 3 l\u1ea7n \u0111\u1ec3 m\u1edf th\u00eam nh\u00e9.'));
-    card.querySelectorAll('[data-tale]').forEach(b => b.onclick = () => { const t = TALES.find(x => x.id === b.dataset.tale); m.close(); readTale(h, t); });
+    const lib = card.querySelector('.talelib');
+    const bindLib = () => { G.bindTaleShelf(lib, () => { lib.innerHTML = G.taleShelfHTML(p); bindLib(); }); lib.querySelectorAll('[data-tale]').forEach(b => b.onclick = () => { const t = TALES.find(x => x.id === b.dataset.tale); m.close(); readTale(h, t); }); };
+    bindLib();
     say('Which story shall we read?', 'Mình đọc truyện nào nhỉ?');
   };
 
