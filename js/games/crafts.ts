@@ -1,263 +1,422 @@
-﻿import { register, untilRight } from './frame.js';
+﻿import { register } from './frame.js';
 import { T } from '../i18n.js';
+import { saveProfiles } from '../state.js';
 import { pic } from '../art.js';
 import { el, wait } from '../util.js';
+
+type Pt = { x: number; y: number };
+
+function keep(api: any, png: string) {
+  for (const p of api.players || []) {
+    if (!p || !Array.isArray(p.album)) continue;
+    p.album.push(png);
+    if (p.album.length > 12) p.album.shift();
+  }
+  saveProfiles();
+}
+
+function pad(api: any, aspect = 0.75, bg = '#fffdf6') {
+  const box = api.stage.getBoundingClientRect();
+  const w = Math.round(Math.max(260, Math.min(520, box.width - 16, (innerHeight * 0.45) / aspect)));
+  const h = Math.round(w * aspect);
+  const dpr = Math.min(2, devicePixelRatio || 1);
+  const wrap = el('div', 'cr-wrap');
+  wrap.style.position = 'relative';
+  wrap.style.margin = '0 auto';
+  wrap.style.touchAction = 'none';
+  wrap.style.width = w + 'px';
+  wrap.style.height = h + 'px';
+
+  const c: HTMLCanvasElement = el('canvas', 'cr-cv');
+  c.width = w * dpr;
+  c.height = h * dpr;
+  c.style.width = w + 'px';
+  c.style.height = h + 'px';
+  c.style.borderRadius = '18px';
+  c.style.boxShadow = '0 4px 14px rgba(40,30,60,.18)';
+  c.style.background = bg;
+  c.style.display = 'block';
+
+  const g = c.getContext('2d')!;
+  g.scale(dpr, dpr);
+  g.lineCap = 'round';
+  g.lineJoin = 'round';
+
+  wrap.appendChild(c);
+  api.stage.appendChild(wrap);
+  return { wrap, c, g, w, h };
+}
+
+function stroke(c: HTMLCanvasElement, w: number, pts: Pt[], ms = 800): HTMLButtonElement {
+  const b: HTMLButtonElement = el('button', 'cr-stroke-btn');
+  b.style.position = 'absolute';
+  b.style.inset = '0';
+  b.style.width = '100%';
+  b.style.height = '100%';
+  b.style.opacity = '0';
+  b.style.cursor = 'pointer';
+  b.onclick = () => {
+    const rect = c.getBoundingClientRect();
+    const scale = w / rect.width;
+    let step = 0;
+    const timer = setInterval(() => {
+      if (step >= pts.length) {
+        clearInterval(timer);
+        return;
+      }
+      const p = pts[step];
+      const ev = { clientX: rect.left + (p.x / scale), clientY: rect.top + (p.y / scale) };
+      if (step === 0) {
+        c.dispatchEvent(new PointerEvent('pointerdown', { ...ev, bubbles: true }));
+      } else {
+        c.dispatchEvent(new PointerEvent('pointermove', { ...ev, bubbles: true }));
+      }
+      if (step === pts.length - 1) {
+        c.dispatchEvent(new PointerEvent('pointerup', { ...ev, bubbles: true }));
+      }
+      step++;
+    }, Math.max(16, Math.floor(ms / pts.length)));
+  };
+  return b;
+}
 
 let styled = false;
 function style() {
   if (styled) return;
   styled = true;
   document.head.appendChild(el('style', '', `
-.cr-board { display: flex; flex-direction: column; align-items: center; gap: 14px; padding: 12px; margin: 0 auto; max-width: 96vw; }
-.cr-stage { position: relative; width: min(360px, 86vw); height: min(280px, 42vh); background: #fffdf6; border-radius: 20px; box-shadow: 0 4px 16px rgba(40, 30, 60, .14); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; overflow: hidden; padding: 10px; }
-.cr-controls { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; max-width: 380px; }
-.cr-btn { min-width: 64px; min-height: 64px; padding: 8px 16px; border-radius: 999px; border: 2px solid #3b2a4f; background: #fff; box-shadow: 0 3px 0 rgba(59, 42, 79, .2); font: 800 17px var(--font, sans-serif); color: #3b2a4f; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; touch-action: manipulation; }
-.cr-btn:active { transform: translateY(2px); box-shadow: 0 1px 0 rgba(59, 42, 79, .2); }
-.cr-preview { font-size: 72px; line-height: 1.2; text-align: center; }
+.cr-row { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; align-items: center; margin: 8px auto 0; max-width: 96vw; }
+.cr-sw { width: 44px; height: 44px; min-width: 44px; min-height: 44px; border-radius: 50%; border: 3px solid #fff; box-shadow: 0 2px 6px rgba(0,0,0,.25); cursor: pointer; }
+.cr-sw.on { outline: 4px solid #4a2a78; outline-offset: 2px; }
+.cr-btn { min-width: 44px; min-height: 44px; padding: 6px 16px; border: 0; border-radius: 999px; background: #fff; box-shadow: 0 3px 0 rgba(59,42,79,.18); font: 800 17px var(--font, sans-serif); color: #3b2a4f; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+.cr-btn.go { background: #3cba54; color: #fff; }
+.gl.little .cr-sw, .gl.little .cr-btn { min-width: 64px; min-height: 64px; }
 `));
 }
 
-async function runCraftSequence(api, {
+function palette(api: any, colors = ['#e63946', '#f1faee', '#a8dadc', '#457b9d', '#1d3557', '#ffb703']) {
+  style();
+  const state = { color: colors[0] };
+  const row = el('div', 'cr-row');
+  const btns = colors.map((col, i) => {
+    const b = el('button', `cr-sw ${i === 0 ? 'on' : ''}`);
+    b.style.background = col;
+    b.onclick = () => {
+      state.color = col;
+      btns.forEach(x => x.classList.toggle('on', x === b));
+      api.sfx.tap();
+    };
+    return b;
+  });
+  row.append(...btns);
+  api.stage.appendChild(row);
+  return { row, btns, state, of: (c: string) => btns.find((b: any) => b.style.background === c) };
+}
+
+async function runCraftPad(api: any, {
   sayText,
-  steps,
-  winTitle
+  winTitle,
+  drawBase
 }: {
   sayText: [string, string];
-  steps: Array<{ icon: string; name: [string, string]; preview: string }>;
   winTitle: [string, string];
+  drawBase: (g: CanvasRenderingContext2D, w: number, h: number) => void;
 }) {
   style();
   api.say(sayText[0], sayText[1]);
-  api.dots(steps.length, 0);
+  api.dots(3, 0);
 
-  const wrap = el('div', 'cr-board'); api.stage.appendChild(wrap);
-  const stage = el('div', 'cr-stage'); wrap.appendChild(stage);
-  const preview = el('div', 'cr-preview', pic(steps[0].preview)); stage.appendChild(preview);
-  const controls = el('div', 'cr-controls'); wrap.appendChild(controls);
+  const { wrap, c, g, w, h } = pad(api, 0.75, '#1e1e24');
+  const pal = palette(api);
 
-  const btns = steps.map((s, idx) => {
-    const b = el('button', 'cr-btn', `${pic(s.icon)} <span>${T(s.name[0], s.name[1])}</span>`);
-    b.dataset.step = String(idx);
-    controls.appendChild(b);
-    return b;
+  const done = el('button', 'cr-btn go', `${pic('✅')} ${T('Save Craft Keepsake', 'Lưu Tác Phẩm Album')}`);
+  done.disabled = true;
+  const row = el('div', 'cr-row', done);
+  api.stage.appendChild(row);
+
+  let painting = false;
+  let painted = 0;
+  drawBase(g, w, h);
+
+  const onDown = (e: PointerEvent) => {
+    painting = true;
+    g.strokeStyle = pal.state.color;
+    g.lineWidth = api.little ? 18 : 12;
+    const rect = c.getBoundingClientRect();
+    const scale = w / rect.width;
+    g.beginPath();
+    g.moveTo((e.clientX - rect.left) * scale, (e.clientY - rect.top) * scale);
+  };
+  const onMove = (e: PointerEvent) => {
+    if (!painting) return;
+    const rect = c.getBoundingClientRect();
+    const scale = w / rect.width;
+    const x = (e.clientX - rect.left) * scale;
+    const y = (e.clientY - rect.top) * scale;
+    g.lineTo(x, y);
+    g.stroke();
+    painted += 2;
+    if (painted > 120 && done.disabled) {
+      done.disabled = false;
+      api.dots(3, 1);
+    }
+  };
+  const onUp = () => { painting = false; };
+
+  c.addEventListener('pointerdown', onDown);
+  c.addEventListener('pointermove', onMove);
+  window.addEventListener('pointerup', onUp);
+  api.onCleanup(() => {
+    c.removeEventListener('pointerdown', onDown);
+    c.removeEventListener('pointermove', onMove);
+    window.removeEventListener('pointerup', onUp);
   });
 
-  let current = 0;
-  while (current < steps.length) {
-    api.plan(() => btns[current] || null, { maxActions: 5 });
-    const target = btns[current];
-    const clicked = await untilRight(api, btns, e => e === target);
-    if (!clicked || api.closed) return;
-    preview.innerHTML = pic(steps[current].preview);
-    api.sfx.pop(current);
-    current++;
-    api.dots(steps.length, current);
-    await wait(300);
-  }
-  await wait(800);
+  api.plan(() => {
+    if (!c.isConnected) return null;
+    if (!done.disabled) return done;
+    const pts = Array.from({ length: 12 }, (_, i) => ({ x: w * (0.25 + 0.04 * i), y: h * (0.35 + 0.03 * (i % 3)) }));
+    return stroke(c, w, pts, 600);
+  }, { maxActions: 8 });
+
+  const ok = await new Promise<boolean>(res => {
+    done.onclick = () => res(true);
+    api.onCleanup(() => res(false));
+  });
+  if (!ok || api.closed) return;
+
+  api.right(done);
+  keep(api, c.toDataURL('image/png'));
+  api.say('Saved your craft creation to your Album!', 'Đã lưu tác phẩm thủ công của con vào Album!');
+  await wait(1200);
+  api.dots(3, 3);
   return api.win({ title: T(winTitle[0], winTitle[1]) });
 }
 
-// 1. lacquer: Lacquer Painting / Tranh Sơn Mài
+// 1. lacquer
 register({
   id: 'lacquer', icon: '🖼️',
   name: () => T('Lacquer Painting', 'Tranh Sơn Mài'),
-  async run(api) {
-    return runCraftSequence(api, {
-      sayText: ['Lay real gold leaf and polish layers of natural sap until shimmering art emerges!', 'Dát vàng quỳ và mài từng lớp sơn ta để ánh lên bức tranh huyền ảo!'],
-      steps: [
-        { icon: '🪵', name: ['Black Lacquer Board', 'Vóc Gỗ Sơn Đen'], preview: '🪵' },
-        { icon: '✨', name: ['Gold Leaf Inlay', 'Dát Vàng Quỳ'], preview: '✨' },
-        { icon: '🪷', name: ['Polished Lotus Bloom', 'Mài Hiện Tranh Sen'], preview: '🪷' }
-      ],
-      winTitle: ['Luminous Lacquer Masterpiece!', 'Bức Tranh Sơn Mài Lấp Lánh Tuyệt Đẹp!']
+  run(api) {
+    return runCraftPad(api, {
+      sayText: ['Gently rub gold leaf onto the dark lacquer board!', 'Thoa dát vàng quỳ lấp lánh lên vóc gỗ sơn mài nhé!'],
+      winTitle: ['Lacquer Painting Saved!', 'Tranh Sơn Mài Đã Ở Trong Album!'],
+      drawBase(g, w, h) {
+        g.fillStyle = '#121212';
+        g.fillRect(0, 0, w, h);
+        g.font = `${Math.round(w * 0.18)}px sans-serif`;
+        g.fillText('🪷', w * 0.38, h * 0.6);
+      }
     });
   }
 });
 
-// 2. scratch: Scratch Art / Tranh Cào
+// 2. scratch
 register({
   id: 'scratch', icon: '✨',
   name: () => T('Scratch Art', 'Tranh Cào'),
-  async run(api) {
-    return runCraftSequence(api, {
-      sayText: ['Gently scrape away the dark layer with a stylus to reveal dazzling rainbow hues beneath!', 'Dùng que tre cào nhẹ lớp phấn đen để lộ ra sắc cầu vồng lấp lánh nhé!'],
-      steps: [
-        { icon: '🖌️', name: ['Scratch a Star', 'Cào Hình Ngôi Sao'], preview: '⭐' },
-        { icon: '🌈', name: ['Reveal Rainbow Waves', 'Lộ Dải Cầu Vồng'], preview: '🌈' },
-        { icon: '🎆', name: ['Sparkling Night Sky', 'Bầu Trời Đầy Tia Sáng'], preview: '✨' }
-      ],
-      winTitle: ['Dazzling Scratch Artwork!', 'Bức Tranh Cào Cầu Vồng Tuyệt Đẹp!']
+  run(api) {
+    return runCraftPad(api, {
+      sayText: ['Scratch away the dark coat to reveal rainbow colors underneath!', 'Cào lớp phủ đen để lộ dải màu cầu vồng rực rỡ nhé!'],
+      winTitle: ['Scratch Art Keepsake Saved!', 'Tranh Cào Cầu Vồng Đã Ở Trong Album!'],
+      drawBase(g, w, h) {
+        g.fillStyle = '#212529';
+        g.fillRect(0, 0, w, h);
+        g.strokeStyle = '#ffb703';
+        g.lineWidth = 3;
+        g.strokeRect(w * 0.08, h * 0.08, w * 0.84, h * 0.84);
+      }
     });
   }
 });
 
-// 3. bubblepaint: Bubble Paint / Vẽ Bong Bóng
+// 3. bubblepaint
 register({
   id: 'bubblepaint', icon: '🫧',
   name: () => T('Bubble Paint', 'Vẽ Bong Bóng'),
-  async run(api) {
-    return runCraftSequence(api, {
-      sayText: ['Blow joyful soapy bubbles in bright watercolours, then press paper down as they pop!', 'Thổi bong bóng màu xà phòng rực rỡ rồi áp giấy để in những đốm tròn diệu kỳ!'],
-      steps: [
-        { icon: '🫧', name: ['Blue Bubbles', 'Bong Bóng Xanh Biển'], preview: '🫧' },
-        { icon: '🌸', name: ['Pink Foam Bubbles', 'Bong Bóng Hồng Đào'], preview: '🌸' },
-        { icon: '📜', name: ['Bubble Print Paper', 'Trang Giấy Đốm Màu'], preview: '🎨' }
-      ],
-      winTitle: ['Bubbly Dreamy Picture!', 'Tranh Bong Bóng Nghệ Thuật Đã Xong!']
+  run(api) {
+    return runCraftPad(api, {
+      sayText: ['Pop soapy color bubbles onto your sheet of paper!', 'Thổi bong bóng xà phòng màu lên trang giấy nhé!'],
+      winTitle: ['Bubble Print Artwork Saved!', 'Tranh Bong Bóng Đã Ở Trong Album!'],
+      drawBase(g, w, h) {
+        g.fillStyle = '#f8f9fa';
+        g.fillRect(0, 0, w, h);
+        g.font = `${Math.round(w * 0.14)}px sans-serif`;
+        g.fillText('🫧', w * 0.15, h * 0.4);
+        g.fillText('🫧', w * 0.55, h * 0.65);
+      }
     });
   }
 });
 
-// 4. fingerpaint: Finger Painting / Vẽ Bằng Ngón Tay
+// 4. fingerpaint
 register({
   id: 'fingerpaint', icon: '🖐️',
   name: () => T('Finger Painting', 'Vẽ Bằng Ngón Tay'),
-  async run(api) {
-    return runCraftSequence(api, {
-      sayText: ['Dip your fingertips straight into silky non-toxic paint and dab your imagination onto the page!', 'Chấm ngón tay vào vệt màu mát mịn để vẽ những bông hoa và chú bướm xinh xắn!'],
-      steps: [
-        { icon: '🔴', name: ['Red Petal Dab', 'Chấm Cánh Hoa Đỏ'], preview: '🌺' },
-        { icon: '🟢', name: ['Green Vine Dab', 'Vuốt Cành Lá Xanh'], preview: '🌿' },
-        { icon: '🦋', name: ['Fingerprint Butterfly', 'In Chú Bướm Vàng'], preview: '🦋' }
-      ],
-      winTitle: ['A Cheerful Fingerprint Art Album!', 'Bức Tranh Dấu Tay Dễ Thương Đã Xong!']
+  run(api) {
+    return runCraftPad(api, {
+      sayText: ['Paint with your fingertips directly on the canvas!', 'Dùng ngón tay chấm tô màu trực tiếp lên tranh nhé!'],
+      winTitle: ['Fingerprint Picture Saved!', 'Tranh Dấu Ngón Tay Đã Ở Trong Album!'],
+      drawBase(g, w, h) {
+        g.fillStyle = '#fffdf6';
+        g.fillRect(0, 0, w, h);
+        g.font = `${Math.round(w * 0.15)}px sans-serif`;
+        g.fillText('🌺', w * 0.2, h * 0.5);
+        g.fillText('🦋', w * 0.6, h * 0.5);
+      }
     });
   }
 });
 
-// 5. weatherpaint: Colour the Weather / Tô Màu Thời Tiết
+// 5. weatherpaint
 register({
   id: 'weatherpaint', icon: '🌦️',
   name: () => T('Colour the Weather', 'Tô Màu Thời Tiết'),
-  async run(api) {
-    return runCraftSequence(api, {
-      sayText: ['Paint the sky for sunshine, gentle raindrops, drifting clouds or winter snow!', 'Tô màu cho bầu trời nắng ấm, mưa bay lất phất hay mây trắng bồng bềnh nhé!'],
-      steps: [
-        { icon: '☀️', name: ['Warm Golden Sun', 'Mặt Trời Tỏa Nắng'], preview: '☀️' },
-        { icon: '🌧️', name: ['Gentle Spring Shower', 'Cơn Mưa Rào Mát Rượi'], preview: '🌧️' },
-        { icon: '🌈', name: ['Clear Sky Rainbow', 'Cầu Vồng Sau Mưa'], preview: '🌈' }
-      ],
-      winTitle: ['A Full Sky of Seasons!', 'Bầu Trời Bốn Mùa Rực Rỡ Sắc Màu!']
+  run(api) {
+    return runCraftPad(api, {
+      sayText: ['Paint gentle rain, sunbeams, and clouds in the sky!', 'Tô màu cho nắng ấm và hạt mưa dịu dàng nhé!'],
+      winTitle: ['Weather Canvas Saved!', 'Tranh Thời Tiết Đã Ở Trong Album!'],
+      drawBase(g, w, h) {
+        g.fillStyle = '#e0f2fe';
+        g.fillRect(0, 0, w, h);
+        g.font = `${Math.round(w * 0.16)}px sans-serif`;
+        g.fillText('☀️', w * 0.15, h * 0.4);
+        g.fillText('🌧️', w * 0.55, h * 0.6);
+      }
     });
   }
 });
 
-// 6. thocam: Brocade Patterns / Hoa Văn Thổ Cẩm
+// 6. thocam
 register({
   id: 'thocam', icon: '🧶',
   name: () => T('Brocade Patterns', 'Hoa Văn Thổ Cẩm'),
-  async run(api) {
-    return runCraftSequence(api, {
-      sayText: ['Arrange highland geometric motifs into a proud, vibrant ethnic brocade border!', 'Xếp những khối hình học kỷ hà độc đáo thành dải thổ cẩm vùng cao rực rỡ!'],
-      steps: [
-        { icon: '🔷', name: ['Mountain Diamond', 'Họa Tiết Hình Thoi'], preview: '🔷' },
-        { icon: '🔺', name: ['Pine Tree Triangles', 'Rừng Thông Tam Giác'], preview: '🔺' },
-        { icon: '🧵', name: ['Woven Brocade Border', 'Dải Viền Thổ Cẩm'], preview: '🧣' }
-      ],
-      winTitle: ['Highland Brocade Tapestry!', 'Tấm Thổ Cẩm Vùng Cao Đẹp Tuyệt Vời!']
+  run(api) {
+    return runCraftPad(api, {
+      sayText: ['Paint vibrant ethnic geometric patterns on woven cloth!', 'Tô màu dải thổ cẩm vùng cao rực rỡ nhé!'],
+      winTitle: ['Brocade Tapestry Saved!', 'Thổ Cẩm Vùng Cao Đã Ở Trong Album!'],
+      drawBase(g, w, h) {
+        g.fillStyle = '#2b2d42';
+        g.fillRect(0, 0, w, h);
+        g.strokeStyle = '#d90429';
+        g.lineWidth = 4;
+        g.strokeRect(w * 0.05, h * 0.1, w * 0.9, h * 0.8);
+      }
     });
   }
 });
 
-// 7. pixelpic: Pixel Picture / Tranh Ô Vuông
+// 7. pixelpic
 register({
   id: 'pixelpic', icon: '👾',
   name: () => T('Pixel Picture', 'Tranh Ô Vuông'),
-  async run(api) {
-    return runCraftSequence(api, {
-      sayText: ['Fill in each tiny square like little mosaic tiles to make retro character art!', 'Tô màu từng ô vuông nhỏ xíu để tạo nên nhân vật hoạt hình thật ngộ nghĩnh!'],
-      steps: [
-        { icon: '🟨', name: ['Yellow Face Pixels', 'Tô Ô Màu Vàng'], preview: '🙂' },
-        { icon: '🟥', name: ['Red Cap Pixels', 'Tô Chiếc Mũ Đỏ'], preview: '🧢' },
-        { icon: '⭐', name: ['Shiny Pixel Heart', 'Điểm Xuyết Trái Tim'], preview: '💖' }
-      ],
-      winTitle: ['Pixel Art Finished!', 'Bức Tranh Pixel Đáng Yêu Đã Hoàn Thành!']
+  run(api) {
+    return runCraftPad(api, {
+      sayText: ['Fill grid squares to paint a cute retro pixel character!', 'Tô màu ô vuông để tạo nhân vật pixel ngộ nghĩnh nhé!'],
+      winTitle: ['Pixel Art Saved!', 'Tranh Pixel Đã Ở Trong Album!'],
+      drawBase(g, w, h) {
+        g.fillStyle = '#f1f5f9';
+        g.fillRect(0, 0, w, h);
+        g.strokeStyle = '#cbd5e1';
+        g.lineWidth = 2;
+        for (let x = 0; x < w; x += 24) { g.beginPath(); g.moveTo(x, 0); g.lineTo(x, h); g.stroke(); }
+        for (let y = 20; y < h; y += 24) { g.beginPath(); g.moveTo(0, y); g.lineTo(w, y); g.stroke(); }
+      }
     });
   }
 });
 
-// 8. fireworks: Fireworks Painter / Vẽ Pháo Hoa
+// 8. fireworks
 register({
   id: 'fireworks', icon: '🎆',
   name: () => T('Fireworks Painter', 'Vẽ Pháo Hoa'),
-  async run(api) {
-    return runCraftSequence(api, {
-      sayText: ['Light up the midnight sky with bursts of sparkling gold and ruby fireworks over the harbour and lake!', 'Thắp sáng bầu trời đêm Giao Thừa bằng những chùm pháo hoa rực rỡ trên mặt hồ!'],
-      steps: [
-        { icon: '✨', name: ['Golden Comet Trail', 'Vệt Pháo Sáng Vàng'], preview: '✨' },
-        { icon: '🎆', name: ['Ruby Flower Burst', 'Bông Pháo Hoa Đỏ'], preview: '🎆' },
-        { icon: '🎇', name: ['Sparkler Finale', 'Mưa Sao Lấp Lánh'], preview: '🎇' }
-      ],
-      winTitle: ['A Night Sky Full of Wonder!', 'Bầu Trời Pháo Hoa Giao Thừa Đẹp Lộng Lẫy!']
+  run(api) {
+    return runCraftPad(api, {
+      sayText: ['Draw glowing fireworks bursts across the midnight sky!', 'Vẽ những chùm pháo hoa lấp lánh đêm Giao Thừa nhé!'],
+      winTitle: ['Fireworks Display Saved!', 'Bức Tranh Pháo Hoa Đã Ở Trong Album!'],
+      drawBase(g, w, h) {
+        g.fillStyle = '#0b090a';
+        g.fillRect(0, 0, w, h);
+        g.font = `${Math.round(w * 0.16)}px sans-serif`;
+        g.fillText('🎆', w * 0.2, h * 0.45);
+        g.fillText('✨', w * 0.6, h * 0.45);
+      }
     });
   }
 });
 
-// 9. masks: Mid-Autumn Masks / Làm Mặt Nạ Trung Thu
+// 9. masks
 register({
   id: 'masks', icon: '🎭',
   name: () => T('Mid-Autumn Masks', 'Làm Mặt Nạ Trung Thu'),
-  async run(api) {
-    return runCraftSequence(api, {
-      sayText: ['Paint papier-mâché masks of the jolly Moon God Ông Địa and cheerful rabbits for festival night!', 'Vẽ mặt nạ giấy bồi Ông Địa phúc hậu và chú thỏ ngọc để rước đèn đêm rằm!'],
-      steps: [
-        { icon: '🎭', name: ['Smiling Ông Địa Mask', 'Mặt Nạ Ông Địa'], preview: '🎭' },
-        { icon: '🐰', name: ['Jade Rabbit Mask', 'Mặt Nạ Thỏ Ngọc'], preview: '🐰' },
-        { icon: '🏮', name: ['Moonlight Lantern Ribbons', 'Gắn Dải Ruy Băng Đèn Lồng'], preview: '🏮' }
-      ],
-      winTitle: ['Mid-Autumn Festival Masks Ready!', 'Mặt Nạ Trung Thu Vui Nhộn Đã Xong!']
+  run(api) {
+    return runCraftPad(api, {
+      sayText: ['Decorate festival masks with bright paint!', 'Tô màu chiếc mặt nạ giấy bồi đón Rằm tháng Tám nhé!'],
+      winTitle: ['Festival Mask Saved!', 'Mặt Nạ Trung Thu Đã Ở Trong Album!'],
+      drawBase(g, w, h) {
+        g.fillStyle = '#fff7ed';
+        g.fillRect(0, 0, w, h);
+        g.font = `${Math.round(w * 0.2)}px sans-serif`;
+        g.fillText('🎭', w * 0.35, h * 0.62);
+      }
     });
   }
 });
 
-// 10. makeface: Make a Face / Ghép Khuôn Mặt
+// 10. makeface
 register({
   id: 'makeface', icon: '😀',
   name: () => T('Make a Face', 'Ghép Khuôn Mặt'),
-  async run(api) {
-    return runCraftSequence(api, {
-      sayText: ['Choose laughing eyes, silly button noses and great big smiles to build cheerful faces!', 'Chọn đôi mắt cười, chiếc mũi tròn và nụ cười rạng rỡ để ghép thành khuôn mặt vui vẻ!'],
-      steps: [
-        { icon: '👀', name: ['Sparkling Kind Eyes', 'Đôi Mắt Tinh Anh'], preview: '👀' },
-        { icon: '👃', name: ['Button Nose', 'Chiếc Mũi Nhỏ'], preview: '👃' },
-        { icon: '👄', name: ['Happy Broad Smile', 'Nụ Cười Rạng Rỡ'], preview: '😀' }
-      ],
-      winTitle: ['A Big Warm Cheerful Smile!', 'Khuôn Mặt Thật Tươi Tắn Và Dễ Thương!']
+  run(api) {
+    return runCraftPad(api, {
+      sayText: ['Paint smiles, eyes, and expressions on a cheerful face!', 'Tô nụ cười và ánh mắt rạng rỡ lên khuôn mặt nhé!'],
+      winTitle: ['Cheerful Face Saved!', 'Khuôn Mặt Vui Vẻ Đã Ở Trong Album!'],
+      drawBase(g, w, h) {
+        g.fillStyle = '#fef3c7';
+        g.fillRect(0, 0, w, h);
+        g.beginPath();
+        g.arc(w * 0.5, h * 0.5, w * 0.3, 0, Math.PI * 2);
+        g.strokeStyle = '#f59e0b';
+        g.lineWidth = 5;
+        g.stroke();
+      }
     });
   }
 });
 
-// 11. gallery: My Little Gallery / Phòng Tranh Của Em
+// 11. gallery
 register({
   id: 'gallery', icon: '🖼️',
   name: () => T('My Little Gallery', 'Phòng Tranh Của Em'),
-  async run(api) {
-    return runCraftSequence(api, {
-      sayText: ['Select ornate wooden frames and hang your favorite drawings up in your cozy home museum!', 'Chọn khung gỗ xinh xắn và treo những bức tranh bé yêu thích lên phòng triển lãm nhé!'],
-      steps: [
-        { icon: '🪵', name: ['Carved Wood Frame', 'Khung Gỗ Chạm Khắc'], preview: '🖼️' },
-        { icon: '💡', name: ['Spotlight Above', 'Gắn Đèn Soi Tranh'], preview: '💡' },
-        { icon: '🏷️', name: ['Artist Signature Tag', 'Tấm Biển Tên Tác Giả'], preview: '🎨' }
-      ],
-      winTitle: ['Your Gallery is Open for Visitors!', 'Phòng Tranh Nhỏ Của Bé Đã Mở Cửa!']
+  run(api) {
+    return runCraftPad(api, {
+      sayText: ['Paint and frame your picture for your home exhibition!', 'Vẽ và lồng khung cho bức tranh triển lãm nhé!'],
+      winTitle: ['Gallery Frame Artwork Saved!', 'Bức Tranh Triển Lãm Đã Ở Trong Album!'],
+      drawBase(g, w, h) {
+        g.fillStyle = '#f8fafc';
+        g.fillRect(0, 0, w, h);
+        g.strokeStyle = '#78350f';
+        g.lineWidth = 10;
+        g.strokeRect(10, 10, w - 20, h - 20);
+      }
     });
   }
 });
 
-// 12. leafrub: Leaf Rubbings / In Lá
+// 12. leafrub
 register({
   id: 'leafrub', icon: '🍃',
   name: () => T('Leaf Rubbings', 'In Lá'),
-  async run(api) {
-    return runCraftSequence(api, {
-      sayText: ['Place autumn leaves under drawing paper and rub wax crayons over them to reveal intricate veins!', 'Đặt chiếc lá dưới trang giấy rồi dùng sáp màu chà nhẹ để hiện lên từng đường gân lá kỳ diệu!'],
-      steps: [
-        { icon: '🍃', name: ['Broad Maple Leaf', 'Chiếc Lá Phong Rơi'], preview: '🍁' },
-        { icon: '🖍️', name: ['Wax Crayon Rubbing', 'Chà Sáp Màu'], preview: '🖍️' },
-        { icon: '🌿', name: ['Intricate Vein Pattern', 'Hiện Đường Gân Lá'], preview: '🌿' }
-      ],
-      winTitle: ['Natural Leaf Pattern Unveiled!', 'Bức Tranh In Lá Tự Nhiên Thật Đẹp!']
+  run(api) {
+    return runCraftPad(api, {
+      sayText: ['Rub wax crayons across the leaf to reveal delicate veins!', 'Chà sáp màu lên lá để hiện đường gân lá kỳ diệu nhé!'],
+      winTitle: ['Leaf Rubbing Keepsake Saved!', 'Tranh In Lá Tự Nhiên Đã Ở Trong Album!'],
+      drawBase(g, w, h) {
+        g.fillStyle = '#fefae0';
+        g.fillRect(0, 0, w, h);
+        g.font = `${Math.round(w * 0.2)}px sans-serif`;
+        g.fillText('🍁', w * 0.35, h * 0.62);
+      }
     });
   }
 });
