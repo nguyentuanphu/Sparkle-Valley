@@ -35,7 +35,7 @@ marketing/source/runvalley.log
 .copilot/
 # --- made by tools/build.mts from .ts files (never committed; do not edit by hand) ---
 /home/analytics.js
-/home/app.js
+/home/site.js
 /js/adventure.js
 /js/audio.js
 /js/autoplay.js
@@ -92,6 +92,7 @@ marketing/source/runvalley.log
 /js/howto-player.js
 /js/howto-registry.js
 /js/howto.js
+/js/hud.js
 /js/install.js
 /js/keepcopy.js
 /js/lanterns.js
@@ -130,6 +131,7 @@ marketing/source/runvalley.log
 /js/voice-index.js
 /js/voice.js
 /js/voicepack.js
+/js/website.js
 /js/world.js
 /js/worldedit.js
 /studio/ui/app.js

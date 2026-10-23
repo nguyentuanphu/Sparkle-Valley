@@ -44,7 +44,6 @@ export class Hud {
         <div class="chips"><button class="chip c-money" data-chip="money" title="${T('Coins', 'Đồng xu')}"></button><button class="chip c-orbs" data-chip="orbs" title="${T('Sparkle Orbs', 'Ngọc Lấp Lánh')}"></button><button class="chip c-leafy" data-chip="leafy" title="${T('Leafies', 'Bạn Lá')}"></button></div>
         <div class="hud-btns">
           <button class="simplesw" aria-label="${T('Big pictures screen', 'Màn hình hình to')}"><span>${ICONS.bigTiles}</span><b>${T('Big pictures', 'Hình to')}</b></button>
-          <button class="homebtn" aria-label="${T('Parent website', 'Trang web phụ huynh')}"><span>${ICONS.info}</span><b>${T('Home', 'Trang chủ')}</b></button>
         </div>
       </div>
       <div class="quest">
@@ -116,9 +115,8 @@ export class Hud {
     this.q('.z-where').onclick = () => game.openWhere && game.openWhere(i);   // (Round U) "Where is…?" sparkles
     this.q('.dk.snd').onclick = () => game.openSound(this.q('.dk.snd'));   // (Round U) the three Sound switches: music, sounds, voice
     this.q('.friendchip').onclick = () => { const r = game.findFriend(i); if (r) game.say && game.say(r[0], r[1]); };
-        // Parent website Home button: opens /home in a new tab, preserving game session
-        this.q('.homebtn').onclick = () => { SFX.tap(); window.open('/home', '_blank', 'noopener,noreferrer'); };
-        // (Round V, owner 13 Oct) a tap on the quest folds it to a small chip and hides its arrow and sparkles; a tap on the chip
+    // (r89, owner 23 Oct AEDT) the family website moved from this corner into Settings (js/ui.ts openQuick, js/website.ts)
+    // (Round V, owner 13 Oct) a tap on the quest folds it to a small chip and hides its arrow and sparkles; a tap on the chip
     // opens it again and says the goal (remembered per child)
     this.q('.q-say').onclick = () => { const p = this.hero.profile; p.questFold = !p.questFold; saveProfiles(); this.foldQuest(); if (!p.questFold) game.sayObjective(i); };
     this.q('.q-go').onclick = () => game.goToObjective(i);
@@ -161,6 +159,12 @@ export class Hud {
       if (w && (mid - w / 2 < L || mid + w / 2 > R)) { root.style.setProperty('--quest-x', Math.round((L + R) / 2) + 'px'); root.style.setProperty('--quest-gap-w', Math.max(200, Math.round(R - L)) + 'px'); root.classList.add('quest-gap'); }
       return;
     }
+    // (r89, owner 23 Oct AEDT: the goal row moves up into the space the Home button left) on a phone the goal row sits just
+    // under what the left corner really holds now (the player card, Big pictures, the companion row), measured, not a
+    // fixed height: it moves up when that corner is shorter and down when it is taller, in each player's own half
+    { const tl = this.q('.hud-tl'); let bottom = 0;
+      for (const c of tl.children) if (c instanceof HTMLElement && !c.hidden && c.offsetWidth && c.offsetHeight) bottom = Math.max(bottom, c.offsetTop + c.offsetHeight);
+      if (bottom) root.style.setProperty('--quest-tl-below', Math.round(tl.offsetTop + bottom) + 'px'); else root.style.removeProperty('--quest-tl-below'); }
     const reserve = nav.offsetWidth + (parseFloat(getComputedStyle(nav).right) || 0) + (parseFloat(getComputedStyle(quest).left) || 0) + 14;
     root.style.setProperty('--quest-nav-reserve', reserve + 'px');
     root.style.setProperty('--quest-below-top', (nav.offsetTop + nav.offsetHeight + 12) + 'px');
