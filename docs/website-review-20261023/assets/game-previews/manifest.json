@@ -1,0 +1,173 @@
+{
+  "note": "Existing project marketing game captures, reused unchanged. These are saved scenes, not newly captured latest-release evidence. Each scene has English and Vietnamese versions.",
+  "images": [
+    {
+      "asset": "assets/game-previews/adventure-en.jpg",
+      "source": "marketing/source/stills10/adventure-en.jpg",
+      "sha256": "1824c0f532d4117219022f0af0718c4ab4f409b791d7e216e315e869aaa76e45",
+      "width": 1080,
+      "height": 1920
+    },
+    {
+      "asset": "assets/game-previews/adventure-vi.jpg",
+      "source": "marketing/source/stills10/adventure-vi.jpg",
+      "sha256": "b1e13cca0663dd9515309ec1bb50832217796838d30c99022c18660a488b294c",
+      "width": 1080,
+      "height": 1920
+    },
+    {
+      "asset": "assets/game-previews/cine-hanoi-en.jpg",
+      "source": "marketing/source/stills10/cine-hanoi-en.jpg",
+      "sha256": "f964da62bb8c2608da18fe0f0c6d1195290547e6a95b5669f1582daa36523249",
+      "width": 1080,
+      "height": 1920
+    },
+    {
+      "asset": "assets/game-previews/cine-hanoi-vi.jpg",
+      "source": "marketing/source/stills10/cine-hanoi-vi.jpg",
+      "sha256": "c577da967896e06e5e895a439867d4192273d4cb3eb7c35c90b70c79cd73ff8d",
+      "width": 1080,
+      "height": 1920
+    },
+    {
+      "asset": "assets/game-previews/cine-hoian-en.jpg",
+      "source": "marketing/source/stills10/cine-hoian-en.jpg",
+      "sha256": "4f25cf0463d0de420e22b8c1a88d5bea673e59483b042a8897b4e5695f368491",
+      "width": 1080,
+      "height": 1920
+    },
+    {
+      "asset": "assets/game-previews/cine-hoian-vi.jpg",
+      "source": "marketing/source/stills10/cine-hoian-vi.jpg",
+      "sha256": "71856a6af9dfd68f9dc996550134220212feeb69f2f46f9d2bb49f6055f03505",
+      "width": 1080,
+      "height": 1920
+    },
+    {
+      "asset": "assets/game-previews/cine-sydney-en.jpg",
+      "source": "marketing/source/stills10/cine-sydney-en.jpg",
+      "sha256": "038bf8fd0ae90a94ffadf9cb9750b6eaafdaf1678ca7d20de1727cb567395410",
+      "width": 1080,
+      "height": 1920
+    },
+    {
+      "asset": "assets/game-previews/cine-sydney-vi.jpg",
+      "source": "marketing/source/stills10/cine-sydney-vi.jpg",
+      "sha256": "1359dd95110cf782cfa05ef1807e80eeacda933a8d5c3c99f3af22da81ddeb56",
+      "width": 1080,
+      "height": 1920
+    },
+    {
+      "asset": "assets/game-previews/game-colors-en.jpg",
+      "source": "marketing/source/stills10/game-colors-en.jpg",
+      "sha256": "45b2769bd0a7875003575d28ff2d90eb3f71b654376aad896ecf6f49d6f3d624",
+      "width": 1080,
+      "height": 1920
+    },
+    {
+      "asset": "assets/game-previews/game-colors-vi.jpg",
+      "source": "marketing/source/stills10/game-colors-vi.jpg",
+      "sha256": "51f7a13a11df826566dee02bfc7f0a2c3b91a8bc9faa992112bb6bdf15798942",
+      "width": 1080,
+      "height": 1920
+    },
+    {
+      "asset": "assets/game-previews/game-count-en.jpg",
+      "source": "marketing/source/stills10/game-count-en.jpg",
+      "sha256": "c6140dd9b9d4fa86e302dbf32b157d3bd49de62d8c06eae8584508a27385da4c",
+      "width": 1080,
+      "height": 1920
+    },
+    {
+      "asset": "assets/game-previews/game-count-vi.jpg",
+      "source": "marketing/source/stills10/game-count-vi.jpg",
+      "sha256": "93cb35f8086fee15c544912ecb357b2fc9630f045b1e5c943a4928c2df29bb26",
+      "width": 1080,
+      "height": 1920
+    },
+    {
+      "asset": "assets/game-previews/game-kite-en.jpg",
+      "source": "marketing/source/stills10/game-kite-en.jpg",
+      "sha256": "df1a43e17472b4178fa2f51af4a9e8acb2fc66f01e9e9b93f51a6a8e9c0d54e9",
+      "width": 1080,
+      "height": 1920
+    },
+    {
+      "asset": "assets/game-previews/game-kite-vi.jpg",
+      "source": "marketing/source/stills10/game-kite-vi.jpg",
+      "sha256": "bc16451b4e3c12b7169f67a90aa4d8dfec4dbeb2963385a235bb7cbce63c5fd3",
+      "width": 1080,
+      "height": 1920
+    },
+    {
+      "asset": "assets/game-previews/game-money-en.jpg",
+      "source": "marketing/source/stills10/game-money-en.jpg",
+      "sha256": "28bddedaf78a9c67cda85cf1b5aa6d5fd1a2178405819dbe994ab535f1f328bd",
+      "width": 1080,
+      "height": 1920
+    },
+    {
+      "asset": "assets/game-previews/game-money-vi.jpg",
+      "source": "marketing/source/stills10/game-money-vi.jpg",
+      "sha256": "24ab3b4125bd5fd8e00e77f961728c2d09781872f201944bd6f91a295ef2de3c",
+      "width": 1080,
+      "height": 1920
+    },
+    {
+      "asset": "assets/game-previews/game-oanquan-en.jpg",
+      "source": "marketing/source/stills10/game-oanquan-en.jpg",
+      "sha256": "3443245c2e14025235c83d61a2679b3a2c20bbb6e257dd7f3cd4cdb56b45d4fb",
+      "width": 1080,
+      "height": 1920
+    },
+    {
+      "asset": "assets/game-previews/game-oanquan-vi.jpg",
+      "source": "marketing/source/stills10/game-oanquan-vi.jpg",
+      "sha256": "1c8a8d0fe629b696b343543cbee5b069e5a3330830b5d401911a741592488ff5",
+      "width": 1080,
+      "height": 1920
+    },
+    {
+      "asset": "assets/game-previews/game-reading-en.jpg",
+      "source": "marketing/source/stills10/game-reading-en.jpg",
+      "sha256": "0f1843f69d3c5899586746420ea6bb9267dcc625220b19a60aae3d47e8fe100d",
+      "width": 1080,
+      "height": 1920
+    },
+    {
+      "asset": "assets/game-previews/game-reading-vi.jpg",
+      "source": "marketing/source/stills10/game-reading-vi.jpg",
+      "sha256": "2e48a17ffcff6896de69e827c365f01c65ac0332c7662c7e0ee14c68d464dad2",
+      "width": 1080,
+      "height": 1920
+    },
+    {
+      "asset": "assets/game-previews/missions-en.jpg",
+      "source": "marketing/source/stills10/missions-en.jpg",
+      "sha256": "8aea1776cb581b922bc930f16c90195471fee4e9f216124fc29ff71f247d47a7",
+      "width": 1080,
+      "height": 1920
+    },
+    {
+      "asset": "assets/game-previews/missions-vi.jpg",
+      "source": "marketing/source/stills10/missions-vi.jpg",
+      "sha256": "354cd54f668eb95d1eea19218d9d03cf5f06ca1de7d15cb188c6e9a86416b770",
+      "width": 1080,
+      "height": 1920
+    },
+    {
+      "asset": "assets/game-previews/tale-en.jpg",
+      "source": "marketing/source/stills10/tale-en.jpg",
+      "sha256": "a9fcffd8c7b4921d686d411178be718a689bcca1570c8dda430e68d911446eb2",
+      "width": 1080,
+      "height": 1920
+    },
+    {
+      "asset": "assets/game-previews/tale-vi.jpg",
+      "source": "marketing/source/stills10/tale-vi.jpg",
+      "sha256": "c9c493a82a1fc438a4f143de0c4f1bd82c3ee039a5a96f87b32c110c88d0e9e4",
+      "width": 1080,
+      "height": 1920
+    }
+  ]
+}

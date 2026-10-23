@@ -1,0 +1,57 @@
+name: Website consistency
+on:
+  push:
+    branches: [main]
+  pull_request:
+    paths:
+      - 'docs/website-review-20261023/**'
+      - 'js/**'
+      - 'css/**'
+      - 'home/**'
+      - 'content/**'
+      - 'fonts/**'
+      - 'icons/**'
+      - 'sounds/**'
+      - 'voices/**'
+      - 'photos/**'
+      - 'videos/**'
+      - 'vendor/**'
+      - 'manifest.webmanifest'
+      - 'sw.*'
+      - 'index.html'
+      - 'studio/version.json'
+      - '.github/workflows/website-consistency.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: website-consistency-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  website:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install existing generator dependencies
+        working-directory: tests
+        run: npm install --no-package-lock --no-save --no-audit --no-fund
+      - name: Rebuild from this release and check for outdated explanations
+        env:
+          SV_WEBSITE_SOURCE: ${{ github.sha }}
+          SV_WEBSITE_OUTPUT: ${{ runner.temp }}/sparkle-website-preview
+        run: node docs/website-review-20261023/sync-website.mjs
+      - name: Keep rebuilt website and review report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: website-consistency
+          path: |
+            ${{ runner.temp }}/sparkle-website-preview
+            docs/website-review-20261023/website-drift.json
+          if-no-files-found: warn

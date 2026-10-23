@@ -1,0 +1,62 @@
+[
+  {
+    "name": "desktop",
+    "width": 1440,
+    "documentWidth": 1440,
+    "close": {
+      "x": 475,
+      "y": 66,
+      "width": 44,
+      "height": 44
+    },
+    "modalOpen": true
+  },
+  {
+    "name": "phone",
+    "width": 390,
+    "documentWidth": 390,
+    "close": {
+      "x": 212,
+      "y": 11,
+      "width": 44,
+      "height": 44
+    },
+    "modalOpen": true
+  },
+  {
+    "name": "small-phone",
+    "width": 320,
+    "documentWidth": 320,
+    "close": {
+      "x": 212,
+      "y": 11,
+      "width": 44,
+      "height": 44
+    },
+    "modalOpen": true
+  },
+  {
+    "name": "phone-landscape",
+    "width": 844,
+    "documentWidth": 844,
+    "close": {
+      "x": 359,
+      "y": 40,
+      "width": 44,
+      "height": 44
+    },
+    "modalOpen": true
+  },
+  {
+    "name": "tablet-landscape",
+    "width": 1180,
+    "documentWidth": 1180,
+    "close": {
+      "x": 359,
+      "y": 40,
+      "width": 44,
+      "height": 44
+    },
+    "modalOpen": true
+  }
+]
