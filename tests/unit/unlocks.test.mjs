@@ -1,4 +1,4 @@
-﻿import test from 'node:test';
+import test from 'node:test';
 import assert from 'node:assert/strict';
 
 // Set up minimal browser globals for importing modules in node:test
@@ -16,7 +16,7 @@ globalThis.localStorage = {
   removeItem: () => {}
 };
 
-const { isOpen, progressOf, FIRST_SET_GAMES, FIRST_SET_TALES } = await import('../../js/content/unlocks.js');
+const { isOpen, progressOf, FIRST_SET_GAMES, FIRST_SET_TALES, SECOND_SET_GAMES } = await import('../../js/content/unlocks.js');
 const { normalizeProfile } = await import('../../js/state.js');
 
 test('first-set games and tales are always open by default', () => {
@@ -38,7 +38,7 @@ test('second-set game is locked until each first-set game is finished 3 times', 
   const area = 'animals';
   const games = FIRST_SET_GAMES[area];
   assert.ok(games.length > 0);
-  const secondSetGameId = 'new_animal_game_r90';
+  const secondSetGameId = SECOND_SET_GAMES[area][0];
 
   assert.equal(isOpen(profile, secondSetGameId, 'game', area), false);
   const p1 = progressOf(profile, 'game', area);
