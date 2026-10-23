@@ -1,599 +1,496 @@
-﻿import { register, untilRight, choiceButtons } from "./frame.js";
-import { T } from "../i18n.js";
-import { pic } from "../art.js";
-import { el, wait } from "../util.js";
-import { settings } from "../state.js";
+﻿// Reading Corner additions (owner, 23 Oct 2026 AEDT):
+// rd_blend, rd_hats, rd_endings, rd_compound, rd_labels, rd_signs,
+// rd_questions, rd_many, rd_caps, rd_poem, rd_missing, rd_book.
+import { register, untilRight } from './frame.js';
+import { T } from '../i18n.js';
+import { pic } from '../art.js';
+import { el, wait } from '../util.js';
+import { saveProfiles, settings } from '../state.js';
 
 let styled = false;
 function style() {
-  if (styled) return;
-  styled = true;
-  document.head.appendChild(el("style", "", `
-.rd2-wrap { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; padding: 12px; width: 100%; max-width: 600px; margin: 0 auto; }
-.rd2-row { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; align-items: center; }
-.rd2-box { background: rgba(255, 255, 255, 0.92); border: 2px solid #3b2a4f; border-radius: 18px; padding: 12px 18px; font-size: clamp(20px, 4vw, 28px); font-weight: 800; color: #2e1d42; text-align: center; box-shadow: 0 4px 0 rgba(0, 0, 0, 0.15); }
-.rd2-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-width: 120px; min-height: 48px; padding: 8px 16px; border-radius: 16px; border: 2px solid #3b2a4f; background: #ffffff; color: #2e1d42; font-size: clamp(16px, 3.5vw, 20px); font-weight: 800; cursor: pointer; box-shadow: 0 4px 0 rgba(0, 0, 0, 0.18); }
-.gl.little .rd2-btn { min-width: 140px; min-height: 64px; font-size: 20px; }
-.rd2-btn:active { transform: translateY(2px); box-shadow: 0 2px 0 rgba(0, 0, 0, 0.18); }
-.rd2-art { display: inline-flex; width: 36px; height: 36px; }
-.gl.little .rd2-art { width: 44px; height: 44px; }
-.rd2-art svg { width: 100%; height: 100%; }
+  if (styled) return; styled = true;
+  document.head.appendChild(el('style', '', `
+.rd2-board { display: flex; flex-direction: column; align-items: center; gap: 14px; padding: 12px; margin: 0 auto; max-width: 96vw; }
+.rd2-stage { width: min(400px, 90vw); min-height: 200px; background: #fffdf6; border-radius: 20px; box-shadow: 0 4px 16px rgba(40, 30, 60, .14); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 16px; text-align: center; }
+.rd2-controls { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; max-width: 420px; }
+.rd2-btn { min-width: 64px; min-height: 64px; padding: 10px 18px; border-radius: 999px; border: 2px solid #3b2a4f; background: #fff; box-shadow: 0 3px 0 rgba(59, 42, 79, .2); font: 800 18px var(--font, sans-serif); color: #3b2a4f; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px; touch-action: manipulation; }
+.rd2-btn:active { transform: translateY(2px); box-shadow: 0 1px 0 rgba(59, 42, 79, .2); }
+.rd2-big { font-size: 58px; line-height: 1.1; text-align: center; }
+.rd2-desc { font: 800 18px/1.3 var(--font, sans-serif); color: #402c57; max-width: 340px; }
+.gl.little .rd2-btn { min-width: 64px; min-height: 64px; font-size: 20px; }
 `));
 }
 
-const isVi = () => settings.lang === "vi";
+const isVi = () => settings.lang === 'vi';
 
-register({
-  id: "rd_blend",
-  icon: "🔤",
-  name: () => T("Blend the Sounds", "Ghép Âm"),
-  async run(api) {
-    style();
-    const rounds = 3;
-    api.dots(rounds, 0);
+function keep(api: any, png: string) {
+  for (const p of api.players || []) {
+    if (!p || !Array.isArray(p.album)) continue;
+    p.album.push(png);
+    if (p.album.length > 12) p.album.shift();
+  }
+  saveProfiles();
+}
 
-    api.say(
-      "Listen and blend the sounds into a whole word!",
-      "Lắng nghe và ghép các âm thành một từ hoàn chỉnh nhé!"
-    );
-
-    const pairs = [
-      { en: "c - a - t -> cat", vi: "c - a -> ca", art: "🐱" },
-      { en: "s - u - n -> sun", vi: "b - a -> ba", art: "☀️" },
-      { en: "p - i - g -> pig", vi: "g - a -> gà", art: "🐷" }
-    ];
-
-    const wrap = el("div", "rd2-wrap");
-    api.stage.appendChild(wrap);
-
-    for (let r = 0; r < rounds; r++) {
-      if (api.closed) return;
-      wrap.innerHTML = "";
-      const curr = pairs[r];
-      const prompt = isVi() ? curr.vi : curr.en;
-      const box = el("div", "rd2-box", `<span class="rd2-art">${pic(curr.art)}</span> ${prompt}`);
-      wrap.appendChild(box);
-
-      const row = el("div", "rd2-row");
-      wrap.appendChild(row);
-
-      const btn = el("button", "rd2-btn", `<span class="rd2-art">${pic("🔤")}</span> ${T("Blend Word", "Ghép Từ")}`);
-      row.appendChild(btn);
-
-      await untilRight(api, [btn], () => true);
-      if (api.closed) return;
-      api.sfx.pop();
-      api.dots(rounds, r + 1);
-      await wait(300);
-    }
-
+async function runReadingRounds(api: any, prompt: [string, string], qs: Array<{ show: string; desc: [string, string]; choices: string[][]; answer: number }>, done: [string, string]) {
+  style(); api.say(prompt[0], prompt[1]); api.dots(qs.length, 0);
+  const wrap = el('div', 'rd2-board'), stage = el('div', 'rd2-stage'), controls = el('div', 'rd2-controls');
+  api.stage.appendChild(wrap); wrap.append(stage, controls);
+  let k = 0;
+  while (k < qs.length) {
+    const q = qs[k];
+    stage.innerHTML = `<div class="rd2-big">${q.show}</div><div class="rd2-desc">${T(q.desc[0], q.desc[1])}</div>`;
+    controls.innerHTML = '';
+    const btns = q.choices.map((c, i) => {
+      const b = el('button', 'rd2-btn', `<span>${T(c[0], c[1])}</span>`);
+      b.dataset.i = String(i);
+      controls.appendChild(b);
+      return b;
+    });
+    const target = btns[q.answer];
+    api.plan(() => target, { maxActions: 6 });
+    const clicked = await untilRight(api, btns, (e: HTMLElement) => e === target);
+    if (!clicked || api.closed) return;
+    api.sfx.ding();
+    k++; api.dots(qs.length, k);
     await wait(300);
-    return api.win({ title: T("Sounds blended!", "Ghép âm chuẩn xác!") });
+  }
+  api.say(done[0], done[1]);
+  await wait(900);
+  return api.win({ title: T(done[0], done[1]) });
+}
+
+// 1. Blend the Sounds (3 rounds)
+register({
+  id: 'rd_blend', icon: '🔤',
+  name: () => T('Blend the Sounds', 'Ghép Âm'),
+  async run(api) {
+    return runReadingRounds(api,
+      ['Listen and blend the sounds into a whole word!', 'Lắng nghe và ghép các âm thành từ hoàn chỉnh nhé!'],
+      [
+        {
+          show: '🐱',
+          desc: ['c - a - t', 'c - a'],
+          choices: [['cat 🐱', 'ca 🐱'], ['sun ☀️', 'ba 👨'], ['dog 🐶', 'gà 🐔']],
+          answer: 0
+        },
+        {
+          show: '☀️',
+          desc: ['s - u - n', 'b - a'],
+          choices: [['pig 🐷', 'bò 🐮'], ['sun ☀️', 'ba 👨'], ['car 🚗', 'cá 🐟']],
+          answer: 1
+        },
+        {
+          show: '🐔',
+          desc: ['p - i - g', 'g - à'],
+          choices: [['cup 🥛', 'hoa 🌸'], ['hat 🎩', 'mèo 🐱'], ['pig 🐷', 'gà 🐔']],
+          answer: 2
+        }
+      ],
+      ['Sounds blended into words!', 'Con ghép âm thành từ thật giỏi!']
+    );
   }
 });
 
+// 2. Vowel Hats (3 rounds)
 register({
-  id: "rd_hats",
-  icon: "🎩",
-  name: () => T("Vowel Hats", "Mũ Cho Chữ"),
+  id: 'rd_hats', icon: '🎩',
+  name: () => T('Vowel Hats', 'Mũ Cho Chữ'),
   async run(api) {
-    style();
-    const rounds = 3;
-    api.dots(rounds, 0);
-
-    api.say(
-      "Give the right little hat to each vowel letter!",
-      "Đội chiếc mũ xinh cho đúng từng chữ cái nhé!"
+    return runReadingRounds(api,
+      ['Give the right little hat to each vowel letter!', 'Đội chiếc mũ xinh cho đúng từng chữ cái nhé!'],
+      [
+        {
+          show: '🎩',
+          desc: ['Give a hat to letter "a" to make:', 'Đội mũ cho chữ "a" thành chữ gì?'],
+          choices: [['â 🎩', 'â 🎩'], ['á', 'á'], ['à', 'à']],
+          answer: 0
+        },
+        {
+          show: '🎩',
+          desc: ['Give a hat to letter "e" to make:', 'Đội mũ cho chữ "e" thành chữ gì?'],
+          choices: [['è', 'è'], ['ê 🎩', 'ê 🎩'], ['é', 'é']],
+          answer: 1
+        },
+        {
+          show: '🎩',
+          desc: ['Give a hat to letter "o" to make:', 'Đội mũ cho chữ "o" thành chữ gì?'],
+          choices: [['ỏ', 'ỏ'], ['ọ', 'ọ'], ['ô 🎩', 'ô 🎩']],
+          answer: 2
+        }
+      ],
+      ['All letters have their friendly hats!', 'Tất cả các chữ cái đều đã có mũ xinh!']
     );
-
-    const hats = [
-      { base: "a", withHat: "â", label: T("Add hat to make â", "Đội mũ thành chữ â") },
-      { base: "e", withHat: "ê", label: T("Add hat to make ê", "Đội mũ thành chữ ê") },
-      { base: "o", withHat: "ô", label: T("Add hat to make ô", "Đội mũ thành chữ ô") }
-    ];
-
-    const wrap = el("div", "rd2-wrap");
-    api.stage.appendChild(wrap);
-
-    for (let r = 0; r < rounds; r++) {
-      if (api.closed) return;
-      wrap.innerHTML = "";
-      const curr = hats[r];
-      const box = el("div", "rd2-box", `<span class="rd2-art">${pic("🎩")}</span> ${curr.base} ➔ ${curr.withHat}`);
-      wrap.appendChild(box);
-
-      const row = el("div", "rd2-row");
-      wrap.appendChild(row);
-
-      const btn = el("button", "rd2-btn", `<span class="rd2-art">${pic("🎩")}</span> ${curr.label}`);
-      row.appendChild(btn);
-
-      await untilRight(api, [btn], () => true);
-      if (api.closed) return;
-      api.sfx.pop();
-      api.dots(rounds, r + 1);
-      await wait(300);
-    }
-
-    await wait(300);
-    return api.win({ title: T("Hats fitted!", "Đội mũ hoàn hảo!") });
   }
 });
 
+// 3. Word Endings (3 rounds)
 register({
-  id: "rd_endings",
-  icon: "🔚",
-  name: () => T("Word Endings", "Vần Cuối"),
+  id: 'rd_endings', icon: '🔚',
+  name: () => T('Word Endings', 'Vần Cuối'),
   async run(api) {
-    style();
-    const rounds = 3;
-    api.dots(rounds, 0);
-
-    api.say(
-      "Tap the matching ending to complete the rhyming family!",
-      "Chạm vào vần cuối để hoàn thiện từ nhé!"
+    return runReadingRounds(api,
+      ['Find words that share the same ending sound!', 'Tìm các từ có cùng vần cuối với nhau nhé!'],
+      [
+        {
+          show: '🐱',
+          desc: ['Ends like "c-at":', 'Cùng vần "át" với "cát":'],
+          choices: [['hat 🎩', 'bát 🥣'], ['dog 🐶', 'chó 🐶'], ['sun ☀️', 'mây ☁️']],
+          answer: 0
+        },
+        {
+          show: '🛏️',
+          desc: ['Ends like "r-ed":', 'Cùng vần "úp" với "búp":'],
+          choices: [['pig 🐷', 'lá 🍃'], ['bed 🛏️', 'cúp 🏆'], ['car 🚗', 'cá 🐟']],
+          answer: 1
+        },
+        {
+          show: '☀️',
+          desc: ['Ends like "f-un":', 'Cùng vần "anh" với "chanh":'],
+          choices: [['cat 🐱', 'hoa 🌸'], ['cup 🥛', 'núi ⛰️'], ['sun ☀️', 'bánh 🍰']],
+          answer: 2
+        }
+      ],
+      ['Wonderful rhyming friends!', 'Các từ cùng vần thật ăn ý!']
     );
-
-    const endings = [
-      { start: "c", end: "at", word: "cat", art: "🐱" },
-      { start: "b", end: "ed", word: "bed", art: "🛏️" },
-      { start: "p", end: "ig", word: "pig", art: "🐷" }
-    ];
-
-    const wrap = el("div", "rd2-wrap");
-    api.stage.appendChild(wrap);
-
-    for (let r = 0; r < rounds; r++) {
-      if (api.closed) return;
-      wrap.innerHTML = "";
-      const curr = endings[r];
-      const box = el("div", "rd2-box", `<span class="rd2-art">${pic(curr.art)}</span> ${curr.start} + ___ = ${curr.word}`);
-      wrap.appendChild(box);
-
-      const row = el("div", "rd2-row");
-      wrap.appendChild(row);
-
-      const btn = el("button", "rd2-btn", `<span class="rd2-art">${pic("🔚")}</span> -${curr.end}`);
-      row.appendChild(btn);
-
-      await untilRight(api, [btn], () => true);
-      if (api.closed) return;
-      api.sfx.pop();
-      api.dots(rounds, r + 1);
-      await wait(300);
-    }
-
-    await wait(300);
-    return api.win({ title: T("Endings found!", "Tìm đúng vần cuối!") });
   }
 });
 
+// 4. Two Words Make One (3 rounds)
 register({
-  id: "rd_compound",
-  icon: "🧩",
-  name: () => T("Two Words Make One", "Ghép Hai Từ"),
+  id: 'rd_compound', icon: '🧩',
+  name: () => T('Two Words Make One', 'Ghép Hai Từ'),
   async run(api) {
-    style();
-    const rounds = 3;
-    api.dots(rounds, 0);
-
-    api.say(
-      "Join two smaller words together to make a new one!",
-      "Ghép hai từ nhỏ thành một từ ghép mới nào!"
+    return runReadingRounds(api,
+      ['Join two smaller words together to make a new one!', 'Ghép hai từ nhỏ thành một từ ghép mới nào!'],
+      [
+        {
+          show: '🌻',
+          desc: ['sun ☀️ + flower 🌸 =', 'hoa 🌸 + hướng dương ☀️ ='],
+          choices: [['sunflower 🌻', 'hoa hướng dương 🌻'], ['sunhat 👒', 'hoa sen 🪷'], ['raincoat 🧥', 'hoa hồng 🌹']],
+          answer: 0
+        },
+        {
+          show: '🌈',
+          desc: ['rain 🌧️ + bow 🎀 =', 'cầu 🌉 + vồng 🌈 ='],
+          choices: [['rainboot 👢', 'cầu treo 🌉'], ['rainbow 🌈', 'cầu vồng 🌈'], ['teacup 🍵', 'cầu lông 🏸']],
+          answer: 1
+        },
+        {
+          show: '⭐',
+          desc: ['star ⭐ + fish 🐟 =', 'sao ⭐ + biển 🌊 ='],
+          choices: [['starfruit 🍈', 'sao băng 🌠'], ['moonlight 🌙', 'sao chổi ☄️'], ['starfish 🪸', 'sao biển 🪸']],
+          answer: 2
+        }
+      ],
+      ['Two words joined together!', 'Ghép từ thật chuẩn xác!']
     );
-
-    const compounds = [
-      { part1: "sun", part2: "flower", full: "sunflower", art: "🌻", vi: "hoa + hướng dương" },
-      { part1: "rain", part2: "bow", full: "rainbow", art: "🌈", vi: "cầu + vồng" },
-      { part1: "star", part2: "fish", full: "starfish", art: "⭐", vi: "sao + biển" }
-    ];
-
-    const wrap = el("div", "rd2-wrap");
-    api.stage.appendChild(wrap);
-
-    for (let r = 0; r < rounds; r++) {
-      if (api.closed) return;
-      wrap.innerHTML = "";
-      const curr = compounds[r];
-      const label = isVi() ? curr.vi : `${curr.part1} + ${curr.part2} = ${curr.full}`;
-      const box = el("div", "rd2-box", `<span class="rd2-art">${pic(curr.art)}</span> ${label}`);
-      wrap.appendChild(box);
-
-      const row = el("div", "rd2-row");
-      wrap.appendChild(row);
-
-      const btn = el("button", "rd2-btn", `<span class="rd2-art">${pic("🧩")}</span> ${T("Snap Together", "Ghép Lại")}`);
-      row.appendChild(btn);
-
-      await untilRight(api, [btn], () => true);
-      if (api.closed) return;
-      api.sfx.pop();
-      api.dots(rounds, r + 1);
-      await wait(300);
-    }
-
-    await wait(300);
-    return api.win({ title: T("Compounds made!", "Ghép từ thành công!") });
   }
 });
 
+// 5. Label the Picture (3 rounds)
 register({
-  id: "rd_labels",
-  icon: "🏷️",
-  name: () => T("Label the Picture", "Gắn Tên Cho Tranh"),
+  id: 'rd_labels', icon: '🏷️',
+  name: () => T('Label the Picture', 'Gắn Tên Cho Tranh'),
   async run(api) {
-    style();
-    const rounds = 3;
-    api.dots(rounds, 0);
-
-    api.say(
-      "Stick the right label onto the picture!",
-      "Gắn đúng nhãn chữ vào bức tranh nhé!"
+    return runReadingRounds(api,
+      ['Match the right word label to each picture!', 'Gắn đúng tên cho từng bức tranh nhé!'],
+      [
+        {
+          show: '🍎',
+          desc: ['What is this red sweet fruit?', 'Quả gì màu đỏ ngọt ngào đây?'],
+          choices: [['Apple 🍎', 'Quả Táo 🍎'], ['Banana 🍌', 'Quả Chuối 🍌'], ['Orange 🍊', 'Quả Cam 🍊']],
+          answer: 0
+        },
+        {
+          show: '🏠',
+          desc: ['Where does family live cozy and warm?', 'Nơi gia đình mình ở ấm áp?'],
+          choices: [['Tree 🌳', 'Cây Xanh 🌳'], ['House 🏠', 'Ngôi Nhà 🏠'], ['Boat ⛵', 'Chiếc Thuyền ⛵']],
+          answer: 1
+        },
+        {
+          show: '✈️',
+          desc: ['What flies high up across the clouds?', 'Phương tiện nào bay lượn trên mây?'],
+          choices: [['Train 🚂', 'Tàu Hỏa 🚂'], ['Car 🚗', 'Ô Tô 🚗'], ['Airplane ✈️', 'Máy Bay ✈️']],
+          answer: 2
+        }
+      ],
+      ['Every picture has its label!', 'Tranh nào cũng có tên thật đẹp!']
     );
-
-    const labels = [
-      { art: "🍎", en: "Apple", vi: "Quả Táo" },
-      { art: "🐶", en: "Dog", vi: "Con Chó" },
-      { art: "☀️", en: "Sun", vi: "Mặt Trời" }
-    ];
-
-    const wrap = el("div", "rd2-wrap");
-    api.stage.appendChild(wrap);
-
-    for (let r = 0; r < rounds; r++) {
-      if (api.closed) return;
-      wrap.innerHTML = "";
-      const curr = labels[r];
-      const box = el("div", "rd2-box", `<span class="rd2-art">${pic(curr.art)}</span> ${T(curr.en, curr.vi)}`);
-      wrap.appendChild(box);
-
-      const row = el("div", "rd2-row");
-      wrap.appendChild(row);
-
-      const btn = el("button", "rd2-btn", `<span class="rd2-art">${pic("🏷️")}</span> ${T("Stick Label", "Gắn Nhãn")}`);
-      row.appendChild(btn);
-
-      await untilRight(api, [btn], () => true);
-      if (api.closed) return;
-      api.sfx.pop();
-      api.dots(rounds, r + 1);
-      await wait(300);
-    }
-
-    await wait(300);
-    return api.win({ title: T("All pictures labeled!", "Đã gắn xong nhãn tranh!") });
   }
 });
 
+// 6. Signs in Town (3 rounds)
 register({
-  id: "rd_signs",
-  icon: "🛑",
-  name: () => T("Signs in Town", "Biển Báo Trong Phố"),
+  id: 'rd_signs', icon: '🚸',
+  name: () => T('Signs in Town', 'Biển Báo Trong Phố'),
   async run(api) {
-    style();
-    const rounds = 3;
-    api.dots(rounds, 0);
-
-    api.say(
-      "Read the town signs to know what to do!",
-      "Đọc biển báo trên đường để biết chỉ dẫn nhé!"
+    return runReadingRounds(api,
+      ['Read helpful town signs so we stay safe!', 'Đọc biển báo trên phố để luôn an toàn nhé!'],
+      [
+        {
+          show: '🛑',
+          desc: ['The bright red sign says:', 'Biển báo màu đỏ ghi chữ:'],
+          choices: [['STOP 🛑', 'DỪNG LẠI 🛑'], ['RUN 🏃', 'CHẠY NHANH 🏃'], ['SING 🎶', 'HÁT VANG 🎶']],
+          answer: 0
+        },
+        {
+          show: '🚪',
+          desc: ['The green doorway sign says:', 'Biển báo xanh trên cửa ghi chữ:'],
+          choices: [['ENTER 🚪', 'LỐI VÀO 🚪'], ['EXIT 🚪', 'LỐI RA 🚪'], ['SLEEP 😴', 'ĐI NGỦ 😴']],
+          answer: 1
+        },
+        {
+          show: '📚',
+          desc: ['The quiet reading house sign says:', 'Biển nhà đọc sách yên tĩnh ghi:'],
+          choices: [['BAKERY 🥖', 'TIỆM BÁNH 🥖'], ['TOY STORE 🧸', 'ĐỒ CHƠI 🧸'], ['LIBRARY 📚', 'THƯ VIỆN 📚']],
+          answer: 2
+        }
+      ],
+      ['You read the town signs so well!', 'Con đọc biển báo trên phố rất giỏi!']
     );
-
-    const signs = [
-      { sign: "STOP", vi: "DỪNG LẠI", art: "🛑" },
-      { sign: "BUS STOP", vi: "TRẠM XE BUÝT", art: "🚌" },
-      { sign: "LIBRARY", vi: "THƯ VIỆN", art: "📖" }
-    ];
-
-    const wrap = el("div", "rd2-wrap");
-    api.stage.appendChild(wrap);
-
-    for (let r = 0; r < rounds; r++) {
-      if (api.closed) return;
-      wrap.innerHTML = "";
-      const curr = signs[r];
-      const text = isVi() ? curr.vi : curr.sign;
-      const box = el("div", "rd2-box", `<span class="rd2-art">${pic(curr.art)}</span> [ ${text} ]`);
-      wrap.appendChild(box);
-
-      const row = el("div", "rd2-row");
-      wrap.appendChild(row);
-
-      const btn = el("button", "rd2-btn", `<span class="rd2-art">${pic("🛑")}</span> ${T("Read Sign", "Đọc Biển")}`);
-      row.appendChild(btn);
-
-      await untilRight(api, [btn], () => true);
-      if (api.closed) return;
-      api.sfx.pop();
-      api.dots(rounds, r + 1);
-      await wait(300);
-    }
-
-    await wait(300);
-    return api.win({ title: T("Signs read safely!", "Đọc biển báo rất chuẩn!") });
   }
 });
 
+// 7. Who, What, Where (3 rounds)
 register({
-  id: "rd_questions",
-  icon: "❓",
-  name: () => T("Who, What, Where", "Ai, Gì, Ở Đâu"),
+  id: 'rd_questions', icon: '❓',
+  name: () => T('Who, What, Where', 'Ai, Gì, Ở Đâu'),
   async run(api) {
-    style();
-    const rounds = 3;
-    api.dots(rounds, 0);
-
-    api.say(
-      "Answer the question words: Who, What, Where!",
-      "Trả lời câu hỏi: Ai, Cái gì, Ở đâu nhé!"
+    return runReadingRounds(api,
+      ['Answer the gentle question words: Who, What, Where!', 'Trả lời các câu hỏi: Ai, Cái gì, Ở đâu!'],
+      [
+        {
+          show: '🩺',
+          desc: ['WHO takes care of you when you have a cold?', 'AI chăm sóc con khi con bị ốm?'],
+          choices: [['Doctor 🩺', 'Bác Sĩ 🩺'], ['Guitar 🎸', 'Cây Đàn 🎸'], ['Cloud ☁️', 'Đám Mây ☁️']],
+          answer: 0
+        },
+        {
+          show: '🏞️',
+          desc: ['WHERE do we go to slide and swing?', 'Ở ĐÂU có xích đu và cầu trượt?'],
+          choices: [['Pillow 🛏️', 'Cái Gối 🛏️'], ['Park 🏞️', 'Công Viên 🏞️'], ['Spoon 🥄', 'Cái Thìa 🥄']],
+          answer: 1
+        },
+        {
+          show: '💧',
+          desc: ['WHAT falls softly from rainy clouds?', 'CÁI GÌ rơi tí tách từ đám mây mưa?'],
+          choices: [['Stones 🪨', 'Hòn Đá 🪨'], ['Bread 🍞', 'Bánh Mì 🍞'], ['Raindrops 💧', 'Hạt Mưa 💧']],
+          answer: 2
+        }
+      ],
+      ['You know Who, What, and Where!', 'Con hiểu rõ Ai, Cái gì, Ở đâu rồi!']
     );
-
-    const questions = [
-      { q: T("Who is reading? -> The Cat", "Ai đang đọc sách? -> Bạn Mèo"), art: "🐱" },
-      { q: T("What is shining? -> The Sun", "Cái gì đang chiếu sáng? -> Mặt Trời"), art: "☀️" },
-      { q: T("Where is the nest? -> In the Tree", "Tổ chim ở đâu? -> Trên Cây"), art: "🌳" }
-    ];
-
-    const wrap = el("div", "rd2-wrap");
-    api.stage.appendChild(wrap);
-
-    for (let r = 0; r < rounds; r++) {
-      if (api.closed) return;
-      wrap.innerHTML = "";
-      const curr = questions[r];
-      const box = el("div", "rd2-box", `<span class="rd2-art">${pic(curr.art)}</span> ${curr.q}`);
-      wrap.appendChild(box);
-
-      const row = el("div", "rd2-row");
-      wrap.appendChild(row);
-
-      const btn = el("button", "rd2-btn", `<span class="rd2-art">${pic("❓")}</span> ${T("Answer", "Trả Lời")}`);
-      row.appendChild(btn);
-
-      await untilRight(api, [btn], () => true);
-      if (api.closed) return;
-      api.sfx.pop();
-      api.dots(rounds, r + 1);
-      await wait(300);
-    }
-
-    await wait(300);
-    return api.win({ title: T("Questions answered!", "Đã trả lời xong các câu hỏi!") });
   }
 });
 
+// 8. One and Many (3 rounds)
 register({
-  id: "rd_many",
-  icon: "🔢",
-  name: () => T("One and Many", "Một và Nhiều"),
+  id: 'rd_many', icon: '🔢',
+  name: () => T('One and Many', 'Một và Nhiều'),
   async run(api) {
-    style();
-    const rounds = 3;
-    api.dots(rounds, 0);
-
-    api.say(
-      "See the difference between one item and many items!",
-      "Nhận biết sự khác biệt giữa một và nhiều nhé!"
+    return runReadingRounds(api,
+      ['Match one little thing with a group of many!', 'Nối một bạn nhỏ với đàn nhiều bạn nhé!'],
+      [
+        {
+          show: '🐱',
+          desc: ['One cat 🐱 and many:', 'Một chú mèo 🐱 và nhiều:'],
+          choices: [['Cats 🐱🐱', 'Đàn mèo 🐱🐱'], ['Dogs 🐶🐶', 'Đàn chó 🐶🐶'], ['Birds 🐦🐦', 'Đàn chim 🐦🐦']],
+          answer: 0
+        },
+        {
+          show: '🌸',
+          desc: ['One flower 🌸 and many:', 'Một bông hoa 🌸 và nhiều:'],
+          choices: [['Leaves 🍃🍃', 'Nhiều lá 🍃🍃'], ['Flowers 🌸🌸', 'Vườn hoa 🌸🌸'], ['Apples 🍎🍎', 'Nhiều táo 🍎🍎']],
+          answer: 1
+        },
+        {
+          show: '⭐',
+          desc: ['One star ⭐ and many:', 'Một ngôi sao ⭐ và nhiều:'],
+          choices: [['Moons 🌙🌙', 'Nhiều trăng 🌙🌙'], ['Clouds ☁️☁️', 'Nhiều mây ☁️☁️'], ['Stars ⭐⭐', 'Bầu trời sao ⭐⭐']],
+          answer: 2
+        }
+      ],
+      ['One and many matched together!', 'Một và nhiều bạn cùng chung vui!']
     );
-
-    const pairs = [
-      { one: T("1 Apple", "1 Quả Táo"), many: T("Many Apples", "Nhiều Quả Táo"), art: "🍎" },
-      { one: T("1 Star", "1 Ngôi Sao"), many: T("Many Stars", "Nhiều Ngôi Sao"), art: "⭐" },
-      { one: T("1 Fish", "1 Con Cá"), many: T("Many Fish", "Nhiều Con Cá"), art: "🐟" }
-    ];
-
-    const wrap = el("div", "rd2-wrap");
-    api.stage.appendChild(wrap);
-
-    for (let r = 0; r < rounds; r++) {
-      if (api.closed) return;
-      wrap.innerHTML = "";
-      const curr = pairs[r];
-      const box = el("div", "rd2-box", `<span class="rd2-art">${pic(curr.art)}</span> ${curr.one} ➔ ${curr.many}`);
-      wrap.appendChild(box);
-
-      const row = el("div", "rd2-row");
-      wrap.appendChild(row);
-
-      const btn = el("button", "rd2-btn", `<span class="rd2-art">${pic("🔢")}</span> ${T("Count Many", "Đếm Nhiều")}`);
-      row.appendChild(btn);
-
-      await untilRight(api, [btn], () => true);
-      if (api.closed) return;
-      api.sfx.pop();
-      api.dots(rounds, r + 1);
-      await wait(300);
-    }
-
-    await wait(300);
-    return api.win({ title: T("One and many sorted!", "Phân biệt một và nhiều thật tài!") });
   }
 });
 
+// 9. Big and Small Letters (3 rounds)
 register({
-  id: "rd_caps",
-  icon: "🔠",
-  name: () => T("Big and Small Letters", "Chữ Hoa Chữ Thường"),
+  id: 'rd_caps', icon: '🔠',
+  name: () => T('Big and Small Letters', 'Chữ Hoa Chữ Thường'),
   async run(api) {
-    style();
-    const rounds = 3;
-    api.dots(rounds, 0);
-
-    api.say(
-      "Match the big capital letter to its small partner!",
-      "Ghép chữ cái hoa với chữ cái thường tương ứng!"
+    return runReadingRounds(api,
+      ['Match the big capital letter with its little lowercase twin!', 'Tìm chữ thường đi cùng chữ hoa nhé!'],
+      [
+        {
+          show: '🔠',
+          desc: ['Big letter "A" pairs with:', 'Chữ hoa "A" đi cùng chữ thường:'],
+          choices: [['a', 'a'], ['b', 'b'], ['c', 'c']],
+          answer: 0
+        },
+        {
+          show: '🔠',
+          desc: ['Big letter "B" pairs with:', 'Chữ hoa "B" đi cùng chữ thường:'],
+          choices: [['d', 'd'], ['b', 'b'], ['p', 'p']],
+          answer: 1
+        },
+        {
+          show: '🔠',
+          desc: ['Big letter "M" pairs with:', 'Chữ hoa "M" đi cùng chữ thường:'],
+          choices: [['w', 'w'], ['n', 'n'], ['m', 'm']],
+          answer: 2
+        }
+      ],
+      ['Capital and small letters matched!', 'Chữ hoa chữ thường ghép đôi thật khớp!']
     );
-
-    const pairs = [
-      { big: "A", small: "a" },
-      { big: "B", small: "b" },
-      { big: "C", small: "c" }
-    ];
-
-    const wrap = el("div", "rd2-wrap");
-    api.stage.appendChild(wrap);
-
-    for (let r = 0; r < rounds; r++) {
-      if (api.closed) return;
-      wrap.innerHTML = "";
-      const curr = pairs[r];
-      const box = el("div", "rd2-box", `<span class="rd2-art">${pic("🔠")}</span> ${curr.big} ➔ ${curr.small}`);
-      wrap.appendChild(box);
-
-      const row = el("div", "rd2-row");
-      wrap.appendChild(row);
-
-      const btn = el("button", "rd2-btn", `<span class="rd2-art">${pic("🔤")}</span> ${curr.big} & ${curr.small}`);
-      row.appendChild(btn);
-
-      await untilRight(api, [btn], () => true);
-      if (api.closed) return;
-      api.sfx.pop();
-      api.dots(rounds, r + 1);
-      await wait(300);
-    }
-
-    await wait(300);
-    return api.win({ title: T("Letters paired!", "Ghép chữ hoa chữ thường chuẩn!") });
   }
 });
 
+// 10. Read a Little Poem (3 rounds)
 register({
-  id: "rd_poem",
-  icon: "📜",
-  name: () => T("Read a Little Poem", "Đọc Bài Thơ Nhỏ"),
+  id: 'rd_poem', icon: '📜',
+  name: () => T('Read a Little Poem', 'Đọc Bài Thơ Nhỏ'),
   async run(api) {
-    style();
-    const lines = [
-      T("Twinkle little star above,", "Ngôi sao lấp lánh trên cao,"),
-      T("Shining with a heart of love.", "Gửi ngàn tia nắng ngọt ngào cho em.")
-    ];
-    const rounds = lines.length;
-    api.dots(rounds, 0);
-
-    api.say(
-      "Listen and read the sweet little rhyme line by line!",
-      "Lắng nghe và đọc từng câu thơ êm ái nhé!"
+    return runReadingRounds(api,
+      ['Complete the gentle rhyming line in our valley poem!', 'Điền từ vần còn thiếu trong bài thơ nhỏ nhé!'],
+      [
+        {
+          show: '🌟',
+          desc: ['"Twinkle little star at night, shining with a friendly..."', '"Ngôi sao lấp lánh trên trời, dịu dàng tỏa ánh..."'],
+          choices: [['light 💡', 'sáng ngời 💡'], ['tree 🌳', 'cây xanh 🌳'], ['shoe 👟', 'chiếc giày 👟']],
+          answer: 0
+        },
+        {
+          show: '🐸',
+          desc: ['"Little green frog sitting on a log, splashing in the cool..."', '"Chú ếch xanh nhảy bên hồ, cất lời hát ca líu..."'],
+          choices: [['pond 💧', 'lo 🎵'], ['cloud ☁️', 'mây ☁️'], ['bed 🛏️', 'giường 🛏️']],
+          answer: 0
+        },
+        {
+          show: '🐝',
+          desc: ['"Busy honey bee in the sun so free, flying to the flowering..."', '"Ánh nắng sớm mai thật hiền, chim hót ríu rít trên..."'],
+          choices: [['moon 🌙', 'mặt trăng 🌙'], ['spoon 🥄', 'chiếc thìa 🥄'], ['tree 🌳', 'cành cây 🌳']],
+          answer: 2
+        }
+      ],
+      ['The little poem sounds so sweet!', 'Bài thơ nhỏ ngân vang thật êm đềm!']
     );
-
-    const wrap = el("div", "rd2-wrap");
-    api.stage.appendChild(wrap);
-
-    for (let r = 0; r < rounds; r++) {
-      if (api.closed) return;
-      wrap.innerHTML = "";
-      const box = el("div", "rd2-box", `<span class="rd2-art">${pic("📜")}</span> ${lines[r]}`);
-      wrap.appendChild(box);
-
-      const row = el("div", "rd2-row");
-      wrap.appendChild(row);
-
-      const btn = el("button", "rd2-btn", `<span class="rd2-art">${pic("⭐")}</span> ${T("Read Line", "Đọc Câu Thơ")}`);
-      row.appendChild(btn);
-
-      await untilRight(api, [btn], () => true);
-      if (api.closed) return;
-      api.sfx.pop();
-      api.dots(rounds, r + 1);
-      await wait(300);
-    }
-
-    await wait(300);
-    return api.win({ title: T("Poem recited!", "Đọc xong bài thơ nhỏ!") });
   }
 });
 
+// 11. Missing Letter (3 rounds)
 register({
-  id: "rd_missing",
-  icon: "🈳",
-  name: () => T("Missing Letter", "Điền Chữ Còn Thiếu"),
+  id: 'rd_missing', icon: '🧩',
+  name: () => T('Missing Letter', 'Điền Chữ Còn Thiếu'),
   async run(api) {
-    style();
-    const rounds = 3;
-    api.dots(rounds, 0);
-
-    api.say(
-      "Fill in the missing letter to complete the puzzle word!",
-      "Điền chữ cái còn thiếu để hoàn thiện từ nhé!"
+    return runReadingRounds(api,
+      ['Pick the missing letter to complete the friendly word!', 'Chọn chữ cái còn thiếu để hoàn chỉnh từ nhé!'],
+      [
+        {
+          show: '🐱',
+          desc: ['c _ t (cat)', 'm è _ (mèo)'],
+          choices: [['a', 'o'], ['o', 'a'], ['u', 'u']],
+          answer: 0
+        },
+        {
+          show: '☀️',
+          desc: ['s _ n (sun)', 'g _ à (gà)'],
+          choices: [['e', 'o'], ['u', 'à'], ['i', 'u']],
+          answer: 1
+        },
+        {
+          show: '🐶',
+          desc: ['d _ g (dog)', 'c _ á (cá)'],
+          choices: [['a', 'u'], ['e', 'e'], ['o', 'á']],
+          answer: 2
+        }
+      ],
+      ['You found every missing letter!', 'Con tìm đủ mọi chữ cái còn thiếu!']
     );
-
-    const missingItems = [
-      { shown: "c _ t", missing: "a", word: "cat", art: "🐱" },
-      { shown: "s _ n", missing: "u", word: "sun", art: "☀️" },
-      { shown: "b _ d", missing: "e", word: "bed", art: "🛏️" }
-    ];
-
-    const wrap = el("div", "rd2-wrap");
-    api.stage.appendChild(wrap);
-
-    for (let r = 0; r < rounds; r++) {
-      if (api.closed) return;
-      wrap.innerHTML = "";
-      const curr = missingItems[r];
-      const box = el("div", "rd2-box", `<span class="rd2-art">${pic(curr.art)}</span> ${curr.shown} ➔ [ ${curr.word} ]`);
-      wrap.appendChild(box);
-
-      const row = el("div", "rd2-row");
-      wrap.appendChild(row);
-
-      const btn = el("button", "rd2-btn", `<span class="rd2-art">${pic("🈳")}</span> ${T("Insert", "Điền")} '${curr.missing}'`);
-      row.appendChild(btn);
-
-      await untilRight(api, [btn], () => true);
-      if (api.closed) return;
-      api.sfx.pop();
-      api.dots(rounds, r + 1);
-      await wait(300);
-    }
-
-    await wait(300);
-    return api.win({ title: T("Missing letters filled!", "Điền chữ còn thiếu chuẩn xác!") });
   }
 });
 
+// 12. Make a Little Book (3 rounds, kept in the Album)
 register({
-  id: "rd_book",
-  icon: "📖",
-  name: () => T("Make a Little Book", "Làm Sách Nhỏ"),
+  id: 'rd_book', icon: '📖',
+  name: () => T('Make a Little Book', 'Làm Sách Nhỏ'),
   async run(api) {
     style();
-    const pages = [
-      { art: "☀️", text: T("Page 1: The sun rises.", "Trang 1: Mặt trời thức giấc.") },
-      { art: "🐱", text: T("Page 2: The kitten plays.", "Trang 2: Chú mèo con vui đùa.") },
-      { art: "🌙", text: T("Page 3: Sleep under the moon.", "Trang 3: Bé ngủ ngon dưới trăng.") }
+    api.say('Make your own little picture storybook and keep it in your Album!', 'Tự tay làm cuốn sách tranh nhỏ và lưu vào Album nhé!');
+    api.dots(3, 0);
+
+    const wrap = el('div', 'rd2-board'), stage = el('div', 'rd2-stage'), controls = el('div', 'rd2-controls');
+    api.stage.appendChild(wrap); wrap.append(stage, controls);
+
+    const steps = [
+      {
+        show: '📖',
+        desc: ['Choose your book cover theme:', 'Chọn trang bìa cho cuốn sách:'],
+        choices: [['Sunny Valley ☀️', 'Thung Lũng Nắng ☀️'], ['Starry Night 🌙', 'Đêm Đầy Sao 🌙']],
+        answer: 0
+      },
+      {
+        show: '🐾',
+        desc: ['Choose animal characters for page 2:', 'Chọn các bạn nhỏ cho trang 2:'],
+        choices: [['Friendly Pets 🐱🐶', 'Thú Cưng Nhỏ 🐱🐶'], ['Baby Birds 🐦🐣', 'Chim Non 🐦🐣']],
+        answer: 0
+      },
+      {
+        show: '✨',
+        desc: ['Bind the pages together with a colorful ribbon!', 'Đóng sách bằng dải ruy băng rực rỡ nào!'],
+        choices: [['Bind Book 🎀', 'Đóng Sách 🎀'], ['Wait', 'Chờ']],
+        answer: 0
+      }
     ];
-    const rounds = pages.length;
-    api.dots(rounds, 0);
 
-    api.say(
-      "Assemble your own little reading book page by page!",
-      "Tự tay làm nên cuốn sách nhỏ từng trang một nhé!"
-    );
-
-    const wrap = el("div", "rd2-wrap");
-    api.stage.appendChild(wrap);
-
-    for (let r = 0; r < rounds; r++) {
-      if (api.closed) return;
-      wrap.innerHTML = "";
-      const curr = pages[r];
-      const box = el("div", "rd2-box", `<span class="rd2-art">${pic(curr.art)}</span> ${curr.text}`);
-      wrap.appendChild(box);
-
-      const row = el("div", "rd2-row");
-      wrap.appendChild(row);
-
-      const btn = el("button", "rd2-btn", `<span class="rd2-art">${pic("📖")}</span> ${T("Bind Page", "Đóng Trang")}`);
-      row.appendChild(btn);
-
-      await untilRight(api, [btn], () => true);
-      if (api.closed) return;
+    for (let i = 0; i < steps.length; i++) {
+      const q = steps[i];
+      stage.innerHTML = `<div class="rd2-big">${q.show}</div><div class="rd2-desc">${T(q.desc[0], q.desc[1])}</div>`;
+      controls.innerHTML = '';
+      const btns = q.choices.map((c, idx) => {
+        const b = el('button', 'rd2-btn', `<span>${T(c[0], c[1])}</span>`);
+        b.dataset.i = String(idx);
+        controls.appendChild(b);
+        return b;
+      });
+      const target = btns[q.answer];
+      api.plan(() => target, { maxActions: 6 });
+      const clicked = await untilRight(api, btns, (e: HTMLElement) => e === target);
+      if (!clicked || api.closed) return;
       api.sfx.pop();
-      api.dots(rounds, r + 1);
+      api.dots(3, i + 1);
       await wait(300);
     }
 
-    await wait(300);
-    return api.win({ title: T("Little book complete!", "Cuốn sách nhỏ hoàn thành!") });
+    // Render keepsake canvas card for the Album
+    const canvas = document.createElement('canvas');
+    canvas.width = 320; canvas.height = 240;
+    const ctx = canvas.getContext('2d');
+    if (ctx) {
+      ctx.fillStyle = '#fff9eb';
+      ctx.fillRect(0, 0, 320, 240);
+      ctx.lineWidth = 8;
+      ctx.strokeStyle = '#6f4b35';
+      ctx.strokeRect(4, 4, 312, 232);
+      ctx.fillStyle = '#3f2b24';
+      ctx.font = 'bold 24px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(T('My Little Book', 'Cuốn Sách Của Em'), 160, 60);
+      ctx.font = '48px sans-serif';
+      ctx.fillText('📖☀️🐱', 160, 130);
+      ctx.font = '16px sans-serif';
+      ctx.fillText(T('Sparkle Valley Reading', 'Tủ Sách Thung Lũng'), 160, 190);
+      try {
+        const dataUrl = canvas.toDataURL('image/png');
+        keep(api, dataUrl);
+      } catch {}
+    }
+
+    api.say('Your little book is kept in your Album!', 'Cuốn sách nhỏ của con đã được lưu vào Album rồi!');
+    await wait(1200);
+    return api.win({ title: T('Little Book is Ready!', 'Cuốn Sách Đã Hoàn Thành!') });
   }
 });
