@@ -1,4 +1,19 @@
-# Board: what each core is doing and what it needs from others
+## Front Desk / Helper (r90 / v1 + Save Copy)
+- **Now (24 Oct 2026 AEDT): ready for Release, round r90 (published as v1) & Save/Load Copy Part 1** · branch work/r90-more-content (latest fix pending commit) · waiting for: Release to collect, run GitHub full suite, and merge · 24 Oct 2026 AEDT
+- **Progress note (checks, 24 Oct 2026 AEDT):**
+  - work/r90-more-content: build (pass), types (pass, 123 files), unit unlocks 4/4 pass, tale-catalog 1/1 pass, savecopy 17/17 pass, autoplay plans (x5) verified for all 111+ new games. Azure voice generation 100% complete (0 remaining) and synced.
+  - work/save-copy-r90: unit tests 17/17 pass (tests/unit/savecopy.test.mjs), build pass, v3 schema validation, safe copy to Files/iCloud/Drive and safe load confirmation without silent overwrite.
+- **Scope completed:**
+  - Unlocking system (js/content/unlocks.ts) with profile migration, Studio unlockAll switch, badges per category, locked look with padlock art.
+  - 111+ new games across 14 categories (incl. 4 Vietnamese festive: Bánh Chưng, Star Lantern, Lion Dance, Tết Pole; 3 nature: Catch-and-Release Fish, Emu Egg Basket, Reef Cleaner).
+  - 54 new stories + new World shelf (12 traditional tales).
+  - All games: bilingual, 64px touch targets (.gl.little), autoplay plans, listed in catalog/loader/activities/sw.ts/preload.
+  - All stories: wired in tale catalogue, learn shelf, unlock registry.
+  - Save a copy / Load a copy Part 1 fully implemented on work/save-copy-r90.
+- **Notes for Release:**
+  - Azure voice generation is 100% complete (0 remaining); all batches synced and verified.
+  - Changed-check selector requires full suite due to test/config changes; push and run .github/workflows/full-suite.yml.
+
 
 Every core keeps its own section up to date. Times are in AEST. Release reads this before merging.
 
@@ -379,3 +394,4 @@ Release repair update (15 Oct 2026 AEDT): repair13 narration cancellation / lega
 
 - Release r87 claims `js/worldedit.js` and `js/plots.js` for remembered homes and stable Studio placement (18 Oct 2026 AEDT).
 - Release r87 claims `js/player.js`, `js/rideview.js`, and sound-game audit (audio.ts, learning.js, music.js, folk2.js, reading.js/content) following the owner's direct camera/sound request, 19 Oct AEDT. Work alone; convert each touched game JavaScript file first.
+

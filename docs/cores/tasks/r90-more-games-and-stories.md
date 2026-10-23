@@ -23,11 +23,12 @@ the exact new games and stories goes to the owner (pop-up) before building.
 4. **Grown-ups:** a Studio switch on Releases, "Unlock all games and stories" (every device or the ticked ones), off by
    default; testers and auto play can reach everything with it.
 
-## Still to settle with the owner (plan stage)
-- The list of new games per category and new stories per shelf (names, both languages, which country each comes from).
-- What the World shelf holds (proposal: well-known folk tales and fables from other countries, retold for little ones).
-- Whether progress made before r90 counts (proposal: yes, finishes already recorded count towards the 3).
-
+## Owner decisions (23 Oct 2026 AEDT)
+- Build the complete approved r90 plan in one round. Do not defer any approved addition to a later round.
+- Use the plan's 12 traditional World-shelf tales, retold in the game's own words.
+- Count pre-r90 recorded game finishes toward the three-finish unlock requirement; treat a previously completed story as one reading, as planned.
+- Add four Vietnamese festive games: Wrap Bánh Chưng for Tết / Làm Bánh Chưng Ngày Tết, Make a Star Lantern / Làm Đèn Ông Sao, Lion Dance Drummer / Múa Lân Rộn Ràng, and Tết Pole Decorator / Trồng Cây Nêu Ngày Tết.
+- Add three nature games: Catch-and-Release Fish / Vớt Cá Thơ Ngây, Emu Egg Basket / Nhặt Trứng Đà Điểu, and Great Barrier Reef Cleaner / Bảo Vệ Rạn San Hô. All seven join the r90 checks and Release handoff; none is built yet.
 ## Rules every new game and story keeps
 English and Vietnamese for everything shown or said (recorded with Azure; lines with a child's name never recorded);
 touch targets 44 px, 64 px for under-5s; drawings for every emoji (`js/art.js`); new files in TypeScript; autoplay can

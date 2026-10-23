@@ -1,3 +1,15 @@
+## r90 / v1 — Front Desk Helper (24 Oct 2026 AEDT)
+- Branch: work/r90-more-content (184a5827)
+- Commit: feat(r90-stories): wire 54 tales into catalog, learn shelf, and unlock registry
+- Checks:
+  - build: pass (122 TS files, 0 errors)
+  - types: pass (cd tests && npx tsc -p .)
+  - unit: unlocks 4/4 pass, tale-catalog 1/1 pass
+  - autoplay: all 111+ new games verified at x5 speed (owner-autoplay-plans)
+  - changed-check: Full suite required (.gitignore change); pushed to GitHub for .github/workflows/full-suite.yml
+- Scope: unlocking system, 111+ games (14 categories incl. 7 new), 54 stories + World shelf
+- Blocker: AZURE_SPEECH_KEY missing locally; narration lines queued for Release runner
+
 # Release core
 
 **You bring the cores' work together and hand it to the owner:** merge the core branches, run the full regression
@@ -229,3 +241,4 @@ Local network5/5 and Audio/festival8/8 passed. New bounded Wi-Fi language-switch
 ### Website integration handoff — 23 October 2026 AEDT
 
 Ready for Release integration on `work/family-website-20261023`, based directly on main r88 `781089d6`; no runtime source copied from the older design branch. Parent controls, existing child-statistics explanations and a clearly labelled invented sample graph have been added to the complete four-section EN/VI website prototype. [Exact handoff](../website-review-20261023/RELEASE-HANDOFF.md) and [copyable prompt](../website-review-20261023/RELEASE-PROMPT.md). Parent/report/graph, navigation and existing guide/photo/Family Quiz/printing checks pass five layouts; current-main changed suite 9/9, 187 unit tests. Phone/tablet/computer images inspected. R87 images were replaced with actual r88 UI rendered in an isolated, empty example profile; early captures during the modal fade were corrected by waiting for full opacity. Reward/festival tests reuse the unchanged prior r88 results. No new game full suite, production/offline/update integration or Netlify zip is claimed for this artifact branch. Runtime Home-to-Settings/quest geometry and real floating view remain Release work, with exact null-handler/layout/permission/pause risks documented. New round/version and deployment approval remain required for that integration.
+
