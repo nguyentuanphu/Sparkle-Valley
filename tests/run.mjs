@@ -4407,7 +4407,7 @@ await check('rollout', async () => {
   // yet) hides its feature from a child who never used it, keeps it for a child who did (profile.tried), and brings it back
   // when switched on; a release starting today shows the New! card; a tester device sees a batch 7 days early
   const out = [];
-  const P = await open(b, { w: 1024, h: 700 }); await clear(P.page);
+  const P = await open(b, { w: 1024, h: 700, schedule: true }); await clear(P.page);
   const r = await P.page.evaluate(async () => {
     const G = __sv, h = G.heroes[0], p = h.profile, C = await import('/js/custom.js'), wait = ms => new Promise(r => setTimeout(r, ms));
     const { gamesIn } = await import('/js/content/activities.js'), { GAMES } = await import('/js/games/registry.js');
