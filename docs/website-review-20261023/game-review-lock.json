@@ -1,5 +1,5 @@
 {
-  "source": "269e9a12c8360561d18dd6c8ca5fb7713403971e",
+  "source": "f5b98c6c08f5fc22071fd54fc8894e83a82b237e",
   "files": [
     {
       "file": "content/custom.json",
@@ -1267,7 +1267,7 @@
     },
     {
       "file": "manifest.webmanifest",
-      "hash": "932ac443cec1a927d1d6ed163dd9836b53fe7d80"
+      "hash": "8c86479ba2d09a4405a6fef922ceb83e85d696ef"
     },
     {
       "file": "photos/blocked.json",
