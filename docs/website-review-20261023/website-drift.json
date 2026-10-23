@@ -1,6 +1,6 @@
 {
-  "source": "f5b98c6c08f5fc22071fd54fc8894e83a82b237e",
-  "reviewedSource": "269e9a12c8360561d18dd6c8ca5fb7713403971e",
+  "source": "731d2d6da0fee3362b07795c4f1481a85fb097d9",
+  "reviewedSource": "f5b98c6c08f5fc22071fd54fc8894e83a82b237e",
   "coverage": {
     "valley": 17,
     "lantern": 24,
@@ -9,7 +9,7 @@
     "festivals": 24
   },
   "changed": [
-    "manifest.webmanifest"
+    "index.html"
   ],
   "coverageChanged": [],
   "requiresEditorialReview": true
