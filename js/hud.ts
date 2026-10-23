@@ -14,6 +14,8 @@ import { SFX } from './audio.js';
 import { say } from './voice.js';
 import { explain as explainBrief } from './explain.js';
 import * as feel from './feel.js';
+import type { SvMain } from './main.js';
+import type { Hero } from './player.js';
 
 export const EMOTES = [
   { id: 'hi', icon: '👋', en: 'Hi!', vi: 'Xin chào!' },
@@ -26,8 +28,14 @@ export const EMOTES = [
   { id: 'wait', icon: '✋', en: 'Wait for me!', vi: 'Đợi tớ với!' }
 ];
 
+type HudRect = { x: number, y: number, w: number, h: number, rot?: number };
+type HudLast = { act?: string | null, little?: boolean, where?: boolean, h?: string, m?: string, o?: string, fm?: string, c?: string, f?: string, sig?: string };
+type MiniMarker = { x: number, z: number, icon: string, size?: number, pin?: boolean, friend?: string };
 export class Hud {
-  constructor(i, hero, game) {
+  i: number; hero: Hero; game: SvMain; root: HTMLElement; q: (s: string) => HTMLElement;
+  mini: CanvasRenderingContext2D; wheel: HTMLCanvasElement; wctx: CanvasRenderingContext2D; navWatch: ResizeObserver;
+  last: HudLast; nums?: number[]; rect?: HudRect; regionT: number; toastT: number; _miniT?: number; _musHeld?: boolean; _tt?: ReturnType<typeof setTimeout>; wheelA?: number;
+  constructor(i: number, hero: Hero, game: SvMain) {
     this.i = i; this.hero = hero; this.game = game;
     const root = this.root = el('div', 'hud');
     root.innerHTML = `
@@ -72,8 +80,8 @@ export class Hud {
       <button class="bigprompt" hidden></button>`;
     document.getElementById('huds').appendChild(root);
     this.q = s => root.querySelector(s);
-    this.mini = this.q('.mini').getContext('2d');
-    this.wheel = this.q('.wheel'); this.wctx = this.wheel.getContext('2d');
+    { const mc = root.querySelector('.mini'), wc = root.querySelector('.wheel'); if (!(mc instanceof HTMLCanvasElement) || !(wc instanceof HTMLCanvasElement)) throw Error('the HUD has no map or stamina picture');
+      this.mini = mc.getContext('2d'); this.wheel = wc; this.wctx = wc.getContext('2d'); }
     const pad = game.pads[i];
     const hold = (b, k) => {
       b.addEventListener('pointerdown', e => { e.preventDefault(); pad[k] = true; if (k === '_btnJump') pad._jump = true; b.classList.add('down'); });
@@ -89,7 +97,7 @@ export class Hud {
     this.q('.simplesw').onclick = () => { SFX.tap(); game.simple && game.simple.show(); };
     this.q('.pcard').onclick = () => game.openQuick(i);
     // (owner, 16 Oct AEDT, point 50: "keep, explain on tap") the hearts explain themselves instead of opening Settings
-    { const hb = this.q('.hearts'), HEARTS = ['Hearts show how strong you are. Little ones never lose them.', 'Trái tim cho biết con khỏe thế nào. Các bé không bao giờ mất tim.']
+    { const hb = this.q('.hearts'), HEARTS: [string, string] = ['Hearts show how strong you are. Little ones never lose them.', 'Trái tim cho biết con khỏe thế nào. Các bé không bao giờ mất tim.']
       hb.setAttribute('role', 'button'); hb.tabIndex = 0; hb.setAttribute('aria-label', T('What do the hearts mean?', 'Trái tim có nghĩa là gì?'));
       // (owner, 16 Oct) a short note and a short spoken line, each with its own Studio switch (js/explain.js)
       const explain = e => { e.stopPropagation(); e.preventDefault(); SFX.tap && SFX.tap(); explainBrief(this, 'hearts', HEARTS); };
@@ -104,7 +112,7 @@ export class Hud {
     this.q('.dk.call').onclick = () => game.toggleMute();
     this.q('.dk.mus').onclick = () => { if (this._musHeld) { this._musHeld = false; return; } game.toggleAudio('music'); };
     // press and hold Music: the Songs page (round O)
-    { const b = this.q('.dk.mus'); let t = 0; b.addEventListener('pointerdown', () => { clearTimeout(t); t = setTimeout(() => { this._musHeld = true; game.openSongs && game.openSongs(); }, 650); }); for (const ev of ['pointerup', 'pointercancel', 'pointerleave']) b.addEventListener(ev, () => clearTimeout(t)); }
+    { const b = this.q('.dk.mus'); let t: ReturnType<typeof setTimeout> | undefined; b.addEventListener('pointerdown', () => { clearTimeout(t); t = setTimeout(() => { this._musHeld = true; game.openSongs && game.openSongs(); }, 650); }); for (const ev of ['pointerup', 'pointercancel', 'pointerleave']) b.addEventListener(ev, () => clearTimeout(t)); }
     this.q('.z-where').onclick = () => game.openWhere && game.openWhere(i);   // (Round U) "Where is…?" sparkles
     this.q('.dk.snd').onclick = () => game.openSound(this.q('.dk.snd'));   // (Round U) the three Sound switches: music, sounds, voice
     this.q('.friendchip').onclick = () => { const r = game.findFriend(i); if (r) game.say && game.say(r[0], r[1]); };
@@ -121,8 +129,8 @@ export class Hud {
     this.q('.z-view').addEventListener('pointerdown', e => { e.preventDefault(); game.cycleView(i); });
     // (owner, 13 Oct AEDT: too many buttons down one side) zoom, camera view and Where is sit in a tray behind one View
     // button; it closes by itself after a while, or with a tap on View again (their keys work all the time)
-    { const zr = this.q('.zoomer'), tb = this.q('.z-tray'); let t = 0;
-      const open = on => { zr.classList.toggle('open', on); tb.setAttribute('aria-expanded', String(on)); clearTimeout(t); if (on) { document.querySelector('.audio-tray')?.close?.(); document.querySelectorAll('.zoomer.open').forEach(z => { if (z !== zr) { z.classList.remove('open'); z.querySelector('.z-tray')?.setAttribute('aria-expanded', 'false'); } }); t = setTimeout(() => open(false), 8000); } };
+    { const zr = this.q('.zoomer'), tb = this.q('.z-tray'); let t: ReturnType<typeof setTimeout> | undefined;
+      const open = on => { zr.classList.toggle('open', on); tb.setAttribute('aria-expanded', String(on)); clearTimeout(t); if (on) { document.querySelector<HTMLElement & { close?(): void }>('.audio-tray')?.close?.(); document.querySelectorAll('.zoomer.open').forEach(z => { if (z !== zr) { z.classList.remove('open'); z.querySelector('.z-tray')?.setAttribute('aria-expanded', 'false'); } }); t = setTimeout(() => open(false), 8000); } };
       tb.addEventListener('pointerdown', e => e.stopPropagation());
       tb.onclick = e => { e.stopPropagation(); open(!zr.classList.contains('open')); };
       this.q('.ztray').addEventListener('pointerdown', () => open(true), true); }
@@ -158,9 +166,9 @@ export class Hud {
     root.style.setProperty('--quest-below-top', (nav.offsetTop + nav.offsetHeight + 12) + 'px');
     root.classList.toggle('quest-below-nav', !quest.classList.contains('fold') && root.clientWidth - reserve < 180);
   }
-  refreshWho() { const p = this.hero.profile; this.q('.pav').src = avatarURL(p); this.q('.pname').textContent = nm(p.name); this.q('.pname').classList.toggle('starname', !!(p.look && p.look.star)); } // (owner, 12 Oct: this week's star tester gets a gold star by the name)
-  toggleEmotes(v) { const e = this.q('.emotes'); e.hidden = v == null ? !e.hidden : !v; }
-  layout(r, two) {
+  refreshWho() { const p = this.hero.profile, av = this.q('.pav'); if (av instanceof HTMLImageElement) av.src = avatarURL(p); this.q('.pname').textContent = nm(p.name); this.q('.pname').classList.toggle('starname', !!(p.look && p.look.star)); } // (owner, 12 Oct: this week's star tester gets a gold star by the name)
+  toggleEmotes(v?: boolean) { const e = this.q('.emotes'); e.hidden = v == null ? !e.hidden : !v; }
+  layout(r: HudRect, two?: boolean) {
     Object.assign(this.root.style, { left: r.x + 'px', top: r.y + 'px', width: r.w + 'px', height: r.h + 'px', transform: r.rot ? `rotate(${r.rot}deg)` : '' });
     this.root.classList.toggle('far', r.rot === 180);   // (two players face to face: this half is turned to the far end)
     const small = two || r.w < 560 || r.h < 420; this.root.classList.toggle('small', small); this.rect = r;
@@ -173,8 +181,8 @@ export class Hud {
     { const audio = this.q('.dk.snd'); if (tools.firstElementChild !== audio) tools.prepend(audio); if (chat.previousElementSibling !== audio) tools.insertBefore(chat, audio.nextSibling); }
     this.fitQuest();
   }
-  showRegion(name) { const e = this.q('.region'); e.textContent = name; e.classList.remove('show'); void e.offsetWidth; e.classList.add('show'); }
-  toast(msg, o = {}) { const e = this.q('.htoast'); e.textContent = msg; e.classList.toggle('explain', !!o.explain); e.classList.add('show'); clearTimeout(this._tt); this._tt = setTimeout(() => e.classList.remove('show'), Math.max(3200, msg.length * 30)); }
+  showRegion(name: string) { const e = this.q('.region'); e.textContent = name; e.classList.remove('show'); void e.offsetWidth; e.classList.add('show'); }
+  toast(msg: string, o: { explain?: boolean } = {}) { const e = this.q('.htoast'); e.textContent = msg; e.classList.toggle('explain', !!o.explain); e.classList.add('show'); clearTimeout(this._tt); this._tt = setTimeout(() => e.classList.remove('show'), Math.max(3200, msg.length * 30)); }
   setAction(it) {
     const b = this.q('.act');
     if (!it) { b.hidden = true; this.last.act = null; return; }
@@ -182,14 +190,14 @@ export class Hud {
     if (this.last.act !== lab) { b.hidden = false; this.q('.act .ai').innerHTML = hasPic(it.icon) ? pic(it.icon) : esc(it.icon || '✋'); this.q('.act .al').textContent = lab; b.classList.toggle('long', lab.length > 18); b.classList.toggle('vlong', lab.length > 34); this.last.act = lab; }
   }
   // a big pulsing button in the middle of the screen (pet rescue, ferry). bigPrompt(null) hides it.
-  bigPrompt(html, onTap) {
+  bigPrompt(html: string | null, onTap?: () => void) {
     const b = this.q('.bigprompt'); b.hidden = !html; if (!html) return;
     b.innerHTML = html; b.classList.toggle('wait', !onTap);
     b.onpointerdown = e => { e.preventDefault(); e.stopPropagation(); if (onTap) { b.classList.remove('hit'); void b.offsetWidth; b.classList.add('hit'); onTap(); } };
   }
-  setCall(on, talking, muted) { const b = this.q('.dk.call'); b.hidden = !on; b.querySelector('span').innerHTML = muted ? ICONS.callOff : ICONS.call; b.querySelector('small').textContent = muted ? T('Mic off', 'Micrô tắt') : T('Mic on', 'Micrô bật'); b.classList.toggle('talking', !!talking); b.classList.toggle('mute', !!muted); }   // (r63: it says whether the microphone is on)
+  setCall(on: boolean, talking?: boolean, muted?: boolean) { const b = this.q('.dk.call'); b.hidden = !on; b.querySelector('span').innerHTML = muted ? ICONS.callOff : ICONS.call; b.querySelector('small').textContent = muted ? T('Mic off', 'Micrô tắt') : T('Mic on', 'Micrô bật'); b.classList.toggle('talking', !!talking); b.classList.toggle('mute', !!muted); }   // (r63: it says whether the microphone is on)
 
-  update(dt, camera, fogMap, markers) {
+  update(dt: number, camera: THREE.Camera, fogMap: HTMLCanvasElement | (() => HTMLCanvasElement), markers: MiniMarker[] | (() => MiniMarker[])) {
     const h = this.hero, p = h.profile;
     // under-5s: the action button's picture breathes (css: feel and sound)
     { const lt = p.age !== 'big'; if (this.last.little !== lt) { this.root.classList.toggle('little', lt); this.last.little = lt; } }
@@ -234,7 +242,7 @@ export class Hud {
     this.drawWheel(camera);
   }
 
-  drawMini(fogMap, markers) {
+  drawMini(fogMap: HTMLCanvasElement, markers: MiniMarker[]) {
     const x = this.mini, S = 200, h = this.hero, view = 110; // metres across radius
     const k = fogMap.width / SIZE, sx = (h.pos.x + HALF) * k, sz = (h.pos.z + HALF) * k, r = view * k;
     x.clearRect(0, 0, S, S); x.save(); x.beginPath(); x.arc(S / 2, S / 2, S / 2, 0, Math.PI * 2); x.clip();
@@ -259,7 +267,7 @@ export class Hud {
   }
 
   // the nearest online friend: name, distance and an arrow pointing their way (relative to the camera)
-  updateFriend(camera) {
+  updateFriend(camera: THREE.Camera) {
     const b = this.q('.friendchip'), h = this.hero;
     const list = Object.values(this.game.partners || {}).filter(P => P.pos.y > -40);
     if (!list.length) { if (!b.hidden) b.hidden = true; return; }
@@ -274,10 +282,10 @@ export class Hud {
     const a = Math.atan2(P.pos.x - h.pos.x, P.pos.z - h.pos.z) - camA;
     this.q('.fc-arrow').style.transform = `rotate(${-a - Math.PI / 2}rad)`;
   }
-  drawWheel(camera) {
+  drawWheel(camera: THREE.Camera) {
     const h = this.hero, c = this.wctx, max = h.staminaMax, full = h.stamina >= max - .001 && !h.exhausted;
     this.wheelA = clamp((this.wheelA || 0) + (full ? -.05 : .2), 0, 1);
-    this.wheel.style.opacity = this.wheelA;
+    this.wheel.style.opacity = String(this.wheelA);
     if (this.wheelA <= 0 || !this.rect) return;
     const v = new THREE.Vector3(h.pos.x, h.pos.y + 1.6, h.pos.z).project(camera);
     const px = (v.x * .5 + .5) * this.rect.w, py = (-v.y * .5 + .5) * this.rect.h;
