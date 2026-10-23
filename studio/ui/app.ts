@@ -1782,7 +1782,7 @@ PAGES.testers = async P => {
         ${x.log.length ? `<details><summary>${T('The last 30 seconds', '30 giây trước đó')} (${x.log.length})</summary><ol class="tlog">${x.log.map(([t, kk, s]) => `<li><small>${t} s</small> <b>${esc(kk)}</b> ${esc(s)}</li>`).join('')}</ol></details>` : ''}
         ${x.shot ? `<button class="btn small" data-shot="${esc(x.rid)}">🖼️ ${T('Screenshot', 'Ảnh màn hình')}</button><div class="tshot"></div>` : ''}</div>`).join('')}</div>`;
     const set = async b => { try { const q = await api('testers/set', { k, ...b }); Object.assign(problems.find(x => x.k === k) || {}, q); toast('✅ ' + T('Saved', 'Đã lưu'), 'good'); draw(); open(k); } catch (e) { fail(e); } };
-    $('#tfix').onclick = () => { const v = $('#tfin').value.trim(); if (!/^r\d{1,4}$/.test(v)) return toast('⚠️ ' + T('Write the version like r67.', 'Viết phiên bản như r67.'), 'bad'); set({ status: 'fixed', fixedIn: v }); };
+    $('#tfix').onclick = () => { const v = $('#tfin').value.trim(); if (!/^r\d{1,4}(\.\d{1,2})?$/.test(v)) return toast('⚠️ ' + T('Write the version like r67.', 'Viết phiên bản như r67.'), 'bad'); set({ status: 'fixed', fixedIn: v }); };
     box.querySelectorAll<HTMLInputElement>('[data-set]').forEach(b => b.onclick = () => set({ status: b.dataset.set }));
     $('#tdup').onchange = () => { if ($('#tdup').value) set({ dupOf: $('#tdup').value }); };
     box.querySelectorAll<HTMLInputElement>('[data-shot]').forEach(b => b.onclick = async () => { try { const s = await api('testers/shot/' + b.dataset.shot); b.nextElementSibling.innerHTML = s.shot ? `<img alt="" src="${esc(s.shot)}">` : T('No picture.', 'Không có ảnh.'); } catch (e) { fail(e); } });

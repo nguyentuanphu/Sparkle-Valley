@@ -1459,6 +1459,36 @@ await check('testerreport', async () => {
   return `${got.length} reports: an error, a game that did not open and a frozen screen by themselves, each with a picture, the last 30 seconds, the players and the device; the ladybird (picture first, then a kind and a note), a long-press quick report, offline reports waiting with a number and sending when back online, and "already reported → add to it"; the retest of a fixed problem, and the auto play check\'s findings sent once`;
 });
 
+await check('testernews', async () => {
+  // (r90, owner 23 Oct AEDT: "when I log in there is a pop up that I test a new release, very annoying; any release or new
+  // game for testers should be shown as a list within the ladybug") no "Tester preview" pop-up at the start; the ladybird
+  // has a dot; its panel lists what is new to test (a ticked sneak peek and a batch starting in 3 days), with Play for a
+  // game; the dot goes once the list is seen
+  const out = [];
+  const d3 = new Date(Date.now() + 3 * 864e5), day3 = d3.getFullYear() + '-' + String(d3.getMonth() + 1).padStart(2, '0') + '-' + String(d3.getDate()).padStart(2, '0');
+  const live = { releases: { tester: { on: true, devices: ['tester000001'], peeks: ['money_bahu'] }, singers: { on: true, start: day3, newDays: 7 } }, festivals: {} };
+  for (const lang of ['en', 'vi']) {
+    const P = await open(b, { w: 390, h: 844, touch: true, lang, pre: `try { localStorage.setItem('sv2_playerid', 'tester000001'); localStorage.setItem('sv2_live', ${JSON.stringify(JSON.stringify(live))}); ${ACCEPTED} } catch (e) { }`,
+      route: async ctx => { await ctx.route('**/api/live**', r => r.fulfill({ json: live })); await testerSite(ctx, () => ({ mine: [], open: [], retest: [], helped: 0, reports: 0, peeks: ['money_bahu'] })); } });
+    await clear(P.page); await P.page.waitForSelector('.hud .z-lb', { timeout: 20000 }); await P.page.waitForTimeout(9000);
+    const r = await P.page.evaluate(async () => {
+      const popup = [...document.querySelectorAll('.reward, .modal')].map(x => x.textContent).find(t => /Tester preview|Xem trước cho người thử/.test(t)) || '';
+      const dot = !document.querySelector('.hud .z-lb .lb-new')?.hidden;
+      const T = await import('/js/tester.js'); await T.openPanel(0); await new Promise(res => setTimeout(res, 600));
+      const rows = [...document.querySelectorAll('.tp-news .tp-news-row')].map(x => x.textContent.trim()), play = !!document.querySelector('.tp-news [data-try="bahu"]');
+      document.querySelector('.modal.tpanel .x')?.click(); await new Promise(res => setTimeout(res, 400));
+      return { popup: popup.slice(0, 80), dot, rows, play, dotAfter: !document.querySelector('.hud .z-lb .lb-new')?.hidden };
+    });
+    if (r.popup) out.push(lang + ': a pop-up at the start: ' + r.popup);
+    if (!r.dot || r.dotAfter) out.push(lang + ': the ladybird dot ' + JSON.stringify({ before: r.dot, after: r.dotAfter }));
+    if (r.rows.length !== 2 || !r.play) out.push(lang + ': the list ' + JSON.stringify(r.rows));
+    if (P.errors.length) out.push(lang + ': ' + P.errors.slice(0, 2).join(' | '));
+    await P.ctx.close();
+  }
+  ok(!out.length, out.join(' | '));
+  return 'no Tester preview pop-up at the start (9 s, EN and VI); the ladybird has a dot; its panel lists the sneak peek (with Play) and the batch in 3 days; the dot goes once seen';
+});
+
 await check('testerrewards', async () => {
   // a problem the tester found is fixed: the tick on the ladybird, Ông Cú's thank-you with coins; reports that helped
   // give the Bug Hunter badge on the shirt (seen by friends: it is in the look), tester gear, stickers and the week's star
@@ -1932,6 +1962,11 @@ await check('story', async () => {
   await act('story_c1_find'); await w(600); await calm(); await w(2500); await calm();
   const carrying = await pg.evaluate(() => __sv.heroes[0].profile.lanterns.carrying); seen.push(await q());
   pg.evaluate(() => { const it = __sv.interactables.find(i => i.id === 'story_c1_hang'); it.act(__sv.heroes[0]); }); await w(1500);
+  // (r90, testers #425 #432 #442: the rope panel covered the game) a game opened while the panel waits hides it; closing
+  // the game brings it back, still waiting
+  const padGame = await pg.evaluate(async () => { const d = document.querySelector('.handpad'); if (!d) return null; const F = await import('/js/games/frame.js');
+    F.openGame('colors', { players: [__sv.heroes[0].profile] }); await new Promise(r => setTimeout(r, 500)); const hidden = getComputedStyle(d).display === 'none';
+    document.querySelector('.gl .gl-x')?.click(); await new Promise(r => setTimeout(r, 900)); return { hidden, back: d.isConnected && getComputedStyle(d).display !== 'none' && !F.gameOpen() }; });
   // pull the rope (drag the handle down)
   const roped = await pg.evaluate(() => { const el = document.querySelector('.handpad [data-hp=rope]'); if (!el) return false; const r = el.getBoundingClientRect(), ev = (t, y) => el.dispatchEvent(new PointerEvent(t, { bubbles: true, pointerId: 9, clientX: r.left + 20, clientY: r.top + r.height * y }));
     ev('pointerdown', 0); ev('pointermove', 1); ev('pointerup', 1); return true; }); await w(2500);
@@ -1958,6 +1993,7 @@ await check('story', async () => {
   if (!ribbonsWaited) out.push('walking into the village finished the step before the ribbons were caught');
   if (!(lifted >= 1)) out.push('no lotus leaves to lift');
   if (!roped) out.push('hanging did not ask to pull the rope');
+  if (!padGame || !padGame.hidden || !padGame.back) out.push('a game opened over the rope panel: ' + JSON.stringify(padGame));
   if (!(end.house > 5)) out.push(`a building stands ${end.house.toFixed(1)} m from the đình`);
   if (P.errors.length) out.push(...P.errors.slice(0, 2));
   await P.ctx.close();
@@ -4371,7 +4407,7 @@ await check('rollout', async () => {
   // yet) hides its feature from a child who never used it, keeps it for a child who did (profile.tried), and brings it back
   // when switched on; a release starting today shows the New! card; a tester device sees a batch 7 days early
   const out = [];
-  const P = await open(b, { w: 1024, h: 700 }); await clear(P.page);
+  const P = await open(b, { w: 1024, h: 700, schedule: true }); await clear(P.page);
   const r = await P.page.evaluate(async () => {
     const G = __sv, h = G.heroes[0], p = h.profile, C = await import('/js/custom.js'), wait = ms => new Promise(r => setTimeout(r, ms));
     const { gamesIn } = await import('/js/content/activities.js'), { GAMES } = await import('/js/games/registry.js');
@@ -4412,6 +4448,9 @@ await check('rollout', async () => {
         await wait(500); const moved = Math.abs(v.o.position.x - v.home.x) > .05; v.goal = null; return moved; }
     };
     const res = {};
+    // (r90 launch, owner 23 Oct AEDT) the shipped schedule (content/custom.json "releases") is set aside while each switch
+    // is tried on and off, then checked on its own below: a batch stays hidden until its Saturday and is on from it
+    const shipped = { ...(C.CUSTOM.releases || {}) }; C.CUSTOM.releases = Object.fromEntries(Object.entries(shipped).filter(([k]) => k === 'wayfind'));
     for (const [id, probe] of Object.entries(probes)) {
       if (id === 'wayfind') {
         const previous = C.CUSTOM.releases?.wayfind; C.CUSTOM.releases = C.CUSTOM.releases || {};
@@ -4429,6 +4468,9 @@ await check('rollout', async () => {
       res[id] = { hidden, kept, back };
     }
     for (const [id, probe] of Object.entries(scenery)) { F[id] = false; const hidden = !(await probe()); F[id] = true; const back = !!(await probe()); res[id] = { hidden, kept: true, back }; }
+    C.CUSTOM.releases = shipped;
+    const sched = Object.entries(shipped).filter(([, r]) => r && r.start).map(([id, r]) => ({ id, before: C.releaseOn(id, true, new Date(new Date(r.start + 'T00:00:00').getTime() - 864e5)), on: C.releaseOn(id, true, new Date(r.start + 'T12:00:00')) }));
+    res.schedule = { hidden: sched.length >= 20 && sched.every(x => !x.before), kept: true, back: sched.every(x => x.on), n: sched.length };
     // every new switch is in Studio's list, starts on, and says what it is in both languages
     const { RELEASES } = await import('/js/content/releases.js');
     const missing = Object.keys(probes).concat(Object.keys(scenery)).filter(id => { const x = RELEASES.find(r => r.id === id); return !x || x.def !== (id !== 'wayfind') || !x.en || !x.vi || x.en === x.vi; });
@@ -5422,17 +5464,18 @@ await check('startup', async () => {
 await check('saves', async () => {
   // progress survives: the main save is wiped (as a browser might do), and the game brings it back by itself
   const P = await open(b, { w: 800, h: 600 }); await clear(P.page);
-  await P.page.evaluate(async () => { const S = await import('/js/state.js'); S.farm.coins = 4321; S.profiles[0].orbs = 7; S.profiles[0].postcards = { opera: true }; S.saveProfiles(true); });
+  await P.page.evaluate(async () => { localStorage.setItem('sv2_playerid', 'savecheck123'); const S = await import('/js/state.js'); S.farm.coins = 4321; S.profiles[0].orbs = 7; S.profiles[0].postcards = { opera: true }; S.saveProfiles(true); });
   await P.page.waitForTimeout(4500);
   // close the game, then wipe the main save from another page of the same site, then open the game again
   const Q = await P.ctx.newPage(); await P.page.close();
-  await Q.goto(URL + 'manifest.webmanifest'); await Q.evaluate(() => { localStorage.removeItem('sv2_profiles'); localStorage.removeItem('sv2_farm'); });
+  await Q.goto(URL + 'manifest.webmanifest'); await Q.evaluate(() => { localStorage.removeItem('sv2_profiles'); localStorage.removeItem('sv2_farm'); localStorage.removeItem('sv2_playerid'); });
   await Q.goto(URL); await Q.waitForSelector('.screen.title', { timeout: 30000 });
   P.page = Q;
-  const r = await P.page.evaluate(async () => { const S = await import('/js/state.js'); return { coins: S.farm.coins, orbs: S.profiles[0].orbs, pc: !!(S.profiles[0].postcards || {}).opera, restored: S.restoredFromCopy, kept: !!localStorage.getItem('sv2_profiles') }; });
+  const r = await P.page.evaluate(async () => { const S = await import('/js/state.js'); return { coins: S.farm.coins, orbs: S.profiles[0].orbs, pc: !!(S.profiles[0].postcards || {}).opera, restored: S.restoredFromCopy, kept: !!localStorage.getItem('sv2_profiles'), device: localStorage.getItem('sv2_playerid') }; });
   await P.ctx.close();
-  ok(r.coins === 4321 && r.orbs === 7 && r.pc && r.restored && r.kept, JSON.stringify(r));
-  return 'wiped main save restored from the safe copy (coins, orbs, postcards)';
+  // (r89.1, owner 23 Oct AEDT) the device keeps its own number, so Studio counts it as the same device
+  ok(r.coins === 4321 && r.orbs === 7 && r.pc && r.restored && r.kept && r.device === 'savecheck123', JSON.stringify(r));
+  return 'wiped main save restored from the safe copy (coins, orbs, postcards, the device\'s number)';
 });
 
 await check('meet', async () => {

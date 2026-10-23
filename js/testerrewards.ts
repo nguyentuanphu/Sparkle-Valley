@@ -7,7 +7,7 @@
 //   - tester gear (the bug hunter's hat, the ladybird backpack, the detective cape for a full sticker page);
 //   - a sticker for each kind of problem found (the sticker album), this week's star by the name (look.star);
 //   - the Tester's Corner: badges, stickers, gear and the board of problems fixed thanks to this tester;
-//   - sneak peeks: a "Tester preview" note for each release testers see early.
+//   - (sneak peeks are listed in the ladybird's panel, js/tester.ts, with no pop-up: owner, 23 Oct AEDT).
 import { T, nm } from './i18n.js';
 import { profiles, saveProfiles } from './state.js';
 import { el, esc } from './util.js';
@@ -15,16 +15,16 @@ import { pic } from './art.js';
 import { modal, dialog, reward, confetti } from './popups.js';
 import { say } from './voice.js';
 import { ITEM, adoptWorn, versionFor, setOf } from './content/shop.js';
-import { RELEASES } from './content/releases.js';
 import * as C from './content/tester.js';
 
 const KEY = 'sv2_tester_rw';
 const get = d => { try { return JSON.parse(localStorage.getItem(KEY) || 'null') || d; } catch (e) { return d; } };
 const put = v => { try { localStorage.setItem(KEY, JSON.stringify(v)); } catch (e) { } };
 const L = pair => T(pair[0], pair[1]);
+const sayLine = (l: string[]) => say(l[0], l[1]);
 let G = null, statusOf = () => null, queue = Promise.resolve();
 // (each moment waits until a child is in the valley and nothing else is open: never over the title screen or a game)
-const free = () => new Promise(res => { const ok = () => G.heroes && G.heroes.length && !G.paused && !document.querySelector('.screen.title, .screen.who, .modal, .dialog, .gl, .theatre, .storybook, .reward');
+const free = () => new Promise<void>(res => { const ok = () => G.heroes && G.heroes.length && !G.paused && !document.querySelector('.screen.title, .screen.who, .modal, .dialog, .gl, .theatre, .storybook, .reward');
   if (ok()) return res(); const t = setInterval(() => { if (ok()) { clearInterval(t); res(); } }, 700); });
 const later = f => { queue = queue.then(async () => { await free(); return f(); }).catch(() => { }); return queue; };
 
@@ -51,13 +51,14 @@ function dress(st) {
 export function apply(st) {
   if (!st) return; const seen = get({ badge: '', thanked: {}, star: '', peeks: {}, stickers: [] }), out = dress(st);
   later(async () => {
-    if (out.badge && out.badge.id !== seen.badge) { await free(); seen.badge = out.badge.id; put(seen); say(...C.TESTER_LINES.badge); await reward(pic('🐞'), T(out.badge.en, out.badge.vi), T('Bug Hunter badge, worn on your shirt', 'Huy hiệu Săn Bọ, đeo trên áo')); }
+    if (out.badge && out.badge.id !== seen.badge) { await free(); seen.badge = out.badge.id; put(seen); sayLine(C.TESTER_LINES.badge); await reward(pic('🐞'), T(out.badge.en, out.badge.vi), T('Bug Hunter badge, worn on your shirt', 'Huy hiệu Săn Bọ, đeo trên áo')); }
     const newSt = out.kinds.filter(k => !(seen.stickers || []).includes(k));
     if (newSt.length) { await free(); seen.stickers = out.kinds; put(seen); await reward(pic(C.STICKER_ICON[newSt[0]]), T('A new tester sticker!', 'Một hình dán người thử mới!'), T('In the Tester\'s Corner', 'Trong Góc người thử')); }
     const week = new Date(); week.setDate(week.getDate() - week.getDay()); const wk = week.toISOString().slice(0, 10);
-    if (st.star && seen.star !== wk) { await free(); seen.star = wk; put(seen); say(...C.TESTER_LINES.star); await reward(pic('⭐'), T('Star tester of the week!', 'Người thử ngôi sao của tuần!'), T('A gold star by your name for a week', 'Một ngôi sao vàng bên tên con trong một tuần')); }
+    if (st.star && seen.star !== wk) { await free(); seen.star = wk; put(seen); sayLine(C.TESTER_LINES.star); await reward(pic('⭐'), T('Star tester of the week!', 'Người thử ngôi sao của tuần!'), T('A gold star by your name for a week', 'Một ngôi sao vàng bên tên con trong một tuần')); }
     for (const p of (st.mine || []).filter(p => ['fixed', 'confirmed'].includes(p.status) && !seen.thanked[p.k])) { await free(); seen.thanked[p.k] = 1; put(seen); await thankNow(p); }
-    for (const id of st.peeks || []) if (!seen.peeks[id]) { await free(); const r = RELEASES.find(x => x.id === id); seen.peeks[id] = 1; put(seen); if (r) { say(...C.TESTER_LINES.peek); await reward(pic('🐞'), T('Tester preview', 'Xem trước cho người thử'), T(r.en, r.vi)); } }
+    // (r90, owner 23 Oct AEDT: the "Tester preview" pop-up at every start was very annoying) releases a tester sees early
+    // are listed in the ladybird's panel instead (js/tester.ts testerNews), with no pop-up
   });
 }
 // "You found this, and now it is fixed!": Ông Cú thanks the tester by name (the name is shown, not spoken), confetti, coins

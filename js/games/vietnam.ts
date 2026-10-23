@@ -284,6 +284,8 @@ register({
       const mark = field.querySelector('.mark'), rope = field.querySelector('.rope');
       const pull = d => { x += d * .045; api.sfx.pop(Math.abs(Math.round(x * 10))); };
       b0.onclick = () => pull(-1); if (b1) b1.onclick = () => pull(1);
+      // (r90, #423 #445) auto play pulls as fast as a child taps (the plan is asked again after each tap)
+      api.plan(() => field.isConnected && done < 0 ? b0 : null, { maxActions: 400 });
       const aiRate = api.little ? 1.4 : ([1.9, 2.3, 2.8, 3.2, 3.6][Math.min(4, api.level - 1)] + (api.strong ? .4 : 0) + attempt * -.25);
       await new Promise<void>(res => {
         const tick = now => {

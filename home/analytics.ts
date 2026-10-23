@@ -17,6 +17,10 @@ export const consent = (): Consent => {
   return value === 'yes' || value === 'no' ? value : null;
 };
 
+// (owner, 23 Oct AEDT: "always on by default, don't need to ask, it's part of the analytics in game anyway") first-party
+// visit counts run unless this device once said no
+const counting = () => consent() !== 'no';
+
 export const setConsent = (value: Exclude<Consent, null>) => {
   localStorage.setItem(KEY, value);
   if (value === 'no') queued.length = 0;
@@ -26,7 +30,7 @@ const device = () => innerWidth < 600 ? 'phone' : innerWidth < 1000 ? 'tablet' :
 const language = () => document.documentElement.lang === 'vi' ? 'vi' : 'en';
 
 export function track(name: EventName, route: string, action?: string, milestone?: string, seconds?: number) {
-  if (consent() !== 'yes') return;
+  if (!counting()) return;
   if (name === 'page_view' && previousRoute === route) return;
   if (name === 'page_view') previousRoute = route;
   queued.push({ name, route, action, milestone, seconds, lang: language(), device: device() });
@@ -38,7 +42,7 @@ export function trackLink(route: string) {
 }
 
 async function flush() {
-  if (consent() !== 'yes' || !queued.length) return;
+  if (!counting() || !queued.length) return;
   const events = queued.splice(0, 50);
   try {
     await fetch('/api/parent-analytics', {
@@ -54,7 +58,7 @@ async function flush() {
 
 function tick() {
   const now = performance.now();
-  if (consent() === 'yes' && !document.hidden && now - lastInput < 30_000)
+  if (counting() && !document.hidden && now - lastInput < 30_000)
     secondsActive += Math.min(1, Math.max(0, (now - lastTick) / 1000));
   lastTick = now;
 }
@@ -64,7 +68,7 @@ function reportTime() {
   secondsActive = 0;
 }
 function reportScroll() {
-  if (consent() !== 'yes') return;
+  if (!counting()) return;
   const height = document.documentElement.scrollHeight;
   const percent = (scrollY + innerHeight) / Math.max(1, height) * 100;
   for (const milestone of [25, 50, 75, 100]) {

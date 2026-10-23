@@ -23,6 +23,7 @@ import { setPeeks, liveRule } from './custom.js';
 import { setProblemHook } from './players.js';
 import { SFX } from './audio.js';
 import * as C from './content/tester.js';
+import { RELEASES } from './content/releases.js';
 import { takeCopy, putCopyBack, hasCopy, dropCopy } from './keepcopy.js';
 import { revertOf } from './content/autoplay.js';
 import { easyName } from './content/devname.js';
@@ -33,7 +34,7 @@ import type { SvMain } from './main.js';
 import type { ReportEntry } from './report-outbox.js';
 type Where = { area: string; place: string; game: string; window: string; x: number; z: number };
 type Problem = { k: string; title: string; status?: string; fixedIn?: string; n?: number; auto?: string; where?: Where };
-type TesterStatus = { open?: Problem[]; mine?: Problem[]; retest?: Problem[]; reports?: number; helped?: number };
+type TesterStatus = { open?: Problem[]; mine?: Problem[]; retest?: Problem[]; reports?: number; helped?: number; peeks?: string[] };
 type TesterGame = Pick<SvMain, 'heroes' | 'huds' | 'paused' | 'renderer' | 'regionOf'> & {
   playGame?: SvMain['playGame'] & { __tester?: boolean };
   tester?: TesterApi;
@@ -248,8 +249,11 @@ function watch() {
     }
     const ran = longs.filter(([a, d]) => a + d > from && a < to).reduce((m, [, d]) => Math.max(m, d), 0), seen = [...new Set(winAt.filter(([a]) => a > from - 500 && a < to).map(([, k]) => k))];
     return `longest script ${Math.round(ran)} ms; window: ${seen.join(', ') || 'no change'}; focus ${document.hasFocus() ? 'yes' : 'no'}`; };
-  const tick = t => { if (!live) return; const gap = t - lastF; if (gap > C.LIMITS.freeze * 1000 && document.visibilityState === 'visible' && performance.now() - mounted > 15000) { note('freeze', why(lastF, t)); autoReport('freeze', `${(gap / 1000).toFixed(1)} s`); }
-    lastF = t; frames++; if (t - since > C.LIMITS.slowFor * 1000) { fpsNow = frames * 1000 / (t - since); if (fpsNow < C.LIMITS.slowFps && document.visibilityState === 'visible' && performance.now() - mounted > 15000) autoReport('slow', `${Math.round(fpsNow)} frames a second`); frames = 0; since = t; }
+  // (r90, #474 #487 #488: a "freeze" of 57 s with no script running while the share sheet or print window was up) a gap in
+  // which the window lost the focus or went out of sight is the phone pausing the game, not the game stuck: not reported
+  const away = (from: number, to: number) => winAt.some(([at, k]) => at > from - 500 && at < to && /blur|visibilitychange|pagehide|freeze/.test(k));
+  const tick = t => { if (!live) return; const gap = t - lastF; if (gap > C.LIMITS.freeze * 1000 && document.visibilityState === 'visible' && performance.now() - mounted > 15000 && !away(lastF, t)) { note('freeze', why(lastF, t)); autoReport('freeze', `${(gap / 1000).toFixed(1)} s`); }
+    lastF = t; frames++; if (t - since > C.LIMITS.slowFor * 1000) { fpsNow = frames * 1000 / (t - since); if (fpsNow < C.LIMITS.slowFps && document.visibilityState === 'visible' && performance.now() - mounted > 15000 && !away(since, t)) autoReport('slow', `${Math.round(fpsNow)} frames a second`); frames = 0; since = t; }
     raf = requestAnimationFrame(tick); };
   raf = requestAnimationFrame(tick); offs.push(() => cancelAnimationFrame(raf));
   const resetFrames = () => { lastF=performance.now();since=performance.now();frames=0; };
@@ -260,7 +264,10 @@ function watch() {
   let misses = new Set(voiceMisses().map(m => m[0] + '|' + m[1])), lastPos = '';
   const every = setInterval(() => {
     const top = activeReportPanel(document);
-    for (const b of document.querySelectorAll('.modal button, .hud button, .gl button, .dialog button')) {
+    // (r90, #382-#399: "offscreen" on an iPhone 430x517) while a text field has the focus the phone's keyboard covers half
+    // the screen and the window's buttons are out of sight only for that time: not a problem to report
+    const typing = document.activeElement instanceof HTMLElement && document.activeElement.matches('input, textarea, select, [contenteditable="true"]');
+    if (!typing) for (const b of document.querySelectorAll('.modal button, .hud button, .gl button, .dialog button')) {
       if (unreachableControl(b, top)) autoReport('offscreen', labelOf(b));
     }
     const now = voiceMisses(); for (const [lang, text] of now) { const k = lang + '|' + text; if (!misses.has(k)) { misses.add(k); autoReport('novoice', `${lang}: ${String(text).slice(0, 100)}`); } }
@@ -288,8 +295,28 @@ function hookRender() {
   offs.push(() => { R.render = orig; });
 }
 
+// ---------- what is new to test (r90, owner 23 Oct AEDT) ----------
+// "Any release or new game for tester should be shown as a list within the ladybug icon": the releases this device sees
+// early (ticked in Studio, or starting within the 7 days testers see ahead) are listed at the top of the ladybird's
+// panel, with Play for a game; a small dot on the ladybird while one is not seen yet. No pop-up at the start any more.
+type NewsItem = { id: string, en: string, vi: string, game?: string, start?: string };
+function testerNews(): NewsItem[] {
+  const ids = new Set<string>([...((status && Array.isArray(status.peeks)) ? status.peeks : []), ...C.peeksOf(liveRule('tester'))]);
+  const now = Date.now();
+  for (const r of RELEASES) { const x = liveRule(r.id); const st = x && typeof x.start === 'string' ? new Date(x.start + 'T00:00:00').getTime() : NaN; if (st > now && st - now <= 7 * 864e5) ids.add(r.id); }
+  return [...ids].map(id => RELEASES.find(r => r.id === id)).filter(r => !!r).map(r => { const x = liveRule(r.id); return { id: r.id, en: r.en, vi: r.vi, game: r.game, start: x && typeof x.start === 'string' ? x.start : undefined }; });
+}
+const NEWS_SEEN = 'sv2_tester_news';
+const newsUnseen = () => { let seen: string[] = []; try { seen = JSON.parse(localStorage.getItem(NEWS_SEEN) || '[]'); } catch (e) { } return testerNews().filter(n => !seen.includes(n.id)).length; };
+const markNewsSeen = () => { try { localStorage.setItem(NEWS_SEEN, JSON.stringify(testerNews().map(n => n.id))); } catch (e) { } paintCount(); };
+function newsHTML() {
+  const list = testerNews(); if (!list.length) return '';
+  const when = (s?: string) => { if (!s) return T('to test now', 'thử ngay'); const d = new Date(s + 'T00:00:00'); return T(`for everyone from ${d.getDate()}/${d.getMonth() + 1}`, `mọi người có từ ${d.getDate()}/${d.getMonth() + 1}`); };
+  return `<details class="tp-news" open><summary>${pic('🐞')} ${T(`New to test (${list.length})`, `Mới để thử (${list.length})`)}</summary><div class="tp-news-list">${list.map(n => `<div class="tp-news-row"><span><b>${esc(T(n.en, n.vi))}</b><small>${when(n.start)}</small></span>${n.game ? `<button class="btn" data-try="${esc(n.game)}">${T('Play', 'Chơi')}</button>` : ''}</div>`).join('')}</div></details>`;
+}
+
 // ---------- the ladybird and the tester mark ----------
-const paintCount = () => { dispatchEvent(new Event('sv-report-queue')); const n = queue().length, fixed = fixedToSee().length; document.querySelectorAll('.z-lb').forEach(b => { b.querySelector<HTMLElement>('.lb-n').textContent = n ? String(n) : ''; b.querySelector<HTMLElement>('.lb-n').hidden = !n; b.querySelector<HTMLElement>('.lb-ok').hidden = !fixed; }); };
+const paintCount = () => { dispatchEvent(new Event('sv-report-queue')); const n = queue().length, fixed = fixedToSee().length, fresh = newsUnseen(); document.querySelectorAll('.z-lb').forEach(b => { b.querySelector<HTMLElement>('.lb-n').textContent = n ? String(n) : ''; b.querySelector<HTMLElement>('.lb-n').hidden = !n; b.querySelector<HTMLElement>('.lb-ok').hidden = !fixed; const nw = b.querySelector<HTMLElement>('.lb-new'); if (nw) nw.hidden = !fresh; }); };
 const fixedToSee = () => { const seen = get(KEY.seen, {}); return ((status && status.mine) || []).filter(p => ['fixed', 'confirmed'].includes(p.status) && !seen[p.k]); };
 function addUI() {
   // (each player's HUD gets the mark under its clock and, at the ladybird level, the ladybird with the zoom buttons; also
@@ -298,7 +325,7 @@ function addUI() {
     const ck = hud.q && hud.q('.zoom'); if (ck && !ck.querySelector('.testermark')) { const mk = el('span', 'testermark', `${pic('🐞')}<span>${T('Tester', 'Người thử')} · ${BUILD}</span>`); mk.setAttribute('aria-hidden', 'true'); ck.appendChild(mk); offs.push(() => mk.remove()); }
     if (level !== 'ladybird') return;
     const z = hud.q && hud.q('.zoomer'); if (!z || z.querySelector('.z-lb')) return;
-    const b = el('button', 'z-lb', `${pic('🐞')}<i class="lb-n" hidden></i><i class="lb-ok" hidden>✓</i><kbd class="kb">L</kbd>`); b.setAttribute('aria-label', T('Report a problem (hold: quick report)', 'Báo lỗi (giữ: báo nhanh)'));
+    const b = el('button', 'z-lb', `${pic('🐞')}<i class="lb-n" hidden></i><i class="lb-ok" hidden>✓</i><i class="lb-new" hidden></i><kbd class="kb">L</kbd>`); b.setAttribute('aria-label', T('Report a problem (hold: quick report)', 'Báo lỗi (giữ: báo nhanh)'));
     let t0 = 0, quick = null;
     b.addEventListener('pointerdown', e => { e.stopPropagation(); t0 = performance.now(); quick = setTimeout(() => { quick = null; quickReport('quick'); }, 700); });
     b.addEventListener('pointerup', e => { e.stopPropagation(); if (quick) { clearTimeout(quick); quick = null; if (fixedToSee().length) showFixed(); else openPanel(i); } });
@@ -353,6 +380,7 @@ export async function openPanel(i = 0, initialTab = 'tester') {
   const near = ((status && status.open) || []).filter(p => p.where && ((where.game && p.where.game === where.game) || (where.window && p.where.window === where.window) || (!where.game && !where.window && p.where.area === where.area && Math.hypot((p.where.x || 0) - where.x, (p.where.z || 0) - where.z) < 25))).slice(0, 3);
   let kind = 'broken', spoken = false, selectedShot = pic0;
   const m: ReportPanel = modal('tpanel reporting-form' + (G.heroes[i]?.profile.age === 'little' ? ' little' : ''), `<div class="tp-head"><span class="tp-lb">${pic('🐞')}</span><h2>${T('Report a problem', 'Báo lỗi')}</h2><button class="x" aria-label="${T('Close', 'Đóng')}">✕</button></div>
+    ${newsHTML()}
     <div class="actions"><button class="btn tp-retry">${T('Retry queued reports', 'Gửi lại báo cáo đang chờ')}</button></div><p class="note tp-delivery" role="status" aria-live="polite">${T(`${queue().length} reports queued. Sent reports are in My reports.`, `${queue().length} báo cáo đang chờ. Báo cáo đã gửi nằm trong Báo cáo của tôi.`)}</p>
     <label class="tog"><input type="checkbox" class="tp-full" checked> ${T('Include the complete interface', 'Kèm toàn bộ giao diện')}</label><button class="tp-picture-open" type="button" aria-label="${T('View captured picture', 'Xem ảnh đã chụp')}"><img class="tp-shot" alt="" src="${pic0}"><span>${T('View captured picture', 'Xem ảnh đã chụp')}</span></button>
     ${near.length ? `<div class="tp-near"><b>${T('Already reported here', 'Đã có người báo ở đây')}</b>${near.map(p => `<div class="tp-old"><span>${esc(p.title)} <small>· ${p.n}×</small></span><button class="btn" data-join="${esc(p.k)}">${T('Same problem: add to it', 'Cùng lỗi: báo thêm')}</button></div>`).join('')}</div>` : ''}
@@ -361,6 +389,7 @@ export async function openPanel(i = 0, initialTab = 'tester') {
     <div class="actions"><button class="btn primary tp-send">${T('Send', 'Gửi')}</button></div>`);
   bindReportViewport(m);
   const card = m.querySelector<HTMLElement>('.card'), ta = card.querySelector<HTMLTextAreaElement>('textarea');
+  markNewsSeen(); card.querySelectorAll<HTMLButtonElement>('[data-try]').forEach(b => b.onclick = () => { m.close(); G.paused = was; G.playGame?.(i, b.dataset.try, 'tester'); });
   const full = card.querySelector<HTMLInputElement>('.tp-full');
   full.onchange = () => { selectedShot = full.checked ? pic0 : scenePic; card.querySelector<HTMLImageElement>('.tp-shot').src = selectedShot; };
   const reportBody = el('div','testing-report'), autoBody = el('div','testing-auto');

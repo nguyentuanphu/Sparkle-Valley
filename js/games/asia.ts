@@ -95,6 +95,8 @@ register({
     place();
     const ui = el('div', 'sl-ui', `<div class="sl-die">🎲</div><button class="btn big primary sl-roll">🎲 ${T('Roll', 'Gieo')}</button><div class="sl-msg"></div>`); api.stage.appendChild(ui);
     const die = ui.querySelector('.sl-die'), msg = ui.querySelector('.sl-msg'), rollB = ui.querySelector('.sl-roll');
+    // (r90, #416 #418) auto play rolls whenever Roll is ready, as a child would: the dice do the rest
+    api.plan(() => board.isConnected && rollB instanceof HTMLButtonElement && !rollB.disabled ? rollB : null, { maxActions: 400 });
     const max = api.little ? 3 : 6;
     const move = async (i, steps) => {
       for (let s = 0; s < steps && pos[i] < N; s++) { pos[i]++; place(); api.sfx && api.sfx.tap && api.sfx.tap(); if (i === 0) sayIn(settings.lang, numWord(pos[i])); await wait(520); }
