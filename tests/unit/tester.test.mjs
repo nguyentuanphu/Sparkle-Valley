@@ -170,3 +170,15 @@ test('a GitHub issue closed with "Fixed in rNN" sets the Studio problem (r89 two
   assert.equal(statusFromIssue({ state: 'closed', state_reason: 'completed' }, [{ body: 'Fixed in r88' }, { body: 'It came back on r89.' }]), null, 'came back after the fix: still open');
   assert.deepEqual(statusFromIssue({ state: 'closed', state_reason: 'completed' }, [{ body: 'It came back on r89.' }, { body: 'Fixed in r90' }]), { fixedIn: 'r90' });
 });
+
+test('a point release (r89.1, owner 23 Oct AEDT) is a build like any other and sits between r89 and r90', async () => {
+  const S = mem(), a = await T.addReport(S, LIVE, { ...rep(A), b: 'r89.1' });
+  assert.ok(a.ok); assert.deepEqual((await T.problem(S, a.k)).builds, ['r89.1']);
+  await T.setProblem(S, a.k, { fixedIn: 'r89.1' }); assert.equal((await T.problem(S, a.k)).fixedIn, 'r89.1');
+  assert.equal((await T.deviceStatus(S, LIVE, A, 'r89')).retest.length, 0, 'r89 is older than the fix');
+  assert.equal((await T.deviceStatus(S, LIVE, A, 'r89.1')).retest.length, 1, 'on the fixed version: replay it');
+  assert.equal((await T.deviceStatus(S, LIVE, A, 'r90')).retest.length, 1, 'newer than the fix');
+  await T.addReport(S, LIVE, { ...rep(A), b: 'r90' }); assert.equal((await T.problems(S)).find(p => p.k === a.k).status, 'back');
+  const { statusFromIssue } = await import('../../tools/tester-issues.mts');
+  assert.deepEqual(statusFromIssue({ state: 'closed', state_reason: 'completed' }, [{ body: 'Fixed in r89.1.' }]), { fixedIn: 'r89.1' });
+});

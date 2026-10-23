@@ -1,9 +1,9 @@
 {
-  "source": "c671808b073505e1f1a028d12c7017d353ae0a6f",
+  "source": "86cca037eb6307eaf99bf810ed5b2c1df3d5ccea",
   "files": [
     {
       "file": "content/custom.json",
-      "hash": "349528879819f9f94e86623b21616e99883f55a7"
+      "hash": "b140babeccce492bba374b90ec037aea87c15cc4"
     },
     {
       "file": "content/faces/.keep",
@@ -15,7 +15,7 @@
     },
     {
       "file": "css/style.css",
-      "hash": "791196b3f48900007c98ec4196b369e20f66affb"
+      "hash": "2e699939cdb5a64d51abf6067085284004edcb7c"
     },
     {
       "file": "fonts/Baloo2-latin-600.woff2",
@@ -51,167 +51,159 @@
     },
     {
       "file": "icons/launch/launch-1125x2436.png",
-      "hash": "5a0d6f8a0953c210f613c32537848677bb75ba0b"
+      "hash": "f49c9da25bb5657336c95eb2f026fa0f316c3256"
     },
     {
       "file": "icons/launch/launch-1136x640.png",
-      "hash": "1a37c85ea7657f6bb059297f2a50706697b6c7c1"
+      "hash": "f8f048ec92adb9bf68858bdb2dc96b168cce3177"
     },
     {
       "file": "icons/launch/launch-1170x2532.png",
-      "hash": "613fce5930bf3b8c79f4b459c72c131caf29e7ad"
+      "hash": "2e31266663befffa08cc84dda0a4217a8ab9e70f"
     },
     {
       "file": "icons/launch/launch-1179x2556.png",
-      "hash": "b1ba6e08b7cb9acdd4857c6a53b4c06cbd50fa4e"
+      "hash": "7f9651a6b9a46a0d3cf007889c432af9e838115b"
     },
     {
       "file": "icons/launch/launch-1206x2622.png",
-      "hash": "8e0448260b58f1a33ba69659dee278fa561f0c80"
+      "hash": "5c8c10757226d44f4dcd762d5f5885fbf474e83f"
     },
     {
       "file": "icons/launch/launch-1242x2208.png",
-      "hash": "9494ab84400c180df172ad86fe0dc31a3396431e"
+      "hash": "1cb5148f9222bed46220eac70b0b9b35cef49590"
     },
     {
       "file": "icons/launch/launch-1242x2688.png",
-      "hash": "dd0027048de5207d73c6ef5474b47fa065a0330a"
+      "hash": "37767dd01c19f7b398ee6d15d091e6c6ae829d7f"
     },
     {
       "file": "icons/launch/launch-1284x2778.png",
-      "hash": "67e1ef3c332556bf4f008729fca585e69a82d4ff"
+      "hash": "0e256c9e53cac3ed33e798fb5a888ac93f37d4dc"
     },
     {
       "file": "icons/launch/launch-1290x2796.png",
-      "hash": "d0ec108d20b422b3069521e9637119342d7d8c6e"
+      "hash": "3897c703c55d11d0116f9d87b3800ac7833691d5"
     },
     {
       "file": "icons/launch/launch-1320x2868.png",
-      "hash": "f24376c2642fe1d287acf1d20f88ab9ed317f36e"
+      "hash": "177310eef0cd2c5a19fba4516f8853f1c8b74c9b"
     },
     {
       "file": "icons/launch/launch-1334x750.png",
-      "hash": "0ec02139d5e326267b2c578463b45ac2ed3b0397"
+      "hash": "e98461ff0bffde93c2d7806f90541ce43b2e828c"
     },
     {
       "file": "icons/launch/launch-1488x2266.png",
-      "hash": "d4c6c3053155778bf891c664a6a38a18b03d559c"
+      "hash": "e0d5e20fd192858bc0f52062b0a2d4112e284eb3"
     },
     {
       "file": "icons/launch/launch-1536x2048.png",
-      "hash": "fc7b2001b38e010205bfe5a8bee31ddacafaead9"
+      "hash": "0206fecebe214cc1d12c18bad464e5d10ccc0fc8"
     },
     {
       "file": "icons/launch/launch-1620x2160.png",
-      "hash": "c1610ea3bd8dc70cc723a1f0a6de78bcf3468dcd"
+      "hash": "a15cdf23af1a2f4e72e4ae6ab12f63210a96181b"
     },
     {
       "file": "icons/launch/launch-1640x2360.png",
-      "hash": "ff852794a7b2f506182a5cdaf53f8633d05c10ab"
+      "hash": "15509a4d48f6a1770be3d9257184f873375ab0ef"
     },
     {
       "file": "icons/launch/launch-1668x2224.png",
-      "hash": "a2f5d1c1ea743aae30769f7198411fbfcda1279b"
+      "hash": "b356a4c7f7a0a5a7ca406c563a81aa6c22682dba"
     },
     {
       "file": "icons/launch/launch-1668x2388.png",
-      "hash": "b03807229e24ac0e53ab1acaf5cdae99278600ff"
+      "hash": "8b39209f79d23f523cf73154e20b24e8cd7845d1"
     },
     {
       "file": "icons/launch/launch-1792x828.png",
-      "hash": "9dd7c1e5123db2665904b0278e50932317c0f343"
+      "hash": "1c77eb8a86087a3fa8168ad3cbd1a094cc5f6622"
     },
     {
       "file": "icons/launch/launch-2048x1536.png",
-      "hash": "d4f90b4c38227678ec661467a56cc0cff55d0aa2"
+      "hash": "dc39b1fd585ca7b9246ff1a57a1c6f947d34494c"
     },
     {
       "file": "icons/launch/launch-2048x2732.png",
-      "hash": "c9e12f5858bb8aabd60357eafc878b1e49e5fc7f"
+      "hash": "cb837829e9fc36444136f179a264e823e7ad08c5"
     },
     {
       "file": "icons/launch/launch-2160x1620.png",
-      "hash": "5e8a3f513160a2a11afb2d5b4f9ce7a7a2c27a89"
+      "hash": "860946692de6432c47b5b1a668e5441660435779"
     },
     {
       "file": "icons/launch/launch-2208x1242.png",
-      "hash": "e301ac146024ceef1096d415bd430c0e23a7a767"
+      "hash": "952fca0c0bc129a255edc334220b2000deccf22d"
     },
     {
       "file": "icons/launch/launch-2224x1668.png",
-      "hash": "85d011cf439f39f004203f6d9cbe06d5040f2356"
+      "hash": "35d73c2a0530c9466b062ad7112a15ff75873608"
     },
     {
       "file": "icons/launch/launch-2266x1488.png",
-      "hash": "99a06de80fc320552ab095ded860eb0f2bf06518"
+      "hash": "468059071c4288e8b71208161300d11004d064ea"
     },
     {
       "file": "icons/launch/launch-2360x1640.png",
-      "hash": "840192e225df543f1831f1c90c4cd9e60d9c579b"
+      "hash": "b964b58b81ab556c34482a361ca0d768739e2e6e"
     },
     {
       "file": "icons/launch/launch-2388x1668.png",
-      "hash": "4ec36b19ccdeb582a6485ca271116244a43d984c"
+      "hash": "f88dba1d6ef11efd2d4de5995d909653b26bd54a"
     },
     {
       "file": "icons/launch/launch-2436x1125.png",
-      "hash": "e4bc3fae3f3bb7d86e1a5f4d254a29b4eb0f3cbf"
+      "hash": "4fe51d8556a9a38a0ac882728b320aafb97fb414"
     },
     {
       "file": "icons/launch/launch-2532x1170.png",
-      "hash": "4df38305d6f1e2a1dbdc1a5e3e0bd210663ecaac"
+      "hash": "a43525086b679e89ebd0eefdf58215bf3b6e7d6f"
     },
     {
       "file": "icons/launch/launch-2556x1179.png",
-      "hash": "58bb1d3869b7778190f326dad7226f9606a81787"
+      "hash": "04badb432d6e77f342ae7b27193fb1cf9a358911"
     },
     {
       "file": "icons/launch/launch-2622x1206.png",
-      "hash": "743c64a5dde5b43cff6744489f281ddcf719cdbd"
+      "hash": "4f5a85b4648bde2952b58e3e7bcba3e272ff83ec"
     },
     {
       "file": "icons/launch/launch-2688x1242.png",
-      "hash": "a8308858a9f1c640f3366e171791de5dc64a6084"
+      "hash": "2efc182a51eaef5baf6f9709e4e0e9462679b835"
     },
     {
       "file": "icons/launch/launch-2732x2048.png",
-      "hash": "7024b84fc753633a9f83a15e276832676a0d66cb"
+      "hash": "5cf50ef55c771d2fae6be27342b1201d4c250e32"
     },
     {
       "file": "icons/launch/launch-2778x1284.png",
-      "hash": "dde75e55b08c6e93ae3000e11bcb28b24abed505"
+      "hash": "da25acb6229fbe2e478ee43837e1aa731c9c70e3"
     },
     {
       "file": "icons/launch/launch-2796x1290.png",
-      "hash": "6b98158d427bc7dffae9567d063fcc0e8caf8e48"
+      "hash": "512e664ae6aaba54754f22b6397e665f34e54029"
     },
     {
       "file": "icons/launch/launch-2868x1320.png",
-      "hash": "1d2dc0192416bb2cfb9977c7ef74a8f7491594a4"
+      "hash": "b54d6d9c2ed55c94971fdad4a8f9b481f4b04c52"
     },
     {
       "file": "icons/launch/launch-640x1136.png",
-      "hash": "8fc8f14f6febc26985d55ab3d46bd0deaa0bdc2d"
+      "hash": "ddc591971f3fe8db7486642594cbc217585eba85"
     },
     {
       "file": "icons/launch/launch-750x1334.png",
-      "hash": "d58b10c7f508528e7fcef94741b3fd094dae76b2"
+      "hash": "62dbdb6e784716b0f8793952b25c233016eddcc3"
     },
     {
       "file": "icons/launch/launch-828x1792.png",
-      "hash": "084b3b2d4998e3b2dd1f2cfdc35dc8b7527f2171"
-    },
-    {
-      "file": "icons/launch/valley-landscape.jpg",
-      "hash": "7164cafcd736123b58bf020abfcac3a8a53d1ab4"
-    },
-    {
-      "file": "icons/launch/valley-portrait.jpg",
-      "hash": "86fe720d32b5002b307176aa59e0cebd6d52c16d"
+      "hash": "42f8fd7ebeb30db4c484205aaab6427a940d05f2"
     },
     {
       "file": "index.html",
-      "hash": "5d078f96ab4c0b115718212cd45b69cca30c4a47"
+      "hash": "675c3346653800630b340d7c60b8d913a1d88583"
     },
     {
       "file": "js/ads.js",
@@ -243,7 +235,7 @@
     },
     {
       "file": "js/autoplay.ts",
-      "hash": "3f303d6daf561e7ac1e368fcd47d6e6b8e56f821"
+      "hash": "29f8d62cac126bc95d74b8ed5ab6e698d90b93ce"
     },
     {
       "file": "js/avatar.ts",
@@ -683,7 +675,7 @@
     },
     {
       "file": "js/games/asia.ts",
-      "hash": "7a2e1082ae0ab877b06e4877b70f45445b2985b7"
+      "hash": "1a7684b8d2a6be88e3f98ae9230289266bcf39e5"
     },
     {
       "file": "js/games/bigthinkers.ts",
@@ -795,7 +787,7 @@
     },
     {
       "file": "js/games/vietnam.ts",
-      "hash": "134e4f5962a6be63853f9ad4da9c1376d63c5fb7"
+      "hash": "fb478de0dbba018f81e65a2bc60a744c4a3b1e51"
     },
     {
       "file": "js/gather.js",
@@ -1155,15 +1147,15 @@
     },
     {
       "file": "js/tester.ts",
-      "hash": "8644eeaa8bec6a7e23944cae5a329fe79b15099b"
+      "hash": "ffbb10a632f2a34c1783469c4229c066802373d9"
     },
     {
       "file": "js/testergate.js",
       "hash": "19f069913aeaed8513918a4f10f0836b7c7fa61e"
     },
     {
-      "file": "js/testerrewards.ts",
-      "hash": "284bbdaa3c23be2b9d6a54b4e8ef65fa2ce6bc4b"
+      "file": "js/testerrewards.js",
+      "hash": "5c5e08be1d702d2c582b09250bf4be5671e684d3"
     },
     {
       "file": "js/town.js",
@@ -1187,7 +1179,7 @@
     },
     {
       "file": "js/ui.ts",
-      "hash": "6aac6ea125957afb3bb0dc82ee486780d5ba35fe"
+      "hash": "29f99291d3a94f67fc13b420ca082f5d647e358f"
     },
     {
       "file": "js/util.js",
@@ -1331,7 +1323,7 @@
     },
     {
       "file": "sw.ts",
-      "hash": "8453eb53b6414b179ea9662b0dc43d00d88f2da8"
+      "hash": "7f7c9c32b82a704b649849e4fb43b32f1ede9f75"
     },
     {
       "file": "vendor/RoomEnvironment.js",

@@ -386,7 +386,7 @@ function createStudio({ store, conf, online = false, local = {}, family = null }
   async function draftFromFolder(J, message) {
     const G = ghStore(), R = `/repos/${conf.githubRepo}`;
     // (owner, 12 Oct) never from a game folder older than the website: its old voices or content would undo newer ones
-    { const bn = b => +((/VERSION = '[^']*?r(\d+)'/.exec(b ? b.toString('utf8') : '') || [0, 0])[1]), here = bn(await S.read('sw.js').catch(() => null)), there = bn(await gh(`${R}/contents/sw.js?ref=${encodeURIComponent(conf.githubBranch || 'main')}`).then(j => Buffer.from(j.content || '', 'base64')).catch(() => null)); // (fresh: not the branch kept for a few seconds)
+    { const bn = b => +((/VERSION = '[^']*?r(\d+(?:\.\d+)?)'/.exec(b ? b.toString('utf8') : '') || [0, 0])[1]), here = bn(await S.read('sw.js').catch(() => null)), there = bn(await gh(`${R}/contents/sw.js?ref=${encodeURIComponent(conf.githubBranch || 'main')}`).then(j => Buffer.from(j.content || '', 'base64')).catch(() => null)); // (fresh: not the branch kept for a few seconds)
       if (here && there && here < there) throw new Error(`Your game folder is r${here} and the website is r${there}: get the newest game first (Settings, Get the newest game).`); }
     J.msg = 'Reading the website’s files…';
     const remote = await G.familyShas();

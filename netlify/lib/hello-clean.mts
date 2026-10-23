@@ -50,7 +50,7 @@ export function clean(input: unknown, now: number = Date.now()): Hello|null {
   // an older device sends one bucket for today
   const lo = day(now - 30 * 864e5), hi = day(now + 864e5), seen = new Set();
   // where a day was played: its own build (a release or '?'), or the device's build for an older device
-  const origin = (x: Loose) => typeof x.build === 'string' && (/^r\d{1,4}$/.test(x.build) || x.build === '?') ? x.build : (b.sid ? '?' : WORD.test(txt(b.b)) ? txt(b.b) : '?');
+  const origin = (x: Loose) => typeof x.build === 'string' && (/^r\d{1,4}(\.\d{1,2})?$/.test(x.build) || x.build === '?') ? x.build : (b.sid ? '?' : WORD.test(txt(b.b)) ? txt(b.b) : '?');
   const sent: unknown[] = Array.isArray(b.days) ? b.days : [{ d: day(now), m: b.m, g: b.g, t: b.t, o: b.o }];
   const days = sent.slice(0, 42).map(obj)
     .filter(x => { const d = txt(x.d); if (!DAY.test(d) || d < lo || d > hi) return false; const key = d + '|' + origin(x); if (seen.has(key)) return false; seen.add(key); return true; })

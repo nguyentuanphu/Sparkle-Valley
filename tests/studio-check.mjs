@@ -404,7 +404,7 @@ export async function studioCheck(browser, open) {
     // (owner, 12 Oct: the exe's game folder was r38 while the website was r63) a folder older than the website cannot
     // save a draft (its old files would undo newer ones); the exe gets the newest game from GitHub by itself, and keeps a
     // content, voice or photo file changed here and not published yet
-    { const sw = fs.readFileSync(path.join(game, 'sw.js'), 'utf8'), newer = sw.replace(/-r\d+(?:-[^']*)?'/, "-r9998'");
+    { const sw = fs.readFileSync(path.join(game, 'sw.js'), 'utf8'), newer = sw.replace(/-r\d+(?:\.\d+)?(?:-[^']*)?'/, "-r9998'");
       ok(newer!==sw && /-r9998'/.test(newer),'fixture must actually advance the remote build, including cache revisions');
       gh.commitOnMain('sw.js', newer, 'newer game'); gh.commitOnMain('voices/en/f/newline1.mp3', 'NEWV', 'a new line'); gh.commitOnMain('voices/en/f/0000aaaa.mp3', 'REMOTE', 'a changed line');
       fs.writeFileSync(path.join(game, 'voices/en/f/0000aaaa.mp3'), 'LOCAL');

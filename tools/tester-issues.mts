@@ -36,7 +36,7 @@ export function coreOf(p, d) {
   return 'kid-ui';
 }
 // the number of a build ('r83' → 83; anything else → 0)
-const num = (b: unknown) => { const m = /^r(\d+)$/.exec(String(b || '')); return m ? +m[1] : 0; };
+const num = (b: unknown) => { const m = /^r(\d+(\.\d+)?)$/.exec(String(b || '')); return m ? +m[1] : 0; };
 // a problem is recent when one of its builds is the live one or the one before it (no live build known: every problem is)
 export const recentEnough = (builds: string[] | undefined, live: number) => !live || (builds || []).some(b => num(b) >= live - 1);
 // the build the website serves now (js/build.js), else the newest build any tester sent
@@ -66,7 +66,7 @@ export function statusFromIssue(iss: { state?: string, state_reason?: string | n
   if (iss.state_reason === 'not_planned') return { status: 'notbug' };
   for (const c of [...comments].reverse()) {
     const b = String(c.body || ''); if (/came back on/i.test(b)) return null;
-    const m = /\bfixed in (r\d{1,4})\b/i.exec(b); if (m) return { fixedIn: m[1].toLowerCase() };
+    const m = /\bfixed in (r\d{1,4}(?:\.\d{1,2})?)\b/i.exec(b); if (m) return { fixedIn: m[1].toLowerCase() };
   }
   return null;
 }

@@ -10,7 +10,8 @@ import { createHash } from 'node:crypto';
 export const TLIMITS = { size: 320000, device: 60, ip: 150, problems: 3000, keepDays: 60, reportsPerProblem: 20, note: 600, log: 300, errors: 20 };
 const ID = /^[a-z0-9]{12}$/, KINDS = ['broken', 'looks', 'words', 'sound', 'idea', 'auto'], AUTOS = ['error', 'noopen', 'noclose', 'freeze', 'slow', 'offscreen', 'novoice', 'stuck', 'autoplay'];
 export const STATUSES = ['new', 'fixing', 'fixed', 'confirmed', 'back', 'notbug', 'dup'];
-const BUILD = /^r\d{1,4}$/, PK = /^[a-f0-9]{16}$/;
+// (r89.1, owner 23 Oct AEDT) a build is r and a whole number, or one with a point release (r89.1); builds compare as numbers
+const BUILD = /^r\d{1,4}(\.\d{1,2})?$/, PK = /^[a-f0-9]{16}$/;
 const day = t => new Intl.DateTimeFormat('en-CA', { timeZone:'Australia/Sydney', year:'numeric', month:'2-digit', day:'2-digit' }).format(new Date(t));
 const txt = (v, n) => typeof v === 'string' ? v.replace(/[\u0000-\u001f<>]/g, ' ').trim().slice(0, n) : '';
 const num = (v, lo, hi) => Number.isFinite(+v) ? Math.max(lo, Math.min(hi, +v)) : undefined;
