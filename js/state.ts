@@ -19,7 +19,11 @@ const store = {
 // and the browser is asked to keep this site's storage for good (so it is not cleared when space is low or
 // the game is not opened for a while). If the main save is ever missing, the copy is put back by itself.
 const SNAP_DB = 'sparkle-valley-save', SNAP_CACHE = 'sv-save', SNAP_URL = './__sv-save.json';
-const snapshot = () => ({ app: 'sparkle-valley', v: 2, saved: Date.now(), settings: store.get(KEY_SETTINGS, {}), profiles: store.get(KEY_PROFILES, null), farm: store.get('sv2_farm', null) });
+// (r89.1, owner 23 Oct AEDT) the device's own random number (js/players.js) goes into the copy too, so a game brought
+// back from its copy is the same device in Sparkle Studio, not a new one
+const KEY_DEVICE = 'sv2_playerid', DEVICE_ID = /^[a-z0-9]{12}$/;
+const deviceId = () => { try { const v = localStorage.getItem(KEY_DEVICE) || ''; return DEVICE_ID.test(v) ? v : ''; } catch (e) { return ''; } };
+const snapshot = () => ({ app: 'sparkle-valley', v: 2, saved: Date.now(), settings: store.get(KEY_SETTINGS, {}), profiles: store.get(KEY_PROFILES, null), farm: store.get('sv2_farm', null), device: deviceId() });
 const idb = (mode: IDBTransactionMode) => new Promise<IDBObjectStore>((res, rej) => { const r = indexedDB.open(SNAP_DB, 1); r.onupgradeneeded = () => r.result.createObjectStore('snap'); r.onsuccess = () => res(r.result.transaction('snap', mode).objectStore('snap')); r.onerror = () => rej(r.error); });
 // If the main save was missing and its copy could not be read in time, the copies are left alone for this
 // session (new progress goes under "new-…"), so a fresh start never overwrites the only good copy.
@@ -77,6 +81,7 @@ try {
       localStorage.setItem(KEY_PROFILES, JSON.stringify(snap.profiles));
       if (snap.farm) localStorage.setItem('sv2_farm', JSON.stringify(snap.farm));
       if (snap.settings && !localStorage.getItem(KEY_SETTINGS)) localStorage.setItem(KEY_SETTINGS, JSON.stringify(snap.settings));
+      if (typeof snap.device === 'string' && DEVICE_ID.test(snap.device) && !deviceId()) localStorage.setItem(KEY_DEVICE, snap.device);
       restoredFromCopy = true;
     }
   }
