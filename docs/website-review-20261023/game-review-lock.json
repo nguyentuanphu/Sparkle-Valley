@@ -1,5 +1,5 @@
 {
-  "source": "062601b3ff4da156c98751e0eed06eb526746a00",
+  "source": "c671808b073505e1f1a028d12c7017d353ae0a6f",
   "files": [
     {
       "file": "content/custom.json",
@@ -15,7 +15,7 @@
     },
     {
       "file": "css/style.css",
-      "hash": "101a3ae55a67cfbd476254ef9308eb438b28bb87"
+      "hash": "791196b3f48900007c98ec4196b369e20f66affb"
     },
     {
       "file": "fonts/Baloo2-latin-600.woff2",
