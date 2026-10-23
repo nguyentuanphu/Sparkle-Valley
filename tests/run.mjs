@@ -941,14 +941,19 @@ await check('ownerstudiofailures', async () => studioRepairCheck(b));
 await check('ground', async () => {
   // every building on dry, level ground (not over the river or the lake), no road floating, buried or in water,
   // and the build number in the game matches the service worker's version
-  const P = await open(b, { w: 900, h: 700 }); await clear(P.page);
+  const P = await open(b, { w: 900, h: 700 });
+  const title = await P.page.waitForSelector('.tt-build', { timeout: 15000 }).then(e => e.textContent()).catch(() => '');
+  await clear(P.page);
   const r = await groundAudit(P.page);
-  const build = await P.page.evaluate(async () => (await import('/js/build.js')).BUILD);
+  const { build, shown } = await P.page.evaluate(async () => { const m = await import('/js/build.js'); return { build: m.BUILD, shown: m.SHOWN }; });
   const sw = fs.readFileSync(new globalThis.URL('../sw.js', import.meta.url), 'utf8'), ver = /VERSION = '([^']+)'/.exec(sw)[1];
   await P.ctx.close();
   ok(!r.bad.length && !r.roadBad.length, 'problems: ' + JSON.stringify([...r.bad, ...r.roadBad].slice(0, 6)));
   ok(ver.endsWith('-' + build), `build ${build} does not match sw.js VERSION ${ver}`);
-  return `${r.buildings} buildings and ${r.roads} roads checked, build ${build}`;
+  // (owner, 24 Oct AEDT) families see the public number (v1, v1.1 ...), never the round count
+  ok(/^v\d+(\.\d+)*$/.test(shown) && /^r\d+(\.\d+)?$/.test(build), `SHOWN ${shown} must be v and a number, BUILD ${build} r and a number`);
+  ok(title.trim() === shown, `the title screen shows "${title}", not the public number ${shown}`);
+  return `${r.buildings} buildings and ${r.roads} roads checked, build ${build}, shown as ${shown}`;
 });
 
 await check('resume', async () => {
@@ -1366,7 +1371,7 @@ await check('tester', async () => {
     const before = await P.page.evaluate(() => (JSON.parse(localStorage.getItem('sv2_tester_out') || '[]')).length + document.querySelectorAll('.testermark, .z-lb').length);
     if (before || got.length) out.push(lang + ': something was kept or sent before "I accept": ' + JSON.stringify({ before, got: got.length }));
     await P.page.click('.tagree .tg-yes'); await P.page.waitForSelector('.testermark', { timeout: 8000 }).catch(() => { }); await P.page.waitForTimeout(1500);
-    const on = await P.page.evaluate(async () => ({ mark: (document.querySelector('.testermark') || {}).textContent || '', lb: document.querySelectorAll('.hud .z-lb').length, build: (await import('/js/build.js')).BUILD, lbSize: (r => r && Math.min(r.width, r.height))(document.querySelector('.hud .z-lb') && document.querySelector('.hud .z-lb').getBoundingClientRect()) }));
+    const on = await P.page.evaluate(async () => ({ mark: (document.querySelector('.testermark') || {}).textContent || '', lb: document.querySelectorAll('.hud .z-lb').length, build: (await import('/js/build.js')).SHOWN, lbSize: (r => r && Math.min(r.width, r.height))(document.querySelector('.hud .z-lb') && document.querySelector('.hud .z-lb').getBoundingClientRect()) }));
     if (!on.mark.includes(on.build) || on.lb !== 1 || !(on.lbSize >= 44)) out.push(lang + ': after accepting, no tester mark with the version or no ladybird (44 px): ' + JSON.stringify(on));
     if (!got.some(x => x && x.accepted === true)) out.push(lang + ': the acceptance was not told');
     // Settings → Stop being a tester
