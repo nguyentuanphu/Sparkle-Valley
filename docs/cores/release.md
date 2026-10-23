@@ -155,6 +155,7 @@ All of them once per release (`node suite.mjs`), plus `node suite.mjs --changed`
 ### r89 checks so far, 23 Oct 2026 AEDT (Release, branch `release/r89`)
 
 - Bridge and lake `0ee1379a`: bridges, water, solid, boats, plots, mapcoords, report, unit pass (one at a time, 6 min).
+- GitHub full suite on `494af038` (run 39904906861): **230/230 passed** (23 Oct, 5:14 pm AEDT). The run before (`d70026c7`, 228/230) found two, both fixed: `films` (Memory Match's guide demo stopped: the guide's quiet game copy had no `plan()`, an r89 regression) and `contract` (the UI record still listed the removed Home button; re-recorded, only `homebtn` changed). `films` in full and `contract` then passed locally. Certificate card: Print or save as PDF, both names in its subtitle. Code map from that run committed.
 - Website integration `da4191e2`, `f4ec62f0`: new check `website` passes (Welcome, Settings, the floating view, the standalone page, the goal row on phone, narrow phone, landscape, tablet, computer, side by side and face to face; goal row top 54 px on phones, was 110 px); `tsc` clean; website sync against `da4191e2` recorded as reviewed, `tools/build-website.mts --check` clean. Screenshots looked at: Welcome, floating website and Settings on phone (Vietnamese), tablet and computer.
 
 ### r87 deployed — 19 Oct 2026, 4:45 pm AEDT
