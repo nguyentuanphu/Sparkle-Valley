@@ -219,11 +219,20 @@ register({
     const who = () => api.two ? api.players[turn % 2].name : null;
     const prompt = () => api.two ? api.say(`${who()}, your turn! Flip two cards.`, `${who()} ơi, đến lượt con! Lật hai thẻ nhé.`) : api.say('Find the matching pairs!', 'Tìm hai hình giống nhau nhé!');
     prompt(); api.dots(pairs, 0);
+    // (r89) auto play remembers like a child: a card it has not seen yet, or the twin of one it has
+    const seen = new Set<Element>(); let open: (HTMLElement & { _v: unknown })[] = [];
+    const down = () => cards.filter(x => !x.classList.contains('flip'));
+    api.plan(() => {
+      if (!grid.isConnected || open.length >= 2) return null;
+      const known = down().filter(x => seen.has(x)), twin = (v: unknown) => known.find(x => x._v === v && !open.includes(x));
+      if (open.length === 1) return twin(open[0]._v) || down().find(x => !seen.has(x)) || down()[0];
+      const pair = known.find(x => known.some(y => y !== x && y._v === x._v)); return pair || down().find(x => !seen.has(x)) || down()[0];
+    }, { maxActions: pairs * 6 });
     for (;;) {
-      const open = [];
+      open = [];
       while (open.length < 2) {
-        const c = await tapOne<HTMLElement & { _v: any }>(cards.filter(x => !x.classList.contains('flip')));
-        if (api.closed || !c) return; c.classList.add('flip'); api.sfx.tap(); open.push(c);
+        const c = await tapOne<HTMLElement & { _v: unknown }>(down());
+        if (api.closed || !c) return; c.classList.add('flip'); seen.add(c); api.sfx.tap(); open.push(c);
       }
       await wait(700);
       if (open[0]._v === open[1]._v) {
