@@ -379,7 +379,7 @@ register({
 
 // 10. hiddenpic
 register({
-  id: 'hiddenpic', icon: '🔍',
+  id: 'hiddenpic', icon: '🕵️',
   name: () => T('Hidden Pictures', 'Tìm Hình Ẩn'),
   run(api) {
     return runInteractivePad(api, {

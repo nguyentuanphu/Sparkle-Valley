@@ -122,7 +122,7 @@ register({
     return rounds(api, '🍎',
       ['What does each zoo animal love to eat?', 'Mỗi bạn thú thích ăn món gì nhất?'],
       [
-        { show: '🐵', choices: [['🍌 Banana', '🍌 Quả chuối'], ['🍗 Meat', '🍗 Thịt']], answer: 0 },
+        { show: '🐵', choices: [['🍌 Banana', '🍌 Quả chuối'], ['🥩 Meat', '🥩 Thịt']], answer: 0 },
         { show: '🐨', choices: [['🍃 Gum leaves', '🍃 Lá bạch đàn'], ['🥕 Carrot', '🥕 Cà rốt']], answer: 0 },
         { show: '🐼', choices: [['🎋 Bamboo', '🎋 Cây tre'], ['🐟 Fish', '🐟 Cá']], answer: 0 }
       ],

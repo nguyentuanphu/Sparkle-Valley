@@ -141,7 +141,7 @@ register({
       { icon: '🎋', name: ['Bamboo ring', 'Vòng tre'], fn: () => { ring.setAttribute('opacity', '1'); hub.setAttribute('opacity', '1'); api.sfx.tap(); } },
       { icon: '🏮', name: ['Red cellophane', 'Giấy bóng đỏ'], fn: () => { poly.setAttribute('fill', '#da251d'); poly.setAttribute('opacity', '.85'); api.sfx.pop(2); } },
       { icon: '⭐', name: ['Gold trim', 'Viền vàng'], fn: () => { poly.setAttribute('stroke', '#ffde00'); ring.setAttribute('stroke', '#ffde00'); api.sfx.pop(4); } },
-      { icon: '🔥', name: ['Light candle', 'Thắp nến'], fn: () => { glow.classList.add('lit'); api.sfx.chime(); } }
+      { icon: '🕯️', name: ['Light candle', 'Thắp nến'], fn: () => { glow.classList.add('lit'); api.sfx.chime(); } }
     ];
     const btns = steps.map((s, idx) => {
       const b = el('button', 'v2-btn', `${pic(s.icon)} <span>${T(s.name[0], s.name[1])}</span>`);

@@ -92,7 +92,7 @@ register({
 
 // 3. Great Barrier Reef Cleaner
 register({
-  id: 'reefclean', icon: '🐠',
+  id: 'reefclean', icon: '🪸',
   name: () => T('Great Barrier Reef Cleaner', 'Bảo Vệ Rạn San Hô'),
   async run(api) {
     style();
@@ -103,7 +103,7 @@ register({
     const wrap = el('div', 'n2-board'); api.stage.appendChild(wrap);
     const stage = el('div', 'n2-stage'); stage.style.background = '#d9f2f7'; wrap.appendChild(stage);
 
-    const coral = el('div', '', pic('🌿')); coral.style.cssText = 'position:absolute;bottom:10px;font-size:70px;'; stage.appendChild(coral);
+    const coral = el('div', '', pic('🪸')); coral.style.cssText = 'position:absolute;bottom:10px;font-size:70px;'; stage.appendChild(coral);
 
     let cleaned = 0;
     while (cleaned < target) {

@@ -84,7 +84,7 @@ register({
       ['Travel the whole country on the Reunification Express!', 'Cùng lên chuyến tàu Thống Nhất xuyên suốt đất nước!'],
       [
         {
-          show: '🚂',
+          show: '🛤️',
           desc: ['First stop from Hanoi: cross the historic bridge or sea pass?', 'Rời ga Hà Nội: tàu qua cầu Long Biên hay qua đèo Hải Vân trước?'],
           choices: [['Long Bien Bridge', 'Cầu Long Biên'], ['Hai Van Pass', 'Đèo Hải Vân']],
           answer: 0
@@ -142,19 +142,19 @@ register({
       ['Help families find their seats under the white sails!', 'Giúp mọi người tìm đúng ghế trong nhà hát con sò!'],
       [
         {
-          show: '📝',
+          show: '🎟️',
           desc: ['Ticket says: Row A for Grandpa Owl!', 'Vé ghi: Hàng A cho Ông Cú!'],
           choices: [['Row A', 'Hàng A'], ['Row B', 'Hàng B']],
           answer: 0
         },
         {
-          show: '📝',
+          show: '🎟️',
           desc: ['Ticket says: Row B for Little Possum!', 'Vé ghi: Hàng B cho Bé Thú Có Túi!'],
           choices: [['Row C', 'Hàng C'], ['Row B', 'Hàng B']],
           answer: 1
         },
         {
-          show: '📝',
+          show: '🎟️',
           desc: ['Ticket says: Row C for Koala family!', 'Vé ghi: Hàng C cho gia đình Koala!'],
           choices: [['Row C', 'Hàng C'], ['Row D', 'Hàng D']],
           answer: 0
@@ -250,19 +250,19 @@ register({
       ['Help passengers navigate the airport from check-in to takeoff!', 'Giúp các bạn nhỏ làm thủ tục lên máy bay nhé!'],
       [
         {
-          show: '📝',
+          show: '🎫',
           desc: ['Show your boarding pass and passport at check-in counter!', 'Đưa thẻ lên tàu bay và hộ chiếu cho cô nhân viên!'],
           choices: [['Boarding Pass', 'Thẻ Lên Tàu'], ['Toy Car', 'Ô Tô Đồ Chơi']],
           answer: 0
         },
         {
-          show: '🎒',
+          show: '🧳',
           desc: ['Put suitcase on the scale and attach luggage tag!', 'Đặt vali lên cân và dán tem hành lý cẩn thận!'],
           choices: [['Luggage Tag', 'Gắn Thẻ Hành Lý'], ['Forget bag', 'Bỏ quên']],
           answer: 0
         },
         {
-          show: '✈️',
+          show: '🛫',
           desc: ['Walk through the gate: airplane is ready for takeoff!', 'Đi qua cửa khởi hành: máy bay đã sẵn sàng bay lên bầu trời!'],
           choices: [['Board Plane', 'Lên Máy Bay'], ['Exit airport', 'Ra về']],
           answer: 0

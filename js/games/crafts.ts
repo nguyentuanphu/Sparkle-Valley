@@ -308,7 +308,7 @@ register({
 
 // 7. pixelpic
 register({
-  id: 'pixelpic', icon: '🤖',
+  id: 'pixelpic', icon: '👾',
   name: () => T('Pixel Picture', 'Tranh Ô Vuông'),
   run(api) {
     return runCraftPad(api, {
@@ -415,7 +415,7 @@ register({
         g.fillStyle = '#fefae0';
         g.fillRect(0, 0, w, h);
         g.font = `${Math.round(w * 0.2)}px sans-serif`;
-        g.fillText('🍂', w * 0.35, h * 0.62);
+        g.fillText('🍁', w * 0.35, h * 0.62);
       }
     });
   }

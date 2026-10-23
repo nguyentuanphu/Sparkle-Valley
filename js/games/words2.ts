@@ -175,7 +175,7 @@ register({
     const stage = el('div', 'w2-stage'); wrap.appendChild(stage);
 
     const sets = [
-      { action: 0, choices: [['🏃 Run', '🏃 Chạy'], ['🏠 House', '🏠 Ngôi nhà'], ['🌳 Tree', '🌳 Cái cây']] },
+      { action: 0, choices: [['🏃 Run', '🏃 Chạy'], ['🪑 Chair', '🪑 Cái ghế'], ['🌳 Tree', '🌳 Cái cây']] },
       { action: 1, choices: [['🍎 Apple', '🍎 Quả táo'], ['🏊 Swim', '🏊 Bơi'], ['🏠 House', '🏠 Ngôi nhà']] },
       { action: 2, choices: [['👟 Shoe', '👟 Đôi giày'], ['🚗 Car', '🚗 Chiếc xe'], ['💃 Dance', '💃 Múa']] }
     ];

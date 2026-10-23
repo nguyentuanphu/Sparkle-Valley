@@ -259,7 +259,7 @@ export function openGrownups(after: (() => void) | undefined = undefined) {
       <div class="actions"><button class="btn" id="gExp">☁️ ${T('Save backup', 'Lưu bản sao')}</button><label class="btn" for="gImp">📂 ${T('Open backup', 'Mở bản sao')}</label><input type="file" id="gImp" accept=".txt,.json,text/plain,application/json" class="vh"></div>
       <h3>💾 ${T('Save a copy (Files / iCloud Drive)', 'Lưu một bản (Tệp / iCloud Drive)')}</h3>
       <p class="note">${T('Save a copy of your children’s progress to iCloud Drive, Google Drive or Files. Loading a copy checks the file and confirms with you before replacing anything.', 'Lưu một bản tiến trình vào iCloud Drive, Google Drive hoặc Tệp. Mở bản sao sẽ kiểm tra tệp và hỏi bạn trước khi thay thế.')}</p>
-      <div class="actions"><button class="btn" id="gSaveCopy">💾 ${T('Save a copy', 'Lưu một bản')}</button><label class="btn" for="gLoadCopy">📥 ${T('Load a copy', 'Mở bản đã lưu')}</label><input type="file" id="gLoadCopy" accept=".svsave,.json,application/json" class="vh"></div>
+      <div class="actions"><button class="btn" id="gSaveCopy">📤 ${T('Save a copy', 'Lưu một bản')}</button><label class="btn" for="gLoadCopy">📥 ${T('Load a copy', 'Mở bản đã lưu')}</label><input type="file" id="gLoadCopy" accept=".svsave,.json,application/json" class="vh"></div>
       <p class="note">${T('The file stays in your own Drive or iCloud: Sparkle Valley has no server and never sees it.', 'Tệp nằm trong Drive hoặc iCloud của bạn: Thung Lũng Lấp Lánh không có máy chủ và không bao giờ xem tệp này.')}</p>
       
       </div></details>

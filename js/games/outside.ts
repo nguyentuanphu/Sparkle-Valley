@@ -259,7 +259,7 @@ register({
 
 /* 6. Musical Chairs */
 register({
-  id: 'chairs', icon: '🎵',
+  id: 'chairs', icon: '🪑',
   name: () => T('Musical Chairs', 'Ghế Âm Nhạc'),
   async run(api) {
     style();
@@ -362,11 +362,11 @@ register({
       swimmer.setAttribute('aria-label', T('Swimmer needs help', 'Bạn bơi cần giúp đỡ'));
       stage.appendChild(swimmer);
 
-      const board = el('button', 'out-float', pic('🚣'));
+      const board = el('button', 'out-float', pic('🛟'));
       board.style.left = '30px';
       board.style.top = '240px';
       board.style.fontSize = '44px';
-      board.setAttribute('aria-label', T('Rescue boat', 'Thuyền cứu hộ'));
+      board.setAttribute('aria-label', T('Rescue ring', 'Phao cứu sinh'));
       stage.appendChild(board);
 
       api.plan(() => swimmer.isConnected ? swimmer : null, { maxActions: target * 3 });

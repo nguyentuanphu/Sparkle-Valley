@@ -127,7 +127,7 @@ register({
 
 // 3. Word Endings (3 rounds)
 register({
-  id: 'rd_endings', icon: '🔤',
+  id: 'rd_endings', icon: '🔚',
   name: () => T('Word Endings', 'Vần Cuối'),
   async run(api) {
     return runReadingRounds(api,
@@ -174,13 +174,13 @@ register({
         {
           show: '🌈',
           desc: ['rain 🌧️ + bow 🎀 =', 'cầu 🌉 + vồng 🌈 ='],
-          choices: [['raincoat 🧥', 'cầu treo 🌉'], ['rainbow 🌈', 'cầu vồng 🌈'], ['teacup 🍵', 'cầu lông 🏸']],
+          choices: [['rainboot 👢', 'cầu treo 🌉'], ['rainbow 🌈', 'cầu vồng 🌈'], ['teacup 🍵', 'cầu lông 🏸']],
           answer: 1
         },
         {
           show: '⭐',
           desc: ['star ⭐ + fish 🐟 =', 'sao ⭐ + biển 🌊 ='],
-          choices: [['starfruit 🍈', 'sao băng 🌠'], ['moonlight 🌙', 'sao chổi 🌟'], ['starfish ⭐', 'sao biển ⭐']],
+          choices: [['starfruit 🍈', 'sao băng 🌠'], ['moonlight 🌙', 'sao chổi ☄️'], ['starfish ⭐', 'sao biển ⭐']],
           answer: 2
         }
       ],
@@ -223,16 +223,16 @@ register({
 
 // 6. Signs in Town (3 rounds)
 register({
-  id: 'rd_signs', icon: '🚦',
+  id: 'rd_signs', icon: '🚸',
   name: () => T('Signs in Town', 'Biển Báo Trong Phố'),
   async run(api) {
     return runReadingRounds(api,
       ['Read helpful town signs so we stay safe!', 'Đọc biển báo trên phố để luôn an toàn nhé!'],
       [
         {
-          show: '🚫',
+          show: '🛑',
           desc: ['The bright red sign says:', 'Biển báo màu đỏ ghi chữ:'],
-          choices: [['STOP 🚫', 'DỪNG LẠI 🚫'], ['RUN 🏃', 'CHẠY NHANH 🏃'], ['SING 🎶', 'HÁT VANG 🎶']],
+          choices: [['STOP 🛑', 'DỪNG LẠI 🛑'], ['RUN 🏃', 'CHẠY NHANH 🏃'], ['SING 🎶', 'HÁT VANG 🎶']],
           answer: 0
         },
         {
