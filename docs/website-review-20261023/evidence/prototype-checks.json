@@ -1,0 +1,56 @@
+[
+  {
+    "name": "phone",
+    "metrics": {
+      "viewport": 390,
+      "width": 390,
+      "header": 66,
+      "play": 527.71875,
+      "menu": 44
+    },
+    "languageSwitch": true,
+    "drawer": true,
+    "welcomeEntry": true,
+    "settingsEntry": true,
+    "escape": true,
+    "closeButton": true,
+    "focusRestored": true,
+    "underlyingSettingsPreserved": true
+  },
+  {
+    "name": "tablet",
+    "metrics": {
+      "viewport": 820,
+      "width": 820,
+      "header": 76,
+      "play": 507.453125,
+      "menu": 92
+    },
+    "languageSwitch": true,
+    "drawer": true,
+    "welcomeEntry": true,
+    "settingsEntry": true,
+    "escape": true,
+    "closeButton": true,
+    "focusRestored": true,
+    "underlyingSettingsPreserved": true
+  },
+  {
+    "name": "desktop",
+    "metrics": {
+      "viewport": 1440,
+      "width": 1440,
+      "header": 76,
+      "play": 588.90625,
+      "menu": 92
+    },
+    "languageSwitch": true,
+    "drawer": true,
+    "welcomeEntry": true,
+    "settingsEntry": true,
+    "escape": true,
+    "closeButton": true,
+    "focusRestored": true,
+    "underlyingSettingsPreserved": true
+  }
+]

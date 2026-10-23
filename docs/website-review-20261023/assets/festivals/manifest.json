@@ -1,0 +1,14 @@
+[
+  {
+    "asset": "tet-hoian.png",
+    "source": "docs/owner-repair-20261014/evidence/festival-tet-after-28/computer-tet-hoian.png",
+    "sha256": "351150d90435c9fa0375fcb0e763ff199ed228f58a54e1d9b4b516039a738104",
+    "note": "Existing saved game verification scene; reused unchanged, not a newly captured live-state image."
+  },
+  {
+    "asset": "tet-village.png",
+    "source": "docs/owner-repair-20261014/evidence/festival-tet-after-28/computer-tet-village.png",
+    "sha256": "cae075e5be2178afa013158193d91c442e5731875a42166930d1f8e021cebe85",
+    "note": "Existing saved game verification scene; reused unchanged, not a newly captured live-state image."
+  }
+]

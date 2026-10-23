@@ -2675,10 +2675,15 @@ await check('parents', async () => {
     // Adventures: a grown-up holds ✓
     const c0 = S.farm.coins; G.openPad(0, 'log'); await w(600); const t = document.querySelector('.pad .missions [data-mtick]'); out.mtick = t ? Math.round(t.getBoundingClientRect().width) : 0;
     if (t) await hold(t); await w(500); out.coins = S.farm.coins - c0; out.open = G.parents.openFor(p).length; tidy();
-    // the certificate card: a picture, saved without a print window
+    // the certificate card: a picture; opening it does not print by itself
     let printed = false; const pr = window.print; window.print = () => { printed = true; };
     const url = await G.parents.certificate(p); out.cert = url.startsWith('data:image/png') && url.length > 20000;
-    await G.parents.openCertificate(p); out.saveBtn = !!document.querySelector('.certcard [data-save]'); out.printed = printed; window.print = pr; tidy();
+    await G.parents.openCertificate(p); out.saveBtn = !!document.querySelector('.certcard [data-save]'); out.printed = printed;
+    // (r89, owner 23 Oct AEDT) Print: only the card, on its own page in a frame of its own (not the game's window)
+    let framed = null; const mo = new MutationObserver(() => { const f = document.querySelector('iframe.printframe'); if (f && !f._watched) { f._watched = true; f.addEventListener('load', () => { f.contentWindow.print = () => { const im = f.contentDocument.querySelector('img'); framed = { w: im && im.naturalWidth, only: f.contentDocument.body.children.length }; }; }); } });
+    mo.observe(document.body, { childList: true });
+    document.querySelector('.certcard [data-print]')?.click(); for (let k = 0; k < 40 && !framed; k++) await new Promise(r => setTimeout(r, 100)); mo.disconnect();
+    out.printBtn = !!document.querySelector('.certcard [data-print]'); out.framed = framed; out.printedGame = printed; window.print = pr; tidy();
     // the dance break after 20 minutes of play, with a big Skip
     delete C.features.danceBreak; G.parents.setPlayMin(21); await w(6500);
     const sk = document.querySelector('.dancebreak .db-skip'); out.dance = !!sk; out.skipH = sk ? Math.round(sk.getBoundingClientRect().height) : 0; sk?.click(); await w(300);
@@ -2705,13 +2710,14 @@ await check('parents', async () => {
   if (!r.told) bad.push('the child was not shown the new mission');
   if (r.mtick < 64 || r.coins !== 10 || r.open !== 0) bad.push('holding ✓ did not finish the mission ' + JSON.stringify([r.mtick, r.coins, r.open]));
   if (!r.cert || !r.saveBtn || r.printed) bad.push('the certificate card ' + JSON.stringify([r.cert, r.saveBtn, r.printed]));
+  if (!r.printBtn || !r.framed || r.framed.w < 1000 || r.framed.only !== 1 || r.printedGame) bad.push('printing the certificate card ' + JSON.stringify([r.printBtn, r.framed, r.printedGame]));
   if (!r.dance || r.skipH < 64 || !r.danceGone) bad.push('the dance break ' + JSON.stringify([r.dance, r.skipH, r.danceGone]));
   if (!r.dim || !r.lullaby || !r.goodnight || !r.snoozed) bad.push('bedtime ' + JSON.stringify([r.dim, r.lullaby, r.goodnight, r.snoozed]));
   if (!r.bday) bad.push('no birthday surprise');
   if (!r.offMissions || !r.offGrownups) bad.push('the Studio switches do not turn them off');
   if (errs.length) bad.push(...errs.slice(0, 2));
   if (bad.length) throw new Error(bad.join('; '));
-  return 'mission written, shown, ticked with a hold (+10); weekly note; certificate picture saved (no print); dance break with a 64 px Skip; bedtime dims, lullaby, goodnight, hold for 10 more; birthday surprise; switches off';
+  return 'mission written, shown, ticked with a hold (+10); weekly note; certificate picture saved, and printed on its own page (only the card, not the game); dance break with a 64 px Skip; bedtime dims, lullaby, goodnight, hold for 10 more; birthday surprise; switches off';
 });
 // (round S, owner 9 Oct) the money follows the language (Vietnamese: đồng, English: dollars) until a grown-up picks one
 await check('currency', async () => {
@@ -7276,6 +7282,11 @@ await check('oanquanrules', async () => {
 });
 
 await check('ridingcamera', async () => (await import('./riding-camera.mts')).ridingCameraCheck(b));
+// (r89) the ten drawing games: auto play finishes each; buttons big enough on phone, tablet and computer
+await check('drawinggames', async () => (await import('./drawing-games.mts')).drawingGamesCheck(b));
+// (r89, owner 23 Oct AEDT) the family website: Welcome and Settings open it floating over the game, the corner Home button
+// is gone and the goal row moved up into its space (tests/website-float.mts)
+await check('website', async () => (await import('./website-float.mts')).websiteCheck(b));
 await check('musicaudio', async () => (await import('./music-audio.mts')).musicAudioCheck(b));
 await check('soundgames', async () => (await import('./sound-games.mts')).soundGamesCheck(b));
 await check('rememberedhomes', async () => (await import('./remembered-homes.mts')).rememberedHomesCheck(b));

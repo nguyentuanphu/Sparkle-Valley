@@ -109,7 +109,7 @@ export function showTitle(onStart) {
   // a storybook cover: the valley behind, the name on a cream card with little friends floating round it,
   // a big "start" button, and the language choices together on one card at the bottom
   const s = el('div', 'screen title sv2', `
-    <div class="tt-bar"><button class="about" aria-label="${T('About', 'Giới thiệu')}">i</button><div class="title-top"></div></div>
+    <div class="tt-bar"><button class="about" aria-label="${T('About', 'Giới thiệu')}">i</button><button class="sitebtn"><span>${WEBSITE_ICON}</span><b class="sitebtn-l"></b></button><div class="title-top"></div></div>
     <div class="tt-cover">
       <div class="tt-floaters" aria-hidden="true"><i>🪁</i><i>🏮</i><i>🌸</i><i>⭐</i><i>🦘</i><i>🪷</i></div>
       <div class="logo"><div class="logo-main"></div><div class="logo-sub"></div></div>
@@ -129,6 +129,7 @@ export function showTitle(onStart) {
     s.querySelector('.logo-sub').innerHTML = both('Two homes · one valley', 'Hai quê hương · một thung lũng');
     s.querySelector('.logo').classList.toggle('vi', settings.lang === 'vi');
     s.querySelector('.about').setAttribute('aria-label', T('About', 'Giới thiệu'));
+    s.querySelector('.sitebtn-l').textContent = T('Website', 'Trang web'); s.querySelector('.sitebtn').setAttribute('aria-label', T('Sparkle Valley website for families', 'Trang web Thung Lũng Lấp Lánh cho gia đình'));
     s.querySelector('.title-foot').innerHTML = flagBtns();
     s.querySelector('.title-learn').innerHTML = learnBtns(); bindLearn(s, redraw);
     bindLang(s, redraw);
@@ -137,8 +138,10 @@ export function showTitle(onStart) {
   };
   redraw();
   s.querySelector('.about').onclick = e => { e.stopPropagation(); ac(); openCredits(hideCaption); };
+  // (r89, owner 23 Oct AEDT) the family website floats over the Welcome screen; closing it comes back here, not into play
+  s.querySelector('.sitebtn').onclick = e => { e.stopPropagation(); ac(); SFX.tap(); openSite(e.currentTarget instanceof Element ? e.currentTarget : null); };
   let starting = false;
-  s.addEventListener('click', async e => { if (starting || e.target.closest('.seg') || e.target.closest('.about') || e.target.closest('.installchip') || e.target.closest('.learnrow')) return; starting=true; ac(); SFX.chime(); try { await onStart(); s.remove(); } catch (error) { starting=false; throw error; } });
+  s.addEventListener('click', async e => { if (starting || e.target.closest('.seg') || e.target.closest('.about') || e.target.closest('.sitebtn') || document.querySelector('.modal.website:not(.out)') || e.target.closest('.installchip') || e.target.closest('.learnrow')) return; starting=true; ac(); SFX.chime(); try { await onStart(); s.remove(); } catch (error) { starting=false; throw error; } });
 }
 
 // ---------- Who's playing ----------
@@ -231,6 +234,15 @@ export function openGrownups(after?: () => void): Promise<void> {
   return settingsRequest;
 }
 
+// ---------- the family website (r89): js/website.ts, loaded only when it is opened ----------
+const WEBSITE_ICON = '<svg class="ico" viewBox="0 0 48 48" aria-hidden="true"><path d="M5 24L24 9l19 15" fill="#ff8a5a" stroke="#3b2a4f" stroke-width="2.6" stroke-linejoin="round"/><path d="M10 23h28v20H10z" fill="#fff3d0" stroke="#3b2a4f" stroke-width="2.6"/><path d="M21 43V31h8v12" fill="#b07a4a" stroke="#3b2a4f" stroke-width="2.6"/><rect x="14" y="27" width="5" height="5" rx="1" fill="#8ed7f3" stroke="#3b2a4f" stroke-width="1.5"/><path d="M37 2l2.1 4.4 4.9.7-3.5 3.4.8 4.8-4.3-2.2-4.3 2.2.8-4.8L30 7.1l4.9-.7z" fill="#ffd23f" stroke="#3b2a4f" stroke-width="1.6" stroke-linejoin="round"/></svg>';
+let siteRequest: Promise<void> | null = null;
+export function openSite(opener: Element | null, section = ''): Promise<void> {
+  if (siteRequest) return siteRequest;
+  siteRequest = import('./website.js').then(m => { m.openWebsite(opener, undefined, section); }).catch(error => { window.svModuleGone?.(error); }).finally(() => { siteRequest = null; });
+  return siteRequest;
+}
+
 // ---------- Quick settings: tap your picture in the corner ----------
 export function openQuick(game, i) {
   const m = modal('qsettings', ''), card = m.querySelector('.card');
@@ -253,6 +265,7 @@ export function openQuick(game, i) {
         <div class="qs-sub">${T('Text size', 'Cỡ chữ')}</div><div class="seg tsize">${[0, 1, 2].map(k => `<button data-ts="${k}" class="${(s.textSize || 0) === k ? 'on' : ''}" style="font-size:${16 + Number(k) * 5}px">A</button>`).join('')}</div></div>
       ${game.festivals ? `<button class="qs-fest" id="qFest"><span>🎉</span><b>${T('Festivals', 'Lễ hội')}</b><small>${T('Tết, Mid-Autumn, Diwali, Christmas, Australia Day: any day you like', 'Tết, Trung Thu, Diwali, Giáng Sinh, Ngày Nước Úc: ngày nào cũng được')}</small></button>` : ''}
       ${game.tester ? '<div id="qTester"></div>' : ''}
+      <button class="qs-site" id="qSite"><span>${WEBSITE_ICON}</span><b>${T('Website', 'Trang web')}</b><small>${T('Explore the game with your family: play stays just as it is', 'Cùng gia đình khám phá trò chơi: trò chơi vẫn giữ nguyên')}</small></button>
       <button class="grown qgrown"><span class="ring"></span>👨‍👩‍👧 ${T('Grown-ups settings', 'Cài đặt phụ huynh')}<small>${T('press and hold', 'nhấn giữ')}</small></button>
       <div class="actions floatbar"><button class="btn primary" id="qDone">${T('Done', 'Xong')}</button></div>`;
     bindLang(card, draw);
@@ -271,6 +284,9 @@ export function openQuick(game, i) {
     card.querySelectorAll('.seg.tsize button').forEach(b => b.onclick = () => { s.textSize = +b.dataset.ts; saveSettings(); applyComfort(); keep(draw); });
     card.querySelectorAll('.seg.vstyle button').forEach(b => b.onclick = () => { s.voiceStyle = b.dataset.v; saveSettings(); keep(draw); say('Hello! Do you like my voice?', 'Xin chào! Con có thích giọng này không?'); });
     const fb = card.querySelector('#qFest'); if (fb) fb.onclick = () => { SFX.tap(); m.close(); openFestivals(game, i); };
+    // (r89, owner 23 Oct AEDT: Home moves from the corner into Settings) the website floats over Settings, which stays
+    // open and paused under it; closing it comes back here, with the focus on this button
+    const sb = card.querySelector('#qSite'); if (sb instanceof HTMLButtonElement) sb.onclick = () => { SFX.tap(); openSite(sb); };
     // the full Grown-ups settings, from inside the game (press and hold, so little fingers don't open it by accident)
     holdButton(card.querySelector('.qgrown'), () => openGrownups(() => { draw(); game.huds.forEach(h => { h.refreshAudio(); h.refreshWho(); }); }));
   };

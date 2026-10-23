@@ -163,6 +163,8 @@ register({
       place(); let done = false, mov = true;
       const tick = async () => { while (!done && !api.closed) { await wait(api.little ? 1500 : 1100); if (done || api.closed) return; if (mov) { at = at >= stops ? 1 : at + 1; place(); } } };
       tick();
+      // (r89) auto play rings the bell when the tram is at the stop asked for, and waits otherwise
+      api.plan(() => !done && at === want ? bell : null, { maxActions: rounds * 2 });
       for (;;) {
         await tapOne([bell]); if (api.closed) return;
         if (at === want) { done = true; api.right(bell); api.say(`Stop ${want}! Everybody off!`, `Trạm ${want}! Mời xuống tàu!`); break; }
@@ -188,6 +190,8 @@ register({
       const row = el('div', 'choices'); const leaf = el('button', 'choice big', '🌿 ' + T('Give a leaf', 'Cho lá')), done = el('button', 'choice big', '✅ ' + T('Done', 'Xong')); row.append(leaf, done); api.stage.appendChild(row);
       api.say(`This koala wants ${want} ${want === 1 ? 'leaf' : 'leaves'}.`, `Bạn koala này muốn ${want} chiếc lá.`);
       let n = 0; const bowl = sc.querySelector('.cg-bowl');
+      // (r89) auto play counts the leaves like a child: one at a time up to the number, then Done
+      api.plan(() => leaf.isConnected ? (n < want ? leaf : done) : null, { maxActions: rounds * (max + 2) });
       for (;;) {
         const b = await tapOne([leaf, done]); if (api.closed) return;
         if (b === leaf) { n++; bowl.appendChild(el('span', '', '🌿')); api.sfx.pop && api.sfx.pop(n); api.show(String(n), String(n)); if (api.little && n === want) { api.right(leaf); break; } continue; }

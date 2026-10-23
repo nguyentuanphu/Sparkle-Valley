@@ -113,6 +113,15 @@ const TL = {
     bPlay.onclick = () => { if (turn !== 0 || !resolveTurn) return; const cs = hands[0].filter(c => sel.has(c.v)); if (!beats(classify(cs), table && table.k)) return; sel = new Set(); play(0, cs); api.right(pileEl); resolveTurn && resolveTurn(); };
     bPass.onclick = () => { if (turn !== 0 || !table || !resolveTurn) return; passed.add(0); sel = new Set(); api.sfx.tap(); say('You pass. Wait for the next round!', 'Con bỏ lượt. Chờ vòng sau nhé!'); resolveTurn && resolveTurn(); };
     bHint.onclick = () => { if (turn !== 0) return; api.sfx.tap(); hint(); };
+    // (r89) auto play plays its turn like the Hint: it picks the hinted cards one by one, then Play; Pass when nothing beats it
+    const cardEl = (v: number) => { const e = handEl.querySelector(`.tl-card[data-v="${v}"]`); return e instanceof HTMLElement ? e : null; };
+    api.plan(() => {
+      if (turn !== 0 || !resolveTurn || shown) return null;
+      const best = choose(hands[0], table && table.k, { strong: true, others: Math.min(hands[1].length, hands[2].length) });
+      if (!best) return table ? bPass : null;
+      const want = new Set(best.map(c => c.v)), off = [...want].find(v => !sel.has(v)) ?? [...sel].find(v => !want.has(v));
+      return off == null ? bPlay : cardEl(off);
+    }, { maxActions: HANDS * 13 * 4 });
 
     let wins = 0;
     for (game = 0; game < HANDS && !api.closed; game++) {

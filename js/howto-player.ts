@@ -53,7 +53,7 @@ function demoKit(box, cap, alive, paused) {
     // the game's api, as js/games/frame.js gives it, but quiet: its words show without being spoken
     api: { stage, level: 1, players: [{ name: '' }], two: false, partnerName: null, T, el, online: null, little: true, strong: false,
       say: (en, vi) => { help.textContent = T(en, vi); }, show: (en, vi) => { help.textContent = T(en, vi); }, sfx: SFX, wait,
-      onCleanup: f => cleanups.push(f), dots() { }, right() { SFX.ok(); }, wrong() { SFX.no && SFX.no(); }, praise() { SFX.chime && SFX.chime(); },
+      onCleanup: f => cleanups.push(f), dots() { }, plan() { }, right() { SFX.ok(); }, // (r89) plan: auto play's helper (js/games/playwatch.ts), nothing to do in a guide wrong() { SFX.no && SFX.no(); }, praise() { SFX.chime && SFX.chime(); },
       get closed() { return closed; }, async win() { closed = true; } },
     async find(sel, ms = 4000) { for (let t = 0; t < ms; t += 100) { const e = stage.querySelector(sel); if (e) return e; await sleep(100); } throw new Error('demo: no ' + sel); },
     all: sel => [...stage.querySelectorAll(sel)],

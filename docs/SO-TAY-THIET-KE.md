@@ -372,3 +372,8 @@ The owner approved writing these rules at 9:03 am AEDT. They apply to new work a
 - **UX-010 HARD — Demonstrated release quality.** Each feature brief names owners, dependencies, affected screens, shared contracts, entry/exit paths, failure recovery, migration and resource budgets. Use existing changed-check/full-suite policy in CLAUDE.md, relevant meaningful tests, and visual/device review. Check EN/VI, phone/tablet/computer, portrait/landscape, keyboard, overlap and cold/warm/offline/update behaviour where applicable. Record failures/skips and uncovered device cases. Do not loosen checks merely to pass or declare zero bugs from automated passes.
 
 Enforcement status: specification approved; automated coverage and physical-device verification must be mapped during implementation. Do not label these rules already checked by a test until that coverage is implemented and verified.
+
+
+## Website, parent reports and game consistency (owner, 23 October 2026 AEDT)
+
+[Binding website/game rules](website-review-20261023/WEBSITE-RULES.md) and [exact Release handoff](website-review-20261023/RELEASE-HANDOFF.md): four main destinations, full EN/VI details, shared game art/fonts/tokens and one release source with regeneration/review gate. Explain existing parent controls and child reports without exposing saves or inventing educational scores. Keep Website on Welcome; move the in-play HUD Home entry into Settings and lift the quest bar only where measured geometry permits. The design branch has no runtime changes; Release must integrate, test and obtain release approval.

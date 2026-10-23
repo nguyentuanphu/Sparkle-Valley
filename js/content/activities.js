@@ -30,6 +30,8 @@ export const GAME_INFO = {
   bunny: ['animals', 2, 1], koala: ['animals', 2, 1], animalsounds: ['animals', 2, 1], duckmaze: ['animals', 2, 1], eggs: ['animals', 2, 1], oddone: ['animals', 3, 2], goat: ['animals', 3, 2],
   music: ['music', 2, 1], tune: ['music', 3, 2], chichi: ['music', 2, 1], puppets: ['music', 2, 1], parcel: ['music', 2, 1],
   colors: ['art', 2, 1], dongho: ['art', 3, 1], rangoli: ['art', 3, 2], jigsaw: ['art', 3, 2], tangram: ['art', 4, 2],
+  // (r89) the ten drawing games
+  dotdot: ['art', 3, 1], trace: ['art', 2, 1], mirror: ['art', 2, 1], colournum: ['art', 4, 2], lanternart: ['art', 2, 1], card: ['art', 3, 1], sand: ['art', 2, 1], drawpath: ['art', 3, 2], shapedraw: ['art', 4, 2], copygrid: ['art', 5, 3],
   counting: ['numbers', 2, 1], numbers: ['numbers', 3, 1], moreless: ['numbers', 3, 2], dragonfire: ['numbers', 3, 1], sums: ['numbers', 5, 3], clock: ['numbers', 5, 3], days: ['numbers', 5, 2],
   shapes: ['shapes', 2, 1], pattern: ['shapes', 3, 2], sorting: ['shapes', 2, 1], tower: ['shapes', 2, 1], memory: ['shapes', 3, 2], sudoku: ['shapes', 5, 3], hanoi: ['shapes', 5, 3],
   letters: ['words', 4, 2], phonics: ['words', 4, 2], opposites: ['words', 4, 2], words: ['words', 5, 2], firstwords: ['words', 5, 3],

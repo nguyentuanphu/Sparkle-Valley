@@ -35,7 +35,7 @@ marketing/source/runvalley.log
 .copilot/
 # --- made by tools/build.mts from .ts files (never committed; do not edit by hand) ---
 /home/analytics.js
-/home/app.js
+/home/site.js
 /js/adventure.js
 /js/audio.js
 /js/autoplay.js
@@ -45,6 +45,7 @@ marketing/source/runvalley.log
 /js/chat.js
 /js/claims.js
 /js/content/autoplay.js
+/js/content/build-types.js
 /js/content/chapter2hanoi.js
 /js/content/chapter2text.js
 /js/content/chapters.js
@@ -63,6 +64,8 @@ marketing/source/runvalley.log
 /js/games/bigthinkers2.js
 /js/games/catalog.js
 /js/games/cities.js
+/js/games/drawing.js
+/js/games/drawshape.js
 /js/games/farmgames.js
 /js/games/folk.js
 /js/games/folk2.js
@@ -89,6 +92,7 @@ marketing/source/runvalley.log
 /js/howto-player.js
 /js/howto-registry.js
 /js/howto.js
+/js/hud.js
 /js/install.js
 /js/keepcopy.js
 /js/lanterns.js
@@ -104,9 +108,11 @@ marketing/source/runvalley.log
 /js/player.js
 /js/plots.js
 /js/popups.js
+/js/printpage.js
 /js/recorder.js
 /js/relay.js
 /js/report-outbox.js
+/js/report.js
 /js/rideview.js
 /js/roads.js
 /js/roomcode.js
@@ -126,6 +132,7 @@ marketing/source/runvalley.log
 /js/voice-index.js
 /js/voice.js
 /js/voicepack.js
+/js/website.js
 /js/world.js
 /js/worldedit.js
 /studio/ui/app.js

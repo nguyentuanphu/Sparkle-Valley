@@ -1,0 +1,7025 @@
+{
+  "source": "6f5de0736a6d66eeed50ef0302cf666d7ba36c4f",
+  "reviewed": "23 October 2026 AEDT",
+  "quests": [
+    {
+      "id": "owl",
+      "icon": "🦉",
+      "title": [
+        "Talk to Ông Cú",
+        "Nói chuyện với Ông Cú"
+      ],
+      "at": "owl",
+      "hint": null
+    },
+    {
+      "id": "tower1",
+      "icon": "🗼",
+      "title": [
+        "Climb the Dawn Tower",
+        "Leo lên Tháp Bình Minh"
+      ],
+      "at": "tw_plateau",
+      "hint": [
+        "The Dawn Tower is fast asleep, right next to us. Climb to the top and it will wake up and show you the whole valley!",
+        "Tháp Bình Minh đang ngủ say ngay cạnh đây. Leo lên đỉnh, tháp sẽ thức dậy và cho con thấy cả thung lũng!"
+      ]
+    },
+    {
+      "id": "plateau",
+      "icon": "✨",
+      "title": [
+        "Solve the 3 shrines on the plateau",
+        "Giải 3 đền trên cao nguyên"
+      ],
+      "at": "plateauShrine",
+      "hint": [
+        "Three puzzle shrines on the plateau went quiet in the storm. They glow orange with a beam of light. Solve their puzzles to wake them!",
+        "Ba ngôi đền đố vui trên cao nguyên đã im lặng sau cơn bão. Đền màu cam, có cột sáng. Giải câu đố để đánh thức các đền nhé!"
+      ]
+    },
+    {
+      "id": "glider",
+      "icon": "🪂",
+      "title": [
+        "Get the Leaf Glider from Ông Cú",
+        "Nhận Cánh Lá từ Ông Cú"
+      ],
+      "at": "owl",
+      "hint": [
+        "You solved the shrines! Come back to me, I have a present for you. Something that will help you fly!",
+        "Con giải xong các đền rồi! Quay lại đây với ông, ông có quà cho con. Một thứ giúp con bay được đấy!"
+      ]
+    },
+    {
+      "id": "village",
+      "icon": "🏮",
+      "title": [
+        "Visit Lotus Village",
+        "Đến thăm Làng Sen"
+      ],
+      "at": "village",
+      "hint": [
+        "Across the river bridge is Lotus Village. Its lanterns have gone dim. The children there need a new friend. Will you go?",
+        "Bên kia cầu là Làng Sen. Đèn lồng ở đó đã mờ đi. Các bạn nhỏ trong làng cần một người bạn mới. Con đi nhé?"
+      ]
+    },
+    {
+      "id": "market",
+      "icon": "🛒",
+      "title": [
+        "Help Cô Mai at the market",
+        "Giúp Cô Mai bán hàng"
+      ],
+      "at": "mai",
+      "hint": [
+        "Oh dear, so many customers and only me to sell the fruit! Could you help me count the money at my market stall?",
+        "Ôi, đông khách quá mà chỉ có mình cô bán! Con giúp cô đếm tiền ở sạp chợ được không?"
+      ]
+    },
+    {
+      "id": "cook",
+      "icon": "🍲",
+      "title": [
+        "Cook a dish at a cooking pot",
+        "Nấu một món ăn"
+      ],
+      "at": "pot",
+      "hint": [
+        "The village is hungry after all that fun! Find a cooking pot, put in some food you gathered, and cook something yummy.",
+        "Cả làng đói bụng sau khi chơi vui! Tìm một nồi nấu ăn, cho đồ ăn con hái được vào, và nấu món gì thật ngon nhé."
+      ]
+    },
+    {
+      "id": "folk",
+      "icon": "🪢",
+      "title": [
+        "Play a folk game with the village kids",
+        "Chơi trò dân gian với các bạn"
+      ],
+      "at": "kids",
+      "hint": [
+        "We forgot how to laugh since the storm. Play a game with us, Ô ăn quan, hopscotch or tug of war, and the lanterns will shine again!",
+        "Từ sau cơn bão tụi mình quên cả cười. Chơi với tụi mình một trò nhé, ô ăn quan, nhảy lò cò hay kéo co, đèn lồng sẽ sáng lại!"
+      ]
+    },
+    {
+      "id": "playground",
+      "icon": "🪁",
+      "title": [
+        "Learn a game on Two Homes Street",
+        "Học một trò chơi ở Phố Hai Quê"
+      ],
+      "at": "playground",
+      "hint": [
+        "G'day! My friends and I came all the way from Australia. Come to Two Homes Street, where Aussie and Vietnamese families live side by side. Learn our games in the park, and Mít will teach you hers!",
+        "Chào bạn! Tớ và các bạn đến từ nước Úc xa xôi. Hãy đến Phố Hai Quê, nơi các gia đình Úc và Việt sống cạnh nhau. Học trò chơi của tụi tớ ở công viên, Mít cũng sẽ dạy bạn trò của Mít nữa!"
+      ]
+    },
+    {
+      "id": "market3",
+      "icon": "🍜",
+      "title": [
+        "Taste food from the north, centre and south at the Three Regions Market",
+        "Nếm món ăn ba miền ở Chợ Ba Miền"
+      ],
+      "at": "market",
+      "hint": [
+        "My friends opened the Three Regions Market. Bà Hai cooks phở like in Hà Nội, O Lài makes bánh bèo from Huế, and Chú Tám sells bánh mì like in Sài Gòn. Taste all three regions!",
+        "Bạn của cô mở một khu chợ tên là Chợ Ba Miền. Bà Hai nấu phở kiểu Hà Nội, O Lài làm bánh bèo Huế, còn Chú Tám bán bánh mì kiểu Sài Gòn. Con nếm thử đủ ba miền nhé!"
+      ]
+    },
+    {
+      "id": "aussie",
+      "icon": "🍦",
+      "title": [
+        "Get a treat at Aussie Corner",
+        "Mua quà vặt ở Góc Nước Úc"
+      ],
+      "at": "aussie",
+      "hint": [
+        "Over in Aussie Corner there's a milk bar with heaps of lollies, a fish and chip shop, and an ice-cream van that plays a song! Grab a treat, mate!",
+        "Ở Góc Nước Úc có tiệm tạp hóa đầy kẹo, tiệm cá và khoai chiên, và cả xe kem phát nhạc nữa! Mua một món ăn vặt đi bạn ơi!"
+      ]
+    },
+    {
+      "id": "buffalo",
+      "icon": "🐃",
+      "title": [
+        "Ride a water buffalo",
+        "Cưỡi trâu"
+      ],
+      "at": "buffalo",
+      "hint": [
+        "The water buffalo are gentle and strong. Walk up to one, say hello and hop on for a ride across the fields!",
+        "Chú trâu hiền lành và khỏe mạnh lắm. Đi lại gần, chào chú rồi leo lên cưỡi một vòng qua cánh đồng nhé!"
+      ]
+    },
+    {
+      "id": "leafies",
+      "icon": "🍃",
+      "title": [
+        "Find 5 hidden Leafies",
+        "Tìm 5 bạn Lá Lá đang trốn"
+      ],
+      "at": "leafy",
+      "hint": [
+        "Little Leafies are hiding all over the valley, scared of the grumpy cloud. Look under rocks and for sparkles. Can you find five?",
+        "Các bạn Lá Lá nhỏ đang trốn khắp thung lũng vì sợ đám mây khó tính. Nhìn dưới hòn đá và chỗ lấp lánh nhé. Con tìm được năm bạn không?"
+      ]
+    },
+    {
+      "id": "statue",
+      "icon": "🪷",
+      "title": [
+        "Bring 4 Sparkle Orbs to the Lotus Statue",
+        "Mang 4 Ngọc Lấp Lánh đến Tượng Sen"
+      ],
+      "at": "statue",
+      "hint": [
+        "Each shrine you solve gives you a Sparkle Orb. Bring four orbs to the Lotus Statue in the village, and it will bless you!",
+        "Mỗi ngôi đền con giải được cho con một Ngọc Lấp Lánh. Mang bốn viên đến Tượng Sen trong làng, tượng sẽ ban phước cho con!"
+      ]
+    },
+    {
+      "id": "postcards",
+      "icon": "📮",
+      "title": [
+        "Collect 5 postcards from famous places",
+        "Sưu tầm 5 bưu thiếp từ những nơi nổi tiếng"
+      ],
+      "at": "postcard",
+      "hint": [
+        "Famous places from Vietnam and Australia are hidden all over the valley: the Opera House, Uluru, the Turtle Tower and more. Visit them and collect postcards!",
+        "Những nơi nổi tiếng của Việt Nam và Úc ẩn khắp thung lũng: Nhà hát Opera, Uluru, Tháp Rùa và nhiều nơi khác. Hãy đến thăm và sưu tầm bưu thiếp nhé!"
+      ]
+    },
+    {
+      "id": "towers",
+      "icon": "🗺️",
+      "title": [
+        "Light up all 4 towers",
+        "Thắp sáng cả 4 tháp"
+      ],
+      "at": "tower",
+      "hint": [
+        "Three more towers are still asleep: in the bamboo forest, by the lake and on the snowy peak. Wake them all to light up your map!",
+        "Còn ba tháp nữa vẫn đang ngủ: trong rừng tre, bên hồ và trên đỉnh núi tuyết. Đánh thức tất cả để bản đồ sáng lên nhé!"
+      ]
+    },
+    {
+      "id": "shrines",
+      "icon": "🌟",
+      "title": [
+        "Solve all 12 shrines",
+        "Giải cả 12 đền"
+      ],
+      "at": "shrine",
+      "hint": [
+        "Only the grumpy cloud is left. Solve every shrine in the valley, and its heart might just turn into a rainbow.",
+        "Chỉ còn đám mây khó tính thôi. Giải hết các đền trong thung lũng, biết đâu trái tim của mây sẽ biến thành cầu vồng."
+      ]
+    }
+  ],
+  "chapters": [
+    {
+      "id": "prologue",
+      "en": "The Lanterns Blow Away",
+      "vi": "Đèn Lồng Bay Mất",
+      "steps": [
+        {
+          "id": "p_owl",
+          "icon": "🦉",
+          "en": "Talk to Ông Cú",
+          "vi": "Nói chuyện với Ông Cú",
+          "at": "owl",
+          "owl": true
+        }
+      ]
+    },
+    {
+      "id": "ch1",
+      "en": "Lotus Village",
+      "vi": "Làng Sen",
+      "landmark": "dinh",
+      "keepsake": "lantern_ch1",
+      "reward": 30,
+      "steps": [
+        {
+          "id": "c1_village",
+          "icon": "🏮",
+          "en": "Fly to Lotus Village with your friend",
+          "vi": "Cùng bạn đồng hành bay đến Làng Sen",
+          "at": "village",
+          "visit": "village",
+          "ribbons": 3,
+          "act_en": "Catch the 3 wind ribbons on the way to Lotus Village",
+          "act_vi": "Bắt 3 dải lụa gió trên đường đến Làng Sen",
+          "tale": [
+            "🦉🏮",
+            "Ông Cú",
+            "One lantern blew towards Lotus Village, across the river bridge. Go with your friend and ask the villagers. They will help you!",
+            "Một chiếc đèn lồng bay về phía Làng Sen, bên kia cầu. Con và bạn đồng hành đi hỏi dân làng nhé. Mọi người sẽ giúp con!"
+          ]
+        },
+        {
+          "id": "c1_nam",
+          "icon": "👵",
+          "en": "Ask Bà Năm where the lantern went",
+          "vi": "Hỏi Bà Năm đèn lồng bay đi đâu",
+          "at": "storyteller",
+          "talk": {
+            "who": "Bà Năm",
+            "label": [
+              "Ask about the lantern",
+              "Hỏi về đèn lồng"
+            ],
+            "lines": [
+              [
+                "Oh, {name}! Last night I saw a red light float down towards the lotus pond.",
+                "Ôi, {name}! Đêm qua bà thấy một đốm sáng đỏ bay xuống phía hồ sen."
+              ],
+              [
+                "But before you look, could you help the village get ready for the festival?",
+                "Nhưng trước khi đi tìm, con giúp làng chuẩn bị cho lễ hội nhé?"
+              ],
+              [
+                "The đình needs fresh water from the old well. Can you fetch some?",
+                "Đình làng cần nước sạch từ giếng cổ. Con múc giúp bà một ít được không?"
+              ]
+            ],
+            "short": [
+              [
+                "A red light flew down to the lotus pond! First, fetch water from the old well for the đình.",
+                "Đốm sáng đỏ bay xuống hồ sen rồi! Trước tiên, con múc nước giếng cổ cho đình nhé."
+              ]
+            ]
+          }
+        },
+        {
+          "id": "c1_well",
+          "icon": "🪣",
+          "en": "Fetch water from the old well",
+          "vi": "Múc nước ở giếng cổ",
+          "at": "well",
+          "act": "lv_well",
+          "tale": [
+            "👵🪣",
+            "Bà Năm",
+            "The old well is by the banyan tree. Walk up to it and draw the water up in the bucket.",
+            "Giếng cổ ở cạnh gốc đa. Con đi đến giếng và kéo gàu nước lên nhé."
+          ]
+        },
+        {
+          "id": "c1_teo",
+          "icon": "🧒",
+          "en": "Play a folk game with Tèo",
+          "vi": "Chơi một trò dân gian với Tèo",
+          "at": "teo",
+          "game": [
+            "oanquan",
+            "hopscotch",
+            "tug",
+            "caro",
+            "chuyen",
+            "marbles",
+            "skipping",
+            "dragon",
+            "mrwolf",
+            "dacau",
+            "oantuti",
+            "nemlon",
+            "goat"
+          ],
+          "tale": [
+            "🧒🪨",
+            "Tèo",
+            "You want to find the lantern? Beat me at a game first! Ô ăn quan, hopscotch, anything. I am the best in the village. Well, almost.",
+            "Bạn muốn tìm đèn lồng hả? Thắng tớ một ván trước đã! Ô ăn quan, nhảy lò cò, gì cũng được. Tớ giỏi nhất làng đó. À, gần nhất thôi."
+          ]
+        },
+        {
+          "id": "c1_tale",
+          "icon": "📖",
+          "en": "Hear Bà Năm tell the story of the first watermelon",
+          "vi": "Nghe Bà Năm kể Sự tích dưa hấu",
+          "at": "storyteller",
+          "tale_id": "duahau",
+          "talk": {
+            "who": "Bà Năm",
+            "label": [
+              "Listen to the story",
+              "Nghe kể chuyện"
+            ],
+            "lines": [
+              [
+                "Come and sit, {name}. Here is the story of Mai An Tiêm and the first watermelon.",
+                "Lại đây ngồi nào, {name}. Bà kể con nghe chuyện Mai An Tiêm và quả dưa hấu đầu tiên."
+              ]
+            ]
+          },
+          "tale": [
+            "🧒😄",
+            "Tèo",
+            "Okay, okay, you win! Bà Năm knows everything that happens in the village. Go and hear her story, she has a clue for you.",
+            "Thôi được, bạn thắng! Bà Năm biết hết mọi chuyện trong làng. Đi nghe bà kể chuyện đi, bà có manh mối cho bạn đó."
+          ]
+        },
+        {
+          "id": "c1_find",
+          "icon": "🪷",
+          "en": "Find the lantern by the lotus pond",
+          "vi": "Tìm đèn lồng bên hồ sen",
+          "at": "lantern",
+          "find": true,
+          "leaves": 5,
+          "act_en": "Lift the lotus leaves to find the lantern",
+          "act_vi": "Lật lá sen để tìm đèn lồng",
+          "tale": [
+            "👵🪷",
+            "Bà Năm",
+            "Like Mai An Tiêm, you never gave up. Now look among the lotus leaves by the pond. Something red is shining there!",
+            "Giống như Mai An Tiêm, con không bao giờ bỏ cuộc. Giờ con tìm giữa những lá sen bên hồ nhé. Có gì đó màu đỏ đang sáng ở đó!"
+          ]
+        },
+        {
+          "id": "c1_hang",
+          "icon": "🏯",
+          "en": "Hang the lantern at the đình",
+          "vi": "Treo đèn lồng ở đình làng",
+          "at": "landmark",
+          "hang": true,
+          "tale": [
+            "🏮✨",
+            "Lấp Lánh",
+            "We found it! The đình is sleeping in the mist. Let us hang the lantern there and wake it up!",
+            "Tìm thấy rồi! Đình làng đang ngủ trong sương. Mình treo đèn lồng lên để đánh thức đình nhé!"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ch2",
+      "en": "Hà Nội",
+      "vi": "Hà Nội",
+      "landmark": "thehuc",
+      "keepsake": "lantern_ch2",
+      "reward": 40,
+      "trick": "light",
+      "steps": [
+        {
+          "id": "c2_fly",
+          "icon": "🏮",
+          "en": "Fly to Hà Nội with your friend",
+          "vi": "Cùng bạn đồng hành bay đến Hà Nội",
+          "at": "hanoi",
+          "visit": "hanoi",
+          "lights": 3,
+          "tale": [
+            "🦉🏮",
+            "Ông Cú",
+            "Hoo hoo! One lantern flew north, all the way to Hà Nội. Trung Thu, the Mid-Autumn festival, is coming, and Hà Nội needs its lantern back. Follow the little lights!",
+            "Hu hu! Một chiếc đèn lồng bay về phía bắc, tận Hà Nội. Sắp đến Trung Thu rồi, Hà Nội đang cần đèn lồng. Con đi theo những đốm sáng nhỏ nhé!"
+          ],
+          "act_en": "Follow the 3 lantern lights to Hà Nội",
+          "act_vi": "Đi theo 3 đốm đèn lồng đến Hà Nội"
+        },
+        {
+          "id": "c2_tam",
+          "icon": "👩‍🏫",
+          "en": "Say hello to Cô Tam at Văn Miếu",
+          "vi": "Chào Cô Tam ở Văn Miếu",
+          "at": "tam2",
+          "big": true,
+          "talk": {
+            "who": "Cô Tam",
+            "label": [
+              "Say hello",
+              "Chào cô"
+            ],
+            "lines": [
+              [
+                "Welcome to Hà Nội, {name}! I brought my class to see Văn Miếu, the oldest school in Vietnam.",
+                "Chào mừng con đến Hà Nội, {name}! Cô đưa lớp ra thăm Văn Miếu, ngôi trường xưa nhất Việt Nam."
+              ],
+              [
+                "Last night a red lantern floated over Hồ Gươm, the lake with the red bridge.",
+                "Đêm qua có một chiếc đèn lồng đỏ bay lơ lửng trên Hồ Gươm, cái hồ có cây cầu đỏ."
+              ],
+              [
+                "And look who came for the holidays: Tèo! He says he knows where it went.",
+                "Mà con xem ai ra đây chơi kìa: Tèo đó! Bạn ấy bảo biết đèn lồng bay đi đâu."
+              ]
+            ],
+            "short": [
+              [
+                "Welcome to Hà Nội! A red lantern floated over Hồ Gươm. Tèo is here too, ask him!",
+                "Chào mừng con đến Hà Nội! Có đèn lồng đỏ bay trên Hồ Gươm. Tèo cũng ở đây, con hỏi bạn ấy nhé!"
+              ]
+            ]
+          },
+          "tale": [
+            "👩‍🏫🏮",
+            "Cô Tam",
+            "You made it to Hà Nội! I am at Văn Miếu with my class. Come and say hello!",
+            "Con đến Hà Nội rồi! Cô đang ở Văn Miếu với lớp. Lại đây chào cô nhé!"
+          ]
+        },
+        {
+          "id": "c2_teo",
+          "icon": "🧒",
+          "en": "Take up Tèo's challenge",
+          "vi": "Nhận lời thách đấu của Tèo",
+          "at": "teo2",
+          "game": [
+            "oanquan"
+          ],
+          "gameLittle": [
+            "oantuti"
+          ],
+          "challenge": {
+            "big": [
+              "I am the Ô ăn quan champion of Hà Nội! Beat me and I will tell you where the lantern went.",
+              "Tớ là vô địch Ô ăn quan của Hà Nội đó! Thắng tớ thì tớ chỉ chỗ đèn lồng cho."
+            ],
+            "little": [
+              "Oẳn tù tì! Rock, paper, scissors! Play with me and I will tell you a secret.",
+              "Oẳn tù tì, ra cái gì ra cái này! Chơi với tớ rồi tớ kể bí mật cho."
+            ]
+          },
+          "tale": [
+            "🧒🪨",
+            "Tèo",
+            "Hey, it is me, Tèo! I came to Hà Nội for Trung Thu. I am the best player here. Bet you cannot beat me!",
+            "Ê, tớ Tèo đây! Tớ ra Hà Nội chơi Trung Thu. Ở đây tớ chơi giỏi nhất đó. Cá là bạn không thắng nổi tớ!"
+          ],
+          "taleLittle": [
+            "🧒🏮",
+            "Tèo",
+            "Hello! I am Tèo. I came to Hà Nội for Trung Thu. Come and play with me!",
+            "Chào bạn! Tớ là Tèo. Tớ ra Hà Nội chơi Trung Thu. Lại đây chơi với tớ nào!"
+          ],
+          "act_en": "Beat Tèo at Ô ăn quan",
+          "act_vi": "Thắng Tèo một ván Ô ăn quan",
+          "actL_en": "Play Oẳn tù tì with Tèo",
+          "actL_vi": "Chơi Oẳn tù tì với Tèo"
+        },
+        {
+          "id": "c2_job",
+          "icon": "🍲",
+          "en": "Help Bà Lan at the bún chả stall",
+          "vi": "Giúp Bà Lan ở quán bún chả",
+          "at": "bunca",
+          "job": true,
+          "big": true,
+          "tale": [
+            "🧒😄",
+            "Tèo",
+            "Wow, you are really good! Sorry I showed off. Friends? Bà Lan at the bún chả stall needs help. Let us help her together!",
+            "Oa, bạn giỏi thật đó! Xin lỗi vì tớ khoe khoang nha. Mình làm bạn nhé? Bà Lan ở quán bún chả đang cần giúp, mình cùng giúp bà đi!"
+          ],
+          "act_en": "Fan the grill and carry the bowls for Bà Lan",
+          "act_vi": "Quạt bếp và bưng bát giúp Bà Lan"
+        },
+        {
+          "id": "c2_vanmieu",
+          "icon": "📚",
+          "en": "Cô Tam's lesson at Văn Miếu",
+          "vi": "Học cùng Cô Tam ở Văn Miếu",
+          "at": "tam2",
+          "lesson": true,
+          "tale": [
+            "🍲😊",
+            "Bà Lan",
+            "Thank you, little helpers! Cô Tam is waiting at Văn Miếu. She has a lesson for you.",
+            "Cảm ơn các cháu giỏi giang! Cô Tam đang chờ ở Văn Miếu. Cô có một bài học cho các cháu đó."
+          ],
+          "taleLittle": [
+            "🧒😄",
+            "Tèo",
+            "You are good! Friends? Cô Tam is at Văn Miếu, the oldest school in Vietnam. Let us go!",
+            "Bạn giỏi quá! Mình làm bạn nhé? Cô Tam đang ở Văn Miếu, ngôi trường xưa nhất Việt Nam. Mình đi thôi!"
+          ],
+          "act_en": "Count the stone turtles at Văn Miếu with Cô Tam",
+          "act_vi": "Đếm rùa đá ở Văn Miếu cùng Cô Tam"
+        },
+        {
+          "id": "c2_tale",
+          "icon": "📖",
+          "en": "Hear Bà Năm tell the story of Hồ Gươm",
+          "vi": "Nghe Bà Năm kể Sự tích Hồ Gươm",
+          "at": "nam2",
+          "tale_id": "hoguom",
+          "talk": {
+            "who": "Bà Năm",
+            "label": [
+              "Listen to the story",
+              "Nghe kể chuyện"
+            ],
+            "lines": [
+              [
+                "Come and sit, {name}. Here is the story of the lake with the red bridge, Hồ Gươm.",
+                "Lại đây ngồi nào, {name}. Bà kể con nghe Sự tích Hồ Gươm, cái hồ có cây cầu đỏ."
+              ]
+            ]
+          },
+          "tale": [
+            "👩‍🏫🐢",
+            "Cô Tam",
+            "Well counted! Bà Năm came to Hà Nội for Trung Thu too. She is sitting by Hồ Gươm. Ask her for its story!",
+            "Đếm giỏi lắm! Bà Năm cũng ra Hà Nội đón Trung Thu. Bà đang ngồi bên Hồ Gươm. Con nhờ bà kể chuyện nhé!"
+          ]
+        },
+        {
+          "id": "c2_find",
+          "icon": "🐢",
+          "en": "Find the lantern by Hồ Gươm",
+          "vi": "Tìm đèn lồng bên Hồ Gươm",
+          "at": "clues",
+          "find": true,
+          "clues": 3,
+          "tale": [
+            "👵🐢",
+            "Bà Năm",
+            "The golden turtle keeps lost things safe in Hồ Gươm. Look for the lantern where the old turtle rests, by the lake!",
+            "Rùa Vàng giữ gìn những thứ bị lạc ở Hồ Gươm. Con tìm đèn lồng ở chỗ chú rùa già nghỉ, bên bờ hồ nhé!"
+          ],
+          "taleLittle": [
+            "✨🏮",
+            "Bà Năm",
+            "Your friend has learned a new trick: it can light the way! Follow its light to the lantern.",
+            "Bạn đồng hành của con vừa học được trò mới: soi đường! Con đi theo ánh sáng của bạn ấy đến chỗ đèn lồng nhé."
+          ],
+          "act_en": "Look by Hồ Gươm: where does the old turtle rest?",
+          "act_vi": "Tìm bên Hồ Gươm: chú rùa già nghỉ ở đâu?",
+          "actL_en": "Follow your friend's light to the lantern",
+          "actL_vi": "Đi theo ánh sáng của bạn đồng hành đến đèn lồng"
+        },
+        {
+          "id": "c2_hang",
+          "icon": "🌉",
+          "en": "Hang the lantern on Cầu Thê Húc",
+          "vi": "Treo đèn lồng trên Cầu Thê Húc",
+          "at": "bridge",
+          "hang": true,
+          "tale": [
+            "🏮✨",
+            "{companion}",
+            "We found it! Cầu Thê Húc is sleeping in the mist. Let us hang the lantern and wake it up for Trung Thu!",
+            "Tìm thấy rồi! Cầu Thê Húc đang ngủ trong sương. Mình treo đèn lồng lên để đánh thức cây cầu đón Trung Thu nhé!"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ch3",
+      "en": "Sydney",
+      "vi": "Sydney",
+      "landmark": "opera",
+      "keepsake": "lantern_ch3",
+      "reward": 40,
+      "trick": "higher",
+      "steps": [
+        {
+          "id": "c3_fly",
+          "icon": "🏮",
+          "en": "Fly to Sydney with your friend",
+          "vi": "Cùng bạn đồng hành bay đến Sydney",
+          "at": "sydney",
+          "visit": "sydney",
+          "lights": 3,
+          "light": [
+            "You found a lantern light!",
+            "Con tìm được một đốm đèn lồng!"
+          ],
+          "lightsAll": [
+            "All the lights! They are showing us the way to Sydney.",
+            "Đủ hết đốm sáng rồi! Các đốm sáng đang chỉ đường cho mình đến Sydney."
+          ],
+          "act_en": "Follow the 3 lantern lights to Sydney",
+          "act_vi": "Đi theo 3 đốm đèn lồng đến Sydney",
+          "tale": [
+            "🦉🏮",
+            "Ông Cú",
+            "Hoo hoo! The wind carried one lantern all the way across the sea to Sydney, in Australia. A girl called Chi saw it fly past the harbour. Follow the little lights!",
+            "Hu hu! Gió mang một chiếc đèn lồng bay qua biển tận Sydney, nước Úc. Một bạn gái tên Chi đã thấy nó bay qua bến cảng. Con đi theo những đốm sáng nhỏ nhé!"
+          ]
+        },
+        {
+          "id": "c3_chi",
+          "icon": "👧",
+          "en": "Meet Chi in Sydney",
+          "vi": "Gặp Chi ở Sydney",
+          "at": "chi3",
+          "big": true,
+          "talk": {
+            "who": "Chi",
+            "label": [
+              "Say hello",
+              "Chào bạn"
+            ],
+            "lines": [
+              [
+                "Welcome to Sydney, {name}! I saw a red lantern float over the harbour, near the Opera House.",
+                "Chào mừng bạn đến Sydney, {name}! Mình thấy một chiếc đèn lồng đỏ bay qua bến cảng, gần Nhà hát Opera."
+              ],
+              [
+                "People here talk a bit differently. Shall I teach you some Aussie words? I can say them in Vietnamese too!",
+                "Ở đây mọi người nói hơi khác một chút. Mình dạy bạn vài từ tiếng Úc nhé? Mình nói được cả tiếng Việt nữa!"
+              ]
+            ],
+            "short": [
+              [
+                "Welcome to Sydney! The lantern flew past the Opera House. Let me teach you some Aussie words first!",
+                "Chào mừng bạn đến Sydney! Đèn lồng bay qua Nhà hát Opera rồi. Mình dạy bạn vài từ tiếng Úc trước nhé!"
+              ]
+            ]
+          },
+          "tale": [
+            "👧🏮",
+            "Chi",
+            "Hello! Xin chào! I am Chi. My mum is from Vietnam and my dad is from Australia, so I have two homes. Come and say hello!",
+            "Xin chào! Hello! Mình là Chi. Mẹ mình người Việt, bố mình người Úc, nên mình có hai quê nhà. Lại đây chào mình nhé!"
+          ]
+        },
+        {
+          "id": "c3_words",
+          "icon": "💬",
+          "en": "Learn Aussie words with Chi",
+          "vi": "Học từ tiếng Úc cùng Chi",
+          "at": "chi3",
+          "words": true,
+          "act_en": "Match the Aussie words with Chi",
+          "act_vi": "Ghép từ tiếng Úc cùng Chi",
+          "actL_en": "Find the pictures with Chi",
+          "actL_vi": "Tìm hình cùng Chi",
+          "tale": [
+            "👧💬",
+            "Chi",
+            "In Australia people say G'day for hello and arvo for afternoon! Tap me and let's learn some words.",
+            "Ở Úc người ta nói G'day thay cho xin chào, và arvo nghĩa là buổi chiều! Chạm vào mình để cùng học từ nhé."
+          ],
+          "taleLittle": [
+            "👧👋",
+            "Chi",
+            "Hello! I am Chi. I have two homes, Vietnam and Australia. Let's play a word game!",
+            "Xin chào! Mình là Chi. Mình có hai quê nhà, Việt Nam và nước Úc. Mình cùng chơi trò chơi chữ nhé!"
+          ]
+        },
+        {
+          "id": "c3_ferry",
+          "icon": "⛴️",
+          "en": "Help Captain Molly with the ferries",
+          "vi": "Giúp thuyền trưởng Molly đưa phà",
+          "at": "molly",
+          "game": [
+            "ferries"
+          ],
+          "big": true,
+          "act_en": "Play Captain Molly's ferry game",
+          "act_vi": "Chơi trò đưa phà của thuyền trưởng Molly",
+          "tale": [
+            "👧⛴️",
+            "Chi",
+            "Bonza! You know lots of Aussie words now. Captain Molly drives the ferries round the harbour. She needs a helper today!",
+            "Tuyệt vời! Giờ bạn biết nhiều từ tiếng Úc rồi. Thuyền trưởng Molly lái phà quanh bến cảng. Hôm nay cô cần người giúp đó!"
+          ]
+        },
+        {
+          "id": "c3_jack",
+          "icon": "🏏",
+          "en": "Play with Jack and Ruby",
+          "vi": "Chơi với Jack và Ruby",
+          "at": "jack3",
+          "game": [
+            "cricket"
+          ],
+          "gameLittle": [
+            "tug"
+          ],
+          "challenge": {
+            "big": [
+              "G'day! Bet you can't beat us at backyard cricket! Win a game and we will tell you where the lantern is.",
+              "Chào bạn! Cá là bạn không thắng nổi bọn mình môn cricket sân nhà! Thắng một ván thì bọn mình chỉ chỗ đèn lồng cho."
+            ],
+            "little": [
+              "G'day! Let's play tug of war, all pulling together! Then we will tell you a secret.",
+              "Chào bạn! Mình cùng chơi kéo co nhé, cùng kéo thật mạnh! Rồi bọn mình kể bí mật cho."
+            ]
+          },
+          "act_en": "Beat Jack and Ruby at cricket",
+          "act_vi": "Thắng Jack và Ruby một ván cricket",
+          "actL_en": "Play tug of war with Jack and Ruby",
+          "actL_vi": "Chơi kéo co với Jack và Ruby",
+          "tale": [
+            "⛴️😄",
+            "Captain Molly",
+            "Thanks, deckhand! Jack and Ruby are playing by the harbour. They are cheeky, but they might know about the lantern.",
+            "Cảm ơn thủy thủ nhỏ! Jack và Ruby đang chơi bên bến cảng. Hai bạn ấy hơi nghịch, nhưng có thể biết đèn lồng ở đâu đó."
+          ],
+          "taleLittle": [
+            "👧🏏",
+            "Chi",
+            "My friends Jack and Ruby are here. They are cheeky, but very kind. Let's play with them!",
+            "Các bạn của mình là Jack và Ruby đang ở đây. Hai bạn hơi nghịch, nhưng tốt bụng lắm. Mình chơi với các bạn ấy nhé!"
+          ]
+        },
+        {
+          "id": "c3_tale",
+          "icon": "📖",
+          "en": "Hear Bà Năm tell The Magic Pudding",
+          "vi": "Nghe Bà Năm kể chuyện Chiếc bánh pudding thần kỳ",
+          "at": "nam3",
+          "tale_id": "magicpudding",
+          "talk": {
+            "who": "Bà Năm",
+            "label": [
+              "Listen to the story",
+              "Nghe kể chuyện"
+            ],
+            "lines": [
+              [
+                "Come and sit, {name}. Here is a funny Sydney story: The Magic Pudding, a pudding that never runs out!",
+                "Lại đây ngồi nào, {name}. Bà kể con nghe một chuyện vui ở Sydney: Chiếc bánh pudding thần kỳ, ăn mãi không hết!"
+              ]
+            ]
+          },
+          "tale": [
+            "🏏😄",
+            "Jack",
+            "Good on ya, you won! Sorry we teased you, mate. Bà Năm is down by the harbour, telling stories. She saw where the lantern went!",
+            "Giỏi lắm, bạn thắng rồi! Xin lỗi vì trêu bạn nha. Bà Năm đang kể chuyện bên bến cảng. Bà thấy đèn lồng bay đi đâu đó!"
+          ]
+        },
+        {
+          "id": "c3_find",
+          "icon": "🔭",
+          "en": "Find the lantern by the harbour",
+          "vi": "Tìm đèn lồng bên bến cảng",
+          "at": "clues3",
+          "find": true,
+          "clues": 3,
+          "act_en": "Look by the harbour: where do the ferries wait?",
+          "act_vi": "Tìm bên bến cảng: phà đậu ở đâu?",
+          "actL_en": "Follow your friend, flying high in the sky",
+          "actL_vi": "Đi theo bạn đồng hành đang bay thật cao",
+          "tale": [
+            "👵⛴️",
+            "Bà Năm",
+            "Like the Magic Pudding, kindness never runs out. The lantern landed by the harbour, where the ferries wait. Go and look!",
+            "Như chiếc bánh pudding thần kỳ, lòng tốt không bao giờ hết. Đèn lồng đáp xuống bên bến cảng, chỗ phà đậu. Con đi tìm đi!"
+          ],
+          "taleLittle": [
+            "✨☁️",
+            "Bà Năm",
+            "Your friend has learned a new trick: it can fly high up in the sky and spot things! Follow it to the lantern.",
+            "Bạn đồng hành của con vừa học trò mới: bay thật cao lên trời để nhìn xa! Con đi theo bạn ấy đến chỗ đèn lồng nhé."
+          ]
+        },
+        {
+          "id": "c3_hang",
+          "icon": "🎭",
+          "en": "Hang the lantern at the Opera House",
+          "vi": "Treo đèn lồng ở Nhà hát Opera",
+          "at": "opera",
+          "hang": true,
+          "tale": [
+            "🏮✨",
+            "{companion}",
+            "We found it! The Opera House is sleeping in the mist. Let us hang the lantern and light up its sails!",
+            "Tìm thấy rồi! Nhà hát Opera đang ngủ trong sương. Mình treo đèn lồng lên để thắp sáng những cánh buồm nhé!"
+          ]
+        }
+      ]
+    }
+  ],
+  "adventures": [
+    {
+      "id": "eggs",
+      "giver": "nam",
+      "icon": "🥚",
+      "en": "Grandma Năm's eggs",
+      "vi": "Trứng của Bà Năm",
+      "places": [
+        "village"
+      ],
+      "ages": [
+        "little",
+        "big"
+      ],
+      "festival": null,
+      "say": [
+        "Grandma Năm's hens hid their eggs. Can you find them?",
+        "Gà của Bà Năm giấu trứng mất rồi. Con tìm giúp bà nhé?"
+      ],
+      "miss": [
+        "Grandma Năm made a cake with your eggs!",
+        "Bà Năm làm bánh bằng trứng con tìm đó!"
+      ],
+      "steps": [
+        {
+          "kind": "go",
+          "place": "village",
+          "icon": "🪷",
+          "en": "Walk to Lotus Village",
+          "vi": "Đi đến Làng Sen",
+          "little": [
+            "Walk to Lotus Village",
+            "Đi đến Làng Sen"
+          ],
+          "older": [
+            "Walk to Lotus Village",
+            "Đi đến Làng Sen"
+          ]
+        },
+        {
+          "kind": "find",
+          "at": "storyteller",
+          "n": 3,
+          "big": 5,
+          "thing": {
+            "icon": "🥚",
+            "en": "eggs",
+            "vi": "quả trứng"
+          },
+          "icon": "🥚",
+          "en": "Find {n} eggs",
+          "vi": "Tìm {n} quả trứng",
+          "also": {
+            "icon": "🪶",
+            "en": "feathers",
+            "vi": "lông gà",
+            "n": 2
+          },
+          "bigText": [
+            "Find {n} eggs and 2 feathers",
+            "Tìm {n} quả trứng và 2 lông gà"
+          ],
+          "little": [
+            "Find 3 eggs",
+            "Tìm 3 quả trứng"
+          ],
+          "older": [
+            "Find 5 eggs and 2 feathers",
+            "Tìm 5 quả trứng và 2 lông gà"
+          ]
+        },
+        {
+          "kind": "give",
+          "at": "storyteller",
+          "icon": "👵",
+          "en": "Bring them to Grandma Năm",
+          "vi": "Mang về cho Bà Năm",
+          "little": [
+            "Bring them to Grandma Năm",
+            "Mang về cho Bà Năm"
+          ],
+          "older": [
+            "Bring them to Grandma Năm",
+            "Mang về cho Bà Năm"
+          ]
+        }
+      ],
+      "reward": {
+        "sticker": "hen",
+        "coins": 10
+      },
+      "title": [
+        "Grandma Năm's eggs",
+        "Trứng của Bà Năm"
+      ],
+      "giverName": {
+        "icon": "👵",
+        "en": "Grandma Năm",
+        "vi": "Bà Năm"
+      }
+    },
+    {
+      "id": "puppy",
+      "giver": "ti",
+      "icon": "🐶",
+      "en": "Lost puppy",
+      "vi": "Cún con đi lạc",
+      "places": [
+        "village"
+      ],
+      "ages": [
+        "little",
+        "big"
+      ],
+      "festival": null,
+      "say": [
+        "My puppy ran away to play. Can you follow his paw prints?",
+        "Cún con của tớ chạy đi chơi mất rồi. Bạn theo dấu chân giúp tớ nhé?"
+      ],
+      "miss": [
+        "The puppy misses you!",
+        "Cún con nhớ con đó!"
+      ],
+      "steps": [
+        {
+          "kind": "talk",
+          "at": "npc_ti",
+          "icon": "👧",
+          "en": "Ask Tí about her puppy",
+          "vi": "Hỏi Tí về cún con",
+          "little": [
+            "Ask Tí about her puppy",
+            "Hỏi Tí về cún con"
+          ],
+          "older": [
+            "Ask Tí about her puppy",
+            "Hỏi Tí về cún con"
+          ]
+        },
+        {
+          "kind": "find",
+          "at": "lv_well",
+          "n": 3,
+          "big": 5,
+          "thing": {
+            "icon": "🐾",
+            "en": "paw prints",
+            "vi": "dấu chân"
+          },
+          "icon": "🐾",
+          "en": "Find {n} paw prints",
+          "vi": "Tìm {n} dấu chân",
+          "little": [
+            "Find 3 paw prints",
+            "Tìm 3 dấu chân"
+          ],
+          "older": [
+            "Find 5 paw prints",
+            "Tìm 5 dấu chân"
+          ]
+        },
+        {
+          "kind": "give",
+          "at": "npc_ti",
+          "icon": "🐶",
+          "en": "Bring the puppy to Tí",
+          "vi": "Đưa cún về cho Tí",
+          "little": [
+            "Bring the puppy to Tí",
+            "Đưa cún về cho Tí"
+          ],
+          "older": [
+            "Bring the puppy to Tí",
+            "Đưa cún về cho Tí"
+          ]
+        }
+      ],
+      "reward": {
+        "sticker": "dog",
+        "coins": 10
+      },
+      "title": [
+        "Lost puppy",
+        "Cún con đi lạc"
+      ],
+      "giverName": {
+        "icon": "👧",
+        "en": "Tí",
+        "vi": "Tí"
+      }
+    },
+    {
+      "id": "market",
+      "giver": "hai",
+      "icon": "🥭",
+      "en": "Market helper",
+      "vi": "Giúp chợ",
+      "places": [
+        "market"
+      ],
+      "ages": [
+        "little",
+        "big"
+      ],
+      "festival": null,
+      "say": [
+        "My mangoes rolled out of the basket! Will you help me pick them up?",
+        "Xoài của bà lăn ra khỏi rổ rồi! Con nhặt giúp bà nhé?"
+      ],
+      "miss": [
+        "Grandma Hai sold all her mangoes. Thank you!",
+        "Bà Hai bán hết xoài rồi. Cảm ơn con!"
+      ],
+      "steps": [
+        {
+          "kind": "go",
+          "place": "market",
+          "icon": "🏮",
+          "en": "Walk to the market",
+          "vi": "Đi đến chợ",
+          "little": [
+            "Walk to the market",
+            "Đi đến chợ"
+          ],
+          "older": [
+            "Walk to the market",
+            "Đi đến chợ"
+          ]
+        },
+        {
+          "kind": "find",
+          "at": "v_bahai",
+          "n": 3,
+          "big": 5,
+          "thing": {
+            "icon": "🥭",
+            "en": "mangoes",
+            "vi": "quả xoài"
+          },
+          "icon": "🥭",
+          "en": "Pick up {n} mangoes",
+          "vi": "Nhặt {n} quả xoài",
+          "little": [
+            "Pick up 3 mangoes",
+            "Nhặt 3 quả xoài"
+          ],
+          "older": [
+            "Pick up 5 mangoes",
+            "Nhặt 5 quả xoài"
+          ]
+        },
+        {
+          "kind": "give",
+          "at": "v_bahai",
+          "icon": "🧑",
+          "en": "Give them to Grandma Hai",
+          "vi": "Đưa cho Bà Hai",
+          "little": [
+            "Give them to Grandma Hai",
+            "Đưa cho Bà Hai"
+          ],
+          "older": [
+            "Give them to Grandma Hai",
+            "Đưa cho Bà Hai"
+          ]
+        }
+      ],
+      "reward": {
+        "sticker": "mango",
+        "coins": 10
+      },
+      "title": [
+        "Market helper",
+        "Giúp chợ"
+      ],
+      "giverName": {
+        "icon": "🧑",
+        "en": "Grandma Hai",
+        "vi": "Bà Hai"
+      }
+    },
+    {
+      "id": "kite",
+      "giver": "haikite",
+      "icon": "🪁",
+      "en": "Kite day",
+      "vi": "Ngày thả diều",
+      "places": [
+        "vungtau"
+      ],
+      "ages": [
+        "little",
+        "big"
+      ],
+      "festival": null,
+      "say": [
+        "The wind is perfect for kites today! Bring the ribbons and we will fly.",
+        "Hôm nay gió thả diều đẹp lắm! Mang dải ruy băng tới, mình cùng thả nhé."
+      ],
+      "miss": [
+        "Your kite is still flying over the sea!",
+        "Diều của con vẫn còn bay trên biển đó!"
+      ],
+      "steps": [
+        {
+          "kind": "go",
+          "place": "vungtau",
+          "icon": "🏖️",
+          "en": "Walk to Vũng Tàu beach",
+          "vi": "Đi đến biển Vũng Tàu",
+          "little": [
+            "Walk to Vũng Tàu beach",
+            "Đi đến biển Vũng Tàu"
+          ],
+          "older": [
+            "Walk to Vũng Tàu beach",
+            "Đi đến biển Vũng Tàu"
+          ]
+        },
+        {
+          "kind": "find",
+          "at": "g_kite",
+          "n": 3,
+          "big": 5,
+          "thing": {
+            "icon": "🎀",
+            "en": "kite ribbons",
+            "vi": "dải ruy băng"
+          },
+          "icon": "🎀",
+          "en": "Find {n} kite ribbons",
+          "vi": "Tìm {n} dải ruy băng",
+          "little": [
+            "Find 3 kite ribbons",
+            "Tìm 3 dải ruy băng"
+          ],
+          "older": [
+            "Find 5 kite ribbons",
+            "Tìm 5 dải ruy băng"
+          ]
+        },
+        {
+          "kind": "play",
+          "at": "g_kite",
+          "icon": "🪁",
+          "en": "Fly a kite with Hai",
+          "vi": "Thả diều cùng anh Hai",
+          "little": [
+            "Fly a kite with Hai",
+            "Thả diều cùng anh Hai"
+          ],
+          "older": [
+            "Fly a kite with Hai",
+            "Thả diều cùng anh Hai"
+          ]
+        }
+      ],
+      "reward": {
+        "sticker": "kite",
+        "coins": 10
+      },
+      "title": [
+        "Kite day",
+        "Ngày thả diều"
+      ],
+      "giverName": {
+        "icon": "🪁",
+        "en": "Big Brother Hai",
+        "vi": "Anh Hai"
+      }
+    },
+    {
+      "id": "cloud",
+      "giver": "owl",
+      "icon": "☁️",
+      "en": "Grumpy Cloud",
+      "vi": "Mây Cau Có",
+      "places": [
+        "plateau",
+        "village"
+      ],
+      "ages": [
+        "little",
+        "big"
+      ],
+      "festival": null,
+      "say": [
+        "Grumpy Cloud is sad today. Sunshine and a song will cheer him up.",
+        "Hôm nay Mây Cau Có buồn. Ánh nắng và một bài hát sẽ làm mây vui lên."
+      ],
+      "miss": [
+        "Grumpy Cloud smiled all night!",
+        "Mây Cau Có cười cả đêm đó!"
+      ],
+      "steps": [
+        {
+          "kind": "find",
+          "at": "npc_owl",
+          "n": 3,
+          "big": 5,
+          "thing": {
+            "icon": "☀️",
+            "en": "sunbeams",
+            "vi": "tia nắng"
+          },
+          "icon": "☀️",
+          "en": "Catch {n} sunbeams",
+          "vi": "Bắt {n} tia nắng",
+          "little": [
+            "Catch 3 sunbeams",
+            "Bắt 3 tia nắng"
+          ],
+          "older": [
+            "Catch 5 sunbeams",
+            "Bắt 5 tia nắng"
+          ]
+        },
+        {
+          "kind": "go",
+          "place": "village",
+          "icon": "🪷",
+          "en": "Walk to Lotus Village",
+          "vi": "Đi đến Làng Sen",
+          "little": [
+            "Walk to Lotus Village",
+            "Đi đến Làng Sen"
+          ],
+          "older": [
+            "Walk to Lotus Village",
+            "Đi đến Làng Sen"
+          ]
+        },
+        {
+          "kind": "play",
+          "at": "xylo",
+          "icon": "🎶",
+          "en": "Play a happy tune",
+          "vi": "Chơi một bài vui",
+          "little": [
+            "Play a happy tune",
+            "Chơi một bài vui"
+          ],
+          "older": [
+            "Play a happy tune",
+            "Chơi một bài vui"
+          ]
+        }
+      ],
+      "reward": {
+        "sticker": "rainbow",
+        "coins": 10
+      },
+      "title": [
+        "Grumpy Cloud",
+        "Mây Cau Có"
+      ],
+      "giverName": {
+        "icon": "🦉",
+        "en": "Grandpa Owl",
+        "vi": "Ông Cú"
+      }
+    },
+    {
+      "id": "ferry",
+      "giver": "owl",
+      "icon": "⛴️",
+      "en": "Ferry to Hà Nội",
+      "vi": "Đi phà đến Hà Nội",
+      "places": [
+        "village",
+        "hanoi"
+      ],
+      "ages": [
+        "little",
+        "big"
+      ],
+      "festival": null,
+      "say": [
+        "Uncle Tễu is putting on a puppet show in Hà Nội. Take the ferry and see it!",
+        "Chú Tễu diễn múa rối ở Hà Nội. Con đi phà đến xem nhé!"
+      ],
+      "miss": [
+        "Uncle Tễu still talks about your visit!",
+        "Chú Tễu vẫn nhắc chuyến thăm của con đó!"
+      ],
+      "steps": [
+        {
+          "kind": "talk",
+          "at": "ferry*",
+          "icon": "⛴️",
+          "en": "Ride a ferry",
+          "vi": "Đi phà",
+          "little": [
+            "Ride a ferry",
+            "Đi phà"
+          ],
+          "older": [
+            "Ride a ferry",
+            "Đi phà"
+          ]
+        },
+        {
+          "kind": "go",
+          "place": "hanoi",
+          "icon": "🐢",
+          "en": "Walk to Hà Nội",
+          "vi": "Đi đến Hà Nội",
+          "little": [
+            "Walk to Hà Nội",
+            "Đi đến Hà Nội"
+          ],
+          "older": [
+            "Walk to Hà Nội",
+            "Đi đến Hà Nội"
+          ]
+        },
+        {
+          "kind": "play",
+          "at": "g_puppets",
+          "icon": "🎭",
+          "en": "Watch the water puppets",
+          "vi": "Xem múa rối nước",
+          "little": [
+            "Watch the water puppets",
+            "Xem múa rối nước"
+          ],
+          "older": [
+            "Watch the water puppets",
+            "Xem múa rối nước"
+          ]
+        }
+      ],
+      "reward": {
+        "sticker": "turtle",
+        "coins": 10
+      },
+      "title": [
+        "Ferry to Hà Nội",
+        "Đi phà đến Hà Nội"
+      ],
+      "giverName": {
+        "icon": "🦉",
+        "en": "Grandpa Owl",
+        "vi": "Ông Cú"
+      }
+    },
+    {
+      "id": "lotus",
+      "giver": "mai",
+      "icon": "🪷",
+      "en": "Lotus picking",
+      "vi": "Hái sen",
+      "places": [
+        "village"
+      ],
+      "ages": [
+        "little",
+        "big"
+      ],
+      "festival": null,
+      "say": [
+        "The lotus flowers are open! Pick some for the village altar.",
+        "Hoa sen nở rồi! Con hái vài bông cho bàn thờ làng nhé."
+      ],
+      "miss": [
+        "Auntie Mai's lotus tea smells lovely!",
+        "Trà sen của Cô Mai thơm lắm đó!"
+      ],
+      "steps": [
+        {
+          "kind": "go",
+          "place": "village",
+          "icon": "🪷",
+          "en": "Walk to Lotus Village",
+          "vi": "Đi đến Làng Sen",
+          "little": [
+            "Walk to Lotus Village",
+            "Đi đến Làng Sen"
+          ],
+          "older": [
+            "Walk to Lotus Village",
+            "Đi đến Làng Sen"
+          ]
+        },
+        {
+          "kind": "find",
+          "at": "lv_bench",
+          "n": 3,
+          "big": 5,
+          "thing": {
+            "icon": "🪷",
+            "en": "lotus flowers",
+            "vi": "bông sen"
+          },
+          "icon": "🪷",
+          "en": "Pick {n} lotus flowers",
+          "vi": "Hái {n} bông sen",
+          "little": [
+            "Pick 3 lotus flowers",
+            "Hái 3 bông sen"
+          ],
+          "older": [
+            "Pick 5 lotus flowers",
+            "Hái 5 bông sen"
+          ]
+        },
+        {
+          "kind": "give",
+          "at": "npc_mai",
+          "icon": "👩",
+          "en": "Give them to Auntie Mai",
+          "vi": "Đưa cho Cô Mai",
+          "little": [
+            "Give them to Auntie Mai",
+            "Đưa cho Cô Mai"
+          ],
+          "older": [
+            "Give them to Auntie Mai",
+            "Đưa cho Cô Mai"
+          ]
+        }
+      ],
+      "reward": {
+        "sticker": "place_village",
+        "coins": 10
+      },
+      "title": [
+        "Lotus picking",
+        "Hái sen"
+      ],
+      "giverName": {
+        "icon": "👩",
+        "en": "Auntie Mai",
+        "vi": "Cô Mai"
+      }
+    },
+    {
+      "id": "buffalo",
+      "giver": "bear",
+      "icon": "🐃",
+      "en": "Feed Mr. Bear's buffalo",
+      "vi": "Cho trâu của Bác Gấu ăn",
+      "places": [
+        "home",
+        "paddies"
+      ],
+      "ages": [
+        "little",
+        "big"
+      ],
+      "festival": null,
+      "say": [
+        "My buffalo is hungry out in the rice fields. Can you take him some hay?",
+        "Trâu của bác đói bụng ngoài đồng. Con mang rơm ra cho trâu nhé?"
+      ],
+      "miss": [
+        "The buffalo had a long happy nap!",
+        "Trâu ngủ một giấc thật ngon đó!"
+      ],
+      "steps": [
+        {
+          "kind": "find",
+          "at": "hay",
+          "n": 3,
+          "big": 5,
+          "thing": {
+            "icon": "🌾",
+            "en": "bundles of hay",
+            "vi": "bó rơm"
+          },
+          "icon": "🌾",
+          "en": "Gather {n} bundles of hay",
+          "vi": "Gom {n} bó rơm",
+          "little": [
+            "Gather 3 bundles of hay",
+            "Gom 3 bó rơm"
+          ],
+          "older": [
+            "Gather 5 bundles of hay",
+            "Gom 5 bó rơm"
+          ]
+        },
+        {
+          "kind": "go",
+          "place": "paddies",
+          "icon": "🌾",
+          "en": "Walk to the rice fields",
+          "vi": "Đi ra đồng lúa",
+          "little": [
+            "Walk to the rice fields",
+            "Đi ra đồng lúa"
+          ],
+          "older": [
+            "Walk to the rice fields",
+            "Đi ra đồng lúa"
+          ]
+        },
+        {
+          "kind": "give",
+          "at": "buffalo0",
+          "icon": "🐃",
+          "en": "Feed the buffalo",
+          "vi": "Cho trâu ăn",
+          "little": [
+            "Feed the buffalo",
+            "Cho trâu ăn"
+          ],
+          "older": [
+            "Feed the buffalo",
+            "Cho trâu ăn"
+          ]
+        }
+      ],
+      "reward": {
+        "sticker": "buffalo",
+        "coins": 10
+      },
+      "title": [
+        "Feed Mr. Bear's buffalo",
+        "Cho trâu của Bác Gấu ăn"
+      ],
+      "giverName": {
+        "icon": "🐻",
+        "en": "Mr. Bear",
+        "vi": "Bác Gấu"
+      }
+    },
+    {
+      "id": "banhmi",
+      "giver": "nghi",
+      "icon": "🥖",
+      "en": "Bánh mì delivery",
+      "vi": "Giao bánh mì",
+      "places": [
+        "town",
+        "plateau"
+      ],
+      "ages": [
+        "little",
+        "big"
+      ],
+      "festival": null,
+      "say": [
+        "Grandpa Owl ordered bánh mì for breakfast. Can you take them up the hill?",
+        "Ông Cú đặt bánh mì ăn sáng. Con mang lên đồi giúp ông nhé?"
+      ],
+      "miss": [
+        "Grandpa Owl loved his bánh mì!",
+        "Ông Cú thích bánh mì lắm đó!"
+      ],
+      "steps": [
+        {
+          "kind": "find",
+          "at": "npc_ongnghi",
+          "n": 3,
+          "big": 5,
+          "thing": {
+            "icon": "🥖",
+            "en": "bánh mì",
+            "vi": "ổ bánh mì"
+          },
+          "icon": "🥖",
+          "en": "Pack {n} bánh mì",
+          "vi": "Gói {n} ổ bánh mì",
+          "little": [
+            "Pack 3 bánh mì",
+            "Gói 3 ổ bánh mì"
+          ],
+          "older": [
+            "Pack 5 bánh mì",
+            "Gói 5 ổ bánh mì"
+          ]
+        },
+        {
+          "kind": "go",
+          "place": "plateau",
+          "icon": "🦉",
+          "en": "Climb up to Grandpa Owl",
+          "vi": "Leo lên chỗ Ông Cú",
+          "little": [
+            "Climb up to Grandpa Owl",
+            "Leo lên chỗ Ông Cú"
+          ],
+          "older": [
+            "Climb up to Grandpa Owl",
+            "Leo lên chỗ Ông Cú"
+          ]
+        },
+        {
+          "kind": "give",
+          "at": "npc_owl",
+          "icon": "🦉",
+          "en": "Give them to Grandpa Owl",
+          "vi": "Đưa cho Ông Cú",
+          "little": [
+            "Give them to Grandpa Owl",
+            "Đưa cho Ông Cú"
+          ],
+          "older": [
+            "Give them to Grandpa Owl",
+            "Đưa cho Ông Cú"
+          ]
+        }
+      ],
+      "reward": {
+        "sticker": "banhmi",
+        "coins": 10
+      },
+      "title": [
+        "Bánh mì delivery",
+        "Giao bánh mì"
+      ],
+      "giverName": {
+        "icon": "👴",
+        "en": "Grandpa Nghi",
+        "vi": "Ông Nghi"
+      }
+    },
+    {
+      "id": "lanterns",
+      "giver": "teo",
+      "icon": "🏮",
+      "en": "Lantern night",
+      "vi": "Đêm hội đèn lồng",
+      "places": [
+        "village"
+      ],
+      "ages": [
+        "little",
+        "big"
+      ],
+      "festival": "midautumn",
+      "say": [
+        "It is lantern night! Help me find lanterns for the parade.",
+        "Đêm hội đèn lồng rồi! Giúp tớ tìm đèn lồng cho đoàn rước nhé."
+      ],
+      "miss": [
+        "The lanterns are still shining for you!",
+        "Đèn lồng vẫn còn sáng cho con đó!"
+      ],
+      "steps": [
+        {
+          "kind": "go",
+          "place": "village",
+          "icon": "🪷",
+          "en": "Walk to Lotus Village",
+          "vi": "Đi đến Làng Sen",
+          "little": [
+            "Walk to Lotus Village",
+            "Đi đến Làng Sen"
+          ],
+          "older": [
+            "Walk to Lotus Village",
+            "Đi đến Làng Sen"
+          ]
+        },
+        {
+          "kind": "find",
+          "at": "statue",
+          "n": 3,
+          "big": 5,
+          "thing": {
+            "icon": "🏮",
+            "en": "lanterns",
+            "vi": "đèn lồng"
+          },
+          "icon": "🏮",
+          "en": "Find {n} lanterns",
+          "vi": "Tìm {n} đèn lồng",
+          "little": [
+            "Find 3 lanterns",
+            "Tìm 3 đèn lồng"
+          ],
+          "older": [
+            "Find 5 lanterns",
+            "Tìm 5 đèn lồng"
+          ]
+        },
+        {
+          "kind": "give",
+          "at": "npc_teo",
+          "icon": "👦",
+          "en": "Bring them to Tèo",
+          "vi": "Mang đến cho Tèo",
+          "little": [
+            "Bring them to Tèo",
+            "Mang đến cho Tèo"
+          ],
+          "older": [
+            "Bring them to Tèo",
+            "Mang đến cho Tèo"
+          ]
+        }
+      ],
+      "reward": {
+        "sticker": "lantern",
+        "coins": 10
+      },
+      "title": [
+        "Lantern night",
+        "Đêm hội đèn lồng"
+      ],
+      "giverName": {
+        "icon": "👦",
+        "en": "Tèo",
+        "vi": "Tèo"
+      }
+    },
+    {
+      "id": "koala",
+      "giver": "tash",
+      "icon": "🐨",
+      "en": "Koala's lunch",
+      "vi": "Bữa trưa của koala",
+      "places": [
+        "brisbane"
+      ],
+      "ages": [
+        "little",
+        "big"
+      ],
+      "festival": null,
+      "say": [
+        "Our koala is waking up hungry. Find some fresh gum leaves!",
+        "Bạn koala thức dậy đói bụng. Con tìm lá bạch đàn tươi nhé!"
+      ],
+      "miss": [
+        "The koala is sleeping with a full tummy!",
+        "Bạn koala no bụng ngủ ngon rồi!"
+      ],
+      "steps": [
+        {
+          "kind": "go",
+          "place": "brisbane",
+          "icon": "🐨",
+          "en": "Walk to Brisbane",
+          "vi": "Đi đến Brisbane",
+          "little": [
+            "Walk to Brisbane",
+            "Đi đến Brisbane"
+          ],
+          "older": [
+            "Walk to Brisbane",
+            "Đi đến Brisbane"
+          ]
+        },
+        {
+          "kind": "find",
+          "at": "g_koala",
+          "n": 3,
+          "big": 5,
+          "thing": {
+            "icon": "🍃",
+            "en": "gum leaves",
+            "vi": "lá bạch đàn"
+          },
+          "icon": "🍃",
+          "en": "Find {n} gum leaves",
+          "vi": "Tìm {n} lá bạch đàn",
+          "little": [
+            "Find 3 gum leaves",
+            "Tìm 3 lá bạch đàn"
+          ],
+          "older": [
+            "Find 5 gum leaves",
+            "Tìm 5 lá bạch đàn"
+          ]
+        },
+        {
+          "kind": "play",
+          "at": "g_koala",
+          "icon": "🐨",
+          "en": "Help Ranger Tash",
+          "vi": "Giúp cô Tash",
+          "little": [
+            "Help Ranger Tash",
+            "Giúp cô Tash"
+          ],
+          "older": [
+            "Help Ranger Tash",
+            "Giúp cô Tash"
+          ]
+        }
+      ],
+      "reward": {
+        "sticker": "koala",
+        "coins": 10
+      },
+      "title": [
+        "Koala's lunch",
+        "Bữa trưa của koala"
+      ],
+      "giverName": {
+        "icon": "🐨",
+        "en": "Ranger Tash",
+        "vi": "Cô kiểm lâm Tash"
+      }
+    },
+    {
+      "id": "panda",
+      "giver": "lin",
+      "icon": "🐼",
+      "en": "Bamboo for the panda",
+      "vi": "Tre cho gấu trúc",
+      "places": [
+        "china"
+      ],
+      "ages": [
+        "little",
+        "big"
+      ],
+      "festival": null,
+      "say": [
+        "The panda wants crunchy bamboo shoots. Can you find some?",
+        "Gấu trúc muốn ăn măng tre giòn. Con tìm giúp bà nhé?"
+      ],
+      "miss": [
+        "The panda is still munching your bamboo!",
+        "Gấu trúc vẫn đang nhai măng con tìm đó!"
+      ],
+      "steps": [
+        {
+          "kind": "go",
+          "place": "china",
+          "icon": "🐼",
+          "en": "Walk to China Town",
+          "vi": "Đi đến Làng Trung Hoa",
+          "little": [
+            "Walk to China Town",
+            "Đi đến Làng Trung Hoa"
+          ],
+          "older": [
+            "Walk to China Town",
+            "Đi đến Làng Trung Hoa"
+          ]
+        },
+        {
+          "kind": "find",
+          "at": "cn_pagoda",
+          "n": 3,
+          "big": 5,
+          "thing": {
+            "icon": "🎋",
+            "en": "bamboo shoots",
+            "vi": "mầm tre"
+          },
+          "icon": "🎋",
+          "en": "Find {n} bamboo shoots",
+          "vi": "Tìm {n} mầm tre",
+          "little": [
+            "Find 3 bamboo shoots",
+            "Tìm 3 mầm tre"
+          ],
+          "older": [
+            "Find 5 bamboo shoots",
+            "Tìm 5 mầm tre"
+          ]
+        },
+        {
+          "kind": "give",
+          "at": "g_dragon",
+          "icon": "👵",
+          "en": "Give them to Grandma Lin",
+          "vi": "Đưa cho Bà Lin",
+          "little": [
+            "Give them to Grandma Lin",
+            "Đưa cho Bà Lin"
+          ],
+          "older": [
+            "Give them to Grandma Lin",
+            "Đưa cho Bà Lin"
+          ]
+        }
+      ],
+      "reward": {
+        "sticker": "panda",
+        "coins": 10
+      },
+      "title": [
+        "Bamboo for the panda",
+        "Tre cho gấu trúc"
+      ],
+      "giverName": {
+        "icon": "👵",
+        "en": "Grandma Lin",
+        "vi": "Bà Lin"
+      }
+    },
+    {
+      "id": "peacock",
+      "giver": "asha",
+      "icon": "🦚",
+      "en": "Peacock feathers",
+      "vi": "Lông chim công",
+      "places": [
+        "india"
+      ],
+      "ages": [
+        "little",
+        "big"
+      ],
+      "festival": null,
+      "say": [
+        "The peacock dropped his feathers. They make a beautiful rangoli!",
+        "Chim công rụng lông rồi. Lông công làm tranh rangoli đẹp lắm!"
+      ],
+      "miss": [
+        "Grandma Asha's rangoli has your feathers in it!",
+        "Tranh rangoli của Bà Asha có lông công con tìm đó!"
+      ],
+      "steps": [
+        {
+          "kind": "go",
+          "place": "india",
+          "icon": "🐘",
+          "en": "Walk to India Village",
+          "vi": "Đi đến Làng Ấn Độ",
+          "little": [
+            "Walk to India Village",
+            "Đi đến Làng Ấn Độ"
+          ],
+          "older": [
+            "Walk to India Village",
+            "Đi đến Làng Ấn Độ"
+          ]
+        },
+        {
+          "kind": "find",
+          "at": "in_taj",
+          "n": 3,
+          "big": 5,
+          "thing": {
+            "icon": "🪶",
+            "en": "feathers",
+            "vi": "lông công"
+          },
+          "icon": "🪶",
+          "en": "Find {n} feathers",
+          "vi": "Tìm {n} chiếc lông",
+          "little": [
+            "Find 3 feathers",
+            "Tìm 3 chiếc lông"
+          ],
+          "older": [
+            "Find 5 feathers",
+            "Tìm 5 chiếc lông"
+          ]
+        },
+        {
+          "kind": "give",
+          "at": "g_rangoli",
+          "icon": "👵",
+          "en": "Give them to Grandma Asha",
+          "vi": "Đưa cho Bà Asha",
+          "little": [
+            "Give them to Grandma Asha",
+            "Đưa cho Bà Asha"
+          ],
+          "older": [
+            "Give them to Grandma Asha",
+            "Đưa cho Bà Asha"
+          ]
+        }
+      ],
+      "reward": {
+        "sticker": "peacock",
+        "coins": 10
+      },
+      "title": [
+        "Peacock feathers",
+        "Lông chim công"
+      ],
+      "giverName": {
+        "icon": "👵",
+        "en": "Grandma Asha",
+        "vi": "Bà Asha"
+      }
+    },
+    {
+      "id": "harbour",
+      "giver": "molly",
+      "icon": "⛴️",
+      "en": "Harbour shells",
+      "vi": "Vỏ sò ở bến cảng",
+      "places": [
+        "sydney"
+      ],
+      "ages": [
+        "little",
+        "big"
+      ],
+      "festival": null,
+      "say": [
+        "Shells washed up by the ferries. Collect them, then sail with me!",
+        "Vỏ sò dạt vào bến phà. Con nhặt rồi đi thuyền với cô nhé!"
+      ],
+      "miss": [
+        "Captain Molly says hello from the harbour!",
+        "Thuyền trưởng Molly gửi lời chào từ bến cảng!"
+      ],
+      "steps": [
+        {
+          "kind": "go",
+          "place": "sydney",
+          "icon": "⛴️",
+          "en": "Walk to Sydney",
+          "vi": "Đi đến Sydney",
+          "little": [
+            "Walk to Sydney",
+            "Đi đến Sydney"
+          ],
+          "older": [
+            "Walk to Sydney",
+            "Đi đến Sydney"
+          ]
+        },
+        {
+          "kind": "find",
+          "at": "g_ferries",
+          "n": 3,
+          "big": 5,
+          "thing": {
+            "icon": "🐚",
+            "en": "shells",
+            "vi": "vỏ sò"
+          },
+          "icon": "🐚",
+          "en": "Find {n} shells",
+          "vi": "Tìm {n} vỏ sò",
+          "little": [
+            "Find 3 shells",
+            "Tìm 3 vỏ sò"
+          ],
+          "older": [
+            "Find 5 shells",
+            "Tìm 5 vỏ sò"
+          ]
+        },
+        {
+          "kind": "play",
+          "at": "g_ferries",
+          "icon": "⛴️",
+          "en": "Sail with Captain Molly",
+          "vi": "Đi thuyền cùng cô Molly",
+          "little": [
+            "Sail with Captain Molly",
+            "Đi thuyền cùng cô Molly"
+          ],
+          "older": [
+            "Sail with Captain Molly",
+            "Đi thuyền cùng cô Molly"
+          ]
+        }
+      ],
+      "reward": {
+        "sticker": "dolphin",
+        "coins": 10
+      },
+      "title": [
+        "Harbour shells",
+        "Vỏ sò ở bến cảng"
+      ],
+      "giverName": {
+        "icon": "⛴️",
+        "en": "Captain Molly",
+        "vi": "Thuyền trưởng Molly"
+      }
+    },
+    {
+      "id": "tram",
+      "giver": "sam",
+      "icon": "🚋",
+      "en": "Tram ride",
+      "vi": "Đi tàu điện",
+      "places": [
+        "melbourne"
+      ],
+      "ages": [
+        "little",
+        "big"
+      ],
+      "festival": null,
+      "say": [
+        "All aboard! First, find the lost tram bells.",
+        "Lên tàu nào! Trước tiên con tìm mấy cái chuông tàu bị rơi nhé."
+      ],
+      "miss": [
+        "The tram bells go ding ding for you!",
+        "Chuông tàu kêu leng keng chào con đó!"
+      ],
+      "steps": [
+        {
+          "kind": "go",
+          "place": "melbourne",
+          "icon": "🚋",
+          "en": "Walk to Melbourne",
+          "vi": "Đi đến Melbourne",
+          "little": [
+            "Walk to Melbourne",
+            "Đi đến Melbourne"
+          ],
+          "older": [
+            "Walk to Melbourne",
+            "Đi đến Melbourne"
+          ]
+        },
+        {
+          "kind": "find",
+          "at": "g_tram",
+          "n": 3,
+          "big": 5,
+          "thing": {
+            "icon": "🔔",
+            "en": "tram bells",
+            "vi": "chuông tàu"
+          },
+          "icon": "🔔",
+          "en": "Find {n} tram bells",
+          "vi": "Tìm {n} chuông tàu",
+          "little": [
+            "Find 3 tram bells",
+            "Tìm 3 chuông tàu"
+          ],
+          "older": [
+            "Find 5 tram bells",
+            "Tìm 5 chuông tàu"
+          ]
+        },
+        {
+          "kind": "play",
+          "at": "g_tram",
+          "icon": "🚋",
+          "en": "Ride with Conductor Sam",
+          "vi": "Đi tàu cùng chú Sam",
+          "little": [
+            "Ride with Conductor Sam",
+            "Đi tàu cùng chú Sam"
+          ],
+          "older": [
+            "Ride with Conductor Sam",
+            "Đi tàu cùng chú Sam"
+          ]
+        }
+      ],
+      "reward": {
+        "sticker": "penguin",
+        "coins": 10
+      },
+      "title": [
+        "Tram ride",
+        "Đi tàu điện"
+      ],
+      "giverName": {
+        "icon": "🚋",
+        "en": "Conductor Sam",
+        "vi": "Chú soát vé Sam"
+      }
+    },
+    {
+      "id": "dragon",
+      "giver": "long",
+      "icon": "🐉",
+      "en": "Dragon Bridge",
+      "vi": "Cầu Rồng",
+      "places": [
+        "danang"
+      ],
+      "ages": [
+        "little",
+        "big"
+      ],
+      "festival": null,
+      "say": [
+        "The dragon lost his shiny scales. Find them before the fire show!",
+        "Rồng làm rơi vảy lấp lánh. Con tìm trước giờ phun lửa nhé!"
+      ],
+      "miss": [
+        "The dragon breathed fire just for you!",
+        "Rồng phun lửa tặng riêng con đó!"
+      ],
+      "steps": [
+        {
+          "kind": "go",
+          "place": "danang",
+          "icon": "🐉",
+          "en": "Walk to Đà Nẵng",
+          "vi": "Đi đến Đà Nẵng",
+          "little": [
+            "Walk to Đà Nẵng",
+            "Đi đến Đà Nẵng"
+          ],
+          "older": [
+            "Walk to Đà Nẵng",
+            "Đi đến Đà Nẵng"
+          ]
+        },
+        {
+          "kind": "find",
+          "at": "g_dragonfire",
+          "n": 3,
+          "big": 5,
+          "thing": {
+            "icon": "🌟",
+            "en": "dragon scales",
+            "vi": "vảy rồng"
+          },
+          "icon": "🌟",
+          "en": "Find {n} dragon scales",
+          "vi": "Tìm {n} vảy rồng",
+          "little": [
+            "Find 3 dragon scales",
+            "Tìm 3 vảy rồng"
+          ],
+          "older": [
+            "Find 5 dragon scales",
+            "Tìm 5 vảy rồng"
+          ]
+        },
+        {
+          "kind": "play",
+          "at": "g_dragonfire",
+          "icon": "🐉",
+          "en": "Watch the dragon show",
+          "vi": "Xem rồng phun lửa",
+          "little": [
+            "Watch the dragon show",
+            "Xem rồng phun lửa"
+          ],
+          "older": [
+            "Watch the dragon show",
+            "Xem rồng phun lửa"
+          ]
+        }
+      ],
+      "reward": {
+        "sticker": "dragon",
+        "coins": 10
+      },
+      "title": [
+        "Dragon Bridge",
+        "Cầu Rồng"
+      ],
+      "giverName": {
+        "icon": "🐉",
+        "en": "Big Brother Long",
+        "vi": "Anh Long"
+      }
+    },
+    {
+      "id": "puppets",
+      "giver": "teu",
+      "icon": "🎭",
+      "en": "Water puppets",
+      "vi": "Múa rối nước",
+      "places": [
+        "hanoi"
+      ],
+      "ages": [
+        "little",
+        "big"
+      ],
+      "festival": null,
+      "say": [
+        "My puppets lost their little hats. Will you find them?",
+        "Các con rối của chú mất mũ rồi. Con tìm giúp chú nhé?"
+      ],
+      "miss": [
+        "The puppets wear their hats proudly now!",
+        "Các con rối đội mũ thật oai rồi!"
+      ],
+      "steps": [
+        {
+          "kind": "go",
+          "place": "hanoi",
+          "icon": "🐢",
+          "en": "Walk to Hà Nội",
+          "vi": "Đi đến Hà Nội",
+          "little": [
+            "Walk to Hà Nội",
+            "Đi đến Hà Nội"
+          ],
+          "older": [
+            "Walk to Hà Nội",
+            "Đi đến Hà Nội"
+          ]
+        },
+        {
+          "kind": "find",
+          "at": "g_puppets",
+          "n": 3,
+          "big": 5,
+          "thing": {
+            "icon": "👑",
+            "en": "puppet hats",
+            "vi": "mũ con rối"
+          },
+          "icon": "👑",
+          "en": "Find {n} puppet hats",
+          "vi": "Tìm {n} mũ con rối",
+          "little": [
+            "Find 3 puppet hats",
+            "Tìm 3 mũ con rối"
+          ],
+          "older": [
+            "Find 5 puppet hats",
+            "Tìm 5 mũ con rối"
+          ]
+        },
+        {
+          "kind": "play",
+          "at": "g_puppets",
+          "icon": "🎭",
+          "en": "Watch the water puppets",
+          "vi": "Xem múa rối nước",
+          "little": [
+            "Watch the water puppets",
+            "Xem múa rối nước"
+          ],
+          "older": [
+            "Watch the water puppets",
+            "Xem múa rối nước"
+          ]
+        }
+      ],
+      "reward": {
+        "sticker": "pc_puppettheatre",
+        "coins": 10
+      },
+      "title": [
+        "Water puppets",
+        "Múa rối nước"
+      ],
+      "giverName": {
+        "icon": "🎭",
+        "en": "Uncle Tễu",
+        "vi": "Chú Tễu"
+      }
+    },
+    {
+      "id": "quanho",
+      "giver": "dao",
+      "icon": "🎶",
+      "en": "Quan họ song",
+      "vi": "Bài hát quan họ",
+      "places": [
+        "bacninh"
+      ],
+      "ages": [
+        "little",
+        "big"
+      ],
+      "festival": null,
+      "say": [
+        "The singers need betel leaves to welcome guests. Can you bring some?",
+        "Các liền anh liền chị cần lá trầu đón khách. Con mang giúp nhé?"
+      ],
+      "miss": [
+        "The Quan họ singers sang your song!",
+        "Các liền anh liền chị hát bài của con đó!"
+      ],
+      "steps": [
+        {
+          "kind": "go",
+          "place": "bacninh",
+          "icon": "🕰️",
+          "en": "Walk to Bắc Ninh",
+          "vi": "Đi đến Bắc Ninh",
+          "little": [
+            "Walk to Bắc Ninh",
+            "Đi đến Bắc Ninh"
+          ],
+          "older": [
+            "Walk to Bắc Ninh",
+            "Đi đến Bắc Ninh"
+          ]
+        },
+        {
+          "kind": "find",
+          "at": "npc_quanho",
+          "n": 3,
+          "big": 5,
+          "thing": {
+            "icon": "🍃",
+            "en": "betel leaves",
+            "vi": "lá trầu"
+          },
+          "icon": "🍃",
+          "en": "Find {n} betel leaves",
+          "vi": "Tìm {n} lá trầu",
+          "little": [
+            "Find 3 betel leaves",
+            "Tìm 3 lá trầu"
+          ],
+          "older": [
+            "Find 5 betel leaves",
+            "Tìm 5 lá trầu"
+          ]
+        },
+        {
+          "kind": "give",
+          "at": "g_dongho",
+          "icon": "👵",
+          "en": "Give them to Grandma Đào",
+          "vi": "Đưa cho Bà Đào",
+          "little": [
+            "Give them to Grandma Đào",
+            "Đưa cho Bà Đào"
+          ],
+          "older": [
+            "Give them to Grandma Đào",
+            "Đưa cho Bà Đào"
+          ]
+        }
+      ],
+      "reward": {
+        "sticker": "pc_quanho",
+        "coins": 10
+      },
+      "title": [
+        "Quan họ song",
+        "Bài hát quan họ"
+      ],
+      "giverName": {
+        "icon": "👵",
+        "en": "Grandma Đào",
+        "vi": "Bà Đào"
+      }
+    },
+    {
+      "id": "traffic",
+      "giver": "colan",
+      "icon": "⛑️",
+      "en": "Traffic helper",
+      "vi": "Bạn giúp giao thông",
+      "places": [
+        "saigon"
+      ],
+      "ages": [
+        "little",
+        "big"
+      ],
+      "festival": null,
+      "say": [
+        "Riders dropped their helmets! Find them, then help me with the traffic lights.",
+        "Các bác lái xe làm rơi mũ bảo hiểm! Con tìm rồi giúp cô điều khiển đèn nhé."
+      ],
+      "miss": [
+        "Everyone rode home safely, thanks to you!",
+        "Mọi người về nhà an toàn nhờ con đó!"
+      ],
+      "steps": [
+        {
+          "kind": "go",
+          "place": "saigon",
+          "icon": "🛵",
+          "en": "Walk to Hồ Chí Minh City",
+          "vi": "Đi đến TP. Hồ Chí Minh",
+          "little": [
+            "Walk to Hồ Chí Minh City",
+            "Đi đến TP. Hồ Chí Minh"
+          ],
+          "older": [
+            "Walk to Hồ Chí Minh City",
+            "Đi đến TP. Hồ Chí Minh"
+          ]
+        },
+        {
+          "kind": "find",
+          "at": "g_traffic",
+          "n": 3,
+          "big": 5,
+          "thing": {
+            "icon": "⛑️",
+            "en": "helmets",
+            "vi": "mũ bảo hiểm"
+          },
+          "icon": "⛑️",
+          "en": "Find {n} helmets",
+          "vi": "Tìm {n} mũ bảo hiểm",
+          "little": [
+            "Find 3 helmets",
+            "Tìm 3 mũ bảo hiểm"
+          ],
+          "older": [
+            "Find 5 helmets",
+            "Tìm 5 mũ bảo hiểm"
+          ]
+        },
+        {
+          "kind": "play",
+          "at": "g_traffic",
+          "icon": "🚦",
+          "en": "Help Miss Lan",
+          "vi": "Giúp cô Lan",
+          "little": [
+            "Help Miss Lan",
+            "Giúp cô Lan"
+          ],
+          "older": [
+            "Help Miss Lan",
+            "Giúp cô Lan"
+          ]
+        }
+      ],
+      "reward": {
+        "sticker": "crane",
+        "coins": 10
+      },
+      "title": [
+        "Traffic helper",
+        "Bạn giúp giao thông"
+      ],
+      "giverName": {
+        "icon": "⛑️",
+        "en": "Miss Lan",
+        "vi": "Cô Lan"
+      }
+    },
+    {
+      "id": "picnic",
+      "giver": "bev",
+      "icon": "🧺",
+      "en": "Party picnic",
+      "vi": "Dã ngoại tiệc",
+      "places": [
+        "aussie"
+      ],
+      "ages": [
+        "little",
+        "big"
+      ],
+      "festival": null,
+      "say": [
+        "Chloe's party needs plates for the lamingtons. Can you find them?",
+        "Tiệc của Chloe cần đĩa đựng bánh lamington. Con tìm giúp cô nhé?"
+      ],
+      "miss": [
+        "Chloe saved you a lamington!",
+        "Chloe để dành cho con một cái bánh lamington đó!"
+      ],
+      "steps": [
+        {
+          "kind": "go",
+          "place": "aussie",
+          "icon": "🦘",
+          "en": "Walk to Aussie Corner",
+          "vi": "Đi đến Góc Nước Úc",
+          "little": [
+            "Walk to Aussie Corner",
+            "Đi đến Góc Nước Úc"
+          ],
+          "older": [
+            "Walk to Aussie Corner",
+            "Đi đến Góc Nước Úc"
+          ]
+        },
+        {
+          "kind": "find",
+          "at": "v_bev",
+          "n": 3,
+          "big": 5,
+          "thing": {
+            "icon": "🍽️",
+            "en": "plates",
+            "vi": "cái đĩa"
+          },
+          "icon": "🍽️",
+          "en": "Find {n} plates",
+          "vi": "Tìm {n} cái đĩa",
+          "little": [
+            "Find 3 plates",
+            "Tìm 3 cái đĩa"
+          ],
+          "older": [
+            "Find 5 plates",
+            "Tìm 5 cái đĩa"
+          ]
+        },
+        {
+          "kind": "give",
+          "at": "g_parcel",
+          "icon": "🎁",
+          "en": "Bring them to the party",
+          "vi": "Mang đến bữa tiệc",
+          "little": [
+            "Bring them to the party",
+            "Mang đến bữa tiệc"
+          ],
+          "older": [
+            "Bring them to the party",
+            "Mang đến bữa tiệc"
+          ]
+        }
+      ],
+      "reward": {
+        "sticker": "lamington",
+        "coins": 10
+      },
+      "title": [
+        "Party picnic",
+        "Dã ngoại tiệc"
+      ],
+      "giverName": {
+        "icon": "👩",
+        "en": "Aunty Bev",
+        "vi": "Cô Bev"
+      }
+    },
+    {
+      "id": "cricket",
+      "giver": "liam",
+      "icon": "🏏",
+      "en": "Backyard cricket",
+      "vi": "Chơi cricket sân sau",
+      "places": [
+        "aussie"
+      ],
+      "ages": [
+        "little",
+        "big"
+      ],
+      "festival": null,
+      "say": [
+        "We hit all the balls over the fence! Find them and we will play.",
+        "Bọn tớ đánh bóng bay qua hàng rào hết rồi! Bạn tìm rồi mình chơi nhé."
+      ],
+      "miss": [
+        "Liam is practising your big hit!",
+        "Liam đang tập cú đánh xa của con đó!"
+      ],
+      "steps": [
+        {
+          "kind": "go",
+          "place": "aussie",
+          "icon": "🦘",
+          "en": "Walk to Aussie Corner",
+          "vi": "Đi đến Góc Nước Úc",
+          "little": [
+            "Walk to Aussie Corner",
+            "Đi đến Góc Nước Úc"
+          ],
+          "older": [
+            "Walk to Aussie Corner",
+            "Đi đến Góc Nước Úc"
+          ]
+        },
+        {
+          "kind": "find",
+          "at": "g_cricket",
+          "n": 3,
+          "big": 5,
+          "thing": {
+            "icon": "🏏",
+            "en": "cricket balls",
+            "vi": "quả bóng"
+          },
+          "icon": "🏏",
+          "en": "Find {n} cricket balls",
+          "vi": "Tìm {n} quả bóng",
+          "little": [
+            "Find 3 cricket balls",
+            "Tìm 3 quả bóng"
+          ],
+          "older": [
+            "Find 5 cricket balls",
+            "Tìm 5 quả bóng"
+          ]
+        },
+        {
+          "kind": "play",
+          "at": "g_cricket",
+          "icon": "🏏",
+          "en": "Play cricket with Liam",
+          "vi": "Chơi cricket với Liam",
+          "little": [
+            "Play cricket with Liam",
+            "Chơi cricket với Liam"
+          ],
+          "older": [
+            "Play cricket with Liam",
+            "Chơi cricket với Liam"
+          ]
+        }
+      ],
+      "reward": {
+        "sticker": "emu",
+        "coins": 10
+      },
+      "title": [
+        "Backyard cricket",
+        "Chơi cricket sân sau"
+      ],
+      "giverName": {
+        "icon": "🏏",
+        "en": "Liam",
+        "vi": "Liam"
+      }
+    },
+    {
+      "id": "bunny",
+      "giver": "bear",
+      "icon": "🐰",
+      "en": "Bunny breakfast",
+      "vi": "Bữa sáng của thỏ",
+      "places": [
+        "home"
+      ],
+      "ages": [
+        "little",
+        "big"
+      ],
+      "festival": null,
+      "say": [
+        "The bunny is hungry. Ask me, then find her some carrots!",
+        "Thỏ con đói bụng rồi. Hỏi bác rồi tìm cà rốt cho thỏ nhé!"
+      ],
+      "miss": [
+        "The bunny hopped all day after her breakfast!",
+        "Thỏ con nhảy tung tăng cả ngày sau bữa sáng đó!"
+      ],
+      "steps": [
+        {
+          "kind": "talk",
+          "at": "bear",
+          "icon": "🐻",
+          "en": "Ask Mr. Bear",
+          "vi": "Hỏi Bác Gấu",
+          "little": [
+            "Ask Mr. Bear",
+            "Hỏi Bác Gấu"
+          ],
+          "older": [
+            "Ask Mr. Bear",
+            "Hỏi Bác Gấu"
+          ]
+        },
+        {
+          "kind": "find",
+          "at": "hutch",
+          "n": 3,
+          "big": 5,
+          "thing": {
+            "icon": "🥕",
+            "en": "carrots",
+            "vi": "củ cà rốt"
+          },
+          "icon": "🥕",
+          "en": "Find {n} carrots",
+          "vi": "Tìm {n} củ cà rốt",
+          "little": [
+            "Find 3 carrots",
+            "Tìm 3 củ cà rốt"
+          ],
+          "older": [
+            "Find 5 carrots",
+            "Tìm 5 củ cà rốt"
+          ]
+        },
+        {
+          "kind": "give",
+          "at": "hutch",
+          "icon": "🐰",
+          "en": "Feed the bunny",
+          "vi": "Cho thỏ ăn",
+          "little": [
+            "Feed the bunny",
+            "Cho thỏ ăn"
+          ],
+          "older": [
+            "Feed the bunny",
+            "Cho thỏ ăn"
+          ]
+        }
+      ],
+      "reward": {
+        "sticker": "bunny",
+        "coins": 10
+      },
+      "title": [
+        "Bunny breakfast",
+        "Bữa sáng của thỏ"
+      ],
+      "giverName": {
+        "icon": "🐻",
+        "en": "Mr. Bear",
+        "vi": "Bác Gấu"
+      }
+    },
+    {
+      "id": "hens",
+      "giver": "bear",
+      "icon": "🐔",
+      "en": "Happy hens",
+      "vi": "Gà vui vẻ",
+      "places": [
+        "home"
+      ],
+      "ages": [
+        "little",
+        "big"
+      ],
+      "festival": null,
+      "say": [
+        "The hens would love some corn. Then help me in the barn!",
+        "Đàn gà thích ăn bắp lắm. Xong rồi giúp bác ở kho nhé!"
+      ],
+      "miss": [
+        "The hens laid a big egg for you!",
+        "Gà đẻ một quả trứng to tặng con đó!"
+      ],
+      "steps": [
+        {
+          "kind": "find",
+          "at": "pen",
+          "n": 3,
+          "big": 5,
+          "thing": {
+            "icon": "🌽",
+            "en": "corn cobs",
+            "vi": "trái bắp"
+          },
+          "icon": "🌽",
+          "en": "Find {n} corn cobs",
+          "vi": "Tìm {n} trái bắp",
+          "little": [
+            "Find 3 corn cobs",
+            "Tìm 3 trái bắp"
+          ],
+          "older": [
+            "Find 5 corn cobs",
+            "Tìm 5 trái bắp"
+          ]
+        },
+        {
+          "kind": "give",
+          "at": "pen",
+          "icon": "🐔",
+          "en": "Feed the hens",
+          "vi": "Cho gà ăn",
+          "little": [
+            "Feed the hens",
+            "Cho gà ăn"
+          ],
+          "older": [
+            "Feed the hens",
+            "Cho gà ăn"
+          ]
+        },
+        {
+          "kind": "talk",
+          "at": "crate",
+          "icon": "🧺",
+          "en": "Collect from the barn",
+          "vi": "Lấy đồ trong kho",
+          "little": [
+            "Collect from the barn",
+            "Lấy đồ trong kho"
+          ],
+          "older": [
+            "Collect from the barn",
+            "Lấy đồ trong kho"
+          ]
+        }
+      ],
+      "reward": {
+        "sticker": "chick",
+        "coins": 10
+      },
+      "title": [
+        "Happy hens",
+        "Gà vui vẻ"
+      ],
+      "giverName": {
+        "icon": "🐻",
+        "en": "Mr. Bear",
+        "vi": "Bác Gấu"
+      }
+    },
+    {
+      "id": "ducklings",
+      "giver": "bear",
+      "icon": "🐥",
+      "en": "Ducklings home",
+      "vi": "Vịt con về nhà",
+      "places": [
+        "home"
+      ],
+      "ages": [
+        "little",
+        "big"
+      ],
+      "festival": null,
+      "say": [
+        "Three ducklings wandered off. Can you lead them home?",
+        "Mấy chú vịt con đi lạc rồi. Con dẫn vịt về nhà nhé?"
+      ],
+      "miss": [
+        "The ducklings are swimming with their mum!",
+        "Vịt con đang bơi cùng vịt mẹ đó!"
+      ],
+      "steps": [
+        {
+          "kind": "go",
+          "place": "home",
+          "icon": "🏡",
+          "en": "Walk to Sunny Farm",
+          "vi": "Đi đến Nông trại",
+          "little": [
+            "Walk to Sunny Farm",
+            "Đi đến Nông trại"
+          ],
+          "older": [
+            "Walk to Sunny Farm",
+            "Đi đến Nông trại"
+          ]
+        },
+        {
+          "kind": "find",
+          "at": "duckmaze",
+          "n": 3,
+          "big": 5,
+          "thing": {
+            "icon": "🐥",
+            "en": "ducklings",
+            "vi": "vịt con"
+          },
+          "icon": "🐥",
+          "en": "Find {n} ducklings",
+          "vi": "Tìm {n} vịt con",
+          "little": [
+            "Find 3 ducklings",
+            "Tìm 3 vịt con"
+          ],
+          "older": [
+            "Find 5 ducklings",
+            "Tìm 5 vịt con"
+          ]
+        },
+        {
+          "kind": "play",
+          "at": "duckmaze",
+          "icon": "🦆",
+          "en": "Help the duckling home",
+          "vi": "Giúp vịt con về nhà",
+          "little": [
+            "Help the duckling home",
+            "Giúp vịt con về nhà"
+          ],
+          "older": [
+            "Help the duckling home",
+            "Giúp vịt con về nhà"
+          ]
+        }
+      ],
+      "reward": {
+        "sticker": "duck",
+        "coins": 10
+      },
+      "title": [
+        "Ducklings home",
+        "Vịt con về nhà"
+      ],
+      "giverName": {
+        "icon": "🐻",
+        "en": "Mr. Bear",
+        "vi": "Bác Gấu"
+      }
+    },
+    {
+      "id": "stars",
+      "giver": "owl",
+      "icon": "⭐",
+      "en": "Owl's star map",
+      "vi": "Bản đồ sao của Ông Cú",
+      "places": [
+        "plateau"
+      ],
+      "ages": [
+        "little",
+        "big"
+      ],
+      "festival": null,
+      "say": [
+        "Some stars fell out of my star map. Will you put them back?",
+        "Mấy ngôi sao rơi khỏi bản đồ sao của ông. Con gắn lại giúp ông nhé?"
+      ],
+      "miss": [
+        "Your stars twinkled all night long!",
+        "Những ngôi sao của con lấp lánh cả đêm đó!"
+      ],
+      "steps": [
+        {
+          "kind": "go",
+          "place": "plateau",
+          "icon": "🦉",
+          "en": "Climb up to Grandpa Owl",
+          "vi": "Leo lên chỗ Ông Cú",
+          "little": [
+            "Climb up to Grandpa Owl",
+            "Leo lên chỗ Ông Cú"
+          ],
+          "older": [
+            "Climb up to Grandpa Owl",
+            "Leo lên chỗ Ông Cú"
+          ]
+        },
+        {
+          "kind": "find",
+          "at": "npc_owl",
+          "n": 3,
+          "big": 5,
+          "thing": {
+            "icon": "⭐",
+            "en": "stars",
+            "vi": "ngôi sao"
+          },
+          "icon": "⭐",
+          "en": "Find {n} stars",
+          "vi": "Tìm {n} ngôi sao",
+          "little": [
+            "Find 3 stars",
+            "Tìm 3 ngôi sao"
+          ],
+          "older": [
+            "Find 5 stars",
+            "Tìm 5 ngôi sao"
+          ]
+        },
+        {
+          "kind": "talk",
+          "at": "npc_owl",
+          "icon": "🦉",
+          "en": "Show Grandpa Owl",
+          "vi": "Khoe với Ông Cú",
+          "little": [
+            "Show Grandpa Owl",
+            "Khoe với Ông Cú"
+          ],
+          "older": [
+            "Show Grandpa Owl",
+            "Khoe với Ông Cú"
+          ]
+        }
+      ],
+      "reward": {
+        "sticker": "owl",
+        "coins": 10
+      },
+      "title": [
+        "Owl's star map",
+        "Bản đồ sao của Ông Cú"
+      ],
+      "giverName": {
+        "icon": "🦉",
+        "en": "Grandpa Owl",
+        "vi": "Ông Cú"
+      }
+    },
+    {
+      "id": "supper",
+      "giver": "ba",
+      "icon": "🍄",
+      "en": "Mushroom supper",
+      "vi": "Bữa tối nấm",
+      "places": [
+        "village"
+      ],
+      "ages": [
+        "little",
+        "big"
+      ],
+      "festival": null,
+      "say": [
+        "Mushrooms are growing by the cooking pot. Pick some and cook supper!",
+        "Nấm mọc cạnh nồi nấu ăn. Con hái rồi nấu bữa tối nhé!"
+      ],
+      "miss": [
+        "Uncle Ba still talks about your supper!",
+        "Bác Ba vẫn khen bữa tối của con đó!"
+      ],
+      "steps": [
+        {
+          "kind": "go",
+          "place": "village",
+          "icon": "🪷",
+          "en": "Walk to Lotus Village",
+          "vi": "Đi đến Làng Sen",
+          "little": [
+            "Walk to Lotus Village",
+            "Đi đến Làng Sen"
+          ],
+          "older": [
+            "Walk to Lotus Village",
+            "Đi đến Làng Sen"
+          ]
+        },
+        {
+          "kind": "find",
+          "at": "pot1",
+          "n": 3,
+          "big": 5,
+          "thing": {
+            "icon": "🍄",
+            "en": "mushrooms",
+            "vi": "cây nấm"
+          },
+          "icon": "🍄",
+          "en": "Pick {n} mushrooms",
+          "vi": "Hái {n} cây nấm",
+          "bag": "mushroom",
+          "little": [
+            "Pick 3 mushrooms",
+            "Hái 3 cây nấm"
+          ],
+          "older": [
+            "Pick 5 mushrooms",
+            "Hái 5 cây nấm"
+          ]
+        },
+        {
+          "kind": "cook",
+          "icon": "🍲",
+          "en": "Cook a dish",
+          "vi": "Nấu một món ăn",
+          "little": [
+            "Cook a dish",
+            "Nấu một món ăn"
+          ],
+          "older": [
+            "Cook a dish",
+            "Nấu một món ăn"
+          ]
+        }
+      ],
+      "reward": {
+        "sticker": "dish_nam",
+        "coins": 10
+      },
+      "title": [
+        "Mushroom supper",
+        "Bữa tối nấm"
+      ],
+      "giverName": {
+        "icon": "👨",
+        "en": "Uncle Ba",
+        "vi": "Bác Ba"
+      }
+    },
+    {
+      "id": "shuttle",
+      "giver": "bom",
+      "icon": "🏸",
+      "en": "Shuttlecock champions",
+      "vi": "Vô địch đá cầu",
+      "places": [
+        "town"
+      ],
+      "ages": [
+        "little",
+        "big"
+      ],
+      "festival": null,
+      "say": [
+        "Our shuttlecocks flew onto the roofs! Find them and play with us.",
+        "Quả cầu của tụi tớ bay lên mái nhà rồi! Bạn tìm rồi chơi cùng nhé."
+      ],
+      "miss": [
+        "Bờm is still kicking your shuttlecock!",
+        "Bờm vẫn đang đá quả cầu của con đó!"
+      ],
+      "steps": [
+        {
+          "kind": "go",
+          "place": "town",
+          "icon": "🏘️",
+          "en": "Walk to Two Homes Street",
+          "vi": "Đi đến Phố Hai Quê",
+          "little": [
+            "Walk to Two Homes Street",
+            "Đi đến Phố Hai Quê"
+          ],
+          "older": [
+            "Walk to Two Homes Street",
+            "Đi đến Phố Hai Quê"
+          ]
+        },
+        {
+          "kind": "find",
+          "at": "dacau",
+          "n": 3,
+          "big": 5,
+          "thing": {
+            "icon": "🏸",
+            "en": "shuttlecocks",
+            "vi": "quả cầu"
+          },
+          "icon": "🏸",
+          "en": "Find {n} shuttlecocks",
+          "vi": "Tìm {n} quả cầu",
+          "little": [
+            "Find 3 shuttlecocks",
+            "Tìm 3 quả cầu"
+          ],
+          "older": [
+            "Find 5 shuttlecocks",
+            "Tìm 5 quả cầu"
+          ]
+        },
+        {
+          "kind": "play",
+          "at": "dacau",
+          "icon": "🏸",
+          "en": "Kick the shuttlecock",
+          "vi": "Đá cầu",
+          "little": [
+            "Kick the shuttlecock",
+            "Đá cầu"
+          ],
+          "older": [
+            "Kick the shuttlecock",
+            "Đá cầu"
+          ]
+        }
+      ],
+      "reward": {
+        "sticker": "bom",
+        "coins": 10
+      },
+      "title": [
+        "Shuttlecock champions",
+        "Vô địch đá cầu"
+      ],
+      "giverName": {
+        "icon": "👦",
+        "en": "Bờm",
+        "vi": "Bờm"
+      }
+    },
+    {
+      "id": "seeds",
+      "giver": "gourd",
+      "icon": "🌱",
+      "en": "Grandpa Gourd's seeds",
+      "vi": "Hạt giống của Ông Bầu",
+      "places": [
+        "village"
+      ],
+      "ages": [
+        "little",
+        "big"
+      ],
+      "festival": null,
+      "say": [
+        "My seeds blew away in the wind. Find them so they can grow!",
+        "Hạt giống của ông bay theo gió mất rồi. Con tìm giúp để hạt lớn nhé!"
+      ],
+      "miss": [
+        "Your seeds have tiny green leaves now!",
+        "Hạt giống của con nhú lá xanh rồi đó!"
+      ],
+      "steps": [
+        {
+          "kind": "talk",
+          "at": "npc_gourd",
+          "icon": "🍃",
+          "en": "Talk to Grandpa Gourd",
+          "vi": "Nói chuyện với Ông Bầu",
+          "little": [
+            "Talk to Grandpa Gourd",
+            "Nói chuyện với Ông Bầu"
+          ],
+          "older": [
+            "Talk to Grandpa Gourd",
+            "Nói chuyện với Ông Bầu"
+          ]
+        },
+        {
+          "kind": "find",
+          "at": "lv_well",
+          "n": 3,
+          "big": 5,
+          "thing": {
+            "icon": "🌱",
+            "en": "seeds",
+            "vi": "hạt giống"
+          },
+          "icon": "🌱",
+          "en": "Find {n} seeds",
+          "vi": "Tìm {n} hạt giống",
+          "little": [
+            "Find 3 seeds",
+            "Tìm 3 hạt giống"
+          ],
+          "older": [
+            "Find 5 seeds",
+            "Tìm 5 hạt giống"
+          ]
+        },
+        {
+          "kind": "give",
+          "at": "npc_gourd",
+          "icon": "🍃",
+          "en": "Give them to Grandpa Gourd",
+          "vi": "Đưa cho Ông Bầu",
+          "little": [
+            "Give them to Grandpa Gourd",
+            "Đưa cho Ông Bầu"
+          ],
+          "older": [
+            "Give them to Grandpa Gourd",
+            "Đưa cho Ông Bầu"
+          ]
+        }
+      ],
+      "reward": {
+        "sticker": "gourd",
+        "coins": 10
+      },
+      "title": [
+        "Grandpa Gourd's seeds",
+        "Hạt giống của Ông Bầu"
+      ],
+      "giverName": {
+        "icon": "🍃",
+        "en": "Grandpa Gourd",
+        "vi": "Ông Bầu"
+      }
+    },
+    {
+      "id": "shadow",
+      "giver": "teo",
+      "icon": "🎭",
+      "en": "Shadow puppet show",
+      "vi": "Múa rối bóng",
+      "places": [
+        "village"
+      ],
+      "ages": [
+        "little",
+        "big"
+      ],
+      "festival": null,
+      "say": [
+        "The puppet show needs bright stars for the sky. Can you find some?",
+        "Màn múa rối cần sao sáng trên trời. Bạn tìm giúp tớ nhé?"
+      ],
+      "miss": [
+        "Everyone clapped for your puppet show!",
+        "Ai cũng vỗ tay cho màn múa rối của con đó!"
+      ],
+      "steps": [
+        {
+          "kind": "go",
+          "place": "village",
+          "icon": "🪷",
+          "en": "Walk to Lotus Village",
+          "vi": "Đi đến Làng Sen",
+          "little": [
+            "Walk to Lotus Village",
+            "Đi đến Làng Sen"
+          ],
+          "older": [
+            "Walk to Lotus Village",
+            "Đi đến Làng Sen"
+          ]
+        },
+        {
+          "kind": "find",
+          "at": "theatre",
+          "n": 3,
+          "big": 5,
+          "thing": {
+            "icon": "🌟",
+            "en": "paper stars",
+            "vi": "ngôi sao giấy"
+          },
+          "icon": "🌟",
+          "en": "Find {n} paper stars",
+          "vi": "Tìm {n} ngôi sao giấy",
+          "little": [
+            "Find 3 paper stars",
+            "Tìm 3 ngôi sao giấy"
+          ],
+          "older": [
+            "Find 5 paper stars",
+            "Tìm 5 ngôi sao giấy"
+          ]
+        },
+        {
+          "kind": "play",
+          "at": "theatre",
+          "icon": "🎭",
+          "en": "Put on the puppet show",
+          "vi": "Diễn múa rối bóng",
+          "little": [
+            "Put on the puppet show",
+            "Diễn múa rối bóng"
+          ],
+          "older": [
+            "Put on the puppet show",
+            "Diễn múa rối bóng"
+          ]
+        }
+      ],
+      "reward": {
+        "sticker": "butterfly",
+        "coins": 10
+      },
+      "title": [
+        "Shadow puppet show",
+        "Múa rối bóng"
+      ],
+      "giverName": {
+        "icon": "👦",
+        "en": "Tèo",
+        "vi": "Tèo"
+      }
+    },
+    {
+      "id": "house",
+      "giver": "hue",
+      "icon": "🧱",
+      "en": "House warming",
+      "vi": "Mừng nhà mới",
+      "places": [
+        "town"
+      ],
+      "ages": [
+        "little",
+        "big"
+      ],
+      "festival": null,
+      "say": [
+        "We are building a house for the family. Can you find the last bricks?",
+        "Cả nhà đang xây nhà mới. Con tìm mấy viên gạch cuối giúp bà nhé?"
+      ],
+      "miss": [
+        "The new house is finished, and you helped!",
+        "Nhà mới xây xong rồi, có con giúp đó!"
+      ],
+      "steps": [
+        {
+          "kind": "go",
+          "place": "town",
+          "icon": "🏘️",
+          "en": "Walk to Two Homes Street",
+          "vi": "Đi đến Phố Hai Quê",
+          "little": [
+            "Walk to Two Homes Street",
+            "Đi đến Phố Hai Quê"
+          ],
+          "older": [
+            "Walk to Two Homes Street",
+            "Đi đến Phố Hai Quê"
+          ]
+        },
+        {
+          "kind": "find",
+          "at": "npc_bahue",
+          "n": 3,
+          "big": 5,
+          "thing": {
+            "icon": "🧱",
+            "en": "bricks",
+            "vi": "viên gạch"
+          },
+          "icon": "🧱",
+          "en": "Find {n} bricks",
+          "vi": "Tìm {n} viên gạch",
+          "little": [
+            "Find 3 bricks",
+            "Tìm 3 viên gạch"
+          ],
+          "older": [
+            "Find 5 bricks",
+            "Tìm 5 viên gạch"
+          ]
+        },
+        {
+          "kind": "give",
+          "at": "npc_ongnghi",
+          "icon": "👴",
+          "en": "Give them to Grandpa Nghi",
+          "vi": "Đưa cho Ông Nghi",
+          "little": [
+            "Give them to Grandpa Nghi",
+            "Đưa cho Ông Nghi"
+          ],
+          "older": [
+            "Give them to Grandpa Nghi",
+            "Đưa cho Ông Nghi"
+          ]
+        }
+      ],
+      "reward": {
+        "sticker": "hue",
+        "coins": 10
+      },
+      "title": [
+        "House warming",
+        "Mừng nhà mới"
+      ],
+      "giverName": {
+        "icon": "👵",
+        "en": "Grandma Huệ",
+        "vi": "Bà Huệ"
+      }
+    },
+    {
+      "id": "shells",
+      "giver": "haikite",
+      "icon": "🐚",
+      "en": "Seaside shells",
+      "vi": "Vỏ sò bãi biển",
+      "places": [
+        "vungtau"
+      ],
+      "ages": [
+        "little",
+        "big"
+      ],
+      "festival": null,
+      "say": [
+        "The tide left pretty shells by the lighthouse. Bring me some!",
+        "Thủy triều để lại vỏ sò đẹp cạnh hải đăng. Mang cho anh vài cái nhé!"
+      ],
+      "miss": [
+        "Big Brother Hai made a necklace of your shells!",
+        "Anh Hai làm vòng cổ bằng vỏ sò của con đó!"
+      ],
+      "steps": [
+        {
+          "kind": "go",
+          "place": "vungtau",
+          "icon": "🏖️",
+          "en": "Walk to Vũng Tàu beach",
+          "vi": "Đi đến biển Vũng Tàu",
+          "little": [
+            "Walk to Vũng Tàu beach",
+            "Đi đến biển Vũng Tàu"
+          ],
+          "older": [
+            "Walk to Vũng Tàu beach",
+            "Đi đến biển Vũng Tàu"
+          ]
+        },
+        {
+          "kind": "find",
+          "at": "pc_lighthouse",
+          "n": 3,
+          "big": 5,
+          "thing": {
+            "icon": "🐚",
+            "en": "shells",
+            "vi": "vỏ sò"
+          },
+          "icon": "🐚",
+          "en": "Find {n} shells",
+          "vi": "Tìm {n} vỏ sò",
+          "little": [
+            "Find 3 shells",
+            "Tìm 3 vỏ sò"
+          ],
+          "older": [
+            "Find 5 shells",
+            "Tìm 5 vỏ sò"
+          ]
+        },
+        {
+          "kind": "give",
+          "at": "g_kite",
+          "icon": "🧑",
+          "en": "Give them to Big Brother Hai",
+          "vi": "Đưa cho anh Hai",
+          "little": [
+            "Give them to Big Brother Hai",
+            "Đưa cho anh Hai"
+          ],
+          "older": [
+            "Give them to Big Brother Hai",
+            "Đưa cho anh Hai"
+          ]
+        }
+      ],
+      "reward": {
+        "sticker": "pc_lighthouse",
+        "coins": 10
+      },
+      "title": [
+        "Seaside shells",
+        "Vỏ sò bãi biển"
+      ],
+      "giverName": {
+        "icon": "🪁",
+        "en": "Big Brother Hai",
+        "vi": "Anh Hai"
+      }
+    },
+    {
+      "id": "uluru",
+      "giver": "owl",
+      "icon": "🪨",
+      "en": "Uluru sunset",
+      "vi": "Hoàng hôn Uluru",
+      "places": [
+        "uluru"
+      ],
+      "ages": [
+        "little",
+        "big"
+      ],
+      "festival": null,
+      "say": [
+        "Desert flowers bloom by the big red rock. Go and see them!",
+        "Hoa sa mạc nở cạnh tảng đá đỏ khổng lồ. Con đi xem nhé!"
+      ],
+      "miss": [
+        "The big red rock glowed for you at sunset!",
+        "Tảng đá đỏ khổng lồ rực sáng chào con lúc hoàng hôn đó!"
+      ],
+      "steps": [
+        {
+          "kind": "go",
+          "place": "uluru",
+          "icon": "🪨",
+          "en": "Walk to Uluru",
+          "vi": "Đi đến Uluru",
+          "little": [
+            "Walk to Uluru",
+            "Đi đến Uluru"
+          ],
+          "older": [
+            "Walk to Uluru",
+            "Đi đến Uluru"
+          ]
+        },
+        {
+          "kind": "find",
+          "at": "pc_uluru",
+          "n": 3,
+          "big": 5,
+          "thing": {
+            "icon": "🌺",
+            "en": "desert flowers",
+            "vi": "hoa sa mạc"
+          },
+          "icon": "🌺",
+          "en": "Find {n} desert flowers",
+          "vi": "Tìm {n} bông hoa",
+          "little": [
+            "Find 3 desert flowers",
+            "Tìm 3 bông hoa"
+          ],
+          "older": [
+            "Find 5 desert flowers",
+            "Tìm 5 bông hoa"
+          ]
+        },
+        {
+          "kind": "talk",
+          "at": "pc_uluru",
+          "icon": "🪨",
+          "en": "Read the Uluru sign",
+          "vi": "Đọc bảng Uluru",
+          "little": [
+            "Read the Uluru sign",
+            "Đọc bảng Uluru"
+          ],
+          "older": [
+            "Read the Uluru sign",
+            "Đọc bảng Uluru"
+          ]
+        }
+      ],
+      "reward": {
+        "sticker": "pc_uluru",
+        "coins": 10
+      },
+      "title": [
+        "Uluru sunset",
+        "Hoàng hôn Uluru"
+      ],
+      "giverName": {
+        "icon": "🦉",
+        "en": "Grandpa Owl",
+        "vi": "Ông Cú"
+      }
+    },
+    {
+      "id": "fest_tet",
+      "giver": "hue",
+      "icon": "🧧",
+      "en": "",
+      "vi": "",
+      "places": [
+        "town"
+      ],
+      "ages": [
+        "little",
+        "big"
+      ],
+      "festival": "tet",
+      "say": [
+        "Happy Tết! Help me find red envelopes for the children.",
+        "Chúc mừng năm mới! Giúp bà tìm bao lì xì cho các cháu nhé."
+      ],
+      "miss": [
+        "What a lovely festival we had yesterday!",
+        "Hôm qua lễ hội vui quá con nhỉ!"
+      ],
+      "steps": [
+        {
+          "kind": "go",
+          "place": "town",
+          "icon": "🏘️",
+          "en": "Walk to Two Homes Street",
+          "vi": "Đi đến Phố Hai Quê",
+          "little": [
+            "Walk to Two Homes Street",
+            "Đi đến Phố Hai Quê"
+          ],
+          "older": [
+            "Walk to Two Homes Street",
+            "Đi đến Phố Hai Quê"
+          ]
+        },
+        {
+          "kind": "find",
+          "at": "npc_bahue",
+          "n": 3,
+          "big": 5,
+          "thing": {
+            "icon": "🧧",
+            "en": "red envelopes",
+            "vi": "bao lì xì"
+          },
+          "icon": "🧧",
+          "en": "Find {n} red envelopes",
+          "vi": "Tìm {n} bao lì xì",
+          "little": [
+            "Find 3 red envelopes",
+            "Tìm 3 bao lì xì"
+          ],
+          "older": [
+            "Find 5 red envelopes",
+            "Tìm 5 bao lì xì"
+          ]
+        },
+        {
+          "kind": "give",
+          "at": "npc_bahue",
+          "icon": "👵",
+          "en": "Give them to Grandma Huệ",
+          "vi": "Đưa cho Bà Huệ",
+          "little": [
+            "Give them to Grandma Huệ",
+            "Đưa cho Bà Huệ"
+          ],
+          "older": [
+            "Give them to Grandma Huệ",
+            "Đưa cho Bà Huệ"
+          ]
+        }
+      ],
+      "reward": {
+        "sticker": "fest_tet",
+        "coins": 10
+      },
+      "title": [
+        "Tết, the Lunar New Year",
+        "Tết Nguyên Đán"
+      ],
+      "giverName": {
+        "icon": "👵",
+        "en": "Grandma Huệ",
+        "vi": "Bà Huệ"
+      }
+    },
+    {
+      "id": "fest_ramthang1",
+      "giver": "lan",
+      "icon": "🏮",
+      "en": "",
+      "vi": "",
+      "places": [
+        "town"
+      ],
+      "ages": [
+        "little",
+        "big"
+      ],
+      "festival": "ramthang1",
+      "say": [
+        "It is the first full moon of the year. Let us hang lanterns!",
+        "Rằm tháng Giêng rồi. Mình cùng treo đèn lồng nhé!"
+      ],
+      "miss": [
+        "What a lovely festival we had yesterday!",
+        "Hôm qua lễ hội vui quá con nhỉ!"
+      ],
+      "steps": [
+        {
+          "kind": "go",
+          "place": "town",
+          "icon": "🏘️",
+          "en": "Walk to Two Homes Street",
+          "vi": "Đi đến Phố Hai Quê",
+          "little": [
+            "Walk to Two Homes Street",
+            "Đi đến Phố Hai Quê"
+          ],
+          "older": [
+            "Walk to Two Homes Street",
+            "Đi đến Phố Hai Quê"
+          ]
+        },
+        {
+          "kind": "find",
+          "at": "npc_lan",
+          "n": 3,
+          "big": 5,
+          "thing": {
+            "icon": "🏮",
+            "en": "lanterns",
+            "vi": "đèn lồng"
+          },
+          "icon": "🏮",
+          "en": "Find {n} lanterns",
+          "vi": "Tìm {n} đèn lồng",
+          "little": [
+            "Find 3 lanterns",
+            "Tìm 3 đèn lồng"
+          ],
+          "older": [
+            "Find 5 lanterns",
+            "Tìm 5 đèn lồng"
+          ]
+        },
+        {
+          "kind": "give",
+          "at": "npc_lan",
+          "icon": "👧",
+          "en": "Give them to Lan",
+          "vi": "Đưa cho Lan",
+          "little": [
+            "Give them to Lan",
+            "Đưa cho Lan"
+          ],
+          "older": [
+            "Give them to Lan",
+            "Đưa cho Lan"
+          ]
+        }
+      ],
+      "reward": {
+        "sticker": "fest_ramthang1",
+        "coins": 10
+      },
+      "title": [
+        "First Full Moon of the year",
+        "Rằm tháng Giêng"
+      ],
+      "giverName": {
+        "icon": "👧",
+        "en": "Lan",
+        "vi": "Lan"
+      }
+    },
+    {
+      "id": "fest_giotohung",
+      "giver": "nghi",
+      "icon": "🌸",
+      "en": "",
+      "vi": "",
+      "places": [
+        "town"
+      ],
+      "ages": [
+        "little",
+        "big"
+      ],
+      "festival": "giotohung",
+      "say": [
+        "Today we remember the Hùng Kings. Bring flowers to say thank you.",
+        "Hôm nay mình nhớ ơn các Vua Hùng. Con mang hoa đến tạ ơn nhé."
+      ],
+      "miss": [
+        "What a lovely festival we had yesterday!",
+        "Hôm qua lễ hội vui quá con nhỉ!"
+      ],
+      "steps": [
+        {
+          "kind": "go",
+          "place": "town",
+          "icon": "🏘️",
+          "en": "Walk to Two Homes Street",
+          "vi": "Đi đến Phố Hai Quê",
+          "little": [
+            "Walk to Two Homes Street",
+            "Đi đến Phố Hai Quê"
+          ],
+          "older": [
+            "Walk to Two Homes Street",
+            "Đi đến Phố Hai Quê"
+          ]
+        },
+        {
+          "kind": "find",
+          "at": "npc_ongnghi",
+          "n": 3,
+          "big": 5,
+          "thing": {
+            "icon": "🌸",
+            "en": "flowers",
+            "vi": "bông hoa"
+          },
+          "icon": "🌸",
+          "en": "Find {n} flowers",
+          "vi": "Tìm {n} bông hoa",
+          "little": [
+            "Find 3 flowers",
+            "Tìm 3 bông hoa"
+          ],
+          "older": [
+            "Find 5 flowers",
+            "Tìm 5 bông hoa"
+          ]
+        },
+        {
+          "kind": "give",
+          "at": "npc_ongnghi",
+          "icon": "👴",
+          "en": "Give them to Grandpa Nghi",
+          "vi": "Đưa cho Ông Nghi",
+          "little": [
+            "Give them to Grandpa Nghi",
+            "Đưa cho Ông Nghi"
+          ],
+          "older": [
+            "Give them to Grandpa Nghi",
+            "Đưa cho Ông Nghi"
+          ]
+        }
+      ],
+      "reward": {
+        "sticker": "fest_giotohung",
+        "coins": 10
+      },
+      "title": [
+        "Hùng Kings’ Day",
+        "Giỗ Tổ Hùng Vương"
+      ],
+      "giverName": {
+        "icon": "👴",
+        "en": "Grandpa Nghi",
+        "vi": "Ông Nghi"
+      }
+    },
+    {
+      "id": "fest_doanngo",
+      "giver": "hue",
+      "icon": "🍉",
+      "en": "",
+      "vi": "",
+      "places": [
+        "town"
+      ],
+      "ages": [
+        "little",
+        "big"
+      ],
+      "festival": "doanngo",
+      "say": [
+        "It is the Mid-Year Festival. Find fruit for the family table!",
+        "Tết Đoan Ngọ rồi. Con tìm trái cây cho mâm cơm nhà mình nhé!"
+      ],
+      "miss": [
+        "What a lovely festival we had yesterday!",
+        "Hôm qua lễ hội vui quá con nhỉ!"
+      ],
+      "steps": [
+        {
+          "kind": "go",
+          "place": "town",
+          "icon": "🏘️",
+          "en": "Walk to Two Homes Street",
+          "vi": "Đi đến Phố Hai Quê",
+          "little": [
+            "Walk to Two Homes Street",
+            "Đi đến Phố Hai Quê"
+          ],
+          "older": [
+            "Walk to Two Homes Street",
+            "Đi đến Phố Hai Quê"
+          ]
+        },
+        {
+          "kind": "find",
+          "at": "npc_bahue",
+          "n": 3,
+          "big": 5,
+          "thing": {
+            "icon": "🍉",
+            "en": "fruits",
+            "vi": "trái cây"
+          },
+          "icon": "🍉",
+          "en": "Find {n} fruits",
+          "vi": "Tìm {n} trái cây",
+          "little": [
+            "Find 3 fruits",
+            "Tìm 3 trái cây"
+          ],
+          "older": [
+            "Find 5 fruits",
+            "Tìm 5 trái cây"
+          ]
+        },
+        {
+          "kind": "give",
+          "at": "npc_bahue",
+          "icon": "👵",
+          "en": "Give them to Grandma Huệ",
+          "vi": "Đưa cho Bà Huệ",
+          "little": [
+            "Give them to Grandma Huệ",
+            "Đưa cho Bà Huệ"
+          ],
+          "older": [
+            "Give them to Grandma Huệ",
+            "Đưa cho Bà Huệ"
+          ]
+        }
+      ],
+      "reward": {
+        "sticker": "fest_doanngo",
+        "coins": 10
+      },
+      "title": [
+        "Mid-Year Festival (Đoan Ngọ)",
+        "Tết Đoan Ngọ"
+      ],
+      "giverName": {
+        "icon": "👵",
+        "en": "Grandma Huệ",
+        "vi": "Bà Huệ"
+      }
+    },
+    {
+      "id": "fest_vulan",
+      "giver": "lan",
+      "icon": "🌹",
+      "en": "",
+      "vi": "",
+      "places": [
+        "town"
+      ],
+      "ages": [
+        "little",
+        "big"
+      ],
+      "festival": "vulan",
+      "say": [
+        "Vu Lan is a day to thank our parents. Find roses for them.",
+        "Lễ Vu Lan là ngày cảm ơn cha mẹ. Con tìm hoa hồng tặng cha mẹ nhé."
+      ],
+      "miss": [
+        "What a lovely festival we had yesterday!",
+        "Hôm qua lễ hội vui quá con nhỉ!"
+      ],
+      "steps": [
+        {
+          "kind": "go",
+          "place": "town",
+          "icon": "🏘️",
+          "en": "Walk to Two Homes Street",
+          "vi": "Đi đến Phố Hai Quê",
+          "little": [
+            "Walk to Two Homes Street",
+            "Đi đến Phố Hai Quê"
+          ],
+          "older": [
+            "Walk to Two Homes Street",
+            "Đi đến Phố Hai Quê"
+          ]
+        },
+        {
+          "kind": "find",
+          "at": "npc_lan",
+          "n": 3,
+          "big": 5,
+          "thing": {
+            "icon": "🌹",
+            "en": "roses",
+            "vi": "bông hồng"
+          },
+          "icon": "🌹",
+          "en": "Find {n} roses",
+          "vi": "Tìm {n} bông hồng",
+          "little": [
+            "Find 3 roses",
+            "Tìm 3 bông hồng"
+          ],
+          "older": [
+            "Find 5 roses",
+            "Tìm 5 bông hồng"
+          ]
+        },
+        {
+          "kind": "give",
+          "at": "npc_lan",
+          "icon": "👧",
+          "en": "Give them to Lan",
+          "vi": "Đưa cho Lan",
+          "little": [
+            "Give them to Lan",
+            "Đưa cho Lan"
+          ],
+          "older": [
+            "Give them to Lan",
+            "Đưa cho Lan"
+          ]
+        }
+      ],
+      "reward": {
+        "sticker": "fest_vulan",
+        "coins": 10
+      },
+      "title": [
+        "Vu Lan, Thank-You-Parents Day",
+        "Lễ Vu Lan"
+      ],
+      "giverName": {
+        "icon": "👧",
+        "en": "Lan",
+        "vi": "Lan"
+      }
+    },
+    {
+      "id": "fest_midautumn",
+      "giver": "lan",
+      "icon": "🥮",
+      "en": "",
+      "vi": "",
+      "places": [
+        "town"
+      ],
+      "ages": [
+        "little",
+        "big"
+      ],
+      "festival": "midautumn",
+      "say": [
+        "It is the Mid-Autumn Festival! Find mooncakes for the moon party.",
+        "Tết Trung Thu rồi! Mình tìm bánh trung thu cho tiệc trông trăng nhé."
+      ],
+      "miss": [
+        "What a lovely festival we had yesterday!",
+        "Hôm qua lễ hội vui quá con nhỉ!"
+      ],
+      "steps": [
+        {
+          "kind": "go",
+          "place": "town",
+          "icon": "🏘️",
+          "en": "Walk to Two Homes Street",
+          "vi": "Đi đến Phố Hai Quê",
+          "little": [
+            "Walk to Two Homes Street",
+            "Đi đến Phố Hai Quê"
+          ],
+          "older": [
+            "Walk to Two Homes Street",
+            "Đi đến Phố Hai Quê"
+          ]
+        },
+        {
+          "kind": "find",
+          "at": "npc_lan",
+          "n": 3,
+          "big": 5,
+          "thing": {
+            "icon": "🥮",
+            "en": "mooncakes",
+            "vi": "bánh trung thu"
+          },
+          "icon": "🥮",
+          "en": "Find {n} mooncakes",
+          "vi": "Tìm {n} bánh trung thu",
+          "little": [
+            "Find 3 mooncakes",
+            "Tìm 3 bánh trung thu"
+          ],
+          "older": [
+            "Find 5 mooncakes",
+            "Tìm 5 bánh trung thu"
+          ]
+        },
+        {
+          "kind": "give",
+          "at": "npc_lan",
+          "icon": "👧",
+          "en": "Give them to Lan",
+          "vi": "Đưa cho Lan",
+          "little": [
+            "Give them to Lan",
+            "Đưa cho Lan"
+          ],
+          "older": [
+            "Give them to Lan",
+            "Đưa cho Lan"
+          ]
+        }
+      ],
+      "reward": {
+        "sticker": "fest_midautumn",
+        "coins": 10
+      },
+      "title": [
+        "Mid-Autumn Festival",
+        "Tết Trung Thu"
+      ],
+      "giverName": {
+        "icon": "👧",
+        "en": "Lan",
+        "vi": "Lan"
+      }
+    },
+    {
+      "id": "fest_ongtao",
+      "giver": "hue",
+      "icon": "🐟",
+      "en": "",
+      "vi": "",
+      "places": [
+        "town"
+      ],
+      "ages": [
+        "little",
+        "big"
+      ],
+      "festival": "ongtao",
+      "say": [
+        "The Kitchen Gods fly to the sky on golden fish. Help me find them!",
+        "Ông Công Ông Táo cưỡi cá chép về trời. Giúp bà tìm cá nhé!"
+      ],
+      "miss": [
+        "What a lovely festival we had yesterday!",
+        "Hôm qua lễ hội vui quá con nhỉ!"
+      ],
+      "steps": [
+        {
+          "kind": "go",
+          "place": "town",
+          "icon": "🏘️",
+          "en": "Walk to Two Homes Street",
+          "vi": "Đi đến Phố Hai Quê",
+          "little": [
+            "Walk to Two Homes Street",
+            "Đi đến Phố Hai Quê"
+          ],
+          "older": [
+            "Walk to Two Homes Street",
+            "Đi đến Phố Hai Quê"
+          ]
+        },
+        {
+          "kind": "find",
+          "at": "npc_bahue",
+          "n": 3,
+          "big": 5,
+          "thing": {
+            "icon": "🐟",
+            "en": "golden fish",
+            "vi": "cá chép vàng"
+          },
+          "icon": "🐟",
+          "en": "Find {n} golden fish",
+          "vi": "Tìm {n} cá chép vàng",
+          "little": [
+            "Find 3 golden fish",
+            "Tìm 3 cá chép vàng"
+          ],
+          "older": [
+            "Find 5 golden fish",
+            "Tìm 5 cá chép vàng"
+          ]
+        },
+        {
+          "kind": "give",
+          "at": "npc_bahue",
+          "icon": "👵",
+          "en": "Give them to Grandma Huệ",
+          "vi": "Đưa cho Bà Huệ",
+          "little": [
+            "Give them to Grandma Huệ",
+            "Đưa cho Bà Huệ"
+          ],
+          "older": [
+            "Give them to Grandma Huệ",
+            "Đưa cho Bà Huệ"
+          ]
+        }
+      ],
+      "reward": {
+        "sticker": "fest_ongtao",
+        "coins": 10
+      },
+      "title": [
+        "Kitchen Gods’ Day",
+        "Ông Công Ông Táo"
+      ],
+      "giverName": {
+        "icon": "👵",
+        "en": "Grandma Huệ",
+        "vi": "Bà Huệ"
+      }
+    },
+    {
+      "id": "fest_thieunhi",
+      "giver": "bom",
+      "icon": "🎈",
+      "en": "",
+      "vi": "",
+      "places": [
+        "town"
+      ],
+      "ages": [
+        "little",
+        "big"
+      ],
+      "festival": "thieunhi",
+      "say": [
+        "It is Children's Day! Find balloons for the party.",
+        "Ngày Thiếu nhi rồi! Bạn tìm bóng bay cho bữa tiệc nhé."
+      ],
+      "miss": [
+        "What a lovely festival we had yesterday!",
+        "Hôm qua lễ hội vui quá con nhỉ!"
+      ],
+      "steps": [
+        {
+          "kind": "go",
+          "place": "town",
+          "icon": "🏘️",
+          "en": "Walk to Two Homes Street",
+          "vi": "Đi đến Phố Hai Quê",
+          "little": [
+            "Walk to Two Homes Street",
+            "Đi đến Phố Hai Quê"
+          ],
+          "older": [
+            "Walk to Two Homes Street",
+            "Đi đến Phố Hai Quê"
+          ]
+        },
+        {
+          "kind": "find",
+          "at": "npc_bom",
+          "n": 3,
+          "big": 5,
+          "thing": {
+            "icon": "🎈",
+            "en": "balloons",
+            "vi": "bóng bay"
+          },
+          "icon": "🎈",
+          "en": "Find {n} balloons",
+          "vi": "Tìm {n} bóng bay",
+          "little": [
+            "Find 3 balloons",
+            "Tìm 3 bóng bay"
+          ],
+          "older": [
+            "Find 5 balloons",
+            "Tìm 5 bóng bay"
+          ]
+        },
+        {
+          "kind": "give",
+          "at": "npc_bom",
+          "icon": "👦",
+          "en": "Give them to Bờm",
+          "vi": "Đưa cho Bờm",
+          "little": [
+            "Give them to Bờm",
+            "Đưa cho Bờm"
+          ],
+          "older": [
+            "Give them to Bờm",
+            "Đưa cho Bờm"
+          ]
+        }
+      ],
+      "reward": {
+        "sticker": "fest_thieunhi",
+        "coins": 10
+      },
+      "title": [
+        "Children’s Day (1 June)",
+        "Ngày Quốc tế Thiếu nhi 1/6"
+      ],
+      "giverName": {
+        "icon": "👦",
+        "en": "Bờm",
+        "vi": "Bờm"
+      }
+    },
+    {
+      "id": "fest_quockhanh",
+      "giver": "nghi",
+      "icon": "🇻🇳",
+      "en": "",
+      "vi": "",
+      "places": [
+        "town"
+      ],
+      "ages": [
+        "little",
+        "big"
+      ],
+      "festival": "quockhanh",
+      "say": [
+        "It is Vietnam's National Day. Let us put up little flags!",
+        "Hôm nay là Quốc khánh. Mình cùng cắm cờ nhỏ nhé!"
+      ],
+      "miss": [
+        "What a lovely festival we had yesterday!",
+        "Hôm qua lễ hội vui quá con nhỉ!"
+      ],
+      "steps": [
+        {
+          "kind": "go",
+          "place": "town",
+          "icon": "🏘️",
+          "en": "Walk to Two Homes Street",
+          "vi": "Đi đến Phố Hai Quê",
+          "little": [
+            "Walk to Two Homes Street",
+            "Đi đến Phố Hai Quê"
+          ],
+          "older": [
+            "Walk to Two Homes Street",
+            "Đi đến Phố Hai Quê"
+          ]
+        },
+        {
+          "kind": "find",
+          "at": "npc_ongnghi",
+          "n": 3,
+          "big": 5,
+          "thing": {
+            "icon": "🇻🇳",
+            "en": "little flags",
+            "vi": "lá cờ nhỏ"
+          },
+          "icon": "🇻🇳",
+          "en": "Find {n} little flags",
+          "vi": "Tìm {n} lá cờ nhỏ",
+          "little": [
+            "Find 3 little flags",
+            "Tìm 3 lá cờ nhỏ"
+          ],
+          "older": [
+            "Find 5 little flags",
+            "Tìm 5 lá cờ nhỏ"
+          ]
+        },
+        {
+          "kind": "give",
+          "at": "npc_ongnghi",
+          "icon": "👴",
+          "en": "Give them to Grandpa Nghi",
+          "vi": "Đưa cho Ông Nghi",
+          "little": [
+            "Give them to Grandpa Nghi",
+            "Đưa cho Ông Nghi"
+          ],
+          "older": [
+            "Give them to Grandpa Nghi",
+            "Đưa cho Ông Nghi"
+          ]
+        }
+      ],
+      "reward": {
+        "sticker": "fest_quockhanh",
+        "coins": 10
+      },
+      "title": [
+        "Vietnam’s National Day",
+        "Quốc khánh 2/9"
+      ],
+      "giverName": {
+        "icon": "👴",
+        "en": "Grandpa Nghi",
+        "vi": "Ông Nghi"
+      }
+    },
+    {
+      "id": "fest_nhagiao",
+      "giver": "lan",
+      "icon": "💐",
+      "en": "",
+      "vi": "",
+      "places": [
+        "town"
+      ],
+      "ages": [
+        "little",
+        "big"
+      ],
+      "festival": "nhagiao",
+      "say": [
+        "It is Teachers' Day. Find flowers to say thank you to our teachers.",
+        "Ngày Nhà giáo rồi. Mình tìm hoa cảm ơn thầy cô nhé."
+      ],
+      "miss": [
+        "What a lovely festival we had yesterday!",
+        "Hôm qua lễ hội vui quá con nhỉ!"
+      ],
+      "steps": [
+        {
+          "kind": "go",
+          "place": "town",
+          "icon": "🏘️",
+          "en": "Walk to Two Homes Street",
+          "vi": "Đi đến Phố Hai Quê",
+          "little": [
+            "Walk to Two Homes Street",
+            "Đi đến Phố Hai Quê"
+          ],
+          "older": [
+            "Walk to Two Homes Street",
+            "Đi đến Phố Hai Quê"
+          ]
+        },
+        {
+          "kind": "find",
+          "at": "npc_lan",
+          "n": 3,
+          "big": 5,
+          "thing": {
+            "icon": "💐",
+            "en": "flowers",
+            "vi": "bông hoa"
+          },
+          "icon": "💐",
+          "en": "Find {n} flowers",
+          "vi": "Tìm {n} bông hoa",
+          "little": [
+            "Find 3 flowers",
+            "Tìm 3 bông hoa"
+          ],
+          "older": [
+            "Find 5 flowers",
+            "Tìm 5 bông hoa"
+          ]
+        },
+        {
+          "kind": "give",
+          "at": "npc_lan",
+          "icon": "👧",
+          "en": "Give them to Lan",
+          "vi": "Đưa cho Lan",
+          "little": [
+            "Give them to Lan",
+            "Đưa cho Lan"
+          ],
+          "older": [
+            "Give them to Lan",
+            "Đưa cho Lan"
+          ]
+        }
+      ],
+      "reward": {
+        "sticker": "fest_nhagiao",
+        "coins": 10
+      },
+      "title": [
+        "Teachers’ Day (20 November)",
+        "Ngày Nhà giáo Việt Nam 20/11"
+      ],
+      "giverName": {
+        "icon": "👧",
+        "en": "Lan",
+        "vi": "Lan"
+      }
+    },
+    {
+      "id": "fest_easter",
+      "giver": "ruby",
+      "icon": "🥚",
+      "en": "",
+      "vi": "",
+      "places": [
+        "town"
+      ],
+      "ages": [
+        "little",
+        "big"
+      ],
+      "festival": "easter",
+      "say": [
+        "Happy Easter! Can you find the eggs the bunny painted?",
+        "Chúc mừng lễ Phục Sinh! Bạn tìm được trứng màu thỏ giấu không?"
+      ],
+      "miss": [
+        "What a lovely festival we had yesterday!",
+        "Hôm qua lễ hội vui quá con nhỉ!"
+      ],
+      "steps": [
+        {
+          "kind": "go",
+          "place": "town",
+          "icon": "🏘️",
+          "en": "Walk to Two Homes Street",
+          "vi": "Đi đến Phố Hai Quê",
+          "little": [
+            "Walk to Two Homes Street",
+            "Đi đến Phố Hai Quê"
+          ],
+          "older": [
+            "Walk to Two Homes Street",
+            "Đi đến Phố Hai Quê"
+          ]
+        },
+        {
+          "kind": "find",
+          "at": "npc_ruby",
+          "n": 3,
+          "big": 5,
+          "thing": {
+            "icon": "🥚",
+            "en": "painted eggs",
+            "vi": "trứng màu"
+          },
+          "icon": "🥚",
+          "en": "Find {n} painted eggs",
+          "vi": "Tìm {n} trứng màu",
+          "little": [
+            "Find 3 painted eggs",
+            "Tìm 3 trứng màu"
+          ],
+          "older": [
+            "Find 5 painted eggs",
+            "Tìm 5 trứng màu"
+          ]
+        },
+        {
+          "kind": "give",
+          "at": "npc_ruby",
+          "icon": "👧",
+          "en": "Give them to Ruby",
+          "vi": "Đưa cho Ruby",
+          "little": [
+            "Give them to Ruby",
+            "Đưa cho Ruby"
+          ],
+          "older": [
+            "Give them to Ruby",
+            "Đưa cho Ruby"
+          ]
+        }
+      ],
+      "reward": {
+        "sticker": "fest_easter",
+        "coins": 10
+      },
+      "title": [
+        "Easter",
+        "Lễ Phục Sinh"
+      ],
+      "giverName": {
+        "icon": "👧",
+        "en": "Ruby",
+        "vi": "Ruby"
+      }
+    },
+    {
+      "id": "fest_mothersday",
+      "giver": "jack",
+      "icon": "💝",
+      "en": "",
+      "vi": "",
+      "places": [
+        "town"
+      ],
+      "ages": [
+        "little",
+        "big"
+      ],
+      "festival": "mothersday",
+      "say": [
+        "It is Mother's Day. Let us find hearts for our mums!",
+        "Hôm nay là Ngày của Mẹ. Mình tìm trái tim tặng mẹ nhé!"
+      ],
+      "miss": [
+        "What a lovely festival we had yesterday!",
+        "Hôm qua lễ hội vui quá con nhỉ!"
+      ],
+      "steps": [
+        {
+          "kind": "go",
+          "place": "town",
+          "icon": "🏘️",
+          "en": "Walk to Two Homes Street",
+          "vi": "Đi đến Phố Hai Quê",
+          "little": [
+            "Walk to Two Homes Street",
+            "Đi đến Phố Hai Quê"
+          ],
+          "older": [
+            "Walk to Two Homes Street",
+            "Đi đến Phố Hai Quê"
+          ]
+        },
+        {
+          "kind": "find",
+          "at": "npc_jack",
+          "n": 3,
+          "big": 5,
+          "thing": {
+            "icon": "💝",
+            "en": "hearts",
+            "vi": "trái tim"
+          },
+          "icon": "💝",
+          "en": "Find {n} hearts",
+          "vi": "Tìm {n} trái tim",
+          "little": [
+            "Find 3 hearts",
+            "Tìm 3 trái tim"
+          ],
+          "older": [
+            "Find 5 hearts",
+            "Tìm 5 trái tim"
+          ]
+        },
+        {
+          "kind": "give",
+          "at": "npc_jack",
+          "icon": "👦",
+          "en": "Give them to Jack",
+          "vi": "Đưa cho Jack",
+          "little": [
+            "Give them to Jack",
+            "Đưa cho Jack"
+          ],
+          "older": [
+            "Give them to Jack",
+            "Đưa cho Jack"
+          ]
+        }
+      ],
+      "reward": {
+        "sticker": "fest_mothersday",
+        "coins": 10
+      },
+      "title": [
+        "Mother’s Day",
+        "Ngày của Mẹ"
+      ],
+      "giverName": {
+        "icon": "👦",
+        "en": "Jack",
+        "vi": "Jack"
+      }
+    },
+    {
+      "id": "fest_fathersday",
+      "giver": "jack",
+      "icon": "👔",
+      "en": "",
+      "vi": "",
+      "places": [
+        "town"
+      ],
+      "ages": [
+        "little",
+        "big"
+      ],
+      "festival": "fathersday",
+      "say": [
+        "It is Father's Day. Find a surprise for the dads!",
+        "Hôm nay là Ngày của Bố. Mình tìm quà bất ngờ tặng bố nhé!"
+      ],
+      "miss": [
+        "What a lovely festival we had yesterday!",
+        "Hôm qua lễ hội vui quá con nhỉ!"
+      ],
+      "steps": [
+        {
+          "kind": "go",
+          "place": "town",
+          "icon": "🏘️",
+          "en": "Walk to Two Homes Street",
+          "vi": "Đi đến Phố Hai Quê",
+          "little": [
+            "Walk to Two Homes Street",
+            "Đi đến Phố Hai Quê"
+          ],
+          "older": [
+            "Walk to Two Homes Street",
+            "Đi đến Phố Hai Quê"
+          ]
+        },
+        {
+          "kind": "find",
+          "at": "npc_jack",
+          "n": 3,
+          "big": 5,
+          "thing": {
+            "icon": "👔",
+            "en": "ties",
+            "vi": "cà vạt"
+          },
+          "icon": "👔",
+          "en": "Find {n} ties",
+          "vi": "Tìm {n} cà vạt",
+          "little": [
+            "Find 3 ties",
+            "Tìm 3 cà vạt"
+          ],
+          "older": [
+            "Find 5 ties",
+            "Tìm 5 cà vạt"
+          ]
+        },
+        {
+          "kind": "give",
+          "at": "npc_jack",
+          "icon": "👦",
+          "en": "Give them to Jack",
+          "vi": "Đưa cho Jack",
+          "little": [
+            "Give them to Jack",
+            "Đưa cho Jack"
+          ],
+          "older": [
+            "Give them to Jack",
+            "Đưa cho Jack"
+          ]
+        }
+      ],
+      "reward": {
+        "sticker": "fest_fathersday",
+        "coins": 10
+      },
+      "title": [
+        "Father’s Day",
+        "Ngày của Bố"
+      ],
+      "giverName": {
+        "icon": "👦",
+        "en": "Jack",
+        "vi": "Jack"
+      }
+    },
+    {
+      "id": "fest_halloween",
+      "giver": "ruby",
+      "icon": "🎃",
+      "en": "",
+      "vi": "",
+      "places": [
+        "town"
+      ],
+      "ages": [
+        "little",
+        "big"
+      ],
+      "festival": "halloween",
+      "say": [
+        "Happy Halloween! Find friendly pumpkins for the street.",
+        "Chúc mừng Halloween! Bạn tìm bí ngô vui vẻ cho cả phố nhé."
+      ],
+      "miss": [
+        "What a lovely festival we had yesterday!",
+        "Hôm qua lễ hội vui quá con nhỉ!"
+      ],
+      "steps": [
+        {
+          "kind": "go",
+          "place": "town",
+          "icon": "🏘️",
+          "en": "Walk to Two Homes Street",
+          "vi": "Đi đến Phố Hai Quê",
+          "little": [
+            "Walk to Two Homes Street",
+            "Đi đến Phố Hai Quê"
+          ],
+          "older": [
+            "Walk to Two Homes Street",
+            "Đi đến Phố Hai Quê"
+          ]
+        },
+        {
+          "kind": "find",
+          "at": "npc_ruby",
+          "n": 3,
+          "big": 5,
+          "thing": {
+            "icon": "🎃",
+            "en": "pumpkins",
+            "vi": "quả bí ngô"
+          },
+          "icon": "🎃",
+          "en": "Find {n} pumpkins",
+          "vi": "Tìm {n} quả bí ngô",
+          "little": [
+            "Find 3 pumpkins",
+            "Tìm 3 quả bí ngô"
+          ],
+          "older": [
+            "Find 5 pumpkins",
+            "Tìm 5 quả bí ngô"
+          ]
+        },
+        {
+          "kind": "give",
+          "at": "npc_ruby",
+          "icon": "👧",
+          "en": "Give them to Ruby",
+          "vi": "Đưa cho Ruby",
+          "little": [
+            "Give them to Ruby",
+            "Đưa cho Ruby"
+          ],
+          "older": [
+            "Give them to Ruby",
+            "Đưa cho Ruby"
+          ]
+        }
+      ],
+      "reward": {
+        "sticker": "fest_halloween",
+        "coins": 10
+      },
+      "title": [
+        "Halloween",
+        "Lễ hội Halloween"
+      ],
+      "giverName": {
+        "icon": "👧",
+        "en": "Ruby",
+        "vi": "Ruby"
+      }
+    },
+    {
+      "id": "fest_christmas",
+      "giver": "jack",
+      "icon": "🎁",
+      "en": "",
+      "vi": "",
+      "places": [
+        "town"
+      ],
+      "ages": [
+        "little",
+        "big"
+      ],
+      "festival": "christmas",
+      "say": [
+        "Merry Christmas! Help me find presents for the tree.",
+        "Giáng Sinh vui vẻ! Giúp tớ tìm quà đặt dưới cây thông nhé."
+      ],
+      "miss": [
+        "What a lovely festival we had yesterday!",
+        "Hôm qua lễ hội vui quá con nhỉ!"
+      ],
+      "steps": [
+        {
+          "kind": "go",
+          "place": "town",
+          "icon": "🏘️",
+          "en": "Walk to Two Homes Street",
+          "vi": "Đi đến Phố Hai Quê",
+          "little": [
+            "Walk to Two Homes Street",
+            "Đi đến Phố Hai Quê"
+          ],
+          "older": [
+            "Walk to Two Homes Street",
+            "Đi đến Phố Hai Quê"
+          ]
+        },
+        {
+          "kind": "find",
+          "at": "npc_jack",
+          "n": 3,
+          "big": 5,
+          "thing": {
+            "icon": "🎁",
+            "en": "presents",
+            "vi": "món quà"
+          },
+          "icon": "🎁",
+          "en": "Find {n} presents",
+          "vi": "Tìm {n} món quà",
+          "little": [
+            "Find 3 presents",
+            "Tìm 3 món quà"
+          ],
+          "older": [
+            "Find 5 presents",
+            "Tìm 5 món quà"
+          ]
+        },
+        {
+          "kind": "give",
+          "at": "npc_jack",
+          "icon": "👦",
+          "en": "Give them to Jack",
+          "vi": "Đưa cho Jack",
+          "little": [
+            "Give them to Jack",
+            "Đưa cho Jack"
+          ],
+          "older": [
+            "Give them to Jack",
+            "Đưa cho Jack"
+          ]
+        }
+      ],
+      "reward": {
+        "sticker": "fest_christmas",
+        "coins": 10
+      },
+      "title": [
+        "Christmas",
+        "Lễ Giáng Sinh"
+      ],
+      "giverName": {
+        "icon": "👦",
+        "en": "Jack",
+        "vi": "Jack"
+      }
+    },
+    {
+      "id": "fest_newyear",
+      "giver": "ruby",
+      "icon": "🎆",
+      "en": "",
+      "vi": "",
+      "places": [
+        "town"
+      ],
+      "ages": [
+        "little",
+        "big"
+      ],
+      "festival": "newyear",
+      "say": [
+        "It is New Year's Eve! Find party poppers for midnight.",
+        "Đêm Giao thừa rồi! Bạn tìm pháo giấy cho lúc nửa đêm nhé."
+      ],
+      "miss": [
+        "What a lovely festival we had yesterday!",
+        "Hôm qua lễ hội vui quá con nhỉ!"
+      ],
+      "steps": [
+        {
+          "kind": "go",
+          "place": "town",
+          "icon": "🏘️",
+          "en": "Walk to Two Homes Street",
+          "vi": "Đi đến Phố Hai Quê",
+          "little": [
+            "Walk to Two Homes Street",
+            "Đi đến Phố Hai Quê"
+          ],
+          "older": [
+            "Walk to Two Homes Street",
+            "Đi đến Phố Hai Quê"
+          ]
+        },
+        {
+          "kind": "find",
+          "at": "npc_ruby",
+          "n": 3,
+          "big": 5,
+          "thing": {
+            "icon": "🎆",
+            "en": "party poppers",
+            "vi": "pháo giấy"
+          },
+          "icon": "🎆",
+          "en": "Find {n} party poppers",
+          "vi": "Tìm {n} pháo giấy",
+          "little": [
+            "Find 3 party poppers",
+            "Tìm 3 pháo giấy"
+          ],
+          "older": [
+            "Find 5 party poppers",
+            "Tìm 5 pháo giấy"
+          ]
+        },
+        {
+          "kind": "give",
+          "at": "npc_ruby",
+          "icon": "👧",
+          "en": "Give them to Ruby",
+          "vi": "Đưa cho Ruby",
+          "little": [
+            "Give them to Ruby",
+            "Đưa cho Ruby"
+          ],
+          "older": [
+            "Give them to Ruby",
+            "Đưa cho Ruby"
+          ]
+        }
+      ],
+      "reward": {
+        "sticker": "fest_newyear",
+        "coins": 10
+      },
+      "title": [
+        "New Year’s Eve",
+        "Đêm Giao thừa Dương lịch"
+      ],
+      "giverName": {
+        "icon": "👧",
+        "en": "Ruby",
+        "vi": "Ruby"
+      }
+    },
+    {
+      "id": "fest_ausday",
+      "giver": "jack",
+      "icon": "🇦🇺",
+      "en": "",
+      "vi": "",
+      "places": [
+        "town"
+      ],
+      "ages": [
+        "little",
+        "big"
+      ],
+      "festival": "ausday",
+      "say": [
+        "Happy Australia Day! Let us put up little flags.",
+        "Chúc mừng Ngày Nước Úc! Mình cùng cắm cờ nhỏ nhé."
+      ],
+      "miss": [
+        "What a lovely festival we had yesterday!",
+        "Hôm qua lễ hội vui quá con nhỉ!"
+      ],
+      "steps": [
+        {
+          "kind": "go",
+          "place": "town",
+          "icon": "🏘️",
+          "en": "Walk to Two Homes Street",
+          "vi": "Đi đến Phố Hai Quê",
+          "little": [
+            "Walk to Two Homes Street",
+            "Đi đến Phố Hai Quê"
+          ],
+          "older": [
+            "Walk to Two Homes Street",
+            "Đi đến Phố Hai Quê"
+          ]
+        },
+        {
+          "kind": "find",
+          "at": "npc_jack",
+          "n": 3,
+          "big": 5,
+          "thing": {
+            "icon": "🇦🇺",
+            "en": "little flags",
+            "vi": "lá cờ nhỏ"
+          },
+          "icon": "🇦🇺",
+          "en": "Find {n} little flags",
+          "vi": "Tìm {n} lá cờ nhỏ",
+          "little": [
+            "Find 3 little flags",
+            "Tìm 3 lá cờ nhỏ"
+          ],
+          "older": [
+            "Find 5 little flags",
+            "Tìm 5 lá cờ nhỏ"
+          ]
+        },
+        {
+          "kind": "give",
+          "at": "npc_jack",
+          "icon": "👦",
+          "en": "Give them to Jack",
+          "vi": "Đưa cho Jack",
+          "little": [
+            "Give them to Jack",
+            "Đưa cho Jack"
+          ],
+          "older": [
+            "Give them to Jack",
+            "Đưa cho Jack"
+          ]
+        }
+      ],
+      "reward": {
+        "sticker": "fest_ausday",
+        "coins": 10
+      },
+      "title": [
+        "Australia Day",
+        "Ngày Nước Úc"
+      ],
+      "giverName": {
+        "icon": "👦",
+        "en": "Jack",
+        "vi": "Jack"
+      }
+    },
+    {
+      "id": "fest_cleanup",
+      "giver": "ruby",
+      "icon": "♻️",
+      "en": "",
+      "vi": "",
+      "places": [
+        "town"
+      ],
+      "ages": [
+        "little",
+        "big"
+      ],
+      "festival": "cleanup",
+      "say": [
+        "It is Clean Up Day. Help me pick up rubbish!",
+        "Hôm nay là Ngày Làm Sạch. Giúp tớ nhặt rác nhé!"
+      ],
+      "miss": [
+        "What a lovely festival we had yesterday!",
+        "Hôm qua lễ hội vui quá con nhỉ!"
+      ],
+      "steps": [
+        {
+          "kind": "go",
+          "place": "town",
+          "icon": "🏘️",
+          "en": "Walk to Two Homes Street",
+          "vi": "Đi đến Phố Hai Quê",
+          "little": [
+            "Walk to Two Homes Street",
+            "Đi đến Phố Hai Quê"
+          ],
+          "older": [
+            "Walk to Two Homes Street",
+            "Đi đến Phố Hai Quê"
+          ]
+        },
+        {
+          "kind": "find",
+          "at": "npc_ruby",
+          "n": 3,
+          "big": 5,
+          "thing": {
+            "icon": "♻️",
+            "en": "bits of rubbish",
+            "vi": "mẩu rác"
+          },
+          "icon": "♻️",
+          "en": "Find {n} bits of rubbish",
+          "vi": "Tìm {n} mẩu rác",
+          "little": [
+            "Find 3 bits of rubbish",
+            "Tìm 3 mẩu rác"
+          ],
+          "older": [
+            "Find 5 bits of rubbish",
+            "Tìm 5 mẩu rác"
+          ]
+        },
+        {
+          "kind": "give",
+          "at": "npc_ruby",
+          "icon": "👧",
+          "en": "Give them to Ruby",
+          "vi": "Đưa cho Ruby",
+          "little": [
+            "Give them to Ruby",
+            "Đưa cho Ruby"
+          ],
+          "older": [
+            "Give them to Ruby",
+            "Đưa cho Ruby"
+          ]
+        }
+      ],
+      "reward": {
+        "sticker": "fest_cleanup",
+        "coins": 10
+      },
+      "title": [
+        "Clean Up Australia Day",
+        "Ngày Làm Sạch nước Úc"
+      ],
+      "giverName": {
+        "icon": "👧",
+        "en": "Ruby",
+        "vi": "Ruby"
+      }
+    },
+    {
+      "id": "fest_harmony",
+      "giver": "lan",
+      "icon": "🤝",
+      "en": "",
+      "vi": "",
+      "places": [
+        "town"
+      ],
+      "ages": [
+        "little",
+        "big"
+      ],
+      "festival": "harmony",
+      "say": [
+        "It is Harmony Day, and everyone belongs. Find friendship bands to share!",
+        "Ngày Hòa hợp rồi, ai cũng là bạn. Mình tìm vòng tay để chia nhau nhé!"
+      ],
+      "miss": [
+        "What a lovely festival we had yesterday!",
+        "Hôm qua lễ hội vui quá con nhỉ!"
+      ],
+      "steps": [
+        {
+          "kind": "go",
+          "place": "town",
+          "icon": "🏘️",
+          "en": "Walk to Two Homes Street",
+          "vi": "Đi đến Phố Hai Quê",
+          "little": [
+            "Walk to Two Homes Street",
+            "Đi đến Phố Hai Quê"
+          ],
+          "older": [
+            "Walk to Two Homes Street",
+            "Đi đến Phố Hai Quê"
+          ]
+        },
+        {
+          "kind": "find",
+          "at": "npc_lan",
+          "n": 3,
+          "big": 5,
+          "thing": {
+            "icon": "🤝",
+            "en": "friendship bands",
+            "vi": "vòng tay bạn bè"
+          },
+          "icon": "🤝",
+          "en": "Find {n} friendship bands",
+          "vi": "Tìm {n} vòng tay bạn bè",
+          "little": [
+            "Find 3 friendship bands",
+            "Tìm 3 vòng tay bạn bè"
+          ],
+          "older": [
+            "Find 5 friendship bands",
+            "Tìm 5 vòng tay bạn bè"
+          ]
+        },
+        {
+          "kind": "give",
+          "at": "npc_lan",
+          "icon": "👧",
+          "en": "Give them to Lan",
+          "vi": "Đưa cho Lan",
+          "little": [
+            "Give them to Lan",
+            "Đưa cho Lan"
+          ],
+          "older": [
+            "Give them to Lan",
+            "Đưa cho Lan"
+          ]
+        }
+      ],
+      "reward": {
+        "sticker": "fest_harmony",
+        "coins": 10
+      },
+      "title": [
+        "Harmony Day",
+        "Ngày Hòa hợp"
+      ],
+      "giverName": {
+        "icon": "👧",
+        "en": "Lan",
+        "vi": "Lan"
+      }
+    },
+    {
+      "id": "fest_holi",
+      "giver": "lan",
+      "icon": "🎨",
+      "en": "",
+      "vi": "",
+      "places": [
+        "town"
+      ],
+      "ages": [
+        "little",
+        "big"
+      ],
+      "festival": "holi",
+      "say": [
+        "Happy Holi! Find the colour pots for the festival.",
+        "Chúc mừng lễ Holi! Mình tìm hũ màu cho lễ hội nhé."
+      ],
+      "miss": [
+        "What a lovely festival we had yesterday!",
+        "Hôm qua lễ hội vui quá con nhỉ!"
+      ],
+      "steps": [
+        {
+          "kind": "go",
+          "place": "town",
+          "icon": "🏘️",
+          "en": "Walk to Two Homes Street",
+          "vi": "Đi đến Phố Hai Quê",
+          "little": [
+            "Walk to Two Homes Street",
+            "Đi đến Phố Hai Quê"
+          ],
+          "older": [
+            "Walk to Two Homes Street",
+            "Đi đến Phố Hai Quê"
+          ]
+        },
+        {
+          "kind": "find",
+          "at": "npc_lan",
+          "n": 3,
+          "big": 5,
+          "thing": {
+            "icon": "🎨",
+            "en": "colour pots",
+            "vi": "hũ màu"
+          },
+          "icon": "🎨",
+          "en": "Find {n} colour pots",
+          "vi": "Tìm {n} hũ màu",
+          "little": [
+            "Find 3 colour pots",
+            "Tìm 3 hũ màu"
+          ],
+          "older": [
+            "Find 5 colour pots",
+            "Tìm 5 hũ màu"
+          ]
+        },
+        {
+          "kind": "give",
+          "at": "npc_lan",
+          "icon": "👧",
+          "en": "Give them to Lan",
+          "vi": "Đưa cho Lan",
+          "little": [
+            "Give them to Lan",
+            "Đưa cho Lan"
+          ],
+          "older": [
+            "Give them to Lan",
+            "Đưa cho Lan"
+          ]
+        }
+      ],
+      "reward": {
+        "sticker": "fest_holi",
+        "coins": 10
+      },
+      "title": [
+        "Holi, the festival of colours",
+        "Lễ hội sắc màu Holi"
+      ],
+      "giverName": {
+        "icon": "👧",
+        "en": "Lan",
+        "vi": "Lan"
+      }
+    },
+    {
+      "id": "fest_anzac",
+      "giver": "nghi",
+      "icon": "🌺",
+      "en": "",
+      "vi": "",
+      "places": [
+        "town"
+      ],
+      "ages": [
+        "little",
+        "big"
+      ],
+      "festival": "anzac",
+      "say": [
+        "Today is Anzac Day. We find red poppies to remember.",
+        "Hôm nay là Ngày Anzac. Mình tìm hoa đỏ để tưởng nhớ."
+      ],
+      "miss": [
+        "What a lovely festival we had yesterday!",
+        "Hôm qua lễ hội vui quá con nhỉ!"
+      ],
+      "steps": [
+        {
+          "kind": "go",
+          "place": "town",
+          "icon": "🏘️",
+          "en": "Walk to Two Homes Street",
+          "vi": "Đi đến Phố Hai Quê",
+          "little": [
+            "Walk to Two Homes Street",
+            "Đi đến Phố Hai Quê"
+          ],
+          "older": [
+            "Walk to Two Homes Street",
+            "Đi đến Phố Hai Quê"
+          ]
+        },
+        {
+          "kind": "find",
+          "at": "npc_ongnghi",
+          "n": 3,
+          "big": 5,
+          "thing": {
+            "icon": "🌺",
+            "en": "red poppies",
+            "vi": "hoa anh túc đỏ"
+          },
+          "icon": "🌺",
+          "en": "Find {n} red poppies",
+          "vi": "Tìm {n} hoa anh túc đỏ",
+          "little": [
+            "Find 3 red poppies",
+            "Tìm 3 hoa anh túc đỏ"
+          ],
+          "older": [
+            "Find 5 red poppies",
+            "Tìm 5 hoa anh túc đỏ"
+          ]
+        },
+        {
+          "kind": "give",
+          "at": "npc_ongnghi",
+          "icon": "👴",
+          "en": "Give them to Grandpa Nghi",
+          "vi": "Đưa cho Ông Nghi",
+          "little": [
+            "Give them to Grandpa Nghi",
+            "Đưa cho Ông Nghi"
+          ],
+          "older": [
+            "Give them to Grandpa Nghi",
+            "Đưa cho Ông Nghi"
+          ]
+        }
+      ],
+      "reward": {
+        "sticker": "fest_anzac",
+        "coins": 10
+      },
+      "title": [
+        "Anzac Day",
+        "Ngày Anzac"
+      ],
+      "giverName": {
+        "icon": "👴",
+        "en": "Grandpa Nghi",
+        "vi": "Ông Nghi"
+      }
+    },
+    {
+      "id": "fest_reconciliation",
+      "giver": "jack",
+      "icon": "🖐️",
+      "en": "",
+      "vi": "",
+      "places": [
+        "town"
+      ],
+      "ages": [
+        "little",
+        "big"
+      ],
+      "festival": "reconciliation",
+      "say": [
+        "It is Reconciliation Week. Find painted hands for our friendship wall.",
+        "Tuần lễ Hòa giải rồi. Mình tìm bàn tay vẽ cho bức tường tình bạn nhé."
+      ],
+      "miss": [
+        "What a lovely festival we had yesterday!",
+        "Hôm qua lễ hội vui quá con nhỉ!"
+      ],
+      "steps": [
+        {
+          "kind": "go",
+          "place": "town",
+          "icon": "🏘️",
+          "en": "Walk to Two Homes Street",
+          "vi": "Đi đến Phố Hai Quê",
+          "little": [
+            "Walk to Two Homes Street",
+            "Đi đến Phố Hai Quê"
+          ],
+          "older": [
+            "Walk to Two Homes Street",
+            "Đi đến Phố Hai Quê"
+          ]
+        },
+        {
+          "kind": "find",
+          "at": "npc_jack",
+          "n": 3,
+          "big": 5,
+          "thing": {
+            "icon": "🖐️",
+            "en": "painted hands",
+            "vi": "bàn tay vẽ"
+          },
+          "icon": "🖐️",
+          "en": "Find {n} painted hands",
+          "vi": "Tìm {n} bàn tay vẽ",
+          "little": [
+            "Find 3 painted hands",
+            "Tìm 3 bàn tay vẽ"
+          ],
+          "older": [
+            "Find 5 painted hands",
+            "Tìm 5 bàn tay vẽ"
+          ]
+        },
+        {
+          "kind": "give",
+          "at": "npc_jack",
+          "icon": "👦",
+          "en": "Give them to Jack",
+          "vi": "Đưa cho Jack",
+          "little": [
+            "Give them to Jack",
+            "Đưa cho Jack"
+          ],
+          "older": [
+            "Give them to Jack",
+            "Đưa cho Jack"
+          ]
+        }
+      ],
+      "reward": {
+        "sticker": "fest_reconciliation",
+        "coins": 10
+      },
+      "title": [
+        "Reconciliation Week",
+        "Tuần lễ Hòa giải"
+      ],
+      "giverName": {
+        "icon": "👦",
+        "en": "Jack",
+        "vi": "Jack"
+      }
+    },
+    {
+      "id": "fest_naidoc",
+      "giver": "ruby",
+      "icon": "🪃",
+      "en": "",
+      "vi": "",
+      "places": [
+        "town"
+      ],
+      "ages": [
+        "little",
+        "big"
+      ],
+      "festival": "naidoc",
+      "say": [
+        "It is NAIDOC Week. Find the painted boomerangs for the celebration!",
+        "Tuần lễ NAIDOC rồi. Mình tìm boomerang vẽ cho buổi lễ nhé!"
+      ],
+      "miss": [
+        "What a lovely festival we had yesterday!",
+        "Hôm qua lễ hội vui quá con nhỉ!"
+      ],
+      "steps": [
+        {
+          "kind": "go",
+          "place": "town",
+          "icon": "🏘️",
+          "en": "Walk to Two Homes Street",
+          "vi": "Đi đến Phố Hai Quê",
+          "little": [
+            "Walk to Two Homes Street",
+            "Đi đến Phố Hai Quê"
+          ],
+          "older": [
+            "Walk to Two Homes Street",
+            "Đi đến Phố Hai Quê"
+          ]
+        },
+        {
+          "kind": "find",
+          "at": "npc_ruby",
+          "n": 3,
+          "big": 5,
+          "thing": {
+            "icon": "🪃",
+            "en": "boomerangs",
+            "vi": "boomerang"
+          },
+          "icon": "🪃",
+          "en": "Find {n} boomerangs",
+          "vi": "Tìm {n} boomerang",
+          "little": [
+            "Find 3 boomerangs",
+            "Tìm 3 boomerang"
+          ],
+          "older": [
+            "Find 5 boomerangs",
+            "Tìm 5 boomerang"
+          ]
+        },
+        {
+          "kind": "give",
+          "at": "npc_ruby",
+          "icon": "👧",
+          "en": "Give them to Ruby",
+          "vi": "Đưa cho Ruby",
+          "little": [
+            "Give them to Ruby",
+            "Đưa cho Ruby"
+          ],
+          "older": [
+            "Give them to Ruby",
+            "Đưa cho Ruby"
+          ]
+        }
+      ],
+      "reward": {
+        "sticker": "fest_naidoc",
+        "coins": 10
+      },
+      "title": [
+        "NAIDOC Week",
+        "Tuần lễ NAIDOC"
+      ],
+      "giverName": {
+        "icon": "👧",
+        "en": "Ruby",
+        "vi": "Ruby"
+      }
+    },
+    {
+      "id": "fest_diwali",
+      "giver": "lan",
+      "icon": "🪔",
+      "en": "",
+      "vi": "",
+      "places": [
+        "town"
+      ],
+      "ages": [
+        "little",
+        "big"
+      ],
+      "festival": "diwali",
+      "say": [
+        "Happy Diwali! Find little lamps to light up the street.",
+        "Chúc mừng lễ Diwali! Mình tìm đèn nhỏ thắp sáng cả phố nhé."
+      ],
+      "miss": [
+        "What a lovely festival we had yesterday!",
+        "Hôm qua lễ hội vui quá con nhỉ!"
+      ],
+      "steps": [
+        {
+          "kind": "go",
+          "place": "town",
+          "icon": "🏘️",
+          "en": "Walk to Two Homes Street",
+          "vi": "Đi đến Phố Hai Quê",
+          "little": [
+            "Walk to Two Homes Street",
+            "Đi đến Phố Hai Quê"
+          ],
+          "older": [
+            "Walk to Two Homes Street",
+            "Đi đến Phố Hai Quê"
+          ]
+        },
+        {
+          "kind": "find",
+          "at": "npc_lan",
+          "n": 3,
+          "big": 5,
+          "thing": {
+            "icon": "🪔",
+            "en": "little lamps",
+            "vi": "đèn dầu nhỏ"
+          },
+          "icon": "🪔",
+          "en": "Find {n} little lamps",
+          "vi": "Tìm {n} đèn dầu nhỏ",
+          "little": [
+            "Find 3 little lamps",
+            "Tìm 3 đèn dầu nhỏ"
+          ],
+          "older": [
+            "Find 5 little lamps",
+            "Tìm 5 đèn dầu nhỏ"
+          ]
+        },
+        {
+          "kind": "give",
+          "at": "npc_lan",
+          "icon": "👧",
+          "en": "Give them to Lan",
+          "vi": "Đưa cho Lan",
+          "little": [
+            "Give them to Lan",
+            "Đưa cho Lan"
+          ],
+          "older": [
+            "Give them to Lan",
+            "Đưa cho Lan"
+          ]
+        }
+      ],
+      "reward": {
+        "sticker": "fest_diwali",
+        "coins": 10
+      },
+      "title": [
+        "Diwali, the festival of lights",
+        "Lễ hội ánh sáng Diwali"
+      ],
+      "giverName": {
+        "icon": "👧",
+        "en": "Lan",
+        "vi": "Lan"
+      }
+    }
+  ],
+  "weekPrizes": [
+    {
+      "hat": "party",
+      "icon": "🎉",
+      "en": "A party hat for your companion",
+      "vi": "Mũ sinh nhật cho bạn đồng hành"
+    },
+    {
+      "pet": "kitty",
+      "icon": "🐱",
+      "en": "A kitten to look after",
+      "vi": "Một bé mèo để chăm sóc"
+    },
+    {
+      "hat": "flower",
+      "icon": "🌸",
+      "en": "A flower crown for your companion",
+      "vi": "Vòng hoa cho bạn đồng hành"
+    },
+    {
+      "pet": "bunny",
+      "icon": "🐰",
+      "en": "A bunny to look after",
+      "vi": "Một bé thỏ để chăm sóc"
+    },
+    {
+      "hat": "nonla",
+      "icon": "👒",
+      "en": "A little nón lá for your companion",
+      "vi": "Nón lá nhỏ cho bạn đồng hành"
+    },
+    {
+      "pet": "panda",
+      "icon": "🐼",
+      "en": "A baby panda to look after",
+      "vi": "Một bé gấu trúc để chăm sóc"
+    },
+    {
+      "hat": "crown",
+      "icon": "👑",
+      "en": "A golden crown for your companion",
+      "vi": "Vương miện vàng cho bạn đồng hành"
+    },
+    {
+      "pet": "joey",
+      "icon": "🦘",
+      "en": "A joey to look after",
+      "vi": "Một bé chuột túi để chăm sóc"
+    },
+    {
+      "pet": "calf",
+      "icon": "🐮",
+      "en": "A calf to look after",
+      "vi": "Một bé bê để chăm sóc"
+    }
+  ],
+  "family": [
+    {
+      "id": "f_table",
+      "kind": "day",
+      "icon": "🍽️",
+      "en": "Help set the table for dinner.",
+      "vi": "Giúp dọn bàn cho bữa tối.",
+      "on": true
+    },
+    {
+      "id": "f_thanks",
+      "kind": "day",
+      "icon": "💛",
+      "en": "Say \"thank you\" and \"cảm ơn\" to someone in your family today.",
+      "vi": "Nói \"cảm ơn\" và \"thank you\" với một người trong nhà hôm nay."
+    },
+    {
+      "id": "f_plant",
+      "kind": "day",
+      "icon": "🌱",
+      "en": "Water a plant together with a grown-up.",
+      "vi": "Cùng người lớn tưới cây."
+    },
+    {
+      "id": "f_toys",
+      "kind": "day",
+      "icon": "🧸",
+      "en": "Put your toys back in their home.",
+      "vi": "Cất đồ chơi về đúng chỗ."
+    },
+    {
+      "id": "f_fruit",
+      "kind": "day",
+      "icon": "🍎",
+      "en": "Eat a piece of fruit and say its name in both languages.",
+      "vi": "Ăn một miếng trái cây và nói tên của nó bằng hai thứ tiếng."
+    },
+    {
+      "id": "f_draw",
+      "kind": "week",
+      "icon": "🖍️",
+      "en": "Draw your favourite place in the valley and show your family.",
+      "vi": "Vẽ nơi con thích nhất trong thung lũng rồi cho cả nhà xem.",
+      "on": true
+    },
+    {
+      "id": "f_call",
+      "kind": "week",
+      "icon": "📞",
+      "en": "Call or video-call a grandparent and tell them one thing you learnt.",
+      "vi": "Gọi điện cho ông bà và kể một điều con mới học được."
+    },
+    {
+      "id": "f_cook",
+      "kind": "week",
+      "icon": "🥟",
+      "en": "Help cook one dish from the valley with a grown-up.",
+      "vi": "Cùng người lớn nấu một món ăn có trong thung lũng."
+    },
+    {
+      "id": "f_walk",
+      "kind": "week",
+      "icon": "🌳",
+      "en": "Go for a walk outside and find three things the valley has too.",
+      "vi": "Đi dạo ngoài trời và tìm ba thứ mà thung lũng cũng có."
+    },
+    {
+      "id": "f_song",
+      "kind": "week",
+      "icon": "🎵",
+      "en": "Sing a song from the valley together.",
+      "vi": "Cả nhà cùng hát một bài hát trong thung lũng."
+    },
+    {
+      "id": "f_teeth",
+      "kind": "bedtime",
+      "icon": "🪥",
+      "en": "Brush your teeth without being asked.",
+      "vi": "Tự đánh răng mà không cần nhắc.",
+      "on": true
+    },
+    {
+      "id": "f_pyjamas",
+      "kind": "bedtime",
+      "icon": "🌙",
+      "en": "Put on your pyjamas all by yourself.",
+      "vi": "Tự mặc đồ ngủ."
+    },
+    {
+      "id": "f_book",
+      "kind": "bedtime",
+      "icon": "📚",
+      "en": "Choose a book for a grown-up to read with you.",
+      "vi": "Chọn một cuốn sách để người lớn đọc cùng con."
+    },
+    {
+      "id": "f_best",
+      "kind": "bedtime",
+      "icon": "⭐",
+      "en": "Tell a grown-up the best thing about your day.",
+      "vi": "Kể cho người lớn nghe điều vui nhất trong ngày."
+    },
+    {
+      "id": "f_hug",
+      "kind": "bedtime",
+      "icon": "🤗",
+      "en": "Give everyone a goodnight hug.",
+      "vi": "Ôm chúc ngủ ngon mọi người trong nhà."
+    }
+  ],
+  "hunts": [
+    {
+      "shape": "envelope",
+      "en": "Tết, the Lunar New Year",
+      "vi": "Tết Nguyên Đán",
+      "say": [
+        "Five red envelopes are hidden among the Tết decorations. Can you find them?",
+        "Có năm bao lì xì giấu giữa đồ trang trí Tết. Con tìm được không?"
+      ],
+      "id": "tet",
+      "icon": "🧧",
+      "group": "vn",
+      "when": {
+        "lunar": [
+          1,
+          1
+        ]
+      },
+      "days": 3,
+      "kind": "party",
+      "where": [
+        "village",
+        "china",
+        "hanoi",
+        "saigon",
+        "market",
+        "hoian",
+        "vungtau"
+      ],
+      "theme": "tet",
+      "show": "fireworks",
+      "game": "dragon",
+      "treat": null,
+      "lines": [
+        [
+          "Chúc mừng năm mới! Happy Lunar New Year! Families clean their houses, cook bánh chưng and visit their grandparents.",
+          "Chúc mừng năm mới! Mọi nhà dọn dẹp nhà cửa, gói bánh chưng và đi thăm ông bà."
+        ],
+        [
+          "Here is a red lucky-money envelope, lì xì, for you! In China it is called hóngbāo.",
+          "Đây là bao lì xì đỏ cho con! Ở Trung Quốc người ta gọi là hóngbāo."
+        ]
+      ],
+      "objectEn": "red envelopes",
+      "objectVi": "bao lì xì"
+    },
+    {
+      "shape": "lantern",
+      "en": "First Full Moon of the year",
+      "vi": "Rằm tháng Giêng",
+      "say": [
+        "Five little lanterns are hidden for the First Full Moon. Can you find them?",
+        "Có năm chiếc đèn lồng nhỏ giấu cho Rằm tháng Giêng. Con tìm được không?"
+      ],
+      "id": "ramthang1",
+      "icon": "🏮",
+      "group": "vn",
+      "when": {
+        "lunar": [
+          15,
+          1
+        ]
+      },
+      "kind": "party",
+      "where": [
+        "village",
+        "hoian"
+      ],
+      "theme": "lanterns",
+      "show": "lanterns",
+      "game": "kite",
+      "treat": null,
+      "lines": [
+        [
+          "It is the first full moon of the new year! Families light lanterns and visit the pagoda.",
+          "Hôm nay là Rằm tháng Giêng, trăng rằm đầu tiên của năm! Mọi nhà thắp đèn lồng và đi chùa."
+        ],
+        [
+          "People say: Rằm tháng Giêng is worth all the full moons of the year!",
+          "Người ta nói: Lễ quanh năm không bằng Rằm tháng Giêng!"
+        ]
+      ],
+      "objectEn": "little lanterns",
+      "objectVi": "chiếc đèn lồng nhỏ"
+    },
+    {
+      "shape": "flower",
+      "en": "Hùng Kings’ Day",
+      "vi": "Giỗ Tổ Hùng Vương",
+      "say": [
+        "Five yellow flowers are hidden for Hùng Kings’ Day. Can you find them gently?",
+        "Có năm bông hoa vàng giấu cho ngày Giỗ Tổ. Con nhẹ nhàng tìm nhé?"
+      ],
+      "id": "giotohung",
+      "icon": "👑",
+      "group": "vn",
+      "when": {
+        "lunar": [
+          10,
+          3
+        ]
+      },
+      "kind": "quiet",
+      "where": [
+        "village",
+        "hanoi"
+      ],
+      "theme": "flags-vn",
+      "show": "none",
+      "game": "puppets",
+      "treat": "banhchung",
+      "lines": [
+        [
+          "Today we remember the Hùng Kings, the first kings of Vietnam, long, long ago.",
+          "Hôm nay mình tưởng nhớ các Vua Hùng, những vị vua đầu tiên của nước Việt từ ngày xửa ngày xưa."
+        ],
+        [
+          "Remember the story of the square cake and the round cake? It began with a Hùng King.",
+          "Con nhớ chuyện bánh chưng bánh giầy không? Chuyện bắt đầu từ một vị Vua Hùng đó."
+        ]
+      ],
+      "objectEn": "yellow flowers",
+      "objectVi": "bông hoa vàng"
+    },
+    {
+      "shape": "dumpling",
+      "en": "Mid-Year Festival (Đoan Ngọ)",
+      "vi": "Tết Đoan Ngọ",
+      "say": [
+        "Five rice dumplings are hidden for Đoan Ngọ. Can you find them?",
+        "Có năm chiếc bánh ú giấu cho Tết Đoan Ngọ. Con tìm được không?"
+      ],
+      "id": "doanngo",
+      "icon": "🐉",
+      "group": "vn",
+      "when": {
+        "lunar": [
+          5,
+          5
+        ]
+      },
+      "kind": "party",
+      "where": [
+        "village",
+        "china"
+      ],
+      "theme": "dragonboat",
+      "show": "parade",
+      "game": "tug",
+      "treat": "fruit",
+      "lines": [
+        [
+          "Happy Tết Đoan Ngọ! At noon people eat sour fruit and sticky rice wine to chase away little tummy bugs.",
+          "Tết Đoan Ngọ vui vẻ! Buổi trưa mọi người ăn trái cây chua và cơm rượu nếp để \"giết sâu bọ\"."
+        ],
+        [
+          "In China it is the Dragon Boat Festival, with races on the river!",
+          "Ở Trung Quốc là Tết Thuyền Rồng, có đua thuyền trên sông!"
+        ]
+      ],
+      "objectEn": "rice dumplings",
+      "objectVi": "chiếc bánh ú"
+    },
+    {
+      "shape": "flower",
+      "en": "Vu Lan, Thank-You-Parents Day",
+      "vi": "Lễ Vu Lan",
+      "say": [
+        "Five red roses are hidden for Vu Lan, to thank our parents. Can you find them?",
+        "Có năm bông hồng đỏ giấu cho lễ Vu Lan, để cảm ơn cha mẹ. Con tìm được không?"
+      ],
+      "id": "vulan",
+      "icon": "🌹",
+      "group": "vn",
+      "when": {
+        "lunar": [
+          15,
+          7
+        ]
+      },
+      "kind": "quiet",
+      "where": [
+        "village"
+      ],
+      "theme": "hearts",
+      "show": "none",
+      "game": "familyquiz",
+      "treat": null,
+      "lines": [
+        [
+          "Vu Lan is the day to thank our parents and grandparents for their love.",
+          "Lễ Vu Lan là ngày mình cảm ơn ông bà cha mẹ đã thương yêu mình."
+        ],
+        [
+          "People wear a little rose: red if their mum is near, white to remember her.",
+          "Mọi người cài một bông hồng nhỏ trên áo để nhớ đến mẹ."
+        ],
+        [
+          "Can you give someone at home a big hug today?",
+          "Hôm nay con ôm thật chặt người thân trong nhà nhé?"
+        ]
+      ],
+      "objectEn": "red roses",
+      "objectVi": "bông hồng đỏ"
+    },
+    {
+      "shape": "mooncake",
+      "en": "Mid-Autumn Festival",
+      "vi": "Tết Trung Thu",
+      "say": [
+        "Five mooncakes are hidden among the Mid-Autumn lanterns. Can you find them?",
+        "Có năm chiếc bánh trung thu giấu giữa những chiếc đèn Trung Thu. Con tìm được không?"
+      ],
+      "id": "midautumn",
+      "icon": "🥮",
+      "group": "vn",
+      "when": {
+        "lunar": [
+          15,
+          8
+        ]
+      },
+      "kind": "party",
+      "where": [
+        "village",
+        "china",
+        "hanoi",
+        "hoian",
+        "vungtau"
+      ],
+      "theme": "lanterns",
+      "show": "lanterns",
+      "game": "kite",
+      "treat": "mooncake",
+      "lines": [
+        [
+          "It is the Mid-Autumn Festival! Children carry star lanterns under the full moon and share mooncakes.",
+          "Tết Trung Thu rồi! Các bạn nhỏ rước đèn ông sao dưới trăng rằm và cùng ăn bánh trung thu."
+        ],
+        [
+          "Look at the moon tonight: can you see the moon lady Chị Hằng and the rabbit?",
+          "Tối nay ngắm trăng nhé: con có thấy Chị Hằng và chú thỏ không?"
+        ]
+      ],
+      "objectEn": "mooncakes",
+      "objectVi": "chiếc bánh trung thu"
+    },
+    {
+      "shape": "carp",
+      "en": "Kitchen Gods’ Day",
+      "vi": "Ông Công Ông Táo",
+      "say": [
+        "Five golden carp are hidden for the Kitchen Gods’ Day. Can you find them?",
+        "Có năm chú cá chép vàng giấu cho ngày Ông Công Ông Táo. Con tìm được không?"
+      ],
+      "id": "ongtao",
+      "icon": "🐟",
+      "group": "vn",
+      "when": {
+        "lunar": [
+          23,
+          12
+        ]
+      },
+      "kind": "party",
+      "where": [
+        "village",
+        "market"
+      ],
+      "theme": "kitchen",
+      "show": "none",
+      "game": "market",
+      "treat": "cakho",
+      "lines": [
+        [
+          "A week before Tết, the Kitchen Gods ride a golden carp up to heaven to tell how the family’s year went!",
+          "Một tuần trước Tết, Ông Táo cưỡi cá chép vàng bay về trời kể chuyện một năm của gia đình!"
+        ],
+        [
+          "Families set a carp free in the pond and start getting ready for Tết.",
+          "Mọi nhà thả cá chép xuống ao và bắt đầu chuẩn bị đón Tết."
+        ]
+      ],
+      "objectEn": "golden carp",
+      "objectVi": "chú cá chép vàng"
+    },
+    {
+      "shape": "balloon",
+      "en": "Children’s Day (1 June)",
+      "vi": "Ngày Quốc tế Thiếu nhi 1/6",
+      "say": [
+        "Five balloons are hidden for Children’s Day. Can you find them?",
+        "Có năm quả bóng bay giấu cho ngày Thiếu nhi. Con tìm được không?"
+      ],
+      "id": "thieunhi",
+      "icon": "🎈",
+      "group": "vn",
+      "when": {
+        "date": [
+          6,
+          1
+        ]
+      },
+      "kind": "party",
+      "where": [
+        "village",
+        "town",
+        "home"
+      ],
+      "theme": "kids",
+      "show": "parade",
+      "game": "balloon",
+      "treat": "chechuoi",
+      "lines": [
+        [
+          "Happy Children’s Day! In Vietnam, 1 June is a day all about children: presents, games and parties!",
+          "Chúc mừng ngày 1/6! Ở Việt Nam, ngày 1/6 là ngày của các bạn nhỏ: quà, trò chơi và tiệc vui!"
+        ],
+        [
+          "Today every game gives a little extra present!",
+          "Hôm nay trò chơi nào cũng có thêm quà nhỏ nhé!"
+        ]
+      ],
+      "objectEn": "balloons",
+      "objectVi": "quả bóng bay"
+    },
+    {
+      "shape": "star",
+      "en": "Vietnam’s National Day",
+      "vi": "Quốc khánh 2/9",
+      "say": [
+        "Five gold stars are hidden for National Day. Can you find them?",
+        "Có năm ngôi sao vàng giấu cho ngày Quốc khánh. Con tìm được không?"
+      ],
+      "id": "quockhanh",
+      "icon": "🇻🇳",
+      "group": "vn",
+      "when": {
+        "date": [
+          9,
+          2
+        ]
+      },
+      "kind": "party",
+      "where": [
+        "hanoi",
+        "saigon",
+        "village",
+        "vungtau"
+      ],
+      "theme": "flags-vn",
+      "show": "fireworks",
+      "game": "puppets",
+      "treat": "pho",
+      "lines": [
+        [
+          "Happy National Day! On 2 September, Vietnam celebrates its birthday with red flags and fireworks.",
+          "Mừng Quốc khánh 2/9! Ngày này cả nước Việt Nam treo cờ đỏ và xem pháo hoa."
+        ],
+        [
+          "Have a bowl of phở to celebrate!",
+          "Ăn một tô phở mừng ngày lễ nhé!"
+        ]
+      ],
+      "objectEn": "gold stars",
+      "objectVi": "ngôi sao vàng"
+    },
+    {
+      "shape": "flower",
+      "en": "Teachers’ Day (20 November)",
+      "vi": "Ngày Nhà giáo Việt Nam 20/11",
+      "say": [
+        "Five flowers for the teachers are hidden in town. Can you find them?",
+        "Có năm bông hoa tặng thầy cô giấu trong phố. Con tìm được không?"
+      ],
+      "id": "nhagiao",
+      "icon": "💐",
+      "group": "vn",
+      "when": {
+        "date": [
+          11,
+          20
+        ]
+      },
+      "kind": "party",
+      "where": [
+        "town",
+        "village"
+      ],
+      "theme": "teacher",
+      "show": "none",
+      "game": "words",
+      "treat": null,
+      "lines": [
+        [
+          "Happy Teachers’ Day! In Vietnam, children bring flowers and cards to thank their teachers.",
+          "Mừng ngày 20/11! Các bạn học trò tặng hoa và thiệp để cảm ơn thầy cô."
+        ],
+        [
+          "Cô Tam is a teacher at the secondary school. Shall we say thank you to her?",
+          "Cô Tam là cô giáo trường cấp 2 đó. Mình cùng cảm ơn cô nhé?"
+        ]
+      ],
+      "objectEn": "flowers for the teachers",
+      "objectVi": "bông hoa tặng thầy cô"
+    },
+    {
+      "shape": "egg",
+      "en": "Easter",
+      "vi": "Lễ Phục Sinh",
+      "say": [
+        "Five painted eggs are hidden for Easter. Can you find them?",
+        "Có năm quả trứng tô màu giấu cho lễ Phục Sinh. Con tìm được không?"
+      ],
+      "id": "easter",
+      "icon": "🥚",
+      "group": "west",
+      "when": {
+        "easter": 0
+      },
+      "days": 2,
+      "kind": "party",
+      "where": [
+        "aussie",
+        "home",
+        "sydney"
+      ],
+      "theme": "eggs",
+      "show": "parade",
+      "game": "eggs",
+      "treat": "lamington",
+      "lines": [
+        [
+          "Happy Easter! Children hunt for painted eggs hidden in the garden.",
+          "Phục Sinh vui vẻ! Các bạn nhỏ đi tìm những quả trứng tô màu giấu trong vườn."
+        ],
+        [
+          "In Australia the Easter Bilby brings chocolate too!",
+          "Ở Úc còn có chú chuột Bilby Phục Sinh mang sô-cô-la đến nữa!"
+        ]
+      ],
+      "objectEn": "painted eggs",
+      "objectVi": "quả trứng tô màu"
+    },
+    {
+      "shape": "heart",
+      "en": "Mother’s Day",
+      "vi": "Ngày của Mẹ",
+      "say": [
+        "Five hearts for Mum are hidden near home. Can you find them?",
+        "Có năm trái tim tặng mẹ giấu gần nhà. Con tìm được không?"
+      ],
+      "id": "mothersday",
+      "icon": "💝",
+      "group": "west",
+      "when": {
+        "nth": [
+          5,
+          0,
+          2
+        ]
+      },
+      "kind": "party",
+      "where": [
+        "home",
+        "town"
+      ],
+      "theme": "hearts",
+      "show": "none",
+      "game": "familyquiz",
+      "treat": null,
+      "lines": [
+        [
+          "Happy Mother’s Day! Today we say thank you to mums and grandmas.",
+          "Mừng Ngày của Mẹ! Hôm nay mình cảm ơn mẹ và bà nhé."
+        ],
+        [
+          "Can you make a card or give a big hug?",
+          "Con làm một tấm thiệp hay ôm mẹ thật chặt nha?"
+        ]
+      ],
+      "objectEn": "hearts for Mum",
+      "objectVi": "trái tim tặng mẹ"
+    },
+    {
+      "shape": "heart",
+      "en": "Father’s Day",
+      "vi": "Ngày của Bố",
+      "say": [
+        "Five hearts for Dad are hidden near home. Can you find them?",
+        "Có năm trái tim tặng bố giấu gần nhà. Con tìm được không?"
+      ],
+      "id": "fathersday",
+      "icon": "👔",
+      "group": "west",
+      "when": {
+        "nth": [
+          9,
+          0,
+          1
+        ]
+      },
+      "kind": "party",
+      "where": [
+        "home",
+        "town"
+      ],
+      "theme": "hearts",
+      "show": "none",
+      "game": "familyquiz",
+      "treat": "sizzle",
+      "lines": [
+        [
+          "Happy Father’s Day! In Australia it is in September. Today we say thank you to dads and grandpas.",
+          "Mừng Ngày của Bố! Ở Úc ngày này vào tháng 9. Hôm nay mình cảm ơn bố và ông nhé."
+        ]
+      ],
+      "objectEn": "hearts for Dad",
+      "objectVi": "trái tim tặng bố"
+    },
+    {
+      "shape": "sweet",
+      "en": "Halloween",
+      "vi": "Lễ hội Halloween",
+      "say": [
+        "Five wrapped sweets are hidden among the pumpkins. Can you find them?",
+        "Có năm viên kẹo giấu giữa những quả bí ngô. Con tìm được không?"
+      ],
+      "id": "halloween",
+      "icon": "🎃",
+      "group": "west",
+      "when": {
+        "date": [
+          10,
+          31
+        ]
+      },
+      "kind": "party",
+      "where": [
+        "aussie",
+        "town",
+        "home",
+        "sydney",
+        "melbourne"
+      ],
+      "theme": "pumpkins",
+      "show": "lights",
+      "game": "memory",
+      "treat": null,
+      "lines": [
+        [
+          "Happy Halloween! Children dress up in fun costumes and knock on doors saying \"Trick or treat!\"",
+          "Halloween vui vẻ! Các bạn nhỏ hóa trang thật vui và gõ cửa từng nhà nói \"Cho kẹo hay bị ghẹo!\""
+        ],
+        [
+          "Look for houses with a smiling pumpkin by the door. Knock, and you get a treat!",
+          "Tìm những nhà có quả bí ngô cười trước cửa. Gõ cửa là được kẹo đó!"
+        ],
+        [
+          "Collect five treats and you get your very own pumpkin lantern!",
+          "Gom đủ năm viên kẹo là con được một chiếc đèn bí ngô của riêng mình!"
+        ]
+      ],
+      "objectEn": "wrapped sweets",
+      "objectVi": "viên kẹo"
+    },
+    {
+      "shape": "gift",
+      "en": "Christmas",
+      "vi": "Lễ Giáng Sinh",
+      "say": [
+        "Five little presents are hidden among the Christmas decorations. Can you find them?",
+        "Có năm món quà nhỏ giấu giữa đồ trang trí Giáng Sinh. Con tìm được không?"
+      ],
+      "id": "christmas",
+      "icon": "🎄",
+      "group": "west",
+      "when": {
+        "date": [
+          12,
+          25
+        ]
+      },
+      "days": 2,
+      "kind": "party",
+      "where": [
+        "aussie",
+        "town",
+        "sydney",
+        "saigon"
+      ],
+      "theme": "xmas",
+      "show": "lights",
+      "game": "parcel",
+      "treat": "xmascookie",
+      "lines": [
+        [
+          "Merry Christmas! In Australia Christmas is in summer, so lots of families go to the beach!",
+          "Giáng Sinh vui vẻ! Ở Úc Giáng Sinh rơi vào mùa hè, nên nhiều gia đình đi biển!"
+        ],
+        [
+          "Here is a Christmas cookie. Let’s play Pass the Parcel!",
+          "Tặng con bánh quy Giáng Sinh. Mình chơi Chuyền Quà nhé!"
+        ]
+      ],
+      "objectEn": "little presents",
+      "objectVi": "món quà nhỏ"
+    },
+    {
+      "shape": "star",
+      "en": "New Year’s Eve",
+      "vi": "Đêm Giao thừa Dương lịch",
+      "say": [
+        "Five sparkly stars are hidden for New Year’s Eve. Can you find them?",
+        "Có năm ngôi sao lấp lánh giấu cho đêm Giao thừa. Con tìm được không?"
+      ],
+      "id": "newyear",
+      "icon": "🎆",
+      "group": "west",
+      "when": {
+        "date": [
+          12,
+          31
+        ]
+      },
+      "kind": "party",
+      "where": [
+        "sydney",
+        "saigon",
+        "town"
+      ],
+      "theme": "sparkle",
+      "show": "fireworks",
+      "game": "balloon",
+      "treat": null,
+      "lines": [
+        [
+          "It is New Year’s Eve! Sydney is one of the first big cities in the world to see the new year, with fireworks over the Harbour Bridge.",
+          "Đêm giao thừa rồi! Sydney là một trong những thành phố lớn đầu tiên trên thế giới đón năm mới, với pháo hoa trên cầu Cảng."
+        ],
+        [
+          "Let’s count down together: ten, nine, eight…",
+          "Mình cùng đếm ngược nhé: mười, chín, tám…"
+        ]
+      ],
+      "objectEn": "sparkly stars",
+      "objectVi": "ngôi sao lấp lánh"
+    },
+    {
+      "shape": "star",
+      "en": "Australia Day",
+      "vi": "Ngày Nước Úc",
+      "say": [
+        "Five gold stars are hidden for Australia Day. Can you find them?",
+        "Có năm ngôi sao vàng giấu cho Ngày Nước Úc. Con tìm được không?"
+      ],
+      "id": "ausday",
+      "icon": "🇦🇺",
+      "group": "au",
+      "when": {
+        "date": [
+          1,
+          26
+        ]
+      },
+      "kind": "party",
+      "where": [
+        "aussie",
+        "sydney"
+      ],
+      "theme": "flags-au",
+      "show": "fireworks",
+      "game": "cricket",
+      "treat": "sizzle",
+      "lines": [
+        [
+          "Happy Australia Day! People have picnics and barbecues, play backyard cricket and watch fireworks.",
+          "Chúc mừng Ngày Nước Úc! Mọi người đi dã ngoại, nướng thịt, chơi cricket sân sau và xem pháo hoa."
+        ],
+        [
+          "It is also a day to remember the First Nations people, who have cared for this land for more than 60,000 years.",
+          "Đây cũng là ngày tưởng nhớ người Thổ dân, những người đã gìn giữ mảnh đất này hơn 60.000 năm."
+        ],
+        [
+          "Have a sausage sizzle!",
+          "Ăn xúc xích nướng kẹp bánh mì nhé!"
+        ]
+      ],
+      "objectEn": "gold stars",
+      "objectVi": "ngôi sao vàng"
+    },
+    {
+      "shape": "litter",
+      "en": "Clean Up Australia Day",
+      "vi": "Ngày Làm Sạch nước Úc",
+      "say": [
+        "Five bits of litter are left lying about. Can you find them and tidy up?",
+        "Có năm mẩu rác bị bỏ lại. Con tìm và dọn sạch giúp nhé?"
+      ],
+      "id": "cleanup",
+      "icon": "♻️",
+      "group": "au",
+      "when": {
+        "nth": [
+          3,
+          0,
+          1
+        ]
+      },
+      "kind": "party",
+      "where": [
+        "aussie",
+        "home"
+      ],
+      "theme": "clean",
+      "show": "none",
+      "game": "sorting",
+      "treat": null,
+      "lines": [
+        [
+          "It is Clean Up Australia Day! Families pick up rubbish in parks and on beaches.",
+          "Hôm nay là Ngày Làm Sạch nước Úc! Các gia đình cùng nhặt rác ở công viên và bãi biển."
+        ],
+        [
+          "Can you sort the rubbish into the right bins?",
+          "Con phân loại rác vào đúng thùng được không?"
+        ]
+      ],
+      "objectEn": "bits of litter",
+      "objectVi": "mẩu rác"
+    },
+    {
+      "shape": "balloon",
+      "en": "Harmony Day",
+      "vi": "Ngày Hòa hợp",
+      "say": [
+        "Five orange balloons are hidden for Harmony Day. Can you find them?",
+        "Có năm quả bóng màu cam giấu cho Ngày Hòa hợp. Con tìm được không?"
+      ],
+      "id": "harmony",
+      "icon": "🤝",
+      "group": "au",
+      "when": {
+        "date": [
+          3,
+          21
+        ]
+      },
+      "kind": "party",
+      "where": [
+        "aussie",
+        "town",
+        "market"
+      ],
+      "theme": "harmony",
+      "show": "parade",
+      "game": "firstwords",
+      "treat": "dumplings",
+      "lines": [
+        [
+          "Happy Harmony Day! In Australia people from every country live together. We wear orange to say: everyone belongs!",
+          "Mừng Ngày Hòa hợp! Ở Úc có người đến từ khắp nơi sống cùng nhau. Mọi người mặc áo cam để nói: ai cũng thuộc về nơi này!"
+        ],
+        [
+          "Can you say hello in another language?",
+          "Con chào bằng một thứ tiếng khác được không?"
+        ]
+      ],
+      "objectEn": "orange balloons",
+      "objectVi": "quả bóng cam"
+    },
+    {
+      "shape": "paint",
+      "en": "Holi, the festival of colours",
+      "vi": "Lễ hội sắc màu Holi",
+      "say": [
+        "Five pots of colour are hidden for Holi. Can you find them?",
+        "Có năm hũ bột màu giấu cho lễ Holi. Con tìm được không?"
+      ],
+      "id": "holi",
+      "icon": "🎨",
+      "group": "au",
+      "when": {
+        "table": {
+          "2026": "2026-03-04",
+          "2027": "2027-03-22",
+          "2028": "2028-03-11",
+          "2029": "2029-03-01",
+          "2030": "2030-03-20",
+          "2031": "2031-03-09",
+          "2032": "2032-03-27"
+        }
+      },
+      "kind": "party",
+      "where": [
+        "india"
+      ],
+      "theme": "colours",
+      "show": "parade",
+      "game": "colors",
+      "treat": "ladoo",
+      "lines": [
+        [
+          "Happy Holi! In India, people throw soft coloured powder and splash water to welcome spring.",
+          "Chúc mừng Holi! Ở Ấn Độ, mọi người tung bột màu và té nước để đón mùa xuân."
+        ],
+        [
+          "Everyone ends up every colour of the rainbow!",
+          "Ai cũng thành đủ màu như cầu vồng!"
+        ]
+      ],
+      "objectEn": "pots of colour",
+      "objectVi": "hũ bột màu"
+    },
+    {
+      "shape": "flower",
+      "en": "Anzac Day",
+      "vi": "Ngày Anzac",
+      "say": [
+        "Five red poppies are hidden for Anzac Day. Can you find them quietly?",
+        "Có năm bông anh túc đỏ giấu cho Ngày Anzac. Con nhẹ nhàng tìm nhé?"
+      ],
+      "id": "anzac",
+      "icon": "🌺",
+      "group": "au",
+      "when": {
+        "date": [
+          4,
+          25
+        ]
+      },
+      "kind": "quiet",
+      "where": [
+        "aussie",
+        "sydney"
+      ],
+      "theme": "poppies",
+      "show": "none",
+      "game": "tune",
+      "treat": null,
+      "lines": [
+        [
+          "Anzac Day is a quiet day. Australians and New Zealanders remember people who served their countries, and wish for peace.",
+          "Ngày Anzac là một ngày yên lặng. Người Úc và New Zealand tưởng nhớ những người đã phục vụ đất nước và cầu mong hòa bình."
+        ],
+        [
+          "People wear a little red poppy and bake Anzac biscuits.",
+          "Mọi người cài một bông hoa anh túc đỏ và nướng bánh quy Anzac."
+        ]
+      ],
+      "objectEn": "red poppies",
+      "objectVi": "bông anh túc đỏ"
+    },
+    {
+      "shape": "hand",
+      "en": "Reconciliation Week",
+      "vi": "Tuần lễ Hòa giải",
+      "say": [
+        "Five painted hands are hidden for Reconciliation Week. Can you find them?",
+        "Có năm bàn tay tô màu giấu cho Tuần lễ Hòa giải. Con tìm được không?"
+      ],
+      "id": "reconciliation",
+      "icon": "🖐️",
+      "group": "au",
+      "when": {
+        "date": [
+          5,
+          27
+        ]
+      },
+      "days": 8,
+      "kind": "quiet",
+      "where": [
+        "aussie"
+      ],
+      "theme": "ochre",
+      "show": "none",
+      "game": "koala",
+      "treat": "damper",
+      "lines": [
+        [
+          "It is Reconciliation Week. Australians learn about the First Nations people and how to be good friends to each other.",
+          "Đây là Tuần lễ Hòa giải. Người Úc tìm hiểu về người Thổ dân và cách làm bạn tốt với nhau."
+        ]
+      ],
+      "objectEn": "painted hands",
+      "objectVi": "bàn tay tô màu"
+    },
+    {
+      "shape": "boomerang",
+      "en": "NAIDOC Week",
+      "vi": "Tuần lễ NAIDOC",
+      "say": [
+        "Five little boomerangs are hidden for NAIDOC Week. Can you find them?",
+        "Có năm chiếc boomerang nhỏ giấu cho Tuần lễ NAIDOC. Con tìm được không?"
+      ],
+      "id": "naidoc",
+      "icon": "🪃",
+      "group": "au",
+      "when": {
+        "nth": [
+          7,
+          0,
+          1
+        ]
+      },
+      "days": 7,
+      "kind": "party",
+      "where": [
+        "aussie",
+        "brisbane"
+      ],
+      "theme": "ochre",
+      "show": "parade",
+      "game": "koala",
+      "treat": "damper",
+      "lines": [
+        [
+          "It is NAIDOC Week! Australia celebrates the stories, art and culture of First Nations people.",
+          "Tuần lễ NAIDOC rồi! Nước Úc tôn vinh câu chuyện, nghệ thuật và văn hóa của người Thổ dân."
+        ],
+        [
+          "Look at the dot paintings: each pattern tells a story.",
+          "Con xem tranh chấm này: mỗi họa tiết kể một câu chuyện đó."
+        ]
+      ],
+      "objectEn": "little boomerangs",
+      "objectVi": "chiếc boomerang nhỏ"
+    },
+    {
+      "shape": "diya",
+      "en": "Diwali, the festival of lights",
+      "vi": "Lễ hội ánh sáng Diwali",
+      "say": [
+        "Five little lamps are hidden for Diwali. Can you find them?",
+        "Có năm ngọn đèn dầu nhỏ giấu cho lễ Diwali. Con tìm được không?"
+      ],
+      "id": "diwali",
+      "icon": "🪔",
+      "group": "au",
+      "when": {
+        "table": {
+          "2025": "2025-10-20",
+          "2026": "2026-11-08",
+          "2027": "2027-10-29",
+          "2028": "2028-10-17",
+          "2029": "2029-11-05",
+          "2030": "2030-10-26",
+          "2031": "2031-11-14",
+          "2032": "2032-11-02"
+        }
+      },
+      "kind": "party",
+      "where": [
+        "india"
+      ],
+      "theme": "diyas",
+      "show": "fireworks",
+      "game": "rangoli",
+      "treat": "ladoo",
+      "lines": [
+        [
+          "Happy Diwali! Families light little clay lamps called diyas and draw rangoli patterns at the door.",
+          "Chúc mừng Diwali! Mọi nhà thắp những ngọn đèn đất nhỏ gọi là diya và vẽ tranh rangoli trước cửa."
+        ],
+        [
+          "Have some ladoo, round sweets we share with friends and neighbours!",
+          "Ăn kẹo ladoo nhé, những viên kẹo tròn để chia cho bạn bè và hàng xóm!"
+        ]
+      ],
+      "objectEn": "little lamps",
+      "objectVi": "ngọn đèn dầu nhỏ"
+    }
+  ]
+}

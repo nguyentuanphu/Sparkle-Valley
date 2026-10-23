@@ -201,6 +201,19 @@ async function swipe(x0, y0, x1, y1) {
   for (let k = 1; k <= 8; k++) { const x = x0 + (x1 - x0) * k / 8, y = y0 + (y1 - y0) * k / 8; if (finger) { finger.style.left = x + 'px'; finger.style.top = y + 'px'; } t.dispatchEvent(new PointerEvent('pointermove', o(x, y, 1))); await wait(30); }
   t.dispatchEvent(new PointerEvent('pointerup', o(x1, y1, 0)));
 }
+// a finger held down in one place for a while (games played by holding, like the kite), as a plan asks
+// (with a path: the finger stays down and draws along it, as in the drawing games)
+async function press(p: { el: Element, x: number, y: number, ms: number, path?: { x: number, y: number }[] }) {
+  await fingerTo(p.x, p.y); if (!p.el.isConnected) return;
+  const o = (x: number, y: number, b: number) => ({ bubbles: true, cancelable: true, clientX: x, clientY: y, pointerId: 7, pointerType: 'touch', isPrimary: true, buttons: b });
+  p.el.dispatchEvent(new PointerEvent('pointerdown', o(p.x, p.y, 1))); step_(p.path ? 'draw' : 'press', label(p.el));
+  let at = { x: p.x, y: p.y };
+  if (p.path && p.path.length) {
+    const each = Math.max(8, p.ms / p.path.length);
+    for (const q of p.path) { if (!p.el.isConnected) return; at = q; if (finger) { finger.style.left = q.x + 'px'; finger.style.top = q.y + 'px'; } p.el.dispatchEvent(new PointerEvent('pointermove', o(q.x, q.y, 1))); await wait(each); }
+  } else for (let t = 0; t < p.ms && p.el.isConnected; t += 50) { p.el.dispatchEvent(new PointerEvent('pointermove', o(p.x, p.y, 1))); await wait(50); }
+  p.el.dispatchEvent(new PointerEvent('pointerup', o(at.x, at.y, 0)));
+}
 // where a spot in the valley is on the screen (null: behind the camera or off the screen)
 function onScreen(x, y, z) {
   const h = hero(), cam = h && h.cam; if (!cam || !G.renderer) return null;
@@ -389,6 +402,7 @@ async function playGame(note): Promise<PlayResult> {
         }
       } else if (playWatch.plan) {
         pick = playWatch.plan();
+        if (pick && !(pick instanceof Element)) { await press(pick); r.taps++; continue; }
         if (!pick || !shown(pick) || pick.disabled) {
           if (Date.now() - last > s.idle * 1000) { r.cant = true; break; }
           continue; // wait for the next legal turn; never tap an occupied board at random

@@ -1,0 +1,26 @@
+{
+  "reviewed": "23 October 2026 AEDT",
+  "illustrations": [
+    {
+      "asset": "assets/storybook-valley.png",
+      "kind": "Generated storybook illustration based on original game captures; artistic composite, not literal gameplay.",
+      "references": [
+        "marketing/source/stills10/cine-hoian-en.jpg",
+        "marketing/source/stills10/cine-hanoi-en.jpg",
+        "marketing/source/stills10/cine-sydney-en.jpg"
+      ],
+      "review": "Blue and pink decorative lanterns revised to five-pointed Vietnamese đèn ông sao; no HUD or text.",
+      "sha256": "cd41d644f936b83dc9856d990f1ecd541de65306acf3d13c5e3976df7be50a71"
+    },
+    {
+      "asset": "assets/storybook-tet.png",
+      "kind": "Generated storybook interpretation of Tết game scenes, not a literal gameplay screenshot.",
+      "references": [
+        "assets/festivals/tet-village.png",
+        "assets/festivals/tet-hoian.png"
+      ],
+      "review": "Peach and mai blossoms, red/gold banners, lotus pond, old well and five-pointed star lanterns visually checked.",
+      "sha256": "4aadefe676da27fd6929c8d6407e085d49dfcb3056fa8c698a7703cc5a73960d"
+    }
+  ]
+}

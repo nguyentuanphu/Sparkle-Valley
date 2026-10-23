@@ -1,0 +1,16 @@
+{
+  "source": "6f5de0736a6d66eeed50ef0302cf666d7ba36c4f",
+  "reviewedSource": "d674c86616e3353df23d7c25ee683d047e6b980a",
+  "coverage": {
+    "valley": 17,
+    "lantern": 24,
+    "daily": 56,
+    "family": 15,
+    "festivals": 24
+  },
+  "changed": [
+    "js/howto-player.ts"
+  ],
+  "coverageChanged": [],
+  "requiresEditorialReview": true
+}

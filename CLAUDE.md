@@ -1,5 +1,7 @@
 # Sparkle Valley: rules for the assistant
 
+**Website consistency and layout (owner, 23 Oct 2026 AEDT):** read [the website/game contract](docs/website-review-20261023/WEBSITE-RULES.md) and [Release integration handoff](docs/website-review-20261023/RELEASE-HANDOFF.md) before changing website content, UI or packaging. Keep full bilingual detail and four main destinations; use the same game source/art/fonts/theme/release and review drift. Website belongs on Welcome and in Settings during play; removing HUD Home must also reclaim safe quest-bar space. Those runtime changes are pending Release, not already made by the website branch.
+
 **Owner-approved UI and future-feature rules (14 Oct 2026 AEDT):** read the section “Owner-approved interface and feature rules” in [the design handbook](docs/SO-TAY-THIET-KE.md) (UX-001–UX-010) before planning or changing a feature. Work order and implementation sequence: [owner UI audit](docs/cores/tasks/owner-ui-audit-20261014.md). Approval to write these rules does not deploy runtime changes.
 
 

@@ -74,6 +74,9 @@ function fill(api, { code, vals, want, tray, purse, show, onAdd = undefined as (
     const btns = vals.map(v => { const b = el('button', 'mg-pay', cash(code, v)); b._v = v; b.setAttribute('aria-label', fmt(v, code)); purse.appendChild(b); return b; });
     const hint = () => { if (api.closed || fin) return; const need = M.makeChange(want - sum, code, vals), b = need && btns.find(x => x._v === need[0]); btns.forEach(x => x.classList.remove('hint')); if (b) b.classList.add('hint'); };
     const arm = () => { clearTimeout(t); if (api.little) t = setTimeout(hint, misses >= 2 ? 0 : HINT_AFTER); };
+    // (r89) auto play pays like the hint: the next coin or note that still makes the amount exactly
+    api.plan(() => { if (fin) return null; const need = M.makeChange(want - sum, code, vals); return need ? btns.find(x => x._v === need[0]) : null; },
+      { maxActions: Math.ceil(want / Math.min(...vals)) + 4 });
     btns.forEach(b => b.onclick = () => {
       if (api.closed || fin) return;
       if (sum + b._v > want) { misses++; api.wrong(b, 'That is too much. Try a smaller one.', 'Nhiều quá rồi. Thử tiền nhỏ hơn nhé.'); arm(); return; }

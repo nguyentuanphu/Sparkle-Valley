@@ -233,7 +233,8 @@ export interface SvMain {
   together?: () => boolean; shareStatus?: () => void; listenFriends?: () => void; autoMeet?: () => void; onNet?: () => void; netTick?: (body: Element) => void;
   netQuality?: (id: string) => ReturnType<typeof Net.quality>; drawOnlinePanel?: (body: Element, redraw: () => void) => void;
   inviteFriend?: (code: string) => Promise<unknown>; joinFriend?: (room: string, hostPub?: string) => Promise<void>; inviteGame?: (game: string, to?: string, level?: number, size?: number) => void;
-  meetAndPlay?: (i: number, id: string, source?: string) => Promise<void>; findFriend?: (i: number) => void; followFriend?: (i: number, id: string) => void;
+  meetAndPlay?: (i: number, id: string, source?: string) => Promise<void>; findFriend?: (i: number) => [string, string] | null | void;
+  say?: (en: string, vi: string) => void; adventure?: { hud(h: Hud): void, [k: string]: unknown }; _advLoad?: Promise<unknown>; followFriend?: (i: number, id: string) => void;
   friendWhere?: (h: SvHeroT, P: { pos: THREE.Vector3 }) => string; askFriendToCome?: (h: SvHeroT, id: string) => void;
   flyToFriend?: (h: SvHeroT, id: string) => void; walkToFriend?: (h: SvHeroT, id: string) => void;
   // values and functions main.ts shares

@@ -1,0 +1,37 @@
+[
+  {
+    "name": "phone",
+    "fourCategories": true,
+    "allDestinations": true,
+    "noOverflow": true,
+    "englishVietnamese": true
+  },
+  {
+    "name": "tablet",
+    "fourCategories": true,
+    "allDestinations": true,
+    "noOverflow": true,
+    "englishVietnamese": true
+  },
+  {
+    "name": "desktop",
+    "fourCategories": true,
+    "allDestinations": true,
+    "noOverflow": true,
+    "englishVietnamese": true
+  },
+  {
+    "name": "small-phone",
+    "fourCategories": true,
+    "allDestinations": true,
+    "noOverflow": true,
+    "englishVietnamese": true
+  },
+  {
+    "name": "landscape",
+    "fourCategories": true,
+    "allDestinations": true,
+    "noOverflow": true,
+    "englishVietnamese": true
+  }
+]

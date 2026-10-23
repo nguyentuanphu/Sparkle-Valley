@@ -31,6 +31,9 @@ register({
         shout.textContent = T(en, vi); shout.classList.remove('pop'); void shout.offsetWidth; shout.classList.add('pop'); api.say(en, vi);
       };
       place(); await wait(400); hint();
+      // (r89) auto play listens like a child: it steps the way the friends shout, then smashes on "HERE"
+      const btn = (c: string) => { const b = w.querySelector(`.nieu-btns .${c}`); return b instanceof HTMLElement ? b : null; };
+      api.plan(() => w.isConnected ? btn(i < t ? 'r' : i > t ? 'l' : 'hit') : null, { maxActions: rounds * (N + 2) });
       for (;;) {
         const b = await tapOne([...w.querySelectorAll('.nieu-btns button')]); if (api.closed) return;
         if (b.classList.contains('l')) { i = Math.max(0, i - 1); api.sfx.tap(); place(); hint(); continue; }
@@ -92,6 +95,13 @@ register({
         if (Math.hypot(b.x - kx, b.y - ky) < 26) { vy += 120; vx -= 80; api.sfx.no(); birds.splice(k, 1); continue; } if (b.x > w + 30) birds.splice(k, 1); }
       requestAnimationFrame(tick);
     };
+    // (r89) auto play flies like a child: holds the string towards the nearest star while the kite is below it, a short
+    // touch to steer once it is above
+    api.plan(() => {
+      if (!c.isConnected || !stars.length) return null;
+      const s = stars.reduce((a, b) => Math.hypot(a.x - kx, a.y - ky) <= Math.hypot(b.x - kx, b.y - ky) ? a : b), r = c.getBoundingClientRect();
+      return { el: c, x: r.left + s.x / w * r.width, y: r.top + r.height * .6, ms: ky > s.y ? clamp((ky - s.y) * 18 + 400, 400, 1800) : 120 };
+    }, { maxActions: need * 40 });
     api.dots(need, 0); requestAnimationFrame(tick);
     await finished; if (api.closed) return;
     return api.win({ title: T('Your kite flew so high!', 'Diều của con bay cao quá!') });

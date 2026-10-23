@@ -144,6 +144,10 @@ register({
       pal.querySelectorAll('button').forEach(b => b.onclick = () => { brush = b.dataset.c; pal.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); });
       api.stage.append(el('div', 'rg-tip', T('Tap a colour, then tap the squares on the right to copy the left side like a mirror.', 'Chọn màu, rồi chạm vào ô bên phải để tô giống bên trái như soi gương.')), grid, pal);
       let done; const finished = new Promise<void>(res => done = res);
+      // (r89) auto play copies the mirror like a child: the colour a square needs (or the one to rub out), then that square
+      const paint = (c: string) => [...pal.querySelectorAll('button')].find(b => b.dataset.c === c) || null;
+      api.plan(() => { if (!grid.isConnected) return null; const c = cells.find(x => (x._has || null) !== (x._want || null)); if (!c) return null;
+        const need = c._want || c._has; return brush === need ? c : paint(need); }, { maxActions: rounds * S * half * 2 });
       function check() { if (cells.every(c => (c._has || null) === (c._want || null))) done(); }
       check(); await finished; if (api.closed) return;
       api.right(); api.say('Beautiful! Both sides match.', 'Đẹp quá! Hai bên giống hệt nhau.'); grid.classList.add('glow'); await wait(1800);
