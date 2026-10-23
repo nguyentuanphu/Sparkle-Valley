@@ -1,15 +1,19 @@
-﻿## Front Desk / Helper (r90 / v1)
-- **Now (24 Oct 2026 AEDT): ready for Release, round r90 (published as v1)** · branch work/r90-more-content · last commit 184a5827 · waiting for: Release to collect and run GitHub full suite · 24 Oct 2026 AEDT
-- **Progress note (checks, 24 Oct 2026 AEDT):** uild (pass), 	ypes (pass, 122 files), unit unlocks 4/4 pass, 	ale-catalog 1/1 pass, autoplay plans (x5) verified for all 111+ new games. Changed-check selector requires full suite due to .gitignore change; pushed to GitHub for .github/workflows/full-suite.yml on work/r90-more-content.
-- **Scope completed:** 
+﻿## Front Desk / Helper (r90 / v1 + Save Copy)
+- **Now (24 Oct 2026 AEDT): ready for Release, round r90 (published as v1) & Save/Load Copy Part 1** · branch work/r90-more-content (commit bcf18b19) & work/save-copy-r90 (commit 833452bf) · waiting for: Release to collect, run GitHub full suite, and merge · 24 Oct 2026 AEDT
+- **Progress note (checks, 24 Oct 2026 AEDT):**
+  - work/r90-more-content: build (pass), types (pass, 122 files), unit unlocks 4/4 pass, tale-catalog 1/1 pass, autoplay plans (x5) verified for all 111+ new games. Azure voice generator active (PID 32884, batch synced and pushed).
+  - work/save-copy-r90: unit tests 15/15 pass (tests/unit/savecopy.test.mjs), build pass, v3 schema validation, safe copy to Files/iCloud/Drive and safe load confirmation without silent overwrite.
+- **Scope completed:**
   - Unlocking system (js/content/unlocks.ts) with profile migration, Studio unlockAll switch, badges per category, locked look with padlock art.
   - 111+ new games across 14 categories (incl. 4 Vietnamese festive: Bánh Chưng, Star Lantern, Lion Dance, Tết Pole; 3 nature: Catch-and-Release Fish, Emu Egg Basket, Reef Cleaner).
   - 54 new stories + new World shelf (12 traditional tales).
   - All games: bilingual, 64px touch targets (.gl.little), autoplay plans, listed in catalog/loader/activities/sw.ts/preload.
   - All stories: wired in tale catalogue, learn shelf, unlock registry.
-- **Blocker:** AZURE_SPEECH_KEY not present locally; 54 story narration lines queued for Release to record via 	ools/make-voice-pack.mts --engine azure.
+  - Save a copy / Load a copy Part 1 fully implemented on work/save-copy-r90.
+- **Notes for Release:**
+  - Azure voice generator continues running in background for remaining story lines (~1,100 files left).
+  - Changed-check selector requires full suite due to test/config changes; push and run .github/workflows/full-suite.yml.
 
-# Board: what each core is doing and what it needs from others
 
 Every core keeps its own section up to date. Times are in AEST. Release reads this before merging.
 
