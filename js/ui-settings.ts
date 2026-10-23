@@ -1,4 +1,4 @@
-import { hasClip, saveClip, deleteClip, playClip, estimatePitch, pitchFromHz } from './voice.js';
+﻿import { hasClip, saveClip, deleteClip, playClip, estimatePitch, pitchFromHz } from './voice.js';
 import { startRecording, releaseMic, micProblem } from './recorder.js';
 import { ac } from './audio.js';
 
@@ -353,6 +353,8 @@ export function openGrownups(after: (() => void) | undefined = undefined) {
     card.querySelector('#gImp').onchange = async e => { const f = e.target.files[0]; if (!f) return; try { await importBackup(f); toast(T('Backup loaded!', 'Đã mở bản sao!')); draw(); after && after(); } catch (err) { toast(T('That file is not a Sparkle Valley backup.', 'Tệp này không phải bản sao của Thung Lũng Lấp Lánh.')); } };
     card.querySelector('#gSaveCopy').onclick = async () => {
       const snap = snapshot();
+      snap.v = 3;
+      snap.device = localStorage.getItem('sv2_playerid') || '';
       const text = JSON.stringify(snap, null, 2);
       const name = 'sparkle-valley-' + new Date().toISOString().slice(0, 10) + '.svsave';
       const file = new File([text], name, { type: 'application/json' });
