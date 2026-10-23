@@ -42,13 +42,15 @@ jobs:
       - name: Install existing generator dependencies
         working-directory: tests
         run: npm install --no-package-lock --no-save --no-audit --no-fund
+      # (r89) before the rebuild below, which writes this run's own source into the design: the committed /home must be
+      # what the committed design makes
+      - name: The family website at /home is the reviewed design (tools/build-website.mts)
+        run: node tools/build-website.mts --check
       - name: Rebuild from this release and check for outdated explanations
         env:
           SV_WEBSITE_SOURCE: ${{ github.sha }}
           SV_WEBSITE_OUTPUT: ${{ runner.temp }}/sparkle-website-preview
         run: node docs/website-review-20261023/sync-website.mjs
-      - name: The family website at /home is the reviewed design (tools/build-website.mts)
-        run: node tools/build-website.mts --check
       - name: Keep rebuilt website and review report
         if: always()
         uses: actions/upload-artifact@v4
