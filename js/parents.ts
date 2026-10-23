@@ -177,7 +177,7 @@ export function createParents(G, { say, save, reward }) {
     x.lineWidth = 18; x.strokeStyle = '#ff6fae'; x.strokeRect(20, 20, W - 40, H - 40); x.lineWidth = 6; x.strokeStyle = '#8a5cf6'; x.strokeRect(46, 46, W - 92, H - 92);
     x.textAlign = 'center'; x.fillStyle = '#3a2a20';
     x.font = 'bold 64px Fredoka, "Baloo 2", sans-serif'; x.fillText(T('Certificate of Sparkles', 'Giấy khen Lấp Lánh'), W / 2, 150);
-    x.font = '30px Fredoka, "Baloo 2", sans-serif'; x.fillText(T('Sparkle Valley · Thung Lũng Lấp Lánh', 'Thung Lũng Lấp Lánh · Sparkle Valley'), W / 2, 200);
+    x.font = '30px Fredoka, "Baloo 2", sans-serif'; x.fillText(settings.lang === 'vi' ? 'Thung Lũng Lấp Lánh · Sparkle Valley' : 'Sparkle Valley · Thung Lũng Lấp Lánh', W / 2, 200); // both names: not through T(), which swaps a name into the language shown ("Thung Lũng Sparkle")
     x.font = 'bold 72px Fredoka, "Baloo 2", sans-serif'; x.fillStyle = '#8a5cf6'; x.fillText(nm(p.name || ''), W / 2, 300);
     const st = p.stickers || [], keeps = (p.keepsakes || []).length, places = Object.keys((p.stats && p.stats.places) || p.visited || {}).length;
     x.font = '30px Fredoka, "Baloo 2", sans-serif'; x.fillStyle = '#3a2a20';
@@ -188,7 +188,7 @@ export function createParents(G, { say, save, reward }) {
     show.forEach((e, k) => { const col = k % per, row = Math.floor(k / per), px = x0 + col * (size + gap), py = 410 + row * (size + gap);
       if (imgs[k]) x.drawImage(imgs[k], px, py, size, size); else { x.font = `${size * .8}px sans-serif`; x.fillText(e, px + size / 2, py + size * .8); } });
     if (!show.length) { x.font = '28px Fredoka, sans-serif'; x.fillText(T('The first stickers are waiting in the valley!', 'Những hình dán đầu tiên đang chờ trong thung lũng!'), W / 2, 470); }
-    x.font = '26px Fredoka, "Baloo 2", sans-serif'; x.fillStyle = '#5a4a6a'; x.fillText(aestDate() + (places ? ' · ' + T(`${places} places visited`, `đã đến ${places} nơi`) : ''), W / 2, H - 90);
+    x.font = '26px Fredoka, "Baloo 2", sans-serif'; x.fillStyle = '#5a4a6a'; x.fillText(aestDate() + (places ? ' · ' + T(`${places} ${places === 1 ? 'place' : 'places'} visited`, `đã đến ${places} nơi`) : ''), W / 2, H - 90);
     return c.toDataURL('image/png');
   }
   async function openCertificate(p) {
