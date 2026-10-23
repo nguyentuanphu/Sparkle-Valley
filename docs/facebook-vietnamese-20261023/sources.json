@@ -1,0 +1,229 @@
+{
+  "sourceRelease": "r88",
+  "sourceCommit": "781089d6",
+  "format": "1080x1350",
+  "art": "Unchanged game captures and original artSVG icons, composed using game fonts and palette; no new characters or repainted scenes.",
+  "cards": [
+    {
+      "id": "01-welcome",
+      "title": "Hai quê hương.<br>Một thung lũng.",
+      "sub": "Vui chơi song ngữ cho bé 2–8 tuổi",
+      "icons": [
+        "🦉",
+        "🗺️",
+        "💛"
+      ],
+      "pictures": [
+        [
+          "../website-review-20261023/assets/game-previews/cine-hoian-vi.jpg",
+          "Khám phá Việt Nam"
+        ],
+        [
+          "../website-review-20261023/assets/game-previews/cine-sydney-vi.jpg",
+          "Dạo chơi nước Úc"
+        ]
+      ],
+      "points": [
+        "Tiếng Việt & English",
+        "Cùng bé khám phá thế giới"
+      ],
+      "note": "Hình ảnh từ thế giới Sparkle Valley"
+    },
+    {
+      "id": "02-learning",
+      "title": "Bé chơi vui,<br>khám phá mỗi ngày",
+      "sub": "Những cơ hội luyện tập qua trò chơi",
+      "icons": [
+        "📚",
+        "🔢",
+        "🎵"
+      ],
+      "pictures": [
+        [
+          "../website-review-20261023/assets/game-previews/game-reading-vi.jpg",
+          "Chữ cái & từ vựng"
+        ],
+        [
+          "../website-review-20261023/assets/game-previews/game-count-vi.jpg",
+          "Đếm số"
+        ]
+      ],
+      "points": [
+        "Chữ, số & hình khối",
+        "Âm thanh & màu sắc"
+      ],
+      "note": "Chọn hoạt động phù hợp với tuổi và sở thích của bé"
+    },
+    {
+      "id": "03-folk-games",
+      "title": "Tuổi thơ của ba mẹ,<br>niềm vui của bé",
+      "sub": "Trò chơi dân gian Việt Nam",
+      "icons": [
+        "🪁",
+        "🎲",
+        "🦉"
+      ],
+      "pictures": [
+        [
+          "../website-review-20261023/assets/game-previews/game-oanquan-vi.jpg",
+          "Ô Ăn Quan"
+        ],
+        [
+          "../website-review-20261023/assets/game-previews/game-kite-vi.jpg",
+          "Thả Diều"
+        ]
+      ],
+      "points": [
+        "Ô Ăn Quan • Kéo Co • Thả Diều",
+        "Cùng tìm hiểu cách chơi"
+      ],
+      "note": "Trải nghiệm trò chơi quen thuộc trong một thế giới mới"
+    },
+    {
+      "id": "04-stories-festivals",
+      "title": "Nghe truyện Việt,<br>cùng vui lễ hội",
+      "sub": "Gần hơn với những câu chuyện quê nhà",
+      "icons": [
+        "📖",
+        "🐴",
+        "🌟"
+      ],
+      "pictures": [
+        [
+          "../website-review-20261023/assets/game-previews/tale-vi.jpg",
+          "Thánh Gióng"
+        ],
+        [
+          "../website-review-20261023/assets/festivals/tet-village.png",
+          "Không khí Tết trong game"
+        ]
+      ],
+      "points": [
+        "Thánh Gióng • Cây khế",
+        "Tết • Trung Thu"
+      ],
+      "note": "Khám phá truyện Việt và không gian lễ hội theo mùa"
+    },
+    {
+      "id": "05-adventures-rewards",
+      "title": "Mỗi khám phá,<br>một niềm vui",
+      "sub": "Phiêu lưu & nhiệm vụ gia đình",
+      "icons": [
+        "⭐",
+        "🎒",
+        "🛂"
+      ],
+      "pictures": [
+        [
+          "../website-review-20261023/assets/game-previews/adventure-vi.jpg",
+          "Hành trình khám phá"
+        ],
+        [
+          "../website-review-20261023/assets/game-previews/missions-vi.jpg",
+          "Nhiệm vụ gia đình"
+        ]
+      ],
+      "points": [
+        "Hình dán • Huy hiệu • Quà lưu niệm",
+        "Phần thưởng theo hoạt động"
+      ],
+      "note": "Cùng con thực hiện những nhiệm vụ nhỏ trong gia đình"
+    },
+    {
+      "id": "06-parent-controls",
+      "title": "Ba mẹ chọn<br>cách con chơi",
+      "sub": "Các lựa chọn trong mục Phụ huynh",
+      "icons": [
+        "⚙️",
+        "🕒",
+        "💛"
+      ],
+      "pictures": [
+        [
+          "../website-review-20261023/assets/parent-controls/settings-vi.png",
+          "Giao diện Phụ huynh trong game"
+        ]
+      ],
+      "points": [
+        "Tuổi & độ khó • Ngôn ngữ & âm thanh",
+        "Nhắc nghỉ • Lựa chọn chơi trực tuyến"
+      ],
+      "note": "Điều chỉnh trải nghiệm phù hợp với gia đình",
+      "single": true
+    },
+    {
+      "id": "07-play-report",
+      "title": "Hiểu thêm<br>giờ chơi của con",
+      "sub": "Báo cáo riêng cho từng bé trên thiết bị",
+      "icons": [
+        "📊",
+        "📚",
+        "🦉"
+      ],
+      "pictures": [
+        [
+          "example-report.png",
+          "Số liệu minh họa • Hồ sơ ví dụ"
+        ]
+      ],
+      "points": [
+        "Thời gian chơi & trò yêu thích",
+        "Những khám phá đã lưu"
+      ],
+      "note": "Biểu đồ dùng dữ liệu ví dụ, không phải dữ liệu trẻ thật",
+      "single": true,
+      "report": true
+    }
+  ],
+  "checks": [
+    {
+      "id": "01-welcome",
+      "images": true,
+      "footer": 1306,
+      "paragraphs": true,
+      "url": "sparklevalley.au"
+    },
+    {
+      "id": "02-learning",
+      "images": true,
+      "footer": 1306,
+      "paragraphs": true,
+      "url": "sparklevalley.au"
+    },
+    {
+      "id": "03-folk-games",
+      "images": true,
+      "footer": 1306,
+      "paragraphs": true,
+      "url": "sparklevalley.au"
+    },
+    {
+      "id": "04-stories-festivals",
+      "images": true,
+      "footer": 1306,
+      "paragraphs": true,
+      "url": "sparklevalley.au"
+    },
+    {
+      "id": "05-adventures-rewards",
+      "images": true,
+      "footer": 1306,
+      "paragraphs": true,
+      "url": "sparklevalley.au"
+    },
+    {
+      "id": "06-parent-controls",
+      "images": true,
+      "footer": 1306,
+      "paragraphs": true,
+      "url": "sparklevalley.au"
+    },
+    {
+      "id": "07-play-report",
+      "images": true,
+      "footer": 1306,
+      "paragraphs": true,
+      "url": "sparklevalley.au"
+    }
+  ]
+}
