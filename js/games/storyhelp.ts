@@ -18,7 +18,11 @@ import { choiceButtons } from './frame.js';
 import { STORIES, HELP_LINES } from '../content/storyhelp.js';
 import type { Story, Task, Thing, Two } from '../content/storyhelp.js';
 
-type Api = any; // (js/games/frame.js: the game window's helpers)
+// (js/games/frame.js: the game window's helpers this game uses)
+type Plan = () => Element | null | undefined;
+type Api = { stage: HTMLElement; little?: boolean; level: number; tier?: () => number; readonly closed: boolean; sfx: { tap(): void };
+  dots(n: number, done: number): void; show(en: string, vi: string): void; right(e?: Element | null): void; wrong(e: Element | null, en?: string, vi?: string): void;
+  praise(): void; win(extra?: object): Promise<unknown>; onCleanup(f: () => void): void; hand?(target: Element | null | undefined): void; plan(f: Plan, o?: { maxActions?: number }): void };
 const lang = () => (settings.lang === 'vi' ? 1 : 0);
 const word = (w: Two) => w[lang()];
 // the animals' real voices when they are fed (js/audio.js, sounds/animals/)
@@ -108,7 +112,8 @@ function sceneOf(story: Story, used: Set<string>, labels: boolean): { scene: HTM
 async function put(api: Api, task: Extract<Task, { kind: 'put' }>, wrap: HTMLElement, scene: HTMLElement, spots: Map<string, HTMLElement>, little: boolean): Promise<boolean> {
   const things: Thing[] = little ? task.things.slice(0, 1) : [...task.things, ...(task.more || [])];
   const tray = el('div', 'sh-tray'); wrap.appendChild(tray);
-  let sel: HTMLElement | null = null, left = things.length, hintT: any = 0;
+  let sel: HTMLElement | null = null, left = things.length, hintT: ReturnType<typeof setTimeout> | 0 = 0;
+  const thingOf = new Map<HTMLElement, Thing>();
   let stopAnimal = () => {}, endT: ReturnType<typeof setTimeout> | 0 = 0;
   api.onCleanup(() => { stopAnimal(); clearTimeout(endT); });
   const glow = (id: string | null) => spots.forEach((s, k) => s.classList.toggle('glow', k === id));
@@ -138,9 +143,12 @@ async function put(api: Api, task: Extract<Task, { kind: 'put' }>, wrap: HTMLEle
       });
       const end = (e: PointerEvent) => { if (drag) { drag.remove(); drag = null; b.style.opacity = ''; glow(null); if (moved) place(b, th, spotAt(e.clientX, e.clientY)); } };
       b.addEventListener('pointerup', end); b.addEventListener('pointercancel', () => { if (drag) { drag.remove(); drag = null; b.style.opacity = ''; glow(null); } });
-      b.addEventListener('click', () => { if (moved) return; api.sfx.tap(); tray.querySelectorAll('.sel').forEach(x => x.classList.remove('sel')); sel = b; b.classList.add('sel'); (sel as any)._th = th; if (!little) sayAsync(word(th.word), word(th.word)); });
+      b.addEventListener('click', () => { if (moved) return; api.sfx.tap(); tray.querySelectorAll('.sel').forEach(x => x.classList.remove('sel')); sel = b; b.classList.add('sel'); thingOf.set(b, th); if (!little) sayAsync(word(th.word), word(th.word)); });
     });
-    spots.forEach(s => s.addEventListener('click', () => { if (sel) place(sel, (sel as any)._th, s); }));
+    spots.forEach(s => s.addEventListener('click', () => { const th = sel && thingOf.get(sel); if (sel && th) place(sel, th, s); }));
+    // (r89) auto play helps like a child: picks the next thing up, then taps the place it belongs
+    const btns = [...tray.children].filter((e): e is HTMLElement => e instanceof HTMLElement);
+    api.plan(() => { const th = sel && thingOf.get(sel); if (sel && th) return spots.get(th.to) || null; return btns.find(b => !b.classList.contains('gone')) || null; }, { maxActions: things.length * 3 });
     armHint(things[0]);
     if (little && api.hand) api.hand(tray.children[0]);
   });
@@ -152,6 +160,7 @@ async function find(api: Api, task: Extract<Task, { kind: 'find' }>, spots: Map<
   return new Promise(res => {
     api.onCleanup(() => res(false));
     if (little) setTimeout(() => { for (const id of task.spots) spots.get(id)?.classList.add('glow'); }, 400);
+    api.plan(() => spots.get(task.at) || null, { maxActions: 3 }); // (r89) auto play looks in the right place
     spots.forEach((s, id) => s.addEventListener('click', async () => {
       if (id !== task.at) { api.wrong(s, ...HELP_LINES.notHere); if (little && ++misses >= 2) { spots.forEach(x => x.classList.remove('glow')); spots.get(task.at)?.classList.add('glow'); } return; }
       spots.forEach(x => x.classList.remove('glow')); const h = el('span', 'sh-hide', pic(task.hide)); s.appendChild(h); requestAnimationFrame(() => h.classList.add('out'));
@@ -164,11 +173,12 @@ async function find(api: Api, task: Extract<Task, { kind: 'find' }>, spots: Map<
 async function order(api: Api, task: Extract<Task, { kind: 'order' }>, wrap: HTMLElement): Promise<boolean> {
   const slots = el('div', 'sh-slots'), tray = el('div', 'sh-tray'); wrap.append(slots, tray);
   const boxes = task.steps.map((_, i) => { const b = el('div', 'sh-slot', String(i + 1)); slots.appendChild(b); return b; });
-  let next = 0;
+  let next = 0; const stepBtn = new Map<number, HTMLElement>();
+  api.plan(() => stepBtn.get(next) || null, { maxActions: task.steps.length * 2 }); // (r89) auto play: the first thing that happened next
   return new Promise(res => {
     api.onCleanup(() => res(false));
     shuffle(task.steps.map((s, i) => ({ ...s, i }))).forEach(st => {
-      const b = el('button', 'sh-thing', `${pic(st.pic)}<small>${esc(word(st.word))}</small>`); b.setAttribute('aria-label', word(st.word)); tray.appendChild(b);
+      const b = el('button', 'sh-thing', `${pic(st.pic)}<small>${esc(word(st.word))}</small>`); b.setAttribute('aria-label', word(st.word)); tray.appendChild(b); stepBtn.set(st.i, b);
       b.onclick = () => {
         if (st.i !== next) { api.wrong(b, ...HELP_LINES.first); return; }
         b.classList.add('gone'); boxes[next].innerHTML = `${pic(st.pic)}<small>${esc(word(st.word))}</small>`; api.right(boxes[next]);
@@ -185,7 +195,8 @@ export async function play(api: Api): Promise<unknown> {
   api.stage.innerHTML = '';
   await say(api, HELP_LINES.choose); if (api.closed) return;
   const covers = choiceButtons(api, STORIES, (s: Story) => `<span class="sh-cover">${pic(s.icon)}</span><span>${esc(word(s.title))}</span>`, 'choice sh-book');
-  const story: Story | null = await new Promise(res => { covers.forEach((b: any) => b.onclick = () => { api.sfx.tap(); res(b._v); }); api.onCleanup(() => res(null)); });
+  api.plan(() => covers.find(b => b.isConnected) || null, { maxActions: 2 }); // (r89) auto play opens the first story
+  const story: Story | null = await new Promise(res => { covers.forEach(b => b.onclick = () => { api.sfx.tap(); res(b._v); }); api.onCleanup(() => res(null)); });
   if (!story || api.closed) return;
   await sayAsync(word(story.title), word(story.title));
   for (let p = 0; p < story.pages.length; p++) {

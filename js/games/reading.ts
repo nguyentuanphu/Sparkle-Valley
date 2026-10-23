@@ -134,6 +134,12 @@ async function trace(api, c) {
     say();
     let hintT = 0; const arm = () => { clearTimeout(hintT); lan.classList.remove('hint'); hintT = c.later(() => lan.classList.add('hint'), HINT_AFTER); };
     arm();
+    // (r89) auto play traces like a child: one stroke through the dots still dark, in reading order
+    api.plan(() => {
+      const left = pts.filter(p => !p.on); if (!left.length || !lan.isConnected) return null;
+      const b = lan.getBoundingClientRect(), at = p => ({ x: b.left + p.x * b.width / s, y: b.top + p.y * b.height / s }), path = left.map(at);
+      return { el: lan, x: path[0].x, y: path[0].y, ms: Math.min(2400, 60 * path.length), path: path.slice(1) };
+    }, { maxActions: rounds * 4 });
     const done = await new Promise(res => {
       let down = false, got = 0, fin = false;
       api.onCleanup(() => { if (!fin) { fin = true; res(false); } });
@@ -346,15 +352,17 @@ async function syllable(api, c) {
     if (r === 0) await c.say('Beat the drum once for each part of the word.', 'Gõ trống một lần cho mỗi tiếng.');
     await c.read(word); if (api.closed) return;
     // the child beats; a short rest after the last beat counts them (nothing is timed: it waits as long as needed)
-    let ok = false;
+    let ok = false, hits = 0, listening = false;
+    // (r89) auto play beats once for each part of the word, then lets the drum rest so the beats are counted
+    api.plan(() => drum.isConnected && listening && hits < parts.length ? drum : null, { maxActions: rounds * (max + 2) * 2 });
     for (let tries = 0; !ok; tries++) {
-      beats.innerHTML = '';
+      beats.innerHTML = ''; hits = 0; listening = true;
       const n = await new Promise<number>(res => {
         let k = 0, rest = 0, fin = false;
         api.onCleanup(() => { if (!fin) { fin = true; res(-1); } });
-        drum.onclick = () => { if (fin) return; k++; api.sfx.tap(); beats.appendChild(el('i')); drum.classList.add('hit'); setTimeout(() => drum.classList.remove('hit'), 90); clearTimeout(rest); rest = c.later(() => { fin = true; drum.onclick = null; res(k); }, 1600); };
+        drum.onclick = () => { if (fin) return; k++; hits = k; api.sfx.tap(); beats.appendChild(el('i')); drum.classList.add('hit'); setTimeout(() => drum.classList.remove('hit'), 90); clearTimeout(rest); rest = c.later(() => { fin = true; drum.onclick = null; res(k); }, 1600); };
       });
-      if (n < 0 || api.closed) return;
+      listening = false; if (n < 0 || api.closed) return;
       if (t === 0 || n === parts.length) { ok = true; if (n === parts.length || t > 0) api.right(card); else api.praise(); }
       else { api.wrong(drum, 'Listen and count again.', 'Nghe và đếm lại nhé.'); await wait(900); await c.read(word); if (api.closed) return; }
     }
