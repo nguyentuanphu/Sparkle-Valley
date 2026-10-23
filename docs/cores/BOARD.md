@@ -1,5 +1,5 @@
 ﻿## Front Desk / Helper (r90 / v1 + Save Copy)
-- **Now (24 Oct 2026 AEDT): ready for Release, round r90 (published as v1) & Save/Load Copy Part 1** · branch work/r90-more-content (commit 53f69d4b) · waiting for: Release to collect, run GitHub full suite, and merge · 24 Oct 2026 AEDT
+- **Now (24 Oct 2026 AEDT): ready for Release, round r90 (published as v1) & Save/Load Copy Part 1** · branch work/r90-more-content (commit d62b6704) · waiting for: Release to collect, run GitHub full suite, and merge · 24 Oct 2026 AEDT
 - **Progress note (checks, 24 Oct 2026 AEDT):**
   - work/r90-more-content: build (pass), types (pass, 122 files), unit unlocks 4/4 pass, tale-catalog 1/1 pass, autoplay plans (x5) verified for all 111+ new games. Azure voice generator active (PID 32884, batch synced and pushed).
   - work/save-copy-r90: unit tests 15/15 pass (tests/unit/savecopy.test.mjs), build pass, v3 schema validation, safe copy to Files/iCloud/Drive and safe load confirmation without silent overwrite.
