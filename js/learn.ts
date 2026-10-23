@@ -56,7 +56,7 @@ export const TALES = [
     ['🧠😊', 'Thinking calmly helps us when we are in trouble, and real friends are kind to each other.', 'Bình tĩnh suy nghĩ giúp ta khi gặp khó khăn, và bạn thật sự thì luôn tốt với nhau.']] }
 ];
 TALES.push(...MORE_TALES);
-const TALE_FLAGS = [['🇻🇳', 'Vietnam', 'Việt Nam'], ['🇦🇺', 'Australia', 'Úc'], ['🇨🇳', 'China', 'Trung Quốc'], ['🇮🇳', 'India', 'Ấn Độ']];
+const TALE_FLAGS = [['🇻🇳', 'Vietnam', 'Việt Nam'], ['🇦🇺', 'Australia', 'Úc'], ['🇨🇳', 'China', 'Trung Quốc'], ['🇮🇳', 'India', 'Ấn Độ'], ['🌍', 'World', 'Thế giới']];
 
 // ---------- counting hunts ----------
 const HUNTS = [

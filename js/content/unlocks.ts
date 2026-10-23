@@ -45,7 +45,86 @@ export const FIRST_SET_TALES: Record<string, string[]> = {
   world: []
 };
 
-export const SECOND_SET_TALES: Record<string, string[]> = { '🇻🇳': [], '🇦🇺': [], '🇨🇳': [], '🇮🇳': [], world: [] };
+export const SECOND_SET_TALES: Record<string, string[]> = {
+  "🇻🇳": [
+    "traucau",
+    "hoacuctrang",
+    "hobabe",
+    "cayneutale",
+    "trecoc",
+    "datrang",
+    "trangquynh",
+    "luubinh",
+    "caichoi",
+    "hoamuoigio",
+    "chimkhach",
+    "thantrutroi",
+    "hatlua",
+    "colau",
+    "tichchu",
+    "thila",
+    "hoaban",
+    "conkhi",
+    "nangut",
+    "bacogai"
+  ],
+  "🇦🇺": [
+    "platypus",
+    "wombatdig",
+    "koaladay",
+    "kookaburra",
+    "penguinparade",
+    "reefturtle",
+    "echidna",
+    "bilby",
+    "lyrebird",
+    "capelighthouse"
+  ],
+  "🇨🇳": [
+    "peachgarden",
+    "tensuns",
+    "jaderabbit",
+    "mulan",
+    "dragonboat",
+    "movemountain"
+  ],
+  "🇮🇳": [
+    "tortoisegeese",
+    "fourfriends",
+    "birbal",
+    "tenaliraman",
+    "goldenswan",
+    "mousenet"
+  ],
+  "🌍": [
+    "tortoisehare",
+    "lionmouse",
+    "antgrasshopper",
+    "redhen",
+    "gingerbread",
+    "anansi",
+    "stonesoup",
+    "turnip",
+    "billygoats",
+    "shoemaker",
+    "momotaro",
+    "turtlepalace"
+  ],
+  "world": [
+    "tortoisehare",
+    "lionmouse",
+    "antgrasshopper",
+    "redhen",
+    "gingerbread",
+    "anansi",
+    "stonesoup",
+    "turnip",
+    "billygoats",
+    "shoemaker",
+    "momotaro",
+    "turtlepalace"
+  ]
+};
 
 export type ProgressItem = { id: string; n: number };
 export type Progress = { done: number; need: number; perGame: ProgressItem[] };

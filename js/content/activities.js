@@ -1,4 +1,4 @@
-// One list of everything a child can choose on the Simple screen (round J, owner: "one source of truth"): every
+﻿// One list of everything a child can choose on the Simple screen (round J, owner: "one source of truth"): every
 // mini-game sits in exactly one child-friendly area, with the youngest age it suits and how hard it is. The Simple
 // screen's path, its Discover page and search, the "new" markers and the checks all read it from here; the names and
 // pictures still come from the games themselves (js/games/registry.js), so nothing is written twice.
@@ -10,22 +10,22 @@ import { PLACES as MAP_PLACES, PLOTS as MAP_PLOTS } from './map.js';
 
 // the areas, in the order the path visits them; a child who can't read knows each one by its picture
 export const AREAS = [
-  { key: 'animals', icon: '🐶', name: () => T('Animals', 'Con vật') },
-  { key: 'music', icon: '🎵', name: () => T('Music', 'Âm nhạc') },
-  { key: 'art', icon: '🎨', name: () => T('Colours and pictures', 'Màu sắc và tranh') },
-  { key: 'numbers', icon: '🔢', name: () => T('Numbers', 'Con số') },
-  { key: 'shapes', icon: '🔷', name: () => T('Shapes', 'Hình khối') },
-  { key: 'words', icon: '🔤', name: () => T('Letters and words', 'Chữ và từ') },
-  { key: 'me', icon: '💛', name: () => T('Me and my family', 'Em và gia đình') },
-  { key: 'play', icon: '🪁', name: () => T('Play outside', 'Chơi ngoài trời') },
-  { key: 'vietnam', icon: '🇻🇳', name: () => T('Vietnamese games', 'Trò chơi Việt Nam') },
-  { key: 'travel', icon: '🚋', name: () => T('Going places', 'Đi đây đi đó') },
-  { key: 'thinking', icon: '🧠', name: () => T('Big thinkers', 'Suy nghĩ giỏi') },
+  { key: 'animals', icon: 'ðŸ¶', name: () => T('Animals', 'Con váº­t') },
+  { key: 'music', icon: 'ðŸŽµ', name: () => T('Music', 'Ã‚m nháº¡c') },
+  { key: 'art', icon: 'ðŸŽ¨', name: () => T('Colours and pictures', 'MÃ u sáº¯c vÃ  tranh') },
+  { key: 'numbers', icon: 'ðŸ”¢', name: () => T('Numbers', 'Con sá»‘') },
+  { key: 'shapes', icon: 'ðŸ”·', name: () => T('Shapes', 'HÃ¬nh khá»‘i') },
+  { key: 'words', icon: 'ðŸ”¤', name: () => T('Letters and words', 'Chá»¯ vÃ  tá»«') },
+  { key: 'me', icon: 'ðŸ’›', name: () => T('Me and my family', 'Em vÃ  gia Ä‘Ã¬nh') },
+  { key: 'play', icon: 'ðŸª', name: () => T('Play outside', 'ChÆ¡i ngoÃ i trá»i') },
+  { key: 'vietnam', icon: 'ðŸ‡»ðŸ‡³', name: () => T('Vietnamese games', 'TrÃ² chÆ¡i Viá»‡t Nam') },
+  { key: 'travel', icon: 'ðŸš‹', name: () => T('Going places', 'Äi Ä‘Ã¢y Ä‘i Ä‘Ã³') },
+  { key: 'thinking', icon: 'ðŸ§ ', name: () => T('Big thinkers', 'Suy nghÄ© giá»i') },
   // (round S, owner plan 8 Oct) the money games, in the child's home currency
-  { key: 'money', icon: '💰', name: () => T('Money and shopping', 'Tiền và mua sắm') }
+  { key: 'money', icon: 'ðŸ’°', name: () => T('Money and shopping', 'Tiá»n vÃ  mua sáº¯m') }
 ];
 
-// id: [area, youngest age (2 = everyone, 5 = big kids), how hard (1 easy · 2 a bit harder · 3 hardest)]
+// id: [area, youngest age (2 = everyone, 5 = big kids), how hard (1 easy Â· 2 a bit harder Â· 3 hardest)]
 export const GAME_INFO = {
   bunny: ['animals', 2, 1], koala: ['animals', 2, 1], animalsounds: ['animals', 2, 1], duckmaze: ['animals', 2, 1], eggs: ['animals', 2, 1], oddone: ['animals', 3, 2], goat: ['animals', 3, 2],
   catchfish: ['animals', 2, 1], emueggs: ['animals', 2, 1], reefclean: ['animals', 3, 1],
@@ -70,27 +70,28 @@ export const gamesIn = (games, area, little) => Object.keys(games).map(gameInfo)
 // stories by where they come from, places by where they are
 // (bug #30, owner) China and India always come last: after "Our own stories" and after Australia
 export const TALE_AREAS = [
-  { key: '🇻🇳', icon: '🇻🇳', name: () => T('Stories from Vietnam', 'Truyện Việt Nam') },
-  { key: '🇦🇺', icon: '🇦🇺', name: () => T('Stories from Australia', 'Truyện Úc') },
-  { key: '💛', icon: '💛', name: () => T('Our own stories', 'Truyện nhà mình') },
-  { key: '🇨🇳', icon: '🇨🇳', name: () => T('Stories from China', 'Truyện Trung Quốc') },
-  { key: '🇮🇳', icon: '🇮🇳', name: () => T('Stories from India', 'Truyện Ấn Độ') }
+  { key: 'ðŸ‡»ðŸ‡³', icon: 'ðŸ‡»ðŸ‡³', name: () => T('Stories from Vietnam', 'Truyá»‡n Viá»‡t Nam') },
+  { key: 'ðŸ‡¦ðŸ‡º', icon: 'ðŸ‡¦ðŸ‡º', name: () => T('Stories from Australia', 'Truyá»‡n Ãšc') },
+  { key: 'ðŸ’›', icon: 'ðŸ’›', name: () => T('Our own stories', 'Truyá»‡n nhÃ  mÃ¬nh') },
+  { key: 'ðŸ‡¨ðŸ‡³', icon: 'ðŸ‡¨ðŸ‡³', name: () => T('Stories from China', 'Truyá»‡n Trung Quá»‘c') },
+  { key: 'ðŸ‡®ðŸ‡³', icon: 'ðŸ‡®ðŸ‡³', name: () => T('Stories from India', 'Truyá»‡n áº¤n Äá»™') },
+  { key: 'ðŸŒ', icon: 'ðŸŒ', name: () => T('Stories from the World', 'Truyá»‡n Tháº¿ giá»›i') },
 ];
 export const PLACE_AREAS = [
-  { key: 'home', icon: '🏡', name: () => T('Around the farm', 'Quanh nông trại') },
-  { key: 'vn', icon: '🏮', name: () => T('Vietnam', 'Việt Nam') },
-  { key: 'au', icon: '🦘', name: () => T('Australia', 'Nước Úc') },
-  { key: 'asia', icon: '🐼', name: () => T('China and India', 'Trung Hoa và Ấn Độ') }
+  { key: 'home', icon: 'ðŸ¡', name: () => T('Around the farm', 'Quanh nÃ´ng tráº¡i') },
+  { key: 'vn', icon: 'ðŸ®', name: () => T('Vietnam', 'Viá»‡t Nam') },
+  { key: 'au', icon: 'ðŸ¦˜', name: () => T('Australia', 'NÆ°á»›c Ãšc') },
+  { key: 'asia', icon: 'ðŸ¼', name: () => T('China and India', 'Trung Hoa vÃ  áº¤n Äá»™') }
 ];
 
 // (Release request, round T1) new places of the rebuilt valley that are not cities, by their id in js/content/map.js:
-// each joins the place list (the Pad map and the Simple screen's Places road) once the map holds it. Vũng Tàu is a
+// each joins the place list (the Pad map and the Simple screen's Places road) once the map holds it. VÅ©ng TÃ u is a
 // city and lists itself; the harbour is a landmark (the Harbour Bridge), listed under Sydney.
 const SITE_PLACES = [
-  { id: 'hoian', g: 'vn', icon: '🏮', name: () => T('Hội An', 'Hội An') },
+  { id: 'hoian', g: 'vn', icon: 'ðŸ®', name: () => T('Há»™i An', 'Há»™i An') },
   // (round T2) the two Memory Villages, where families build a little house of their own; named as on the map
-  { id: 'memory_e', g: 'vn', icon: '🏘️' },
-  { id: 'memory_w', g: 'au', icon: '🏘️' }
+  { id: 'memory_e', g: 'vn', icon: 'ðŸ˜ï¸' },
+  { id: 'memory_w', g: 'au', icon: 'ðŸ˜ï¸' }
 ];
 export function withSitePlaces(list) {
   if (!list) return list;
@@ -120,12 +121,13 @@ export function withSitePlaces(list) {
   return list;
 }
 
-// a page of the path never holds more than this many stops for an under-5 (the brief: 4–7 at once)
+// a page of the path never holds more than this many stops for an under-5 (the brief: 4â€“7 at once)
 export const LITTLE_PAGE = 6;
-// split a list into even pages of at most n (8 → 4 + 4, not 6 + 2)
+// split a list into even pages of at most n (8 â†’ 4 + 4, not 6 + 2)
 export const pages = (list, n) => { const k = Math.max(1, Math.ceil(list.length / n)), size = Math.ceil(list.length / k), out = []; for (let i = 0; i < list.length; i += size) out.push(list.slice(i, i + size)); return out.length ? out : [[]]; };
 
 // (Play reading trial, owner 11 Oct 2026 AEDT; docs/cores/play-reading.md) "Reading corner", right after "Letters and words".
 // Its ten games, with their ages, are added only while Studio's readingTrial switch is on (js/games/readingmenu.js), so
 // with the switch off the area has no games and is never shown.
-AREAS.splice(AREAS.findIndex(a => a.key === 'words') + 1, 0, { key: 'reading', icon: '📖', name: () => T('Reading corner', 'Góc đọc') });
+AREAS.splice(AREAS.findIndex(a => a.key === 'words') + 1, 0, { key: 'reading', icon: 'ðŸ“–', name: () => T('Reading corner', 'GÃ³c Ä‘á»c') });
+
