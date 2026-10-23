@@ -3192,3 +3192,6 @@ body.calm .sv2 .press::after { animation: none; display: none; }
 @media (max-width: 600px) { .modal.website { padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); } .modal.website .card { width: 100%; height: 100%; border-radius: 0; } }
 /* a phone: the Website button is its picture with the name under it, so it fits beside About and Add to Home Screen */
 @media (max-width: 520px) { .sv2 .tt-bar .sitebtn { flex-direction: column; gap: 0; width: 60px; min-height: 52px; padding: 3px 2px; border-radius: 18px; font-size: 11px; line-height: 1.1; margin-left: 8px; } .sv2 .tt-bar .sitebtn .ico { width: 28px; height: 28px; } .sv2 .tt-bar .sitebtn b { white-space: nowrap; } .sv2 .tt-bar .title-top { min-width: 0; } }
+/* (r90) the countdown under each coming festival: decorations, the hunt, the day (js/ui.ts festCalendarHTML) */
+.fcal-row em.fcal-cd { display: flex; flex-wrap: wrap; gap: 4px 6px; margin-top: 4px; }
+.fcal-row em.fcal-cd span { background: rgba(255, 255, 255, .75); border-radius: 10px; padding: 2px 8px; font-weight: 700; color: #6a4a3a; }
