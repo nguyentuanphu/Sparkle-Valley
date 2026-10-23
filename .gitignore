@@ -66,7 +66,9 @@ marketing/source/runvalley.log
 /js/games/bigthinkers2.js
 /js/games/catalog.js
 /js/games/cities.js
+/js/games/crafts.js
 /js/games/drawing.js
+/js/games/drawing2.js
 /js/games/drawshape.js
 /js/games/farmgames.js
 /js/games/folk.js
@@ -138,6 +140,8 @@ marketing/source/runvalley.log
 /js/state.js
 /js/studio-position.js
 /js/tale-loader.js
+/js/tales-content.js
+/js/talesdata.js
 /js/tester-detection.js
 /js/tester.js
 /js/trade.js
