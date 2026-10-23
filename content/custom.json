@@ -2,5 +2,107 @@
  "message": {
   "en": "",
   "vi": "Các em các bạn thật toẹt vời"
+ },
+ "releases": {
+  "surprises": {
+   "on": true,
+   "start": "2026-11-07",
+   "newDays": 7
+  },
+  "mysteryBox": {
+   "on": true,
+   "start": "2026-11-07",
+   "newDays": 7
+  },
+  "festHunt": {
+   "on": true,
+   "start": "2026-11-07",
+   "newDays": 7
+  },
+  "festDecoBig": {
+   "on": true,
+   "start": "2026-11-07",
+   "newDays": 7
+  },
+  "hoilang": {
+   "on": true,
+   "start": "2026-11-14",
+   "newDays": 7
+  },
+  "singers": {
+   "on": true,
+   "start": "2026-11-14",
+   "newDays": 7
+  },
+  "story_yard": {
+   "on": true,
+   "start": "2026-11-28",
+   "newDays": 7
+  },
+  "yardHands": {
+   "on": true,
+   "start": "2026-11-28",
+   "newDays": 7
+  },
+  "collectibles": {
+   "on": true,
+   "start": "2026-12-05",
+   "newDays": 7
+  },
+  "rankings": {
+   "on": true,
+   "start": "2026-12-05",
+   "newDays": 7
+  },
+  "companionGrow": {
+   "on": true,
+   "start": "2026-12-12",
+   "newDays": 7
+  },
+  "saveGoal": {
+   "on": true,
+   "start": "2026-12-12",
+   "newDays": 7
+  },
+  "priceTags": {
+   "on": true,
+   "start": "2026-12-12",
+   "newDays": 7
+  },
+  "sellersRemember": {
+   "on": true,
+   "start": "2026-12-12",
+   "newDays": 7
+  },
+  "jobs": {
+   "on": true,
+   "start": "2026-12-19",
+   "newDays": 7
+  },
+  "owlGuide": {
+   "on": true,
+   "start": "2026-12-19",
+   "newDays": 7
+  },
+  "villagerTalk": {
+   "on": true,
+   "start": "2026-12-19",
+   "newDays": 7
+  },
+  "dayPlan": {
+   "on": true,
+   "start": "2026-12-19",
+   "newDays": 7
+  },
+  "houseGuide": {
+   "on": true,
+   "start": "2026-12-26",
+   "newDays": 7
+  },
+  "animalHomes": {
+   "on": true,
+   "start": "2026-12-26",
+   "newDays": 7
+  }
  }
 }

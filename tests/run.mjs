@@ -4412,6 +4412,9 @@ await check('rollout', async () => {
         await wait(500); const moved = Math.abs(v.o.position.x - v.home.x) > .05; v.goal = null; return moved; }
     };
     const res = {};
+    // (r90 launch, owner 23 Oct AEDT) the shipped schedule (content/custom.json "releases") is set aside while each switch
+    // is tried on and off, then checked on its own below: a batch stays hidden until its Saturday and is on from it
+    const shipped = { ...(C.CUSTOM.releases || {}) }; C.CUSTOM.releases = Object.fromEntries(Object.entries(shipped).filter(([k]) => k === 'wayfind'));
     for (const [id, probe] of Object.entries(probes)) {
       if (id === 'wayfind') {
         const previous = C.CUSTOM.releases?.wayfind; C.CUSTOM.releases = C.CUSTOM.releases || {};
@@ -4429,6 +4432,9 @@ await check('rollout', async () => {
       res[id] = { hidden, kept, back };
     }
     for (const [id, probe] of Object.entries(scenery)) { F[id] = false; const hidden = !(await probe()); F[id] = true; const back = !!(await probe()); res[id] = { hidden, kept: true, back }; }
+    C.CUSTOM.releases = shipped;
+    const sched = Object.entries(shipped).filter(([, r]) => r && r.start).map(([id, r]) => ({ id, before: C.releaseOn(id, true, new Date(new Date(r.start + 'T00:00:00').getTime() - 864e5)), on: C.releaseOn(id, true, new Date(r.start + 'T12:00:00')) }));
+    res.schedule = { hidden: sched.length >= 20 && sched.every(x => !x.before), kept: true, back: sched.every(x => x.on), n: sched.length };
     // every new switch is in Studio's list, starts on, and says what it is in both languages
     const { RELEASES } = await import('/js/content/releases.js');
     const missing = Object.keys(probes).concat(Object.keys(scenery)).filter(id => { const x = RELEASES.find(r => r.id === id); return !x || x.def !== (id !== 'wayfind') || !x.en || !x.vi || x.en === x.vi; });
