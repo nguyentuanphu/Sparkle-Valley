@@ -1,6 +1,6 @@
 # Parent settings and child play reports
 
-Source: da4191e28918eafd278e9eec66d2dc615140dd4d. Reviewed 23 October 2026 AEDT. Existing game controls, not a new statistics backend.
+Source: 0716602ad14118e1666e9b225276b7d536ec6337. Reviewed 23 October 2026 AEDT. Existing game controls, not a new statistics backend.
 
 ## Reach the report
 
@@ -96,7 +96,7 @@ Collected place entries, landmark postcards, family postcards when available, wo
 
 ### A family weekly note / Ghi chú tuần cho gia đình
 
-When the Family weekly-note feature is enabled, read a short summary for each child, based on saved activity, with a favourite-game mention when available. Certificate cards can celebrate collected stickers. / Khi bật ghi chú tuần trong Gia đình, đọc tóm tắt cho từng bé từ hoạt động đã lưu, có nhắc trò yêu thích khi có. Thiệp khen có thể ghi lại hình dán đã sưu tầm.
+When the Family weekly-note feature is enabled, read a short summary for each child, based on saved activity, with a favourite-game mention when available. Certificate cards celebrate collected stickers: save the picture, or print it or save it as a PDF on its own page. / Khi bật ghi chú tuần trong Gia đình, đọc tóm tắt cho từng bé từ hoạt động đã lưu, có nhắc trò yêu thích khi có. Thiệp khen ghi lại hình dán đã sưu tầm: lưu ảnh, hoặc in ra hay lưu thành PDF trên một trang riêng.
 
 ### Print or keep a copy / In hoặc giữ một bản
 

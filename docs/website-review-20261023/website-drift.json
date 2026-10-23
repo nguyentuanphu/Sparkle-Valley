@@ -1,5 +1,5 @@
 {
-  "source": "da4191e28918eafd278e9eec66d2dc615140dd4d",
+  "source": "0716602ad14118e1666e9b225276b7d536ec6337",
   "reviewedSource": "da4191e28918eafd278e9eec66d2dc615140dd4d",
   "coverage": {
     "valley": 17,
@@ -8,7 +8,13 @@
     "family": 15,
     "festivals": 24
   },
-  "changed": [],
+  "changed": [
+    "index.html",
+    "js/parents.ts",
+    "js/report.ts",
+    "sw.ts",
+    "js/printpage.ts"
+  ],
   "coverageChanged": [],
-  "requiresEditorialReview": false
+  "requiresEditorialReview": true
 }

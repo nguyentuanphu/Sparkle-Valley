@@ -1,5 +1,5 @@
 {
-  "source": "da4191e28918eafd278e9eec66d2dc615140dd4d",
+  "source": "0716602ad14118e1666e9b225276b7d536ec6337",
   "files": [
     {
       "file": "content/custom.json",
@@ -203,7 +203,7 @@
     },
     {
       "file": "index.html",
-      "hash": "aeae8b49defd1b836647ef884aac25ab35044fcc"
+      "hash": "675c3346653800630b340d7c60b8d913a1d88583"
     },
     {
       "file": "js/ads.js",
@@ -951,7 +951,7 @@
     },
     {
       "file": "js/parents.ts",
-      "hash": "d073bb3547432763fb1cf28720ad27395ce1a80c"
+      "hash": "656856bfaf1590813a4379cb122c4d87dd27d398"
     },
     {
       "file": "js/passport.js",
@@ -998,6 +998,10 @@
       "hash": "ab9cda2a07a59a98a61acd73a3d37bc7db9165b8"
     },
     {
+      "file": "js/printpage.ts",
+      "hash": "9d1c9ec7013355498800a33ccb4f38baa57a6f02"
+    },
+    {
       "file": "js/realworld.js",
       "hash": "ba9cbca82cb313125c044b1a5094d13820922176"
     },
@@ -1027,7 +1031,7 @@
     },
     {
       "file": "js/report.ts",
-      "hash": "ade7298a3f0957a75477194762fa56a4456c3e01"
+      "hash": "6e0ffd8ab782ebca585ea7baa88c30c37e4f8afe"
     },
     {
       "file": "js/rideview.ts",
@@ -1319,7 +1323,7 @@
     },
     {
       "file": "sw.ts",
-      "hash": "fea4e1ca741427961201f208e08ebc023a912c32"
+      "hash": "7f7c9c32b82a704b649849e4fb43b32f1ede9f75"
     },
     {
       "file": "vendor/RoomEnvironment.js",
