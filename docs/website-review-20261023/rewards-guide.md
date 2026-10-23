@@ -1,6 +1,6 @@
 # Prizes & badges / Quà thưởng và huy hiệu
 
-Reviewed 23 October 2026 AEDT against source [0716602ad14118e1666e9b225276b7d536ec6337](https://github.com/nguyentuanphu/Sparkle-Valley/tree/0716602ad14118e1666e9b225276b7d536ec6337). [Interactive prize showcase](prototype.html#rewards) · [Quest Guide](quest-guide.md)
+Reviewed 23 October 2026 AEDT against source [d674c86616e3353df23d7c25ee683d047e6b980a](https://github.com/nguyentuanphu/Sparkle-Valley/tree/d674c86616e3353df23d7c25ee683d047e6b980a). [Interactive prize showcase](prototype.html#rewards) · [Quest Guide](quest-guide.md)
 
 These are rewards available under the reviewed rules, not a record of any child's saved collection. Age, difficulty, family choices, already-owned items and remaining stickers affect availability. The website does not grant prizes. / Đây là quà theo quy tắc đã kiểm tra, không phải bộ sưu tập đã lưu của bé. Tuổi, độ khó, lựa chọn gia đình, món đã có và hình dán còn lại ảnh hưởng nội dung. Trang web không trao quà.
 
@@ -613,20 +613,20 @@ When enabled for ages 5–8 on Medium/Hard, one daily box and up to one extra ea
 
 ## Sources
 
-- [js/content/adventures.js](https://github.com/nguyentuanphu/Sparkle-Valley/blob/0716602ad14118e1666e9b225276b7d536ec6337/js/content/adventures.js)
-- [js/content/stickers.js](https://github.com/nguyentuanphu/Sparkle-Valley/blob/0716602ad14118e1666e9b225276b7d536ec6337/js/content/stickers.js)
-- [js/stickers.js](https://github.com/nguyentuanphu/Sparkle-Valley/blob/0716602ad14118e1666e9b225276b7d536ec6337/js/stickers.js)
-- [js/content/chapters.ts](https://github.com/nguyentuanphu/Sparkle-Valley/blob/0716602ad14118e1666e9b225276b7d536ec6337/js/content/chapters.ts)
-- [js/lanterns.ts](https://github.com/nguyentuanphu/Sparkle-Valley/blob/0716602ad14118e1666e9b225276b7d536ec6337/js/lanterns.ts)
-- [js/story.js](https://github.com/nguyentuanphu/Sparkle-Valley/blob/0716602ad14118e1666e9b225276b7d536ec6337/js/story.js)
-- [js/passport.js](https://github.com/nguyentuanphu/Sparkle-Valley/blob/0716602ad14118e1666e9b225276b7d536ec6337/js/passport.js)
-- [js/festhunt.js](https://github.com/nguyentuanphu/Sparkle-Valley/blob/0716602ad14118e1666e9b225276b7d536ec6337/js/festhunt.js)
-- [js/parents.ts](https://github.com/nguyentuanphu/Sparkle-Valley/blob/0716602ad14118e1666e9b225276b7d536ec6337/js/parents.ts)
-- [js/main.ts](https://github.com/nguyentuanphu/Sparkle-Valley/blob/0716602ad14118e1666e9b225276b7d536ec6337/js/main.ts)
-- [js/yard.js](https://github.com/nguyentuanphu/Sparkle-Valley/blob/0716602ad14118e1666e9b225276b7d536ec6337/js/yard.js)
-- [js/jobs.js](https://github.com/nguyentuanphu/Sparkle-Valley/blob/0716602ad14118e1666e9b225276b7d536ec6337/js/jobs.js)
-- [js/content/boxes.js](https://github.com/nguyentuanphu/Sparkle-Valley/blob/0716602ad14118e1666e9b225276b7d536ec6337/js/content/boxes.js)
-- [js/boxes.js](https://github.com/nguyentuanphu/Sparkle-Valley/blob/0716602ad14118e1666e9b225276b7d536ec6337/js/boxes.js)
-- [js/kidplay.js](https://github.com/nguyentuanphu/Sparkle-Valley/blob/0716602ad14118e1666e9b225276b7d536ec6337/js/kidplay.js)
-- [js/games/frame.ts](https://github.com/nguyentuanphu/Sparkle-Valley/blob/0716602ad14118e1666e9b225276b7d536ec6337/js/games/frame.ts)
-- [js/games/registry.ts](https://github.com/nguyentuanphu/Sparkle-Valley/blob/0716602ad14118e1666e9b225276b7d536ec6337/js/games/registry.ts)
+- [js/content/adventures.js](https://github.com/nguyentuanphu/Sparkle-Valley/blob/d674c86616e3353df23d7c25ee683d047e6b980a/js/content/adventures.js)
+- [js/content/stickers.js](https://github.com/nguyentuanphu/Sparkle-Valley/blob/d674c86616e3353df23d7c25ee683d047e6b980a/js/content/stickers.js)
+- [js/stickers.js](https://github.com/nguyentuanphu/Sparkle-Valley/blob/d674c86616e3353df23d7c25ee683d047e6b980a/js/stickers.js)
+- [js/content/chapters.ts](https://github.com/nguyentuanphu/Sparkle-Valley/blob/d674c86616e3353df23d7c25ee683d047e6b980a/js/content/chapters.ts)
+- [js/lanterns.ts](https://github.com/nguyentuanphu/Sparkle-Valley/blob/d674c86616e3353df23d7c25ee683d047e6b980a/js/lanterns.ts)
+- [js/story.js](https://github.com/nguyentuanphu/Sparkle-Valley/blob/d674c86616e3353df23d7c25ee683d047e6b980a/js/story.js)
+- [js/passport.js](https://github.com/nguyentuanphu/Sparkle-Valley/blob/d674c86616e3353df23d7c25ee683d047e6b980a/js/passport.js)
+- [js/festhunt.js](https://github.com/nguyentuanphu/Sparkle-Valley/blob/d674c86616e3353df23d7c25ee683d047e6b980a/js/festhunt.js)
+- [js/parents.ts](https://github.com/nguyentuanphu/Sparkle-Valley/blob/d674c86616e3353df23d7c25ee683d047e6b980a/js/parents.ts)
+- [js/main.ts](https://github.com/nguyentuanphu/Sparkle-Valley/blob/d674c86616e3353df23d7c25ee683d047e6b980a/js/main.ts)
+- [js/yard.js](https://github.com/nguyentuanphu/Sparkle-Valley/blob/d674c86616e3353df23d7c25ee683d047e6b980a/js/yard.js)
+- [js/jobs.js](https://github.com/nguyentuanphu/Sparkle-Valley/blob/d674c86616e3353df23d7c25ee683d047e6b980a/js/jobs.js)
+- [js/content/boxes.js](https://github.com/nguyentuanphu/Sparkle-Valley/blob/d674c86616e3353df23d7c25ee683d047e6b980a/js/content/boxes.js)
+- [js/boxes.js](https://github.com/nguyentuanphu/Sparkle-Valley/blob/d674c86616e3353df23d7c25ee683d047e6b980a/js/boxes.js)
+- [js/kidplay.js](https://github.com/nguyentuanphu/Sparkle-Valley/blob/d674c86616e3353df23d7c25ee683d047e6b980a/js/kidplay.js)
+- [js/games/frame.ts](https://github.com/nguyentuanphu/Sparkle-Valley/blob/d674c86616e3353df23d7c25ee683d047e6b980a/js/games/frame.ts)
+- [js/games/registry.ts](https://github.com/nguyentuanphu/Sparkle-Valley/blob/d674c86616e3353df23d7c25ee683d047e6b980a/js/games/registry.ts)
