@@ -8,8 +8,8 @@ import { el } from './util.js';
 import { events } from './core/events.js';
 
 import { T, applyLang, nm, NPC_NAMES, defaultName } from './i18n.js';
-import { settings, saveSettings, profiles, exportBackup, importBackup, backupAge, farm, resetFarm, saveFarm, MAX_KIDS, snapshot } from './state.js';
-import { readSaveCopy } from './content/savecopy.js';
+import { settings, saveSettings, profiles, saveProfiles, normalizeProfile, exportBackup, importBackup, backupAge, farm, resetFarm, saveFarm, MAX_KIDS, getSnapshot } from './state.js';
+import { createSaveCopy, readSaveCopy } from './content/savecopy.js';
 import { say, voicePack, voiceDiag, allowMobilePack, voiceMisses, clearVoiceMisses, voicesFor, onVoices, hasVietnamese, FAMILY_PHRASES, previewPackVoice } from './voice.js';
 
 import { SFX, Music } from './audio.js';
@@ -352,10 +352,7 @@ export function openGrownups(after: (() => void) | undefined = undefined) {
     card.querySelector('#gFarm').onclick = () => { if (confirm(T('Start the farm over? Players and stickers are kept.', 'Làm lại nông trại? Người chơi và hình dán được giữ lại.'))) { resetFarm(); window.__sv && window.__sv.farm && (window.__sv.farm.syncAnimals(), window.__sv.farm.syncPets()); toast(T('A fresh new farm!', 'Nông trại mới tinh!')); } };
     card.querySelector('#gImp').onchange = async e => { const f = e.target.files[0]; if (!f) return; try { await importBackup(f); toast(T('Backup loaded!', 'Đã mở bản sao!')); draw(); after && after(); } catch (err) { toast(T('That file is not a Sparkle Valley backup.', 'Tệp này không phải bản sao của Thung Lũng Lấp Lánh.')); } };
     card.querySelector('#gSaveCopy').onclick = async () => {
-      const snap = snapshot();
-      snap.v = 3;
-      snap.device = localStorage.getItem('sv2_playerid') || '';
-      const text = JSON.stringify(snap, null, 2);
+      const text = JSON.stringify(createSaveCopy(getSnapshot()), null, 2);
       const name = 'sparkle-valley-' + new Date().toISOString().slice(0, 10) + '.svsave';
       const file = new File([text], name, { type: 'application/json' });
       try {
@@ -389,9 +386,12 @@ export function openGrownups(after: (() => void) | undefined = undefined) {
           `Mở bản sao lưu ngày ${dateStr} của: ${names}?\nThao tác này sẽ thay thế tiến trình hiện tại trên máy này.`
         );
         if (confirm(confirmMsg)) {
-          profiles.splice(0, profiles.length, ...copy.profiles);
+          profiles.splice(0, profiles.length, ...copy.profiles.map(normalizeProfile));
+          Object.keys(farm).forEach(key => delete farm[key]);
           Object.assign(farm, copy.farm);
           Object.assign(settings, copy.settings);
+          if (copy.device) localStorage.setItem('sv2_playerid', copy.device);
+          else localStorage.removeItem('sv2_playerid');
           saveProfiles(true);
           saveSettings();
           saveFarm();
@@ -484,3 +484,5 @@ export function openRecorder(after) {
 
 // ---------- Games hub ----------
 // the traditional games Lotus Village's hội làng runs on its time table (js/folkshow.js); unchanged in round R
+
+

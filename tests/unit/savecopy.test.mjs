@@ -1,6 +1,6 @@
 ﻿import test from "node:test";
 import assert from "node:assert/strict";
-import { readSaveCopy, COPY_VERSION, MAX_COPY_BYTES } from "../../js/content/savecopy.ts";
+import { createSaveCopy, readSaveCopy, COPY_VERSION, MAX_COPY_BYTES } from "../../js/content/savecopy.ts";
 
 const good = {
   app: "sparkle-valley", v: COPY_VERSION, saved: Date.now(), device: "abc123def456",
@@ -85,10 +85,18 @@ test("farm must be object", () => {
   assert.throws(() => readSaveCopy(JSON.stringify(bad)), /invalid copy/);
 });
 
-test("safeKeys blocks proto pollution", () => {
-  // Ensure the validator does not crash or accept dangerous keys
-  const badText = JSON.stringify({ app: "sparkle-valley", v: COPY_VERSION, saved: Date.now(), device: "", settings: { "__proto__": { polluted: true } }, profiles: good.profiles, farm: good.farm });
-  const result = readSaveCopy(badText);
-  // The validation should accept it (proto is just a key string) but not crash
-  assert.equal(typeof result, "object");
+test("prototype keys are rejected", () => {
+  const badText = `{"app":"sparkle-valley","v":${COPY_VERSION},"saved":${Date.now()},"device":"","settings":{"__proto__":{"polluted":true}},"profiles":${JSON.stringify(good.profiles)},"farm":${JSON.stringify(good.farm)}}`;
+  assert.throws(() => readSaveCopy(badText), /invalid copy/);
+});
+
+test("copy creation upgrades the internal snapshot and removes secrets", () => {
+  const copy = createSaveCopy({ ...good, v: 2, settings: { lang: "en", aiKey: "do-not-export", token: "do-not-export" } });
+  assert.equal(copy.v, COPY_VERSION);
+  assert.deepEqual(copy.settings, { lang: "en" });
+});
+
+test("duplicate profile ids are rejected", () => {
+  const bad = { ...good, profiles: [good.profiles[0], { ...good.profiles[0] }] };
+  assert.throws(() => readSaveCopy(JSON.stringify(bad)), /invalid profile/);
 });
