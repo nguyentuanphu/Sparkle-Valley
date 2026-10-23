@@ -5,8 +5,6 @@
 // area or shelf finished 3 times). A tester device sees them early through its preview list (releaseOn).
 import { releaseOn } from '../custom.js';
 
-export const NEW_GAMES = 'newGames', NEW_STORIES = 'newStories';
-
 export const SECOND_SET_GAMES: Record<string, string[]> = {
   animals: ['crabwalk', 'whohome', 'mumbaby', 'feedzoo', 'buffalo', 'reefcount', 'tracks', 'catchfish', 'emueggs', 'reefclean'],
   music: ['dantranh', 'bushband', 'drumecho', 'loudquiet', 'songsteps'],
@@ -111,7 +109,7 @@ for (const ids of Object.values(SECOND_SET_TALES)) ids.forEach(id => TALE_IDS.ad
 export const isSecondGame = (id: string): boolean => GAME_IDS.has(id);
 export const isSecondTale = (id: string): boolean => TALE_IDS.has(id);
 /** switched off in Studio (or never switched on): not offered to children yet */
-export const gamesHeld = (): boolean => !releaseOn(NEW_GAMES, false);
-export const storiesHeld = (): boolean => !releaseOn(NEW_STORIES, false);
+export const gamesHeld = (): boolean => !releaseOn('newGames', false);
+export const storiesHeld = (): boolean => !releaseOn('newStories', false);
 export const heldGame = (id: string): boolean => isSecondGame(id) && gamesHeld();
 export const heldTale = (id: string): boolean => isSecondTale(id) && storiesHeld();

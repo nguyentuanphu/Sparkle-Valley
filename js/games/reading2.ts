@@ -33,14 +33,14 @@ function keep(api: any, png: string) {
   saveProfiles();
 }
 
-async function runReadingRounds(api: any, prompt: [string, string], qs: Array<{ show: string; desc: [string, string]; choices: string[][]; answer: number }>, done: [string, string]) {
+async function runReadingRounds(api: any, prompt: [string, string], qs: Array<{ show: string | [string, string]; desc: [string, string]; choices: string[][]; answer: number }>, done: [string, string]) {
   style(); api.say(prompt[0], prompt[1]); api.dots(qs.length, 0);
   const wrap = el('div', 'rd2-board'), stage = el('div', 'rd2-stage'), controls = el('div', 'rd2-controls');
   api.stage.appendChild(wrap); wrap.append(stage, controls);
   let k = 0;
   while (k < qs.length) {
     const q = qs[k];
-    stage.innerHTML = `<div class="rd2-big">${q.show}</div><div class="rd2-desc">${T(q.desc[0], q.desc[1])}</div>`;
+    stage.innerHTML = `<div class="rd2-big">${Array.isArray(q.show) ? T(q.show[0], q.show[1]) : q.show}</div><div class="rd2-desc">${T(q.desc[0], q.desc[1])}</div>`;
     controls.innerHTML = '';
     const btns = q.choices.map((c, i) => {
       const b = el('button', 'rd2-btn', `<span>${T(c[0], c[1])}</span>`);
@@ -178,9 +178,9 @@ register({
           answer: 1
         },
         {
-          show: '⭐',
-          desc: ['star ⭐ + fish 🐟 =', 'sao ⭐ + biển 🌊 ='],
-          choices: [['starfruit 🍈', 'sao băng 🌠'], ['moonlight 🌙', 'sao chổi ☄️'], ['starfish ⭐', 'sao biển ⭐']],
+          show: ['🪼', '🐬'], // (a picture per language: the English and the Vietnamese answer differ)
+          desc: ['jelly 🍮 + fish 🐟 =', 'cá 🐟 + heo 🐷 ='],
+          choices: [['starfruit 🍈', 'sao băng 🌠'], ['moonlight 🌙', 'sao chổi ☄️'], ['jellyfish 🪼', 'cá heo 🐬']],
           answer: 2
         }
       ],
@@ -448,7 +448,7 @@ register({
 
     for (let i = 0; i < steps.length; i++) {
       const q = steps[i];
-      stage.innerHTML = `<div class="rd2-big">${q.show}</div><div class="rd2-desc">${T(q.desc[0], q.desc[1])}</div>`;
+      stage.innerHTML = `<div class="rd2-big">${Array.isArray(q.show) ? T(q.show[0], q.show[1]) : q.show}</div><div class="rd2-desc">${T(q.desc[0], q.desc[1])}</div>`;
       controls.innerHTML = '';
       const btns = q.choices.map((c, idx) => {
         const b = el('button', 'rd2-btn', `<span>${T(c[0], c[1])}</span>`);

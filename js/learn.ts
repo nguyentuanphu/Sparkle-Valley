@@ -126,7 +126,8 @@ export function createLearning(G) {
     if (!cards) return '';
     const progress = progressOf(p, 'tale', f);
     const note = progress.done >= 3 || !locked.length ? '' : `<div class="unlock-note">${T('To unlock more stories, finish each story here 3 times.', '\u0110\u1ec3 m\u1edf th\u00eam truy\u1ec7n, con h\u00e3y xem xong m\u1ed7i truy\u1ec7n \u1edf \u0111\u00e2y 3 l\u1ea7n.')}<small>${progress.done}/3</small></div>`;
-    return `<h3>${f} ${T('Tales from ' + en, 'Truy\u1ec7n ' + vi)}</h3><div class="talegrid">${cards}</div>${note}`;
+    // (a flag is drawn by icons.js; the world shelf's globe is our drawing, never the phone emoji)
+    return `<h3>${/\p{Regional_Indicator}/u.test(f) ? f : pic(f)} ${T('Tales from ' + en, 'Truy\u1ec7n ' + vi)}</h3><div class="talegrid">${cards}</div>${note}`;
   }).join('');
   /** the fold and Coming soon taps on a shelf; `redraw` paints the shelves again */
   G.bindTaleShelf = (root, redraw) => {
