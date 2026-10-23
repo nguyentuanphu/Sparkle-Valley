@@ -1962,6 +1962,11 @@ await check('story', async () => {
   await act('story_c1_find'); await w(600); await calm(); await w(2500); await calm();
   const carrying = await pg.evaluate(() => __sv.heroes[0].profile.lanterns.carrying); seen.push(await q());
   pg.evaluate(() => { const it = __sv.interactables.find(i => i.id === 'story_c1_hang'); it.act(__sv.heroes[0]); }); await w(1500);
+  // (r90, testers #425 #432 #442: the rope panel covered the game) a game opened while the panel waits hides it; closing
+  // the game brings it back, still waiting
+  const padGame = await pg.evaluate(async () => { const d = document.querySelector('.handpad'); if (!d) return null; const F = await import('/js/games/frame.js');
+    F.openGame('colors', { players: [__sv.heroes[0].profile] }); await new Promise(r => setTimeout(r, 500)); const hidden = getComputedStyle(d).display === 'none';
+    document.querySelector('.gl .gl-x')?.click(); await new Promise(r => setTimeout(r, 900)); return { hidden, back: d.isConnected && getComputedStyle(d).display !== 'none' && !F.gameOpen() }; });
   // pull the rope (drag the handle down)
   const roped = await pg.evaluate(() => { const el = document.querySelector('.handpad [data-hp=rope]'); if (!el) return false; const r = el.getBoundingClientRect(), ev = (t, y) => el.dispatchEvent(new PointerEvent(t, { bubbles: true, pointerId: 9, clientX: r.left + 20, clientY: r.top + r.height * y }));
     ev('pointerdown', 0); ev('pointermove', 1); ev('pointerup', 1); return true; }); await w(2500);
@@ -1988,6 +1993,7 @@ await check('story', async () => {
   if (!ribbonsWaited) out.push('walking into the village finished the step before the ribbons were caught');
   if (!(lifted >= 1)) out.push('no lotus leaves to lift');
   if (!roped) out.push('hanging did not ask to pull the rope');
+  if (!padGame || !padGame.hidden || !padGame.back) out.push('a game opened over the rope panel: ' + JSON.stringify(padGame));
   if (!(end.house > 5)) out.push(`a building stands ${end.house.toFixed(1)} m from the đình`);
   if (P.errors.length) out.push(...P.errors.slice(0, 2));
   await P.ctx.close();
