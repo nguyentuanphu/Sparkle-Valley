@@ -39,6 +39,7 @@ round); the full suite green before a report; times in AEST; no keys or personal
 All of them once per release (`node suite.mjs`), plus `node suite.mjs --changed` after every merge (it always includes `types unit arch rules`).
 
 ## Owner's decisions
+- 23 October 2026 AEDT (pop-up): **version r89** confirmed for this release. Same day, the owner's iPhone screenshots: Print or save as PDF did nothing (the Home Screen app now makes a one-page PDF and shares or downloads it), the white shapes over Thê Húc bridge stopped the child (the deck is walkable, the foam only marks a pond's edge) and Hồ Gươm was small and too deep (now wider and .8 m, wading without swimming).
 - 23 October 2026 AEDT (pop-ups): **one release for everything**: r89 waits for the website chat's branch (it pushes and the owner says so), then Release merges it, runs the full suite, fixes what is red and asks one "yes, deploy". **Ten drawing games: go** (brief `tasks/drawing-games-r89.md`), finished lanterns and cards kept in the child's Album on the device. **iPhone white screen**: launch pictures plus the report robot's 504 fix, so the device's own reports show the cause.
 - 23 October 2026 AEDT, after r88 went live (pop-ups): (1) **SparkleStudio.exe is no longer built or published**: Release skips the exe in every round (step 6 above and the old "run `bash tools/publish-exe.sh` after each round that changes `studio/`" note no longer apply); Studio is online only. The exe's code and the old r87 download stay until the owner says otherwise. (2) **r89 covers** the 30-house catalogue (`agents/implement-house-types-catalogue`), the autoplay "could not work out how to play it" issues, and closing PRs that already shipped (done 23 Oct: #400, #451 to #457, #357). (3) **Website** (`home/`: phone menu missing, tablet menu cut off, code names shown to parents): remind the owner later; not in r89 unless the owner says so. (4) **Ten drawing games**: the helper's work was never pushed and is lost; write a new brief and show the owner the plan before building. (5) The tester-issues robot's no-mention fix (#472) went to main at once as `781089d6` (`[skip netlify]`, robot only).
 - 23 October 2026 AEDT: owner explicitly requested a made-up statistics graph so parents can see what to expect. The interactive example is labelled invented data in EN/VI, remains separate from real child saves and makes no educational-score claim.
@@ -149,6 +150,11 @@ All of them once per release (`node suite.mjs`), plus `node suite.mjs --changed`
 - (13 Oct AEDT, about 10:20 am) Owner to the films chat (Release, `docs/cores/tasks/films-batches.md`), asked whether to wait for r70: **"build everything now including the narration stops before the scene ends, soft background, some films don't start by themselves etc; they should go in one batch and can be released later. make sure you record on handoffs as you go"**. So: all 33 missing films and the three fixes in one batch on `claude/quirky-maxwell-4lm9tv` (built on r70), released later with its own "yes, deploy"; progress written in the brief as it goes.
 
 ## Progress notes
+
+### r89 checks so far, 23 Oct 2026 AEDT (Release, branch `release/r89`)
+
+- Bridge and lake `0ee1379a`: bridges, water, solid, boats, plots, mapcoords, report, unit pass (one at a time, 6 min).
+- Website integration `da4191e2`, `f4ec62f0`: new check `website` passes (Welcome, Settings, the floating view, the standalone page, the goal row on phone, narrow phone, landscape, tablet, computer, side by side and face to face; goal row top 54 px on phones, was 110 px); `tsc` clean; website sync against `da4191e2` recorded as reviewed, `tools/build-website.mts --check` clean. Screenshots looked at: Welcome, floating website and Settings on phone (Vietnamese), tablet and computer.
 
 ### r87 deployed — 19 Oct 2026, 4:45 pm AEDT
 
