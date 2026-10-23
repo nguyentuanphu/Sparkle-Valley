@@ -1,5 +1,5 @@
 {
-  "source": "6f1dbe6085df3d5af0e1ec2599c09fbfeafb08b1",
+  "source": "b7e9b2e3ec7822a1d1644a13ee1bcc792c5c03e8",
   "files": [
     {
       "file": "content/custom.json",
@@ -15,7 +15,7 @@
     },
     {
       "file": "css/style.css",
-      "hash": "791196b3f48900007c98ec4196b369e20f66affb"
+      "hash": "3ffd84c8a4db4020cc3e664b15f8a6352bd693ad"
     },
     {
       "file": "fonts/Baloo2-latin-600.woff2",
@@ -211,7 +211,7 @@
     },
     {
       "file": "index.html",
-      "hash": "8e3315b2edac36bfdaad9bbb6cabee8238bc1216"
+      "hash": "e0dbca31b8c39d3f1f5edc2c1202206939ce5d38"
     },
     {
       "file": "js/ads.js",
@@ -231,7 +231,7 @@
     },
     {
       "file": "js/art.ts",
-      "hash": "c79884ae4e3e6bc4a71cbd4f4a1681667ac98ac2"
+      "hash": "15f3765cb2639bcc97b2c820bd10f3c967ad15e1"
     },
     {
       "file": "js/asia.js",
@@ -294,8 +294,8 @@
       "hash": "25d8e139794064c3dffd719cf089ac40f88a6d73"
     },
     {
-      "file": "js/content/activities.js",
-      "hash": "d201186524660d5c4ec19a4528a6c0b67c5410fe"
+      "file": "js/content/activities.ts",
+      "hash": "cd6e6b869bf15ae9cdf80e87eeeb2e70d3fbc7de"
     },
     {
       "file": "js/content/adventures.js",
@@ -535,7 +535,7 @@
     },
     {
       "file": "js/content/releases.ts",
-      "hash": "d2bdd1390f118cbed17dc053e008b03842f98113"
+      "hash": "932ee48137f72b6c78ed809d79a30841504f795b"
     },
     {
       "file": "js/content/rules.js",
@@ -544,6 +544,10 @@
     {
       "file": "js/content/savecopy.ts",
       "hash": "38a530c4e8ea9e0cf5f8e8cf1ce9e4e6be54c0e0"
+    },
+    {
+      "file": "js/content/secondset.ts",
+      "hash": "762834a3e5ec1b4d56a3ca433fdb3369e63dec95"
     },
     {
       "file": "js/content/shop.js",
@@ -575,7 +579,7 @@
     },
     {
       "file": "js/content/unlocks.ts",
-      "hash": "2338dc885bed7938a8c404030131c311642b5d2e"
+      "hash": "9bb770cf0a0c847d0c495999a222565ff576b97d"
     },
     {
       "file": "js/content/villagerlines.js",
@@ -959,7 +963,7 @@
     },
     {
       "file": "js/learn.ts",
-      "hash": "7272532c40bdea40a7f0416e5d51f3f58610e67d"
+      "hash": "0034d8e27892b78b05bb92d4c6b861e52f8cb5e2"
     },
     {
       "file": "js/listen.js",
@@ -1255,7 +1259,7 @@
     },
     {
       "file": "js/ui.ts",
-      "hash": "385b51d443cc26495afcd5410754fb4e0af9211a"
+      "hash": "f8fcff54f57312116ae6c8bb2cc58de145fde80b"
     },
     {
       "file": "js/util.js",
