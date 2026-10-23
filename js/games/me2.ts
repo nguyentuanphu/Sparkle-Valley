@@ -22,7 +22,7 @@ function style() {
 
 // 1. My Day
 register({
-  id: 'myday', icon: '🌅',
+  id: 'myday', icon: '🌄',
   name: () => T('My Day', 'Một Ngày Của Em'),
   async run(api) {
     style();
@@ -33,13 +33,13 @@ register({
     const stage = el('div', 'm2-stage'); wrap.appendChild(stage);
 
     const routine = [
-      { id: 'wake', icon: '🌅', name: ['Wake up', 'Thức dậy'] },
+      { id: 'wake', icon: '🌄', name: ['Wake up', 'Thức dậy'] },
       { id: 'brush', icon: '🪥', name: ['Brush teeth', 'Đánh răng'] },
       { id: 'play', icon: '🎒', name: ['School & play', 'Đi học & chơi'] },
       { id: 'sleep', icon: '🌙', name: ['Bedtime story', 'Đi ngủ'] }
     ];
 
-    const display = el('div', '', pic('🌅')); display.style.fontSize = '80px'; stage.appendChild(display);
+    const display = el('div', '', pic('🌄')); display.style.fontSize = '80px'; stage.appendChild(display);
     const controls = el('div', 'm2-controls'); wrap.appendChild(controls);
     const btns = routine.map((r, idx) => {
       const b = el('button', 'm2-btn', `${pic(r.icon)} <span>${T(r.name[0], r.name[1])}</span>`);

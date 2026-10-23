@@ -402,7 +402,7 @@ register({
 
 register({
   id: "bank",
-  icon: "🏦",
+  icon: "🏛️",
   name: () => T("At the Bank", "Ở Ngân Hàng"),
   async run(api) {
     style();
@@ -417,8 +417,8 @@ register({
 
     const ops = [
       { name: T("Deposit Coin", "Gửi Xu"), art: "🪙" },
-      { name: T("Deposit Note", "Gửi Tiền Giấy"), art: "💵" },
-      { name: T("Check Balance", "Xem Số Dư"), art: "🏦" },
+      { name: T("Deposit Note", "Gửi Tiền Giấy"), art: "💰" },
+      { name: T("Check Balance", "Xem Số Dư"), art: "🏛️" },
       { name: T("Safe Piggy Savings", "Cất Tiết Kiệm"), art: "💰" }
     ];
 
@@ -429,7 +429,7 @@ register({
       if (api.closed) return;
       wrap.innerHTML = "";
       const curr = ops[r];
-      const box = el("div", "mn2-box", `${pic("🏦")} ${curr.name}`);
+      const box = el("div", "mn2-box", `${pic("🏛️")} ${curr.name}`);
       wrap.appendChild(box);
 
       const row = el("div", "mn2-row");

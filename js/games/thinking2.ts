@@ -318,7 +318,7 @@ async function runPipes(api) {
   return api.win({ title: T('You connected every water pipe!', 'Con đã nối xong mọi ống nước!') });
 }
 
-register({ id: 'minichess', icon: 'MC', name: () => T('Little Chess', 'Cờ Vua Nhỏ'), run: runMiniChess });
-register({ id: 'cotuong', icon: 'CT', name: () => T('Chinese Chess Puzzles', 'Cờ Tướng Nhỏ'), run: runCoTuong });
-register({ id: 'whosits', icon: 'WS', name: () => T('Who Sits Where?', 'Ai Ngồi Đâu?'), run: runWhoSits });
-register({ id: 'pipes', icon: 'WP', name: () => T('Water Pipes', 'Nối Ống Nước'), run: runPipes });
+register({ id: 'minichess', icon: '👑', name: () => T('Little Chess', 'Cờ Vua Nhỏ'), run: runMiniChess });
+register({ id: 'cotuong', icon: '🐘', name: () => T('Chinese Chess Puzzles', 'Cờ Tướng Nhỏ'), run: runCoTuong });
+register({ id: 'whosits', icon: '👪', name: () => T('Who Sits Where?', 'Ai Ngồi Đâu?'), run: runWhoSits });
+register({ id: 'pipes', icon: '💧', name: () => T('Water Pipes', 'Nối Ống Nước'), run: runPipes });

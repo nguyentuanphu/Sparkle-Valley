@@ -23,17 +23,17 @@ function style() {
 
 /* 1. Hide and Seek */
 register({
-  id: 'hideseek', icon: '??',
-  name: () => T('Hide and Seek', 'Tr?n T?m'),
+  id: 'hideseek', icon: '🙈',
+  name: () => T('Hide and Seek', 'Trốn Tìm'),
   async run(api) {
     style();
-    api.say('Find your friends hiding behind the trees!', 'T?m b?n b? ?ang tr?n sau nh?ng c?i c?y nh?!');
+    api.say('Find your friends hiding behind the trees!', 'Tìm các bạn đang trốn sau những cái cây nhé!');
     const target = api.little ? 3 : 5;
     api.dots(target, 0);
     const wrap = el('div', 'out-board'); api.stage.appendChild(wrap);
     const stage = el('div', 'out-stage'); wrap.appendChild(stage);
 
-    const spots = ['??', '??', '??', '??', '??'];
+    const spots = ['🌳', '🌲', '🌳', '🌲', '🌳'];
     let found = 0;
     while (found < target && !api.closed) {
       stage.innerHTML = '';
@@ -44,7 +44,7 @@ register({
         btn.style.left = rand(30, 260) + 'px';
         btn.style.top = rand(30, 220) + 'px';
         btn.dataset.idx = String(i);
-        btn.setAttribute('aria-label', i === hiddenIdx ? T('Friend hiding here', 'B?n ?ang tr?n ? ??y') : T('Just a tree', 'Ch? c? c?y th?i'));
+        btn.setAttribute('aria-label', i === hiddenIdx ? T('Friend hiding here', 'Bạn đang trốn ở đây') : T('Just a tree', 'Chỉ là cái cây thôi'));
         stage.appendChild(btn);
       });
 
@@ -60,19 +60,19 @@ register({
       api.dots(target, found);
       await wait(300);
     }
-    api.say('Everyone is found! What great seekers!', 'T?m th?y h?t b?n b? r?i! Con t?m gi?i qu?!');
+    api.say('Everyone is found! What great seekers!', 'Tìm thấy hết các bạn rồi! Con tìm giỏi quá!');
     await wait(1000);
-    return api.win({ title: T('Super Seeker!', 'Th?m T? Nh? Gi?i Gh?!') });
+    return api.win({ title: T('Super Seeker!', 'Thám Tử Nhí Giỏi Ghê!') });
   }
 });
 
 /* 2. Duck, Duck, Goose */
 register({
-  id: 'duckgoose', icon: '??',
-  name: () => T('Duck, Duck, Goose', 'V?t, V?t, Ng?ng'),
+  id: 'duckgoose', icon: '🦆',
+  name: () => T('Duck, Duck, Goose', 'Vịt, Vịt, Ngỗng'),
   async run(api) {
     style();
-    api.say('Tap each player: Duck? Duck? until Goose!', 'Ch?m t?ng b?n: V?t? V?t? ??n khi g?p Ng?ng!');
+    api.say('Tap each player: Duck? Duck? until Goose!', 'Chạm từng bạn: Vịt? Vịt? cho đến khi gặp Ngỗng!');
     const rounds = api.little ? 3 : 4;
     api.dots(rounds, 0);
     const wrap = el('div', 'out-board'); api.stage.appendChild(wrap);
@@ -85,11 +85,11 @@ register({
       const radius = 110, cx = 180, cy = 160;
       for (let i = 0; i < players; i++) {
         const ang = -Math.PI / 2 + (i * 2 * Math.PI) / players;
-        const btn = el('button', 'out-float out-circle', pic('??'));
+        const btn = el('button', 'out-float out-circle', pic('🧒'));
         btn.style.left = (cx + Math.cos(ang) * radius - 32) + 'px';
         btn.style.top = (cy + Math.sin(ang) * radius - 32) + 'px';
         btn.dataset.goose = i === goosePos ? '1' : '0';
-        btn.setAttribute('aria-label', i === goosePos ? T('Goose!', 'Ng?ng!') : T('Duck', 'V?t'));
+        btn.setAttribute('aria-label', i === goosePos ? T('Goose!', 'Ngỗng!') : T('Duck', 'Vịt'));
         stage.appendChild(btn);
       }
 
@@ -104,24 +104,24 @@ register({
       api.dots(rounds, r + 1);
       await wait(300);
     }
-    api.say('You caught the goose every round!', 'Con b?t ???c ng?ng m?i v?ng r?i!');
+    api.say('You caught the goose every round!', 'Con bắt được ngỗng mọi vòng rồi!');
     await wait(1000);
-    return api.win({ title: T('Goose Catcher!', 'B?t Ng?ng Si?u T?c!') });
+    return api.win({ title: T('Goose Catcher!', 'Bắt Ngỗng Siêu Tốc!') });
   }
 });
 
 /* 3. Red Light, Green Light */
 register({
-  id: 'redgreen', icon: '??',
-  name: () => T('Red Light, Green Light', '??n Xanh ??n ??'),
+  id: 'redgreen', icon: '🚦',
+  name: () => T('Red Light, Green Light', 'Đèn Xanh Đèn Đỏ'),
   async run(api) {
     style();
-    api.say('Green light: walk forward! Red light: freeze!', '??n xanh: ?i t?i! ??n ??: ??ng y?n!');
+    api.say('Green light: walk forward! Red light: freeze!', 'Đèn xanh: đi tới! Đèn đỏ: đứng yên!');
     const rounds = api.little ? 3 : 5;
     api.dots(rounds, 0);
     const wrap = el('div', 'out-board'); api.stage.appendChild(wrap);
     const stage = el('div', 'out-stage'); wrap.appendChild(stage);
-    const runner = el('div', 'out-float', pic('??'));
+    const runner = el('div', 'out-float', pic('🏃'));
     runner.style.left = '30px';
     runner.style.top = '140px';
     runner.style.fontSize = '48px';
@@ -130,11 +130,11 @@ register({
     let reached = 0;
     for (let r = 0; r < rounds && !api.closed; r++) {
       const isGreen = Math.random() < 0.6;
-      const light = el('button', 'out-float out-circle', pic(isGreen ? '??' : '??'));
+      const light = el('button', 'out-float out-circle', pic(isGreen ? '🟢' : '🔴'));
       light.style.left = '160px';
       light.style.top = '40px';
       light.style.fontSize = '48px';
-      light.setAttribute('aria-label', isGreen ? T('Green light', '??n xanh') : T('Red light', '??n ??'));
+      light.setAttribute('aria-label', isGreen ? T('Green light', 'Đèn xanh') : T('Red light', 'Đèn đỏ'));
       stage.appendChild(light);
 
       api.plan(() => light.isConnected ? light : null, { maxActions: rounds * 2 });
@@ -148,37 +148,37 @@ register({
         reached++;
       } else {
         api.sfx.no();
-        api.say('Red light! Stay still!', '??n ??! ??ng y?n nh?!');
+        api.say('Red light! Stay still!', 'Đèn đỏ! Đứng yên nhé!');
         await wait(500);
       }
       api.dots(rounds, reached);
       light.remove();
       await wait(300);
     }
-    api.say('You reached the finish line safely!', 'Con ??n ??ch an to?n r?i!');
+    api.say('You reached the finish line safely!', 'Con đến đích an toàn rồi!');
     await wait(1000);
-    return api.win({ title: T('Safe Runner!', 'V?n ??ng Vi?n An To?n!') });
+    return api.win({ title: T('Safe Runner!', 'Vận Động Viên An Toàn!') });
   }
 });
 
 /* 4. Simon Says */
 register({
-  id: 'simon', icon: '???',
-  name: () => T('Simon Says', 'Simon B?o'),
+  id: 'simon', icon: '🗣️',
+  name: () => T('Simon Says', 'Simon Bảo'),
   async run(api) {
     style();
-    api.say('Watch Simon and copy the actions!', 'Nh?n Simon l?m r?i con l?m theo nh?!');
+    api.say('Watch Simon and copy the actions!', 'Nhìn Simon làm rồi con làm theo nhé!');
     const rounds = api.little ? 3 : 4;
     api.dots(rounds, 0);
     const wrap = el('div', 'out-board'); api.stage.appendChild(wrap);
     const stage = el('div', 'out-stage'); wrap.appendChild(stage);
 
     const actions = [
-      { emoji: '??', en: 'Wave', vi: 'V?y tay' },
-      { emoji: '??', en: 'Clap', vi: 'V? tay' },
-      { emoji: '??', en: 'Point up', vi: 'Ch? l?n' },
-      { emoji: '??', en: 'Point down', vi: 'Ch? xu?ng' },
-      { emoji: '??', en: 'High five', vi: 'B?t n?m' }
+      { emoji: '👋', en: 'Wave', vi: 'Vẫy tay' },
+      { emoji: '👏', en: 'Clap', vi: 'Vỗ tay' },
+      { emoji: '☝️', en: 'Point up', vi: 'Chỉ lên' },
+      { emoji: '👇', en: 'Point down', vi: 'Chỉ xuống' },
+      { emoji: '🙌', en: 'High five', vi: 'Đập tay' }
     ];
     let sequence = [];
     for (let r = 0; r < rounds && !api.closed; r++) {
@@ -191,7 +191,7 @@ register({
         btn.style.fontSize = '64px';
         btn.disabled = true;
         stage.appendChild(btn);
-        api.say(T(sequence[i].en, sequence[i].vi));
+        api.say(sequence[i].en, sequence[i].vi);
         await wait(600);
       }
       stage.innerHTML = '';
@@ -216,25 +216,25 @@ register({
       api.dots(rounds, r + 1);
       await wait(300);
     }
-    api.say('Perfect memory! You copied every move!', 'Tr? nh? tuy?t v?i! Con l?m y h?t Simon!');
+    api.say('Perfect memory! You copied every move!', 'Trí nhớ tuyệt vời! Con làm y hệt Simon!');
     await wait(1000);
-    return api.win({ title: T("Simon's Star!", "Sao C?a Simon!") });
+    return api.win({ title: T("Simon's Star!", 'Ngôi Sao Của Simon!') });
   }
 });
 
 /* 5. Egg and Spoon Race */
 register({
-  id: 'eggspoon', icon: '??',
-  name: () => T('Egg and Spoon Race', 'Ch?y Th?a Tr?ng'),
+  id: 'eggspoon', icon: '🥚',
+  name: () => T('Egg and Spoon Race', 'Chạy Thìa Trứng'),
   async run(api) {
     style();
-    api.say('Balance the egg on the spoon and walk to the finish!', 'Gi? tr?ng tr?n th?a ?i ??n ??ch nh?!');
+    api.say('Balance the egg on the spoon and walk to the finish!', 'Giữ trứng trên thìa và đi đến đích nhé!');
     const steps = api.little ? 4 : 6;
     api.dots(steps, 0);
     const wrap = el('div', 'out-board'); api.stage.appendChild(wrap);
     const stage = el('div', 'out-stage'); wrap.appendChild(stage);
 
-    const spoon = el('button', 'out-float', pic('??') + ' ' + pic('??'));
+    const spoon = el('button', 'out-float', pic('🥄') + ' ' + pic('🥚'));
     spoon.style.left = '30px';
     spoon.style.top = '140px';
     spoon.style.fontSize = '48px';
@@ -251,19 +251,19 @@ register({
       api.dots(steps, s + 1);
       await wait(200);
     }
-    api.say('Egg safe! You crossed the line!', 'Tr?ng an to?n! Con ?? v? ??ch!');
+    api.say('Egg safe! You crossed the line!', 'Trứng an toàn! Con đã về đích!');
     await wait(1000);
-    return api.win({ title: T('Steady Hands!', '??i Tay Gi? C?n B?ng!') });
+    return api.win({ title: T('Steady Hands!', 'Đôi Tay Vững Vàng!') });
   }
 });
 
 /* 6. Musical Chairs */
 register({
-  id: 'chairs', icon: '??',
-  name: () => T('Musical Chairs', 'Gh? ?m Nh?c'),
+  id: 'chairs', icon: '🎵',
+  name: () => T('Musical Chairs', 'Ghế Âm Nhạc'),
   async run(api) {
     style();
-    api.say('Walk around the chairs. Sit when the music stops!', '?i quanh nh?ng c?i gh?. Nghe nh?c d?ng th? ng?i ngay!');
+    api.say('Walk around the chairs. Sit when the music stops!', 'Đi quanh những cái ghế. Nghe nhạc dừng thì ngồi ngay!');
     const rounds = api.little ? 3 : 4;
     api.dots(rounds, 0);
     const wrap = el('div', 'out-board'); api.stage.appendChild(wrap);
@@ -277,13 +277,13 @@ register({
         const chair = el('button', 'out-float out-chair', '');
         chair.style.left = 40 + i * 80 + 'px';
         chair.style.top = '140px';
-        chair.setAttribute('aria-label', T('Chair', 'C?i gh?'));
+        chair.setAttribute('aria-label', T('Chair', 'Cái ghế'));
         stage.appendChild(chair);
         chairs.push(chair);
       }
-      api.say('?? Music playing?', '?? Nh?c ?ang vang?');
+      api.say('The music is playing…', 'Nhạc đang vang…');
       await wait(1200 + rand(0, 800));
-      api.say('Music stopped! Sit quick!', 'Nh?c d?ng! Ng?i ngay!');
+      api.say('Music stopped! Sit quick!', 'Nhạc dừng! Ngồi ngay!');
       api.sfx.pop(r);
 
       api.plan(() => chairs.find(c => c.isConnected) || null, { maxActions: rounds * 2 });
@@ -295,25 +295,25 @@ register({
       api.dots(rounds, r + 1);
       await wait(400);
     }
-    api.say('You got a seat every time!', 'Con ng?i ???c gh? m?i v?ng!');
+    api.say('You got a seat every time!', 'Con ngồi được ghế mọi vòng!');
     await wait(1000);
-    return api.win({ title: T('Chair Champion!', 'Vua Gh? ?m Nh?c!') });
+    return api.win({ title: T('Chair Champion!', 'Vua Ghế Âm Nhạc!') });
   }
 });
 
 /* 7. Kick to Kick */
 register({
-  id: 'kicktokick', icon: '??',
-  name: () => T('Kick to Kick', '?? B?ng Qua L?i'),
+  id: 'kicktokick', icon: '🏉',
+  name: () => T('Kick to Kick', 'Đá Bóng Qua Lại'),
   async run(api) {
     style();
-    api.say('Kick the footy to your friend and back!', '?? b?ng cho b?n v? nh?n l?i t? b?n nh?!');
+    api.say('Kick the footy to your friend and back!', 'Đá bóng cho bạn rồi nhận lại từ bạn nhé!');
     const passes = api.little ? 4 : 6;
     api.dots(passes, 0);
     const wrap = el('div', 'out-board'); api.stage.appendChild(wrap);
     const stage = el('div', 'out-stage'); wrap.appendChild(stage);
 
-    const ball = el('button', 'out-float', pic('??'));
+    const ball = el('button', 'out-float', pic('🏉'));
     ball.style.left = '160px';
     ball.style.top = '140px';
     ball.style.fontSize = '48px';
@@ -333,19 +333,19 @@ register({
       side = 1 - side;
       await wait(200);
     }
-    api.say('Great passing! You and your friend play so well!', '?? chuy?n hay qu?! C? hai ch?i gi?i l?m!');
+    api.say('Great passing! You and your friend play so well!', 'Chuyền bóng hay quá! Hai bạn chơi giỏi lắm!');
     await wait(1000);
-    return api.win({ title: T('Footy Star!', 'Sao B?ng ?? Nh?!') });
+    return api.win({ title: T('Footy Star!', 'Ngôi Sao Bóng Bầu Dục!') });
   }
 });
 
 /* 8. Little Nippers */
 register({
-  id: 'nippers', icon: '???',
-  name: () => T('Little Nippers', 'B? T?p C?u H? Bi?n'),
+  id: 'nippers', icon: '🏖️',
+  name: () => T('Little Nippers', 'Bé Tập Cứu Hộ Biển'),
   async run(api) {
     style();
-    api.say('Rescue the swimmers in the waves!', 'C?u nh?ng ng??i b?i b? s?ng cu?n nh?!');
+    api.say('Rescue the swimmers in the waves!', 'Cứu những bạn đang bơi giữa sóng nhé!');
     const target = api.little ? 3 : 5;
     api.dots(target, 0);
     const wrap = el('div', 'out-board'); api.stage.appendChild(wrap);
@@ -355,18 +355,18 @@ register({
     let rescued = 0;
     while (rescued < target && !api.closed) {
       stage.innerHTML = '';
-      const swimmer = el('button', 'out-float', pic('??'));
+      const swimmer = el('button', 'out-float', pic('🏊'));
       swimmer.style.left = rand(40, 280) + 'px';
       swimmer.style.top = rand(60, 220) + 'px';
       swimmer.style.fontSize = '44px';
-      swimmer.setAttribute('aria-label', T('Swimmer needs help', 'Ng??i b?i c?n gi?p ??'));
+      swimmer.setAttribute('aria-label', T('Swimmer needs help', 'Bạn bơi cần giúp đỡ'));
       stage.appendChild(swimmer);
 
-      const board = el('button', 'out-float', pic('??'));
+      const board = el('button', 'out-float', pic('🚣'));
       board.style.left = '30px';
       board.style.top = '240px';
       board.style.fontSize = '44px';
-      board.setAttribute('aria-label', T('Rescue board', 'V?n c?u h?'));
+      board.setAttribute('aria-label', T('Rescue boat', 'Thuyền cứu hộ'));
       stage.appendChild(board);
 
       api.plan(() => swimmer.isConnected ? swimmer : null, { maxActions: target * 3 });
@@ -378,19 +378,19 @@ register({
       api.dots(target, rescued);
       await wait(300);
     }
-    api.say('All swimmers safe on the beach!', 'M?i ng??i b?i ?? an to?n tr?n b?i bi?n!');
+    api.say('All swimmers safe on the beach!', 'Mọi bạn bơi đã an toàn trên bãi biển!');
     await wait(1000);
-    return api.win({ title: T('Surf Hero!', 'Anh H?ng Bi?n Nh?!') });
+    return api.win({ title: T('Surf Hero!', 'Anh Hùng Biển Nhí!') });
   }
 });
 
 /* 9. Rolling Hoops */
 register({
-  id: 'hoops', icon: '?',
-  name: () => T('Rolling Hoops', 'L?n V?ng'),
+  id: 'hoops', icon: '⭕',
+  name: () => T('Rolling Hoops', 'Lăn Vòng'),
   async run(api) {
     style();
-    api.say('Push the hoop along the path to the finish!', '??y v?ng tr?n theo ???ng ??n ??ch nh?!');
+    api.say('Push the hoop along the path to the finish!', 'Đẩy vòng lăn theo đường đến đích nhé!');
     const steps = api.little ? 4 : 6;
     api.dots(steps, 0);
     const wrap = el('div', 'out-board'); api.stage.appendChild(wrap);
@@ -422,19 +422,19 @@ register({
       api.dots(steps, s + 1);
       await wait(200);
     }
-    api.say('The hoop rolled all the way to the finish!', 'V?ng tr?n ?? l?n ??n ??ch r?i!');
+    api.say('The hoop rolled all the way to the finish!', 'Vòng đã lăn đến tận đích rồi!');
     await wait(1000);
-    return api.win({ title: T('Hoop Master!', 'B?c Th?y L?n V?ng!') });
+    return api.win({ title: T('Hoop Master!', 'Bậc Thầy Lăn Vòng!') });
   }
 });
 
 /* 10. Tag */
 register({
-  id: 'tag', icon: '??',
-  name: () => T('Tag!', '?u?i B?t'),
+  id: 'tag', icon: '🏃',
+  name: () => T('Tag!', 'Đuổi Bắt'),
   async run(api) {
     style();
-    api.say('Chase and tag your friends!', '?u?i b?t b?n b? n?o!');
+    api.say('Chase and tag your friends!', 'Đuổi bắt các bạn nào!');
     const target = api.little ? 3 : 5;
     api.dots(target, 0);
     const wrap = el('div', 'out-board'); api.stage.appendChild(wrap);
@@ -443,11 +443,11 @@ register({
     let tagged = 0;
     while (tagged < target && !api.closed) {
       stage.innerHTML = '';
-      const friend = el('button', 'out-float', pic('??'));
+      const friend = el('button', 'out-float', pic('🧒'));
       friend.style.left = rand(40, 280) + 'px';
       friend.style.top = rand(40, 220) + 'px';
       friend.style.fontSize = '44px';
-      friend.setAttribute('aria-label', T('Friend running', 'B?n ?ang ch?y'));
+      friend.setAttribute('aria-label', T('Friend running', 'Bạn đang chạy'));
       stage.appendChild(friend);
 
       api.plan(() => friend.isConnected ? friend : null, { maxActions: target * 3 });
@@ -459,8 +459,8 @@ register({
       api.dots(target, tagged);
       await wait(300);
     }
-    api.say('You tagged everyone! Fastest runner!', 'Con b?t h?t b?n b? r?i! Ch?y nhanh th?t!');
+    api.say('You tagged everyone! Fastest runner!', 'Con bắt được hết các bạn rồi! Chạy nhanh thật!');
     await wait(1000);
-    return api.win({ title: T('Tag Champion!', 'Vua ?u?i B?t!') });
+    return api.win({ title: T('Tag Champion!', 'Vua Đuổi Bắt!') });
   }
 });

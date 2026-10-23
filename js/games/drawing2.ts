@@ -279,7 +279,7 @@ register({
 
 // 5. aodai
 register({
-  id: 'aodai', icon: '👘',
+  id: 'aodai', icon: '🥻',
   name: () => T('Áo Dài Designer', 'Thiết Kế Áo Dài'),
   run(api) {
     return runInteractivePad(api, {
@@ -289,7 +289,7 @@ register({
         g.fillStyle = '#fff0f3';
         g.fillRect(0, 0, w, h);
         g.font = `${Math.round(w * 0.22)}px sans-serif`;
-        g.fillText('👘', w * 0.38, h * 0.62);
+        g.fillText('🥻', w * 0.38, h * 0.62);
       }
     });
   }
@@ -379,7 +379,7 @@ register({
 
 // 10. hiddenpic
 register({
-  id: 'hiddenpic', icon: '🕵️',
+  id: 'hiddenpic', icon: '🔍',
   name: () => T('Hidden Pictures', 'Tìm Hình Ẩn'),
   run(api) {
     return runInteractivePad(api, {

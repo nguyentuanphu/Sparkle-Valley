@@ -8,7 +8,7 @@ export type Release = { id: string, en: string, vi: string, group: string, def: 
 export const RELEASES: Release[] = [
   { id: 'autoplay', en: 'Auto play check (for grown-ups testing: a small window that plays everything; every device, or only the ticked ones)', vi: 'Tự chơi để kiểm tra (cho người lớn thử game: một cửa sổ nhỏ tự chơi mọi thứ; mọi máy, hoặc chỉ các máy được chọn)', group: 'tools', def: false },
   // (r90, owner 23 Oct) unlock all games and stories
-  { id: 'unlockAll', en: 'Unlock all games and stories: opens every game and story without needing 3 finishes (for testers and auto play; every device, or only the ticked ones)', vi: 'M? t?t c? tr? ch?i v? truy?n: m? m?i tr? ch?i v? truy?n m? kh?ng c?n ch?i xong 3 l?n (cho ng??i th? v? t? ch?i; m?i m?y, ho?c ch? c?c m?y ???c ch?n)', group: 'tools', def: false },
+  { id: 'unlockAll', en: 'Unlock all games and stories: opens every game and story without needing 3 finishes (for testers and auto play; every device, or only the ticked ones)', vi: 'Mở tất cả trò chơi và truyện: mở mọi trò chơi và truyện mà không cần chơi xong 3 lần (cho người thử và tự chơi; mọi máy, hoặc chỉ các máy được chọn)', group: 'tools', def: false },
   { id: 'tester', en: 'Testers (devices that report problems by themselves, with the ladybird; every device, or only the ticked ones)', vi: 'Người thử (máy tự báo lỗi, có con bọ rùa; mọi máy, hoặc chỉ các máy được chọn)', group: 'tools', def: false },
   { id: 'traffic', en: 'Traffic on the roads', vi: 'Xe cộ trên đường', group: 'world', def: true },
   { id: 'cityVehicles', en: 'Vehicles in the cities (parked bikes and cars, tram, xích lô, Hồ Gươm cart)', vi: 'Xe trong thành phố (xe đậu, tàu điện, xích lô, xe điện Hồ Gươm)', group: 'world', def: true },
