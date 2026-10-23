@@ -81,7 +81,7 @@ export function createSimple(G) {
     if (t === 'places') withSitePlaces(G.PLACES);
     if (t === 'places') return PLACE_AREAS.map((a, n) => ({ area: a, items: (n === 0 && G.festivals ? [cal] : []).concat((G.PLACES || []).map((pl, k) => ({ pl, k })).filter(x => x.pl.g === a.key)
       .map(({ pl, k }) => ({ kind: 'place', key: String(k), icon: pl.icon, name: pl.name(), voice: both(pl.name), stars: 0, max: 0 }))) }))
-      .sort((x, y) => (x.area.key === 'asia') - (y.area.key === 'asia'));
+      .sort((x, y) => Number(x.area.key === 'asia') - Number(y.area.key === 'asia'));
     // (round N) the Music group starts with 🎵 Songs: lullabies, village tunes and festival songs to listen to
     const songs = { kind: 'songs', key: 'songs', icon: '🎵', name: T('Songs', 'Bài hát'), voice: ['Songs', 'Bài hát'], stars: 0, max: 0 };
     return AREAS.map(a => ({ area: a, items: (a.key === 'music' && G.openSongs ? [songs] : []).concat(gamesIn(GAMES, a.key, lt).map(g => ({ kind: 'game', key: g.id, icon: GAMES[g.id].icon, name: GAMES[g.id].name(), voice: both(GAMES[g.id].name), stars: starsOf(p, g.id), max: 3, level: g.level }))) }));
@@ -114,14 +114,15 @@ export function createSimple(G) {
   const wide = () => !!(wideQ && wideQ.matches);
   // each stop is placed by the middle of its picture; its stars and full name hang below it (names are never cut:
   // the label is as wide as its column allows and the rows move apart to fit the tallest one)
-  function layoutWide(n, h, tall) {
+  type Lay = { pts: { x: number, y: number }[], lw: number, w?: number, h?: number, gx?: number };
+  function layoutWide(n: number, h: number, tall: number): Lay {
     const gx = 184, mid = Math.max(70, Math.min(h / 2 - 20, h - tall + 30)), pts = [];
     for (let k = 0; k < n; k++) pts.push({ x: 104 + k * gx, y: mid + (k % 2 ? 26 : -26) });
     return { pts, w: 104 + n * gx, lw: gx - 16 };
   }
   // where each stop sits: a snake of rows across the screen, joined by a winding road. (tester's notes, 12 Oct) a
   // category's name is a heading across the road, on its own line, not a stop: the next row starts below it
-  function layout(n, w, tall, heads = []) {
+  function layout(n: number, w: number, tall: number, heads: boolean[] = []): Lay {
     const cols = w < 520 ? 2 : w < 820 ? 3 : w < 1100 ? 4 : 5, gx = w / cols, gy = Math.max(200, tall + 40), pts = [];
     let top = 0, r = 0, c = 0, low = 0;
     for (let k = 0; k < n; k++) {
@@ -221,10 +222,10 @@ export function createSimple(G) {
   }
   // open one category's road (from its card, from Discover, or from the checks), from its start, and say its name
   // (Round V) a section is part of the one page: scroll to its title and say its name
-  function openCat(key, quiet) {
+  function openCat(key: string, quiet = false) {
     cat = null; sel = null; draw(); const sc = m.querySelector('.sp-scroll'), sec = m.querySelector(`.sp-sec[data-cat="${CSS.escape(key)}"]`);
     if (sec) { const t = sec.getBoundingClientRect().top - sc.getBoundingClientRect().top + sc.scrollTop - 8; sc.scrollTop = Math.max(0, t); }
-    const g = groupsOf(tab).find(x => x.area.key === key); if (g && !quiet) say(...both(g.area.name));
+    const g = groupsOf(tab).find(x => x.area.key === key); if (g && !quiet) { const [en, vi] = both(g.area.name); say(en, vi); }
   }
   function backToCards() { cat = null; sel = null; draw(); const sc = m.querySelector('.sp-scroll'); sc.scrollTop = 0; sc.scrollLeft = 0; }
   // scroll the road so that stop k is near the start of the screen
@@ -255,7 +256,7 @@ export function createSimple(G) {
       bind();
     };
   }
-  function show(t) {
+  function show(t = '') {
     if (!solo() || !hero()) return;
     if (t && t !== tab) { tab = t; cat = null; }
     if (!m) {
@@ -278,8 +279,10 @@ export function createSimple(G) {
       m.querySelector('.sp-sound').onclick = () => { SFX.tap(); G.openSound(); };   // (Round U) music, sounds and voice
       m.querySelector('.sp-again').onclick = () => { SFX.tap(); const x = TABS.find(y => y.key === tab); say(x.say[0], x.say[1]); };
       m.querySelector('.sp-discover').onclick = () => { if (busy) return; SFX.tap(); discover(!finding); if (finding) say('Where shall we go?', 'Mình đi đâu nào?'); };
-      // Parent website: it opens in a new tab, so this screen, the stars and the game behind it are all left as they are
-      m.querySelector('.sp-home').onclick = () => { if (busy) return; SFX.tap(); window.open('/home', '_blank', 'noopener,noreferrer'); };
+      // Parent website: floating over this screen (js/website.ts), its Play button reads "Back to game" and closes it, so the
+      // child is back where they were (owner, 24 Oct AEDT: a new tab started the whole game again from the Home Screen app)
+      const home = m.querySelector('.sp-home');
+      home.onclick = () => { if (busy) return; SFX.tap(); import('./website.js').then(w => { w.openWebsite(home); }).catch(error => { window.svModuleGone?.(error); }); };
       m.querySelector('.sp-valley').onclick = () => { if (busy) return; SFX.tap(); choose('valley'); leave(); say('Off you go! Explore the valley.', 'Đi nào! Khám phá thung lũng thôi.'); };
       holdButton(m.querySelector('.sp-grown'), () => openGrownups(() => draw()));
       addEventListener('resize', draw);

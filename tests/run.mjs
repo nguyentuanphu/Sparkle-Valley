@@ -3314,6 +3314,19 @@ await check('simple', async () => {
   await P.page.waitForSelector('.simple-screen:not([hidden]) .sp-catcard, .simple-screen:not([hidden]) .sp-stop', { timeout: 20000 });
   await P.page.evaluate(() => document.querySelectorAll('.dialog').forEach(d => d.remove()));
   const r = { start: true };
+  // (owner, 24 Oct AEDT) Home opens the family website floating over this screen, not a new tab (from the Home Screen app
+  // that started the whole game again); its Play button reads "Back to game" and closes it: the Simple screen is still here
+  r.home = await P.page.evaluate(async () => {
+    const wait = ms => new Promise(res => setTimeout(res, ms)), tabs = [], wo = window.open; window.open = (...a) => { tabs.push(String(a[0])); return null; };
+    try {
+      document.querySelector('.simple-screen .sp-home')?.click();
+      let frame = null, label = null;
+      for (let k = 0; k < 80 && !label?.textContent?.trim(); k++) { await wait(250); frame = document.querySelector('.modal.website iframe'); label = frame?.contentDocument?.querySelector('.play-label'); }
+      const text = label ? label.textContent.trim() : '', embed = !!frame && /embed=1/.test(frame.getAttribute('src') || '');
+      frame?.contentDocument?.querySelector('[data-action=play]')?.click(); await wait(800);
+      return { tabs, embed, text, closed: !document.querySelector('.modal.website'), still: !!document.querySelector('.simple-screen:not([hidden])') };
+    } finally { window.open = wo; }
+  });
   // (Round V, owner 13 Oct: "one screen and scroll down, each has a title then games in roads with them, similar to the
   // Khám phá tab"; replaces Round U's cards) every section of the tab on one page: its title, then its own road; the page scrolls
   r.groupsFirst = await P.page.evaluate(() => { const v = __sv.simple.view, back = document.querySelector('.sp-back'), sc = document.querySelector('.sp-scroll'); return v.cat === null && v.cats.length > 3 && v.secs === v.cats.length && v.stops.length > 10 && back.hidden && document.querySelectorAll('.sp-discover').length === 1 && sc.scrollHeight > sc.clientHeight * 2; });
@@ -3349,7 +3362,8 @@ await check('simple', async () => {
   const S = await open(b, { w: 1280, h: 800, mode: 'split', screen: null }); await S.page.waitForTimeout(1500);
   r.split = await S.page.evaluate(() => ({ open: __sv.simple.open, dock: [...document.querySelectorAll('.simplesw')].some(d => !d.hidden) })); await S.ctx.close();
   ok(r.groupsFirst && r.section.cat && r.section.stops >= 1 && r.section.heads === 1 && r.section.back && r.backToCards && r.talesCards && !r.flash && r.game && r.back && r.tale && !r.valley.open && r.valley.screen === 'valley' && r.valley.dock && !r.valley.paused && r.reopen && r.wide.wide && r.wide.rail && r.wide.sideways && r.wide.inView && r.wide.big && !r.big && !r.split.open && !r.split.dock && !errs.length, JSON.stringify(Object.assign(r, { errs })));
-  return 'under 5 starts on one page of sections, each a title and its own road, scrolling down (like Khám phá); a game and a story each two taps away, the road comes back after; Valley remembered; the “Big pictures” switch reopens it; on its side a rail and a sideways path; big kid and two players start in the valley';
+  ok(!r.home.tabs.length && r.home.embed && /Back to game/.test(r.home.text) && r.home.closed && r.home.still, 'Home: ' + JSON.stringify(r.home));
+  return 'Home floats the website over this screen and Back to game closes it; under 5 starts on one page of sections, each a title and its own road, scrolling down (like Khám phá); a game and a story each two taps away, the road comes back after; Valley remembered; the “Big pictures” switch reopens it; on its side a rail and a sideways path; big kid and two players start in the valley';
 });
 
 await check('adventure', async () => {
