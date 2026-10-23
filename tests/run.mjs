@@ -5464,17 +5464,18 @@ await check('startup', async () => {
 await check('saves', async () => {
   // progress survives: the main save is wiped (as a browser might do), and the game brings it back by itself
   const P = await open(b, { w: 800, h: 600 }); await clear(P.page);
-  await P.page.evaluate(async () => { const S = await import('/js/state.js'); S.farm.coins = 4321; S.profiles[0].orbs = 7; S.profiles[0].postcards = { opera: true }; S.saveProfiles(true); });
+  await P.page.evaluate(async () => { localStorage.setItem('sv2_playerid', 'savecheck123'); const S = await import('/js/state.js'); S.farm.coins = 4321; S.profiles[0].orbs = 7; S.profiles[0].postcards = { opera: true }; S.saveProfiles(true); });
   await P.page.waitForTimeout(4500);
   // close the game, then wipe the main save from another page of the same site, then open the game again
   const Q = await P.ctx.newPage(); await P.page.close();
-  await Q.goto(URL + 'manifest.webmanifest'); await Q.evaluate(() => { localStorage.removeItem('sv2_profiles'); localStorage.removeItem('sv2_farm'); });
+  await Q.goto(URL + 'manifest.webmanifest'); await Q.evaluate(() => { localStorage.removeItem('sv2_profiles'); localStorage.removeItem('sv2_farm'); localStorage.removeItem('sv2_playerid'); });
   await Q.goto(URL); await Q.waitForSelector('.screen.title', { timeout: 30000 });
   P.page = Q;
-  const r = await P.page.evaluate(async () => { const S = await import('/js/state.js'); return { coins: S.farm.coins, orbs: S.profiles[0].orbs, pc: !!(S.profiles[0].postcards || {}).opera, restored: S.restoredFromCopy, kept: !!localStorage.getItem('sv2_profiles') }; });
+  const r = await P.page.evaluate(async () => { const S = await import('/js/state.js'); return { coins: S.farm.coins, orbs: S.profiles[0].orbs, pc: !!(S.profiles[0].postcards || {}).opera, restored: S.restoredFromCopy, kept: !!localStorage.getItem('sv2_profiles'), device: localStorage.getItem('sv2_playerid') }; });
   await P.ctx.close();
-  ok(r.coins === 4321 && r.orbs === 7 && r.pc && r.restored && r.kept, JSON.stringify(r));
-  return 'wiped main save restored from the safe copy (coins, orbs, postcards)';
+  // (r89.1, owner 23 Oct AEDT) the device keeps its own number, so Studio counts it as the same device
+  ok(r.coins === 4321 && r.orbs === 7 && r.pc && r.restored && r.kept && r.device === 'savecheck123', JSON.stringify(r));
+  return 'wiped main save restored from the safe copy (coins, orbs, postcards, the device\'s number)';
 });
 
 await check('meet', async () => {
