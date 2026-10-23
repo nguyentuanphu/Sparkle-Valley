@@ -379,8 +379,12 @@ async function playGame(note): Promise<PlayResult> {
   playWatch.on = k => { last = Date.now(); if (k === 'right') r.rights++; if (k === 'wrong') r.wrongs++; if (k === 'win') r.won = true; };
   const mo = new MutationObserver(() => { last = Date.now(); }); mo.observe(stage, { childList: true, subtree: true, attributes: true, characterData: true });
   const started = Date.now(); // A legal plan's bound includes normal thinking/finger time, not faster play.
+  // (r90, #419 #428: Tiến Lên's northern rules ran out of time at x5) time spent waiting while it is not auto play's turn
+  // (the friends play at the game's own speed, not auto play's) does not count against the allowance; at most 10 minutes
+  let waited = 0;
     try {
-      while ((Date.now() < started + apGameSeconds(s, playWatch.maxActions, run.quest ? 3 : 1) * 1000 || gl.querySelector('.gl-win')) && gl.isConnected && !gl.classList.contains('out')) {
+      while ((Date.now() < started + apGameSeconds(s, playWatch.maxActions, run.quest ? 3 : 1) * 1000 + Math.min(waited, 600e3) || gl.querySelector('.gl-win')) && gl.isConnected && !gl.classList.contains('out')) {
+      const it0 = Date.now();
       await hold(think()); if (!gl.isConnected) break;
       const win = gl.querySelector('.gl-win');
       if (win) { if (win.classList.contains('ask')) { const t = [win.querySelector('.gl-tapout'), win.querySelector('p'), win].find(shown); if (!t || !await tap(t, note)) await until(() => !gl.isConnected, 1); } continue; }
@@ -405,6 +409,7 @@ async function playGame(note): Promise<PlayResult> {
         if (pick && !(pick instanceof Element)) { await press(pick); r.taps++; continue; }
         if (!pick || !shown(pick) || pick.disabled) {
           if (Date.now() - last > s.idle * 1000) { r.cant = true; break; }
+          waited += Date.now() - it0;
           continue; // wait for the next legal turn; never tap an occupied board at random
         }
       } else {

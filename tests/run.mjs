@@ -1459,6 +1459,36 @@ await check('testerreport', async () => {
   return `${got.length} reports: an error, a game that did not open and a frozen screen by themselves, each with a picture, the last 30 seconds, the players and the device; the ladybird (picture first, then a kind and a note), a long-press quick report, offline reports waiting with a number and sending when back online, and "already reported → add to it"; the retest of a fixed problem, and the auto play check\'s findings sent once`;
 });
 
+await check('testernews', async () => {
+  // (r90, owner 23 Oct AEDT: "when I log in there is a pop up that I test a new release, very annoying; any release or new
+  // game for testers should be shown as a list within the ladybug") no "Tester preview" pop-up at the start; the ladybird
+  // has a dot; its panel lists what is new to test (a ticked sneak peek and a batch starting in 3 days), with Play for a
+  // game; the dot goes once the list is seen
+  const out = [];
+  const d3 = new Date(Date.now() + 3 * 864e5), day3 = d3.getFullYear() + '-' + String(d3.getMonth() + 1).padStart(2, '0') + '-' + String(d3.getDate()).padStart(2, '0');
+  const live = { releases: { tester: { on: true, devices: ['tester000001'], peeks: ['money_bahu'] }, singers: { on: true, start: day3, newDays: 7 } }, festivals: {} };
+  for (const lang of ['en', 'vi']) {
+    const P = await open(b, { w: 390, h: 844, touch: true, lang, pre: `try { localStorage.setItem('sv2_playerid', 'tester000001'); localStorage.setItem('sv2_live', ${JSON.stringify(JSON.stringify(live))}); ${ACCEPTED} } catch (e) { }`,
+      route: async ctx => { await ctx.route('**/api/live**', r => r.fulfill({ json: live })); await testerSite(ctx, () => ({ mine: [], open: [], retest: [], helped: 0, reports: 0, peeks: ['money_bahu'] })); } });
+    await clear(P.page); await P.page.waitForSelector('.hud .z-lb', { timeout: 20000 }); await P.page.waitForTimeout(9000);
+    const r = await P.page.evaluate(async () => {
+      const popup = [...document.querySelectorAll('.reward, .modal')].map(x => x.textContent).find(t => /Tester preview|Xem trước cho người thử/.test(t)) || '';
+      const dot = !document.querySelector('.hud .z-lb .lb-new')?.hidden;
+      const T = await import('/js/tester.js'); await T.openPanel(0); await new Promise(res => setTimeout(res, 600));
+      const rows = [...document.querySelectorAll('.tp-news .tp-news-row')].map(x => x.textContent.trim()), play = !!document.querySelector('.tp-news [data-try="bahu"]');
+      document.querySelector('.modal.tpanel .x')?.click(); await new Promise(res => setTimeout(res, 400));
+      return { popup: popup.slice(0, 80), dot, rows, play, dotAfter: !document.querySelector('.hud .z-lb .lb-new')?.hidden };
+    });
+    if (r.popup) out.push(lang + ': a pop-up at the start: ' + r.popup);
+    if (!r.dot || r.dotAfter) out.push(lang + ': the ladybird dot ' + JSON.stringify({ before: r.dot, after: r.dotAfter }));
+    if (r.rows.length !== 2 || !r.play) out.push(lang + ': the list ' + JSON.stringify(r.rows));
+    if (P.errors.length) out.push(lang + ': ' + P.errors.slice(0, 2).join(' | '));
+    await P.ctx.close();
+  }
+  ok(!out.length, out.join(' | '));
+  return 'no Tester preview pop-up at the start (9 s, EN and VI); the ladybird has a dot; its panel lists the sneak peek (with Play) and the batch in 3 days; the dot goes once seen';
+});
+
 await check('testerrewards', async () => {
   // a problem the tester found is fixed: the tick on the ladybird, Ông Cú's thank-you with coins; reports that helped
   // give the Bug Hunter badge on the shirt (seen by friends: it is in the look), tester gear, stickers and the week's star
