@@ -37,6 +37,7 @@ marketing/source/runvalley.log
 /home/analytics.js
 /home/site.js
 /js/adventure.js
+/js/art.js
 /js/audio.js
 /js/autoplay.js
 /js/avatar.js
@@ -164,6 +165,7 @@ marketing/source/runvalley.log
 /js/audio.js
 /js/autoplay.js
 /js/avatar.js
+/js/art.js
 /js/build.js
 /js/chat-player.js
 /js/chat.js
@@ -236,6 +238,7 @@ marketing/source/runvalley.log
 # --- made by tools/build.mts from .ts files (never committed; do not edit by hand) ---
 /js/audio.js
 /js/avatar.js
+/js/art.js
 /js/build.js
 /js/claims.js
 /js/content/releases.js
