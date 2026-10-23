@@ -261,3 +261,5 @@ export function normalizeLearn(v) {
   const seen = {}; for (const [g, n] of Object.entries(obj(o.seen))) if (n) seen[g] = 1;
   return { v: 1, miss, seen };
 }
+
+export const getSnapshot = () => snapshot();
