@@ -43,7 +43,7 @@ Same rules as the r89 drawing games (`js/games/drawing.ts` is the model): one Ty
 game opens (`js/games/catalog.ts` `GAME_CATALOG` and `GAME_LOADERS`), `GAME_INFO` in `js/content/activities.js` with the
 area, youngest age and difficulty, `sw.ts` FILES, a plan or `untilRight` so auto play can finish it.
 
-**Animals** (+7, `js/games/animals2.ts`): `crabwalk` Crab Walk / Cua Bò Ngang (2: guide the crab sideways to its hole)
+**Animals** (+10, `js/games/animals2.ts`): `crabwalk` Crab Walk / Cua Bò Ngang (2: guide the crab sideways to its hole)
 · `whohome` Who Lives Here? / Nhà Của Ai? (2: animal to its home) · `mumbaby` Mums and Babies / Mẹ và Con (2: joey to
 kangaroo, nghé to trâu) · `feedzoo` Feed the Zoo / Cho Thú Ăn (3) · `buffalo` Buffalo to the Field / Dắt Trâu Ra Đồng
 (3: draw or tap the path) · `reefcount` Reef Count / Đếm Cá Rạn San Hô (3: Great Barrier Reef) · `tracks` Whose
@@ -97,10 +97,12 @@ Vịt, Ngỗng (2) · `redgreen` Red Light, Green Light / Đèn Xanh Đèn Đỏ
 to Kick / Đá Bóng Qua Lại (3: Australian football in the park) · `nippers` Little Nippers / Bé Tập Cứu Hộ Biển (4: surf
 lifesaving at the beach) · `hoops` Rolling Hoops / Lăn Vòng (3) · `tag` Tag! / Đuổi Bắt (2).
 
-**Vietnamese games** (+8, `vietnam2.ts`): `rongran` Dragon Snake / Rồng Rắn Lên Mây (2) · `meochuot` Cat and Mouse /
+**Vietnamese games** (+12, `vietnam2.ts`): `rongran` Dragon Snake / Rồng Rắn Lên Mây (2) · `meochuot` Cat and Mouse /
 Mèo Đuổi Chuột (2) · `cuopco` Capture the Flag / Cướp Cờ (4) · `keocua` Sawing Song / Kéo Cưa Lừa Xẻ (2) · `danhdao`
 Coin Target / Đánh Đáo (4) · `nemcon` Throw the Còn / Ném Còn (3) · `trongnu` Planting Buds / Trồng Nụ Trồng Hoa (3) ·
-`duathuyen` Boat Race / Đua Thuyền (3).
+`duathuyen` Boat Race / Đua Thuyền (3) · `banhchung` Wrap Bánh Chưng for Tết / Làm Bánh Chưng Ngày Tết (2) · `denongsao` Make a Star Lantern / Làm Đèn Ông Sao (2) · `mualan` Lion Dance Drummer / Múa Lân Rộn Ràng (2) · `cayneu` Tết Pole Decorator / Trồng Cây Nêu Ngày Tết (2).
+
+**Owner-added nature games (r90, not a later round):** `catchfish` Catch-and-Release Fish / Vớt Cá Thơ Ngây (2) joins Animals; `emueggs` Emu Egg Basket / Nhặt Trứng Đà Điểu (2) and `reefclean` Great Barrier Reef Cleaner / Bảo Vệ Rạn San Hô (3) join the Australian nature group. All seven additions need bilingual child-facing text and voice, 44/64 px targets, offline loading, a complete auto-play plan, and Album output where the child makes a keepsake.
 
 **Going places** (+8, `places2.ts`): `cyclo` Cyclo Ride / Đi Xích Lô (2) · `reunification` The North–South Train / Tàu
 Thống Nhất (3) · `lighthouse` Light the Lighthouse / Thắp Hải Đăng Vũng Tàu (2) · `operaseats` Seats at the Opera
@@ -163,7 +165,7 @@ game: `games` (the count rises), auto play finishes it (`tests/owner-autoplay-pl
 ## 5. Order of work
 1. Unlocking, the note, the badges and the Studio switch, with every place a game or story is offered (section 1);
    checks; push.
-2. Games by category, one category per commit (smallest first: Me, Big thinkers, Music, Words, Animals, Numbers,
+2. Games by category, including all seven owner-added games, one category per commit (smallest first: Me, Big thinkers, Music, Words, Animals, Numbers,
    Shapes, Going places, Vietnamese games, Play outside, Money, Reading corner, Pictures); checks after each; push.
 3. Stories by shelf (World, then Australia, China, India, Vietnam); voices recorded with Azure; films; checks; push.
 4. Board line "ready for Release" with the branch, the last commit and every check's result. Release merges it into the

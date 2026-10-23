@@ -28,6 +28,18 @@ export const AREAS = [
 // id: [area, youngest age (2 = everyone, 5 = big kids), how hard (1 easy · 2 a bit harder · 3 hardest)]
 export const GAME_INFO = {
   bunny: ['animals', 2, 1], koala: ['animals', 2, 1], animalsounds: ['animals', 2, 1], duckmaze: ['animals', 2, 1], eggs: ['animals', 2, 1], oddone: ['animals', 3, 2], goat: ['animals', 3, 2],
+  catchfish: ['animals', 2, 1], emueggs: ['animals', 2, 1], reefclean: ['animals', 3, 1],
+  crabwalk: ['animals', 2, 1], whohome: ['animals', 2, 1], mumbaby: ['animals', 2, 1], feedzoo: ['animals', 3, 1], buffalo: ['animals', 3, 1], reefcount: ['animals', 3, 1], tracks: ['animals', 4, 2],
+  myday: ['me', 2, 1], plate: ['me', 3, 1], kindchoice: ['me', 3, 1],
+  minichess: ['thinking', 5, 2], cotuong: ['thinking', 5, 2], whosits: ['thinking', 5, 2], pipes: ['thinking', 4, 2],
+  dantranh: ['music', 2, 1], bushband: ['music', 3, 1], drumecho: ['music', 3, 1], loudquiet: ['music', 2, 1], songsteps: ['music', 4, 2],
+  whichgroup: ['words', 3, 1], storyorder: ['words', 4, 2], guesswhat: ['words', 4, 2], actions: ['words', 3, 1], position: ['words', 3, 1],
+  numline: ['numbers', 3, 1], tenframe: ['numbers', 3, 1], dice: ['numbers', 2, 1], evenodd: ['numbers', 4, 2], measure: ['numbers', 4, 2], beforeafter: ['numbers', 3, 1], halves: ['numbers', 4, 2],
+  solids: ['shapes', 3, 1], townshapes: ['shapes', 2, 1], tiles: ['shapes', 4, 2], turnit: ['shapes', 4, 2], shapetrain: ['shapes', 2, 1], linescurves: ['shapes', 2, 1], foldbox: ['shapes', 5, 2],
+  cyclo: ['travel', 2, 1], reunification: ['travel', 3, 1], lighthouse: ['travel', 2, 1], operaseats: ['travel', 4, 2], outback: ['travel', 4, 2], floating: ['travel', 3, 1], airport: ['travel', 3, 1], postcard: ['travel', 3, 1],
+  hideseek: ['play', 2, 1], duckgoose: ['play', 2, 1], redgreen: ['play', 2, 1], simon: ['play', 3, 1], eggspoon: ['play', 2, 1], chairs: ['play', 2, 1], kicktokick: ['play', 3, 1], nippers: ['play', 4, 2], hoops: ['play', 3, 1], tag: ['play', 2, 1],
+  savegoal: ['money', 3, 1], pocketweek: ['money', 4, 2], pricetags: ['money', 3, 1], busfare: ['money', 3, 1], lemonade: ['money', 4, 2], party: ['money', 5, 3], recycle: ['money', 3, 1], tetmarket: ['money', 3, 1], bank: ['money', 4, 2], sharefair: ['money', 3, 1],
+  rd_blend: ['reading', 3, 1], rd_hats: ['reading', 3, 1], rd_endings: ['reading', 3, 1], rd_compound: ['reading', 3, 1], rd_labels: ['reading', 3, 1], rd_signs: ['reading', 3, 1], rd_questions: ['reading', 3, 1], rd_many: ['reading', 3, 1], rd_caps: ['reading', 3, 1], rd_poem: ['reading', 3, 1], rd_missing: ['reading', 3, 1], rd_book: ['reading', 3, 1],
   music: ['music', 2, 1], tune: ['music', 3, 2], chichi: ['music', 2, 1], puppets: ['music', 2, 1], parcel: ['music', 2, 1],
   colors: ['art', 2, 1], dongho: ['art', 3, 1], rangoli: ['art', 3, 2], jigsaw: ['art', 3, 2], tangram: ['art', 4, 2],
   // (r89) the ten drawing games
@@ -37,7 +49,8 @@ export const GAME_INFO = {
   letters: ['words', 4, 2], phonics: ['words', 4, 2], opposites: ['words', 4, 2], words: ['words', 5, 2], firstwords: ['words', 5, 3],
   feelings: ['me', 2, 1], bodyparts: ['me', 2, 1], familyquiz: ['me', 3, 2],
   kite: ['play', 2, 1], hopscotch: ['play', 3, 1], tug: ['play', 2, 1], skipping: ['play', 3, 2], sackrace: ['play', 3, 1], nemlon: ['play', 3, 1], marbles: ['play', 4, 2], cricket: ['play', 5, 2], mrwolf: ['play', 3, 2], dacau: ['play', 4, 2],
-  dragon: ['vietnam', 3, 1], datnieu: ['vietnam', 2, 1], oantuti: ['vietnam', 3, 1], chuyen: ['vietnam', 5, 2], oanquan: ['vietnam', 5, 3], caro: ['vietnam', 5, 3], tienlen: ['vietnam', 5, 3], tienlenbac: ['vietnam', 5, 3],
+  dragon: ['vietnam', 3, 1], datnieu: ['vietnam', 2, 1],
+  banhchung: ['vietnam', 2, 1], denongsao: ['vietnam', 2, 1], mualan: ['vietnam', 2, 2], cayneu: ['vietnam', 2, 1], oantuti: ['vietnam', 3, 1], chuyen: ['vietnam', 5, 2], oanquan: ['vietnam', 5, 3], caro: ['vietnam', 5, 3], tienlen: ['vietnam', 5, 3], tienlenbac: ['vietnam', 5, 3],
   traffic: ['travel', 2, 1], ferries: ['travel', 3, 1], tram: ['travel', 3, 1], balloon: ['travel', 2, 1], bubbles: ['travel', 2, 1], market: ['travel', 3, 2], sortout: ['travel', 3, 2], order: ['travel', 5, 2],
   robot: ['thinking', 5, 3], maze: ['thinking', 5, 2], snakes: ['thinking', 5, 2], snap: ['thinking', 3, 2],
   heodat: ['money', 2, 1], coinnote: ['money', 2, 1], lixi: ['money', 2, 1], needwant: ['money', 3, 1], cheaper: ['money', 3, 1], bahu: ['money', 3, 2], shoplist: ['money', 3, 2], waitgrow: ['money', 3, 2], shopkeep: ['money', 4, 2], barter: ['money', 4, 2]

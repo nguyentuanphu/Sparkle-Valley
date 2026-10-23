@@ -1,3 +1,4 @@
+import { isOpen, progressOf } from './content/unlocks.js';
 // Screens and pop-ups: title, who's playing, grown-ups settings, photo editor, NPC dialogue,
 // the Sparkle Pad (map, backpack, adventure log, album, camera), cooking, shop and online play.
 import { AREAS, gamesIn, withSitePlaces } from './content/activities.js';
@@ -990,8 +991,8 @@ export const openGamesHub = Object.assign(function (game, i, onClose) {
   const tabs = [...SECS, ...(game.taleShelfHTML ? [{ key: 'tales', icon: '📖', short: () => T('Stories', 'Truyện') }] : []), ...(game.openSongs ? [{ key: 'songs', icon: '🎵', short: () => T('Songs', 'Bài hát') }] : []), ...(game.festivals ? [{ key: 'fest', icon: '📅', short: () => T('Festivals', 'Lễ hội') }] : [])];
   let cur = tabs.find(t => t.key === openGamesHub.last) ? openGamesHub.last : 'learn';
   const card2 = sec => `<div class="hubgrid">${sec.games.filter(id => GAMES[id]).map((id, k) => {
-      const g = GAMES[id], lv = p.levels[id] || 1;
-      return `<div class="hcard" style="--hc:${HUB_COLORS[(k + sec.key.length) % HUB_COLORS.length]}"><button class="hplay" data-play="${id}"><span class="hi">${pic(g.icon)}</span><b>${esc(g.name())}</b><small>${'⭐'.repeat(lv)}${'☆'.repeat(5 - lv)}</small></button><button class="hgo" data-go="${id}" aria-label="${T('Go there', 'Đi đến đó')}">📍</button><button class="hhow" data-how="${id}" aria-label="${T('How to play', 'Cách chơi')}">📺</button>${g.origin ? `<span class="hflag">${originFlags(g.origin)}</span>` : ''}</div>`;
+      const g = GAMES[id], lv = p.levels[id] || 1, open = isOpen(p, id, 'game', sec.area || sec.key);
+      return `<div class="hcard ${open ? "" : "locked"}" style="--hc:${HUB_COLORS[(k + sec.key.length) % HUB_COLORS.length]}"><button class="hplay" data-play="${id}" ${open ? "" : "disabled"}><span class="hi">${pic(open ? g.icon : '\u{1F512}')}</span><b>${esc(g.name())}</b><small>${'⭐'.repeat(lv)}${'☆'.repeat(5 - lv)}</small></button><button class="hgo" data-go="${id}" aria-label="${T('Go there', 'Đi đến đó')}">📍</button><button class="hhow" data-how="${id}" aria-label="${T('How to play', 'Cách chơi')}">📺</button>${g.origin ? `<span class="hflag">${originFlags(g.origin)}</span>` : ''}</div>`;
     }).join('')}</div>`;
   const body = key => {
     if (key === 'fest') return `<h3>📅 ${T('Festival calendar', 'Lịch lễ hội')}</h3>${festCalendarHTML(game)}`;
@@ -1001,7 +1002,7 @@ export const openGamesHub = Object.assign(function (game, i, onClose) {
       const fam = familySongs().length, groups = SONG_GROUPS.filter(g => g.key === 'family' ? fam : SONG_LIST.some(s => s.group === g.key && Music.has(s.key)));
       return `<h3>🎵 ${T('Songs: tap to listen', 'Bài hát: chạm để nghe')}</h3><div class="festrow songrow">${groups.map(g => `<button class="festbtn" data-songs="${g.key}"><span>${pic(g.icon)}</span><b>${esc(g.name())}</b></button>`).join('')}</div>`;
     }
-    const sec = SECS.find(x => x.key === key) || SECS[0]; return `<h3>${sec.icon} ${esc(sec.title())}</h3>${sec.groups.map(g => `${sec.groups.length > 1 ? `<h4 class="hubarea">${pic(g.area.icon)} ${esc(g.area.name())}</h4>` : ''}${card2({ key: sec.key + g.area.key, games: g.games })}`).join('')}`;
+    const sec = SECS.find(x => x.key === key) || SECS[0]; return `<h3>${sec.icon} ${esc(sec.title())}</h3>${sec.groups.map(g => `${sec.groups.length > 1 ? `<h4 class="hubarea">${pic(g.area.icon)} ${esc(g.area.name())}</h4>` : ''}${card2({ key: sec.key + g.area.key, area: g.area.key, games: g.games })}`).join('')}`;
   };
   card.innerHTML = `<button class="x" aria-label="${T('Close', 'Đóng')}">✕</button><h2>🎮 ${T('Play', 'Vui chơi')}</h2>
     <div class="hubtabs" role="tablist">${tabs.map(t => `<button role="tab" data-tab="${t.key}"><span>${pic(t.icon)}</span><small>${esc(t.short())}</small></button>`).join('')}</div>
