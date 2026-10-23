@@ -40,6 +40,8 @@ All of them once per release (`node suite.mjs`), plus `node suite.mjs --changed`
 
 ## Owner's decisions
 
+- 23 October 2026 AEDT: owner explicitly requested a made-up statistics graph so parents can see what to expect. The interactive example is labelled invented data in EN/VI, remains separate from real child saves and makes no educational-score claim.
+
 - 23 October 2026 AEDT: add detailed parent controls and existing per-child statistics to the website, push a dedicated branch and provide a Release handoff. Keep Website on Welcome; during play move HUD Home into Settings and move the quest bar up safely. [Handoff](../website-review-20261023/RELEASE-HANDOFF.md) names current handlers/layout dependencies and acceptance checks. The website branch does not implement those runtime changes, expose family data, select a new version or approve deployment.
 - 20 October 2026 AEDT, 6:39 AM: owner **“You should stop and upload all your work, let me know what you have done and whats other works are pending”**. Stop implementation/testing; commit and push the unfinished r88 checkpoint to `work/bugs-typescript-20261019` / draft PR #400 with explicit failed/unverified checks and a [handoff](tasks/r88-paused-handoff-20261019.md). This authorizes the WIP upload despite known red checks, superseding the prior push hold. It does not authorize merging into main or deployment. Resume only when instructed.
 - 19 Oct 2026 AEDT: owner explicitly chose **r88** for the next reviewed release batch (pop-up: “Use r88”). Implementation/testing continue on work/bugs-typescript-20261019; deployment still needs the round's explicit approval.

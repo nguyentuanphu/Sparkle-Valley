@@ -1,6 +1,6 @@
 # Release handoff: family website, parent controls and game integration
 
-Owner request, 23 October 2026 AEDT. Integration branch: **`work/family-website-20261023`**, based on main r88 `781089d6`. No new release version or main deployment is approved by this handoff. Fetch the branch's latest head; the earlier design branch is `docs/learning-banner-20261021`.
+Owner request, 23 October 2026 AEDT. Implementation snapshot: `7982a554` (documentation/evidence notes may follow). Integration branch: **`work/family-website-20261023`**, based on main r88 `781089d6`. No new release version or main deployment is approved by this handoff. Fetch the branch's latest head; the earlier design branch is `docs/learning-banner-20261021`.
 
 [Open the private rendered preview](https://sparkle-valley-family-preview-20261023.henry-tpnguyen.chatgpt.site) · [Website/game rules](WEBSITE-RULES.md) · [Parent controls and play reports](parent-controls-guide.md).
 
