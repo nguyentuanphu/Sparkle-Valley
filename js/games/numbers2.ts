@@ -1,136 +1,22 @@
-﻿import { register, untilRight } from "./frame.js";
-import { T } from "../i18n.js";
-import { pic } from "../art.js";
-import { el, wait } from "../util.js";
+// Numbers additions (owner, 23 Oct 2026 AEDT): concrete counting, parity, sequence and sharing play.
+import { register, untilRight } from './frame.js';
+import { T } from '../i18n.js';
+import { pic } from '../art.js';
+import { el, wait } from '../util.js';
 
 let styled = false;
-function style() {
-  if (styled) return; styled = true;
-  document.head.appendChild(el("style", "", ".nm2-wrap{display:grid;justify-items:center;gap:10px;padding:20px}.nm2-btn{min-width:120px;padding:10px;border-radius:15px;background:#fff;border:2px solid #3f2b24}"));
+function style() { if (styled) return; styled = true; document.head.appendChild(el('style', '', `
+.n2-board{display:flex;flex-direction:column;align-items:center;gap:14px;padding:12px;margin:0 auto;max-width:96vw}.n2-stage{width:min(360px,86vw);min-height:180px;background:#fffdf6;border-radius:20px;box-shadow:0 4px 16px rgba(40,30,60,.14);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:12px}.n2-controls{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;max-width:380px}.n2-btn{min-width:64px;min-height:64px;padding:8px 16px;border-radius:999px;border:2px solid #3b2a4f;background:#fff;box-shadow:0 3px 0 rgba(59,42,79,.2);font:800 17px var(--font,sans-serif);color:#3b2a4f;cursor:pointer;display:inline-flex;align-items:center;gap:8px;touch-action:manipulation}.n2-number{font:900 64px var(--font,sans-serif);color:#3b6fe0}.n2-dots{font-size:34px;letter-spacing:5px;max-width:300px;text-align:center}`)); }
+function board(api, icon: string, text: string) { style(); const wrap=el('div','n2-board'); api.stage.appendChild(wrap); const stage=el('div','n2-stage'); wrap.appendChild(stage); const title=el('div','',pic(icon)+' '+text); title.style.cssText='font:800 20px var(--font,sans-serif);text-align:center'; stage.appendChild(title); return { wrap, stage }; }
+async function choiceRounds(api, id: string, icon: string, prompt: string, rounds: Array<{display: string; options: string[][]; answer: number}>, title: [string,string]) {
+  api.say(prompt, prompt); api.dots(rounds.length,0); const {wrap,stage}=board(api,icon,prompt); const controls=el('div','n2-controls'); wrap.appendChild(controls); let k=0;
+  while(k<rounds.length){ const q=rounds[k]; stage.querySelectorAll('.n2-question').forEach(e=>e.remove()); const qel=el('div','n2-question',q.display); qel.className='n2-question n2-number'; stage.appendChild(qel); controls.innerHTML=''; const btns=q.options.map((o,i)=>{const b=el('button','n2-btn',`<span>${T(o[0],o[1])}</span>`); b.dataset.answer=String(i); controls.appendChild(b); return b;}); const target=btns[q.answer]; api.plan(()=>target,{maxActions:5}); const clicked=await untilRight(api,btns,e=>e===target); if(!clicked||api.closed)return; api.sfx.ding(); k++; api.dots(rounds.length,k); await wait(250); }
+  api.say(title[0],title[1]); await wait(900); return api.win({title:T(title[0],title[1])});
 }
-
-register({
-  id: "numline", icon: "🔢",
-  name: () => T("Hop the Number Line", "Nhảy Trên Tia Số"),
-  async run(api) {
-    style();
-    api.say("Hop along the number line!", "Nhảy theo tia số nào!");
-    const wrap = el("div", "nm2-wrap");
-    api.stage.appendChild(wrap);
-    const btn = el("button", "nm2-btn");
-    btn.innerHTML = pic("🔢") + " " + T("Hop", "Nhảy");
-    wrap.appendChild(btn);
-    await untilRight(api, [btn], () => true);
-    api.sfx.pop();
-    await wait(400);
-    return api.win({ title: T("Counted!", "Đếm xong rồi!") });
-  }
-});
-
-register({
-  id: "tenframe", icon: "🔟",
-  name: () => T("Ten Frame", "Khung Mười"),
-  async run(api) {
-    style();
-    api.say("Fill the ten frame!", "Điền đầy khung mười nhé!");
-    const wrap = el("div", "nm2-wrap");
-    api.stage.appendChild(wrap);
-    const btn = el("button", "nm2-btn");
-    btn.innerHTML = pic("🔟") + " " + T("Fill", "Điền");
-    wrap.appendChild(btn);
-    await untilRight(api, [btn], () => true);
-    api.sfx.pop();
-    await wait(400);
-    return api.win({ title: T("Ten done!", "Mười rồi!") });
-  }
-});
-
-register({
-  id: "dice", icon: "🎲",
-  name: () => T("Dice Count", "Đếm Xúc Xắc"),
-  async run(api) {
-    style();
-    api.say("Count the dice dots!", "Đếm chấm xúc xắc nào!");
-    const wrap = el("div", "nm2-wrap");
-    api.stage.appendChild(wrap);
-    const btn = el("button", "nm2-btn");
-    btn.innerHTML = pic("🎲") + " " + T("Count", "Đếm");
-    wrap.appendChild(btn);
-    await untilRight(api, [btn], () => true);
-    api.sfx.pop();
-    await wait(400);
-    return api.win({ title: T("All counted!", "Đếm hết rồi!") });
-  }
-});
-
-register({
-  id: "evenodd", icon: "⚽",
-  name: () => T("Pairs or Odd?", "Chẵn Hay Lẻ?"),
-  async run(api) {
-    style();
-    api.say("Is it even or odd?", "Chẵn hay lẻ nhé?");
-    const wrap = el("div", "nm2-wrap");
-    api.stage.appendChild(wrap);
-    const btn = el("button", "nm2-btn");
-    btn.innerHTML = pic("⚽") + " " + T("Check", "Xem");
-    wrap.appendChild(btn);
-    await untilRight(api, [btn], () => true);
-    api.sfx.pop();
-    await wait(400);
-    return api.win({ title: T("Correct!", "Đúng rồi!") });
-  }
-});
-
-register({
-  id: "measure", icon: "📏",
-  name: () => T("Measure with Blocks", "Đo Bằng Khối"),
-  async run(api) {
-    style();
-    api.say("Measure with blocks!", "Đo bằng khối nào!");
-    const wrap = el("div", "nm2-wrap");
-    api.stage.appendChild(wrap);
-    const btn = el("button", "nm2-btn");
-    btn.innerHTML = pic("📏") + " " + T("Measure", "Đo");
-    wrap.appendChild(btn);
-    await untilRight(api, [btn], () => true);
-    api.sfx.pop();
-    await wait(400);
-    return api.win({ title: T("Measured!", "Đo xong rồi!") });
-  }
-});
-
-register({
-  id: "beforeafter", icon: "🔄",
-  name: () => T("Before and After", "Số Trước Số Sau"),
-  async run(api) {
-    style();
-    api.say("What comes before and after?", "Số trước số sau là mấy?");
-    const wrap = el("div", "nm2-wrap");
-    api.stage.appendChild(wrap);
-    const btn = el("button", "nm2-btn");
-    btn.innerHTML = pic("🔄") + " " + T("Find", "Tìm");
-    wrap.appendChild(btn);
-    await untilRight(api, [btn], () => true);
-    api.sfx.pop();
-    await wait(400);
-    return api.win({ title: T("Got it!", "Biết rồi!") });
-  }
-});
-
-register({
-  id: "halves", icon: "🍕",
-  name: () => T("Share in Half", "Chia Đôi"),
-  async run(api) {
-    style();
-    api.say("Share it in half!", "Chia đôi để cùng nhau nhé!");
-    const wrap = el("div", "nm2-wrap");
-    api.stage.appendChild(wrap);
-    const btn = el("button", "nm2-btn");
-    btn.innerHTML = pic("🍕") + " " + T("Share", "Chia");
-    wrap.appendChild(btn);
-    await untilRight(api, [btn], () => true);
-    api.sfx.pop();
-    await wait(400);
-    return api.win({ title: T("Fair share!", "Chia công bằng!") });
-  }
-});
+register({id:'numline',icon:'ðŸ”¢',name:()=>T('Hop the Number Line','Nháº£y TrÃªn Tia Sá»‘'),async run(api){const rounds=[1,2,3].map(n=>({display:`${n+1}`,options:[['Hop '+(n+1),'Nháº£y '+(n+1)],['Hop '+n,'Nháº£y '+n]],answer:0}));return choiceRounds(api,'numline','ðŸ”¢','Hop to the next number!',rounds,['You reached every next number!','BÃ© nháº£y Ä‘Ãºng tá»«ng sá»‘ tiáº¿p theo!']);}});
+register({id:'tenframe',icon:'ðŸ”Ÿ',name:()=>T('Ten Frame','Khung MÆ°á»i'),async run(api){const rounds=[3,5,8].map(n=>({display:'â— '.repeat(n),options:[[String(n),' '+n],['10','MÆ°á»i']],answer:0}));return choiceRounds(api,'tenframe','ðŸ”Ÿ','How many counters are in the frame?',rounds,['The ten frame helps you see numbers!','Khung mÆ°á»i giÃºp bÃ© nhÃ¬n sá»‘ tháº­t rÃµ!']);}});
+register({id:'dice',icon:'ðŸŽ²',name:()=>T('Dice Count','Äáº¿m XÃºc Xáº¯c'),async run(api){const rounds=[2,4,6].map(n=>({display:'â— '.repeat(n),options:[[String(n),' '+n],[String(n+1),' '+(n+1)]],answer:0}));return choiceRounds(api,'dice','ðŸŽ²','Count the dice dots!',rounds,['All the dice are counted!','BÃ© Ä‘áº¿m xÃºc xáº¯c tháº­t giá»i!']);}});
+register({id:'evenodd',icon:'âš½',name:()=>T('Pairs or Odd?','Cháºµn Hay Láº»?'),async run(api){const ns=[4,7,8].map(n=>({display:String(n),options:[[n%2?'Odd':'Even',n%2?'Láº»':'Cháºµn'],[n%2?'Even':'Odd',n%2?'Cháºµn':'Láº»']],answer:0}));return choiceRounds(api,'evenodd','âš½','Is the number even or odd?',ns,['Even and odd are clear!','BÃ© phÃ¢n biá»‡t cháºµn láº» tháº­t chuáº©n!']);}});
+register({id:'measure',icon:'ðŸ“',name:()=>T('Measure with Blocks','Äo Báº±ng Khá»‘i'),async run(api){const ns=[2,4,6].map(n=>({display:`â–° `.repeat(n),options:[[`${n} blocks`,`${n} khá»‘i`],[`${n+1} blocks`,`${n+1} khá»‘i`]],answer:0}));return choiceRounds(api,'measure','ðŸ“','How many blocks long?',ns,['You measured every length!','BÃ© Ä‘o Ä‘á»™ dÃ i tháº­t chÃ­nh xÃ¡c!']);}});
+register({id:'beforeafter',icon:'ðŸ”„',name:()=>T('Before and After','Sá»‘ TrÆ°á»›c Sá»‘ Sau'),async run(api){const ns=[3,5,8].map(n=>({display:`${n-1}  ${n}  ${n+1}`,options:[[`${n-1} and ${n+1}`,`${n-1} vÃ  ${n+1}`],[`${n} and ${n+2}`,`${n} vÃ  ${n+2}`]],answer:0}));return choiceRounds(api,'beforeafter','ðŸ”„','Find the numbers before and after!',ns,['Before and after, you know them all!','BÃ© biáº¿t sá»‘ trÆ°á»›c vÃ  sá»‘ sau rá»“i!']);}});
+register({id:'halves',icon:'ðŸ•',name:()=>T('Share in Half','Chia ÄÃ´i'),async run(api){const ns=[4,6,8].map(n=>({display:`ðŸ• Ã— ${n}`,options:[[`${n/2} each`,`má»—i bÃªn ${n/2}`],[`${n-1} each`,`má»—i bÃªn ${n-1}`]],answer:0}));return choiceRounds(api,'halves','ðŸ•','Share the pieces equally in half!',ns,['A fair half for everyone!','BÃ© chia Ä‘Ã´i tháº­t cÃ´ng báº±ng!']);}});
