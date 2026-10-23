@@ -1,136 +1,16 @@
-﻿import { register, untilRight } from "./frame.js";
-import { T } from "../i18n.js";
-import { pic } from "../art.js";
-import { el, wait } from "../util.js";
+// Shapes additions (owner, 23 Oct 2026 AEDT): 3D solids, shape hunt, tiles, rotation, trains, lines and folding.
+import { register, untilRight } from './frame.js';
+import { T } from '../i18n.js';
+import { pic } from '../art.js';
+import { el, wait } from '../util.js';
 
-let styled = false;
-function style() {
-  if (styled) return; styled = true;
-  document.head.appendChild(el("style", "", ".sh2-wrap{display:grid;justify-items:center;gap:10px;padding:20px}.sh2-btn{min-width:120px;padding:10px;border-radius:15px;background:#fff;border:2px solid #3f2b24}"));
-}
-
-register({
-  id: "solids", icon: "⚽",
-  name: () => T("Ball, Box, Can", "Khối Cầu, Hộp, Trụ"),
-  async run(api) {
-    style();
-    api.say("Sort the 3D solids!", "Phân loại khối cầu, hộp, trụ nhé!");
-    const wrap = el("div", "sh2-wrap");
-    api.stage.appendChild(wrap);
-    const btn = el("button", "sh2-btn");
-    btn.innerHTML = pic("⚽") + " " + T("Sort", "Xếp");
-    wrap.appendChild(btn);
-    await untilRight(api, [btn], () => true);
-    api.sfx.pop();
-    await wait(400);
-    return api.win({ title: T("All sorted!", "Phân loại xong!") });
-  }
-});
-
-register({
-  id: "townshapes", icon: "🏘️",
-  name: () => T("Shape Hunt in Town", "Tìm Hình Trong Phố"),
-  async run(api) {
-    style();
-    api.say("Find shapes in the town!", "Tìm hình trong phố nào!");
-    const wrap = el("div", "sh2-wrap");
-    api.stage.appendChild(wrap);
-    const btn = el("button", "sh2-btn");
-    btn.innerHTML = pic("🏘️") + " " + T("Find", "Tìm");
-    wrap.appendChild(btn);
-    await untilRight(api, [btn], () => true);
-    api.sfx.pop();
-    await wait(400);
-    return api.win({ title: T("Found them all!", "Đã tìm thấy hết!") });
-  }
-});
-
-register({
-  id: "tiles", icon: "🟦",
-  name: () => T("Tile the Floor", "Lát Sàn"),
-  async run(api) {
-    style();
-    api.say("Tile the floor with patterns!", "Lát sàn bằng hoa văn nào!");
-    const wrap = el("div", "sh2-wrap");
-    api.stage.appendChild(wrap);
-    const btn = el("button", "sh2-btn");
-    btn.innerHTML = pic("🟦") + " " + T("Tile", "Lát");
-    wrap.appendChild(btn);
-    await untilRight(api, [btn], () => true);
-    api.sfx.pop();
-    await wait(400);
-    return api.win({ title: T("Floor tiled!", "Sàn nhà thật đẹp!") });
-  }
-});
-
-register({
-  id: "turnit", icon: "🔄",
-  name: () => T("Turn It Round", "Xoay Hình"),
-  async run(api) {
-    style();
-    api.say("Turn the shape to fit!", "Xoay hình cho vừa khít!");
-    const wrap = el("div", "sh2-wrap");
-    api.stage.appendChild(wrap);
-    const btn = el("button", "sh2-btn");
-    btn.innerHTML = pic("🔄") + " " + T("Turn", "Xoay");
-    wrap.appendChild(btn);
-    await untilRight(api, [btn], () => true);
-    api.sfx.pop();
-    await wait(400);
-    return api.win({ title: T("Fits perfectly!", "Vừa khít rồi!") });
-  }
-});
-
-register({
-  id: "shapetrain", icon: "🚂",
-  name: () => T("Shape Train", "Tàu Hình Khối"),
-  async run(api) {
-    style();
-    api.say("Load the shapes onto the train!", "Xếp hình khối lên tàu hỏa!");
-    const wrap = el("div", "sh2-wrap");
-    api.stage.appendChild(wrap);
-    const btn = el("button", "sh2-btn");
-    btn.innerHTML = pic("🚂") + " " + T("Load", "Xếp");
-    wrap.appendChild(btn);
-    await untilRight(api, [btn], () => true);
-    api.sfx.pop();
-    await wait(400);
-    return api.win({ title: T("Train loaded!", "Tàu đã đầy hàng!") });
-  }
-});
-
-register({
-  id: "linescurves", icon: "〰️",
-  name: () => T("Lines and Curves", "Nét Thẳng Nét Cong"),
-  async run(api) {
-    style();
-    api.say("Trace the lines and curves!", "Vẽ nét thẳng và nét cong!");
-    const wrap = el("div", "sh2-wrap");
-    api.stage.appendChild(wrap);
-    const btn = el("button", "sh2-btn");
-    btn.innerHTML = pic("〰️") + " " + T("Trace", "Vẽ");
-    wrap.appendChild(btn);
-    await untilRight(api, [btn], () => true);
-    api.sfx.pop();
-    await wait(400);
-    return api.win({ title: T("Traced smoothly!", "Nét vẽ uyển chuyển!") });
-  }
-});
-
-register({
-  id: "foldbox", icon: "📦",
-  name: () => T("Fold the Box", "Gấp Hộp"),
-  async run(api) {
-    style();
-    api.say("Fold the box together!", "Gấp hộp lại với nhau!");
-    const wrap = el("div", "sh2-wrap");
-    api.stage.appendChild(wrap);
-    const btn = el("button", "sh2-btn");
-    btn.innerHTML = pic("📦") + " " + T("Fold", "Gấp");
-    wrap.appendChild(btn);
-    await untilRight(api, [btn], () => true);
-    api.sfx.pop();
-    await wait(400);
-    return api.win({ title: T("Box folded!", "Hộp đã gấp xong!") });
-  }
-});
+let styled=false;
+function style(){if(styled)return;styled=true;document.head.appendChild(el('style','',`.s2-board{display:flex;flex-direction:column;align-items:center;gap:14px;padding:12px;margin:0 auto;max-width:96vw}.s2-stage{width:min(360px,86vw);min-height:190px;background:#fffdf6;border-radius:20px;box-shadow:0 4px 16px rgba(40,30,60,.14);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:12px}.s2-controls{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;max-width:380px}.s2-btn{min-width:64px;min-height:64px;padding:8px 16px;border-radius:999px;border:2px solid #3b2a4f;background:#fff;box-shadow:0 3px 0 rgba(59,42,79,.2);font:800 17px var(--font,sans-serif);color:#3b2a4f;cursor:pointer;display:inline-flex;align-items:center;gap:8px;touch-action:manipulation}.s2-picture{font-size:64px;line-height:1.2;text-align:center}.s2-grid{display:grid;grid-template-columns:repeat(3,64px);gap:8px}.s2-tile{width:64px;height:64px;border:2px solid #3b2a4f;border-radius:8px;background:#fff;cursor:pointer;font-size:28px}`));}
+async function rounds(api,icon:string,prompt:[string,string],qs:Array<{show:string;choices:string[][];answer:number}>,done:[string,string]){style();api.say(prompt[0],prompt[1]);api.dots(qs.length,0);const wrap=el('div','s2-board'),stage=el('div','s2-stage'),controls=el('div','s2-controls');api.stage.appendChild(wrap);wrap.append(stage,controls);let k=0;while(k<qs.length){stage.innerHTML=`<div class="s2-picture">${qs[k].show}</div>`;controls.innerHTML='';const btns=qs[k].choices.map((c,i)=>{const b=el('button','s2-btn',`<span>${T(c[0],c[1])}</span>`);b.dataset.i=String(i);controls.appendChild(b);return b;});const target=btns[qs[k].answer];api.plan(()=>target,{maxActions:5});const clicked=await untilRight(api,btns,e=>e===target);if(!clicked||api.closed)return;api.sfx.ding();k++;api.dots(qs.length,k);await wait(250);}api.say(done[0],done[1]);await wait(900);return api.win({title:T(done[0],done[1])});}
+register({id:'solids',icon:'⚽',name:()=>T('Ball, Box, Can','Khối Cầu, Hộp, Trụ'),async run(api){return rounds(api,'⚽',['Match each real object to its 3D solid!','Ghép đồ vật với khối cầu, khối hộp, khối trụ!'],[{show:pic('⚽'),choices:[['Sphere','Khối cầu'],['Cube','Khối hộp'],['Cylinder','Khối trụ']],answer:0},{show:pic('📦'),choices:[['Sphere','Khối cầu'],['Cube','Khối hộp'],['Cylinder','Khối trụ']],answer:1},{show:pic('🥫'),choices:[['Sphere','Khối cầu'],['Cube','Khối hộp'],['Cylinder','Khối trụ']],answer:2}],['All the solids are sorted!','Bé phân loại khối thật chuẩn!']);}});
+register({id:'townshapes',icon:'🏘️',name:()=>T('Shape Hunt in Town','Tìm Hình Trong Phố'),async run(api){return rounds(api,'🏘️',['Find the shapes hiding around town!','Tìm các hình đang ẩn trong phố nhé!'],[{show:'🏠',choices:[['Triangle roof','Mái tam giác'],['Circle roof','Mái tròn']],answer:0},{show:'🛞',choices:[['Square wheel','Bánh vuông'],['Circle wheel','Bánh tròn']],answer:1},{show:'🚪',choices:[['Rectangle door','Cửa chữ nhật'],['Triangle door','Cửa tam giác']],answer:0}],['You found every town shape!','Bé tìm thấy mọi hình trong phố!']);}});
+register({id:'tiles',icon:'🟦',name:()=>T('Tile the Floor','Lát Sàn'),async run(api){style();api.say('Tap every empty square to finish the blue-and-gold floor pattern!','Chạm vào từng ô trống để lát hoa văn xanh vàng nhé!');api.dots(9,0);const wrap=el('div','s2-board'),stage=el('div','s2-stage'),grid=el('div','s2-grid');api.stage.appendChild(wrap);wrap.appendChild(stage);stage.appendChild(grid);const tiles=Array.from({length:9},(_,i)=>{const b=el('button','s2-tile','');b.dataset.i=String(i);grid.appendChild(b);return b;});let done=0;for(const tile of tiles){api.plan(()=>tile,{maxActions:11});const clicked=await untilRight(api,tiles,e=>e===tile);if(!clicked||api.closed)return;tile.textContent=done%2?'◆':'■';tile.style.color=done%2?'#ffd23f':'#3b6fe0';done++;api.dots(9,done);api.sfx.pop(done%4);}await wait(700);return api.win({title:T('Beautiful tiled floor!','Sàn hoa văn đẹp quá!')});}});
+register({id:'turnit',icon:'🔄',name:()=>T('Turn It Round','Xoay Hình'),async run(api){style();api.say('Turn the arrow until it points up!','Xoay mũi tên đến khi chỉ lên trên nhé!');api.dots(3,0);const wrap=el('div','s2-board'),stage=el('div','s2-stage'),btn=el('button','s2-btn','⬅️');api.stage.appendChild(wrap);wrap.appendChild(stage);stage.appendChild(btn);let turns=0;btn.onclick=()=>{turns++;btn.textContent=['⬆️','➡️','⬇️'][turns%3];api.dots(3,turns);api.sfx.pop(turns);};api.plan(()=>turns<3?btn:null,{maxActions:5});while(turns<3){await wait(100);if(api.closed)return;}return api.win({title:T('The shape fits perfectly!','Hình đã xoay vừa khít!')});}});
+register({id:'shapetrain',icon:'🚂',name:()=>T('Shape Train','Tàu Hình Khối'),async run(api){return rounds(api,'🚂',['Load the matching shape into each train wagon!','Xếp đúng hình vào từng toa tàu!'],[{show:'🚂 ○',choices:[['Circle','Hình tròn'],['Square','Hình vuông']],answer:0},{show:'🚂 □',choices:[['Triangle','Tam giác'],['Square','Hình vuông']],answer:1},{show:'🚂 △',choices:[['Triangle','Tam giác'],['Circle','Hình tròn']],answer:0}],['The shape train is ready!','Đoàn tàu hình khối đã đầy!']);}});
+register({id:'linescurves',icon:'〰️',name:()=>T('Lines and Curves','Nét Thẳng Nét Cong'),async run(api){return rounds(api,'〰️',['Is the mark a straight line or a curve?','Đây là nét thẳng hay nét cong?'],[{show:'━━━━',choices:[['Straight','Nét thẳng'],['Curve','Nét cong']],answer:0},{show:'∿∿∿',choices:[['Straight','Nét thẳng'],['Curve','Nét cong']],answer:1},{show:'│││',choices:[['Straight','Nét thẳng'],['Curve','Nét cong']],answer:0}],['Lines and curves are easy now!','Bé phân biệt nét thẳng nét cong rồi!']);}});
+register({id:'foldbox',icon:'📦',name:()=>T('Fold the Box','Gấp Hộp'),async run(api){style();api.say('Fold all four sides up to make a box!','Gấp bốn cạnh lên để tạo thành chiếc hộp nhé!');api.dots(4,0);const wrap=el('div','s2-board'),stage=el('div','s2-stage'),box=el('div','s2-picture','✚'),controls=el('div','s2-controls');api.stage.appendChild(wrap);wrap.append(stage,controls);stage.appendChild(box);const btns=['Top','Right','Bottom','Left'].map((x,i)=>{const b=el('button','s2-btn',T(x,['Trên','Phải','Dưới','Trái'][i]));controls.appendChild(b);return b;});let k=0;while(k<4){const target=btns[k];api.plan(()=>target,{maxActions:5});const clicked=await untilRight(api,btns,e=>e===target);if(!clicked||api.closed)return;box.textContent=['┬','┐','┘','📦'][k];api.sfx.pop(k);k++;api.dots(4,k);await wait(250);}return api.win({title:T('The box is folded!','Chiếc hộp đã gấp xong!')});}});
