@@ -1,0 +1,44 @@
+// Read-only catalogue extraction. Refresh deliberately after reviewing changes on main.
+import fs from 'node:fs';
+import vm from 'node:vm';
+import {execFileSync} from 'node:child_process';
+import {createRequire} from 'node:module';
+const require=createRequire(new URL('../../tests/package.json',import.meta.url)),ts=require('typescript');
+export const SOURCE_REF=execFileSync('git',['rev-parse',process.env.SV_WEBSITE_SOURCE||'781089d6'],{encoding:'utf8'}).trim();
+const read=file=>{for(const candidate of [file,file.replace(/\.js$/,'.ts')]){try{return execFileSync('git',['show',`${SOURCE_REF}:${candidate}`],{encoding:'utf8',stdio:['ignore','pipe','pipe']})}catch{}}throw Error('Website source missing: '+file)};
+const run=(text,deps={})=>{const exports={};vm.runInNewContext(ts.transpileModule(text,{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2020}}).outputText,{exports,require:id=>{if(!(id in deps))throw Error('Unexpected import '+id);return deps[id]},Intl,Date,console},{timeout:2000});return exports};
+const chapters=run(read('js/content/chapters.ts'));
+run(read('js/content/chapter2text.ts'),{'./chapters.js':chapters});
+run(read('js/content/chapter3text.js'),{'./chapters.js':chapters});
+const adventures=run(read('js/content/adventures.js'));
+const family=run(read('js/content/familymissions.js'));
+const hunts=run(read('js/content/festhunt.js'));
+const festivals=run(read('js/content/festcal.js'));
+const questSource=read('js/data.js').split('export const QUESTS = ')[1];
+const quests=run('const T=(en,vi)=>[en,vi]; export const QUESTS = '+questSource).QUESTS;
+const storySource=read('js/story.js').split('export const QUEST_TALES = ')[1].split('// One page,')[0];
+const tales=run('export const QUEST_TALES = '+storySource).QUEST_TALES;
+const snapshot={source:SOURCE_REF,reviewed:'23 October 2026 AEDT',quests:quests.map(q=>({id:q.id,icon:q.icon,title:q.title(),at:q.at,hint:tales[q.id]?.slice(2)||null})),chapters:chapters.CHAPTERS,adventures:adventures.ADVENTURES.map(a=>({...a,title:adventures.titleOf(a,Object.fromEntries(festivals.FESTCAL.map(f=>[f.id,[f.en,f.vi]]))),giverName:adventures.GIVERS[a.giver],steps:a.steps.map(s=>({...s,little:adventures.stepText(s,'little'),older:adventures.stepText(s,'big')}))})),weekPrizes:adventures.WEEK_PRIZES,family:family.FAMILY_MISSIONS,hunts:Object.entries(hunts.HUNT).map(([id,h])=>({...h,...festivals.FESTCAL.find(f=>f.id===id),id,objectEn:h.en,objectVi:h.vi}))};
+fs.writeFileSync(new URL('./quest-snapshot.json',import.meta.url),JSON.stringify(snapshot,null,2)+'\n');
+console.log(JSON.stringify({quests:snapshot.quests.length,chapters:snapshot.chapters.map(c=>[c.id,c.steps.length]),daily:snapshot.adventures.length,family:snapshot.family.length,hunts:snapshot.hunts.length}));
+// Additional reward catalogues; extracting data never starts a game or changes a save.
+const stickers=run(read('js/content/stickers.js')),boxes=run(read('js/content/boxes.js'));
+const countryText=read('js/passport.js').split('export const COUNTRIES = ')[1].split('const ccOf')[0];
+const countryData=run('const T=(en,vi)=>[en,vi]; export const COUNTRIES = '+countryText).COUNTRIES;
+const hatText=read('js/data.js').split('export const HAT_ICON = ')[1].split('export const GATHER')[0];
+// Only the two hat maps, excluding unrelated placement data.
+const hatLines=hatText.split('\n').slice(0,2).join('\n');
+const hats=run('const T=(en,vi)=>[en,vi]; export const HAT_ICON = '+hatLines);
+const bookText=read('js/story.js').split('export const CHAPTERS = ')[1].split('// Show pages')[0];
+const books=run('const T=(en,vi)=>[en,vi]; export const CHAPTERS = '+bookText).CHAPTERS;
+const skills=run(read('js/games/registry.ts')).SKILLS;
+const yard=run(read('js/content/yard.js'));
+const rewardSnapshot={source:SOURCE_REF,stickers:stickers.STICKERS,themes:stickers.THEMES,countries:countryData.map(c=>({cc:c.cc,name:c.name(),place:c.place(),games:c.games,hat:c.hat,hatName:hats.HAT_NAME[c.hat](),hatIcon:hats.HAT_ICON[c.hat]})),storyBooks:books.map(c=>({id:c.id,after:c.after,reward:c.reward,title:c.title()})),skills,collectibles:boxes.COLLECTIBLES,weekPrizes:adventures.WEEK_PRIZES,yardSteps:yard.YARD_STEPS};
+fs.writeFileSync(new URL('./reward-snapshot.json',import.meta.url),JSON.stringify(rewardSnapshot,null,2)+'\n');
+console.log('Reward catalogue extracted:',rewardSnapshot.stickers.length,'stickers,',rewardSnapshot.collectibles.length,'collectibles');
+const lunar=run(read('js/lunar.js'));
+const gameCatalog=run(read('js/games/catalog.ts').split('export const GAME_LOADERS =')[0],{'../i18n.js':{T:(en,vi)=>[en,vi]},'../money.js':{curCode:()=> 'AUD'},'../custom.js':{customQuiz:()=>[{}]}}).GAME_CATALOG;
+const dates={};
+for(const year of [2026,2027])dates[year]=Object.fromEntries(festivals.FESTCAL.map(f=>{const w=f.when;let date=w.lunar?lunar.lunarDay(...w.lunar,year):w.date?`${year}-${String(w.date[0]).padStart(2,'0')}-${String(w.date[1]).padStart(2,'0')}`:w.easter!=null?lunar.easter(year):w.nth?lunar.nthWeekday(year,...w.nth):w.table?.[year]||null;return [f.id,date]}));
+fs.writeFileSync(new URL('./festival-snapshot.json',import.meta.url),JSON.stringify({source:SOURCE_REF,festivals:festivals.FESTCAL,dates,games:gameCatalog.map(g=>({id:g.id,name:g.name(),icon:g.icon,origin:g.origin||null})),plan:festivals.DAY_PLAN,buildup:festivals.BUILDUP},null,2)+'\n');
+console.log('Festival directory:',festivals.FESTCAL.length,'events, default dates for 2026 and 2027');

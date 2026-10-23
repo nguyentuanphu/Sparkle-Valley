@@ -1,0 +1,59 @@
+[
+  {
+    "name": "phone",
+    "counts": {
+      "learn-card": 6,
+      "folk-card": 5,
+      "story-card": 3,
+      "benefit-card": 6,
+      "parent-faq": 6
+    },
+    "metrics": {
+      "width": 390,
+      "pageWidth": 390,
+      "missingPairs": 0
+    },
+    "learningExpanded": true,
+    "languagePreservesDetails": true,
+    "folkExpanded": true,
+    "faqExpanded": true
+  },
+  {
+    "name": "tablet",
+    "counts": {
+      "learn-card": 6,
+      "folk-card": 5,
+      "story-card": 3,
+      "benefit-card": 6,
+      "parent-faq": 6
+    },
+    "metrics": {
+      "width": 820,
+      "pageWidth": 820,
+      "missingPairs": 0
+    },
+    "learningExpanded": true,
+    "languagePreservesDetails": true,
+    "folkExpanded": true,
+    "faqExpanded": true
+  },
+  {
+    "name": "desktop",
+    "counts": {
+      "learn-card": 6,
+      "folk-card": 5,
+      "story-card": 3,
+      "benefit-card": 6,
+      "parent-faq": 6
+    },
+    "metrics": {
+      "width": 1440,
+      "pageWidth": 1440,
+      "missingPairs": 0
+    },
+    "learningExpanded": true,
+    "languagePreservesDetails": true,
+    "folkExpanded": true,
+    "faqExpanded": true
+  }
+]
