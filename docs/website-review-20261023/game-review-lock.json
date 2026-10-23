@@ -1,5 +1,5 @@
 {
-  "source": "dee820ee9c35e63c9c65eb1f941fa98d2b16fd85",
+  "source": "d3bfaac1780a6a01b8801ea148aa0fd82a3343e1",
   "files": [
     {
       "file": "content/custom.json",
@@ -903,7 +903,7 @@
     },
     {
       "file": "js/howto-data.ts",
-      "hash": "b0044ad0e2189c5a59477c60819738f5e32a4de0"
+      "hash": "0d376ba1db46072837eccb5295bc1af9fae7c620"
     },
     {
       "file": "js/howto-player.ts",
@@ -1154,8 +1154,8 @@
       "hash": "424de2260fb4c68ce5ea935ec076b64cbe33ec4a"
     },
     {
-      "file": "js/simple.js",
-      "hash": "c78d9a1ae76b1238dc351367df1e88dfb84cf927"
+      "file": "js/simple.ts",
+      "hash": "5ffbb29457e0ff8f58369bb66235e1fad09a391e"
     },
     {
       "file": "js/snacks.js",
@@ -1295,7 +1295,7 @@
     },
     {
       "file": "js/voice.ts",
-      "hash": "c41d1bd0b35f13aeda882a75ffc6358c340bfefa"
+      "hash": "9b61788093457731ae2f306e78ef61b34a97669f"
     },
     {
       "file": "js/voicepack.ts",
@@ -1431,7 +1431,7 @@
     },
     {
       "file": "voices/areas.json",
-      "hash": "1add1b4de87b288f390e7007f258416ec0526624"
+      "hash": "87121315009b9f90aff4aaa3bb0b36563a4745dc"
     },
     {
       "file": "voices/en/f/00039191206c6c56.mp3",
@@ -6491,7 +6491,7 @@
     },
     {
       "file": "voices/en/f/3078e492-30ee5f01.mp3",
-      "hash": "b4753b92038be199e7f1e2ecbb7fbbd550bc3837"
+      "hash": "a776a74de237f67c52f543089210fa402d1c4fec"
     },
     {
       "file": "voices/en/f/30849f741d7cc4d7.mp3",
@@ -9147,7 +9147,7 @@
     },
     {
       "file": "voices/en/f/48baf783-7e67c70a.mp3",
-      "hash": "e34ca903b64665a03e0f9c68278b933891c7648b"
+      "hash": "8446bb04abf84373c2002f6185e499778ae76da5"
     },
     {
       "file": "voices/en/f/48bf7a8d-23e0e49d.mp3",
@@ -11702,6 +11702,10 @@
       "hash": "ff5a528df5044f69f9efad8cd9daf206d9f6d043"
     },
     {
+      "file": "voices/en/f/610c23c1-74b4e135.mp3",
+      "hash": "8376b1b8b3551a6c2f95305064a771e87a061925"
+    },
+    {
       "file": "voices/en/f/610fd3ab37d19062.mp3",
       "hash": "840bfe08e626166d8ce4de52ecbfb62cdcef4a55"
     },
@@ -12199,7 +12203,7 @@
     },
     {
       "file": "voices/en/f/657babc71837ad6b.mp3",
-      "hash": "7443b07161149eb2b23c754a65f774539e796326"
+      "hash": "ec68cd30fa76da2e88e2d323e41c6ad283ea539b"
     },
     {
       "file": "voices/en/f/658d2d74-4c17b15d.mp3",
@@ -33115,7 +33119,7 @@
     },
     {
       "file": "voices/en/m/3078e492-30ee5f01.mp3",
-      "hash": "51739b44e6ba24af60f3b011bfcc74e8be1449d5"
+      "hash": "2ab7b7ea4d3b5afbcddccae9709ca7da0ee884d6"
     },
     {
       "file": "voices/en/m/30849f741d7cc4d7.mp3",
@@ -35771,7 +35775,7 @@
     },
     {
       "file": "voices/en/m/48baf783-7e67c70a.mp3",
-      "hash": "4d7b356cb5f6f39e3cbd1a2a3c2cbdb12d52bbb7"
+      "hash": "e8b6170e14f7c415bfc48fce518b8e99aa055c42"
     },
     {
       "file": "voices/en/m/48bf7a8d-23e0e49d.mp3",
@@ -38326,6 +38330,10 @@
       "hash": "54f2f4f20b2576a84e19f4e9fe59eea7bc7fa137"
     },
     {
+      "file": "voices/en/m/610c23c1-74b4e135.mp3",
+      "hash": "7046025efdd8e93dabd6ba7b3ec46218d97cf5ef"
+    },
+    {
       "file": "voices/en/m/610fd3ab37d19062.mp3",
       "hash": "e73daf3e48c61be533bb1475f225067356067513"
     },
@@ -38823,7 +38831,7 @@
     },
     {
       "file": "voices/en/m/657babc71837ad6b.mp3",
-      "hash": "931486bd1fb0339687c7093fe833c5427a1ab691"
+      "hash": "1a94aa61c6aa83ebf57d6e05f15b4844b891dc71"
     },
     {
       "file": "voices/en/m/658d2d74-4c17b15d.mp3",
@@ -54771,7 +54779,7 @@
     },
     {
       "file": "voices/manifest-en.json",
-      "hash": "c549fcb767e347399f41b33ae4c1f04bf8885842"
+      "hash": "91c96cd1f1d86a84d364a2b76569cf9967d33309"
     },
     {
       "file": "voices/manifest-hi.json",
@@ -54779,7 +54787,7 @@
     },
     {
       "file": "voices/manifest-vi.json",
-      "hash": "03ba2810f83dab3f589260128b934bb56d55e267"
+      "hash": "5d44d6305571f51d1cd13b61890f8e1eda1ff62e"
     },
     {
       "file": "voices/manifest-zh.json",
@@ -54787,7 +54795,7 @@
     },
     {
       "file": "voices/manifest.json",
-      "hash": "d6bb45733cf4c789eddb8cda283e086e22998ee5"
+      "hash": "189c08f8a8890d4074c78a4ab80e3bc334c4b6ac"
     },
     {
       "file": "voices/vi/f/000df9031a712f99.mp3",
