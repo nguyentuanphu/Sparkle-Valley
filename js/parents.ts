@@ -7,7 +7,8 @@
 //       lullaby first, the dance break a song tagged "kids"); the 11 grown-up phrases recorded on the device already
 //       play in the game. Recording villagers' lines in family voices in Studio is planned, not built (ROUND-R item 11)
 //   (c) a weekly note per child from the play report's days (js/report.js), in Grown-ups
-//   (d) a certificate card per child: a picture with the stickers earned, saved like a photo (js/photos.js, no print)
+//   (d) a certificate card per child: a picture with the stickers earned, saved like a photo (js/photos.js) or printed
+//       on its own landscape A4 page (r89, js/printpage.ts)
 //   (e) a dance break after 20 minutes of play: music and six moves; a big Skip button
 //   (f) bedtime: a grown-up sets a time (AEST); 10 minutes before, a gentle word; then the valley dims, a lullaby plays
 //       on the Songs page (js/songs.js, hát ru), and a goodnight card ends the game kindly (hold for 10 more minutes)
@@ -22,6 +23,7 @@ import { GAMES } from './games/registry.js';
 import { familySongs } from './content/songs.js';
 import { modal, holdButton, confetti } from './popups.js';
 import { saveToDevice } from './photos.js';
+import { homeScreenApp, pdfOf, jpegOf, sharePDF, printPicture } from './printpage.js';
 import { DECOR } from './myhouse.js';
 import { pic, artSVG } from './art.js';
 import { el, esc } from './util.js';
@@ -191,8 +193,17 @@ export function createParents(G, { say, save, reward }) {
   }
   async function openCertificate(p) {
     const url = await certificate(p), m = modal('certcard', `<button class="x" aria-label="${T('Close', 'Đóng')}">✕</button><h2>${pic('🖼️')} ${T('Certificate card', 'Thiệp khen')}</h2>
-      <img class="cert-img" src="${url}" alt="${esc(T('Certificate card', 'Thiệp khen'))}"><div class="actions"><button class="btn primary" data-save>${pic('💾')} ${T('Save picture', 'Lưu ảnh')}</button><button class="btn ghost" data-close>${T('Close', 'Đóng')}</button></div>`);
+      <img class="cert-img" src="${url}" alt="${esc(T('Certificate card', 'Thiệp khen'))}"><div class="actions"><button class="btn primary" data-save>${pic('💾')} ${T('Save picture', 'Lưu ảnh')}</button><button class="btn" data-print>${pic('🖨️')} ${T('Print or save as PDF', 'In hoặc lưu PDF')}</button><button class="btn ghost" data-close>${T('Close', 'Đóng')}</button></div>`);
     m.querySelector('.x').onclick = m.querySelector('[data-close]').onclick = () => m.close();
+    // (r89, owner 23 Oct AEDT: "print out certificates") the card on its own landscape A4 page: the browser's print
+    // window, or on the iPhone Home Screen app a PDF for the share sheet (js/printpage.ts)
+    m.querySelector('[data-print]').onclick = async () => {
+      SFX.tap && SFX.tap();
+      if (!homeScreenApp()) { await printPicture(url, true); return; }
+      const img = await loadImg(url); if (!(img instanceof HTMLImageElement)) return;
+      const c = document.createElement('canvas'); c.width = img.naturalWidth; c.height = img.naturalHeight; c.getContext('2d')?.drawImage(img, 0, 0);
+      await sharePDF(pdfOf(jpegOf(c), c.width, c.height, true), `${T('Certificate', 'Giấy khen')} ${String(nm(p.name || '')).replace(/[^\p{L}\p{N} ]+/gu, '')} ${aestDate()}.pdf`);
+    };
     m.querySelector('[data-save]').onclick = async () => { const how = await saveToDevice(url); G.heroes[0] && how !== 'cancelled' && G.toast(G.heroes[0], how === 'failed' ? T('Could not save the picture.', 'Không lưu được ảnh.') : T('Picture saved!', 'Đã lưu ảnh!')); };
     return m;
   }

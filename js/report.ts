@@ -12,6 +12,7 @@ import { customAlbum } from './custom.js';
 import { modal } from './popups.js';
 import { pic } from './art.js';
 import { esc } from './util.js';
+import { homeScreenApp, pdfOf, jpegOf, sharePDF } from './printpage.js';
 
 export const dayKey = (d = new Date()) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 const days = p => { const s = p.stats = p.stats || {}; s.days = s.days && typeof s.days === 'object' ? s.days : {}; return s.days; };
@@ -54,24 +55,18 @@ export function openReport(p) {
     <div class="rp-bar actions"><button class="btn" data-print>${pic('🖨️')} ${T('Print or save as PDF', 'In hoặc lưu PDF')}</button><button class="btn ghost" data-close>${T('Close', 'Đóng')}</button></div>`);
   const close = () => m.close();
   m.querySelector('.x').onclick = close; m.querySelector('[data-close]').onclick = close;
-  // (r89, owner's iPhone screenshot) an app opened from the Home Screen ignores print() on iPhone and iPad, so there the
-  // report is made into a one-page PDF on the device and handed to the share sheet (Print, Save to Files, Mail); a
-  // browser that cannot share files saves it instead. Everywhere else the browser's own print window opens as before.
+  // (r89, owner's iPhone screenshot) on the Home Screen app a one-page PDF for the share sheet (js/printpage.ts)
   m.querySelector('[data-print]').onclick = async () => {
     if (!homeScreenApp()) { document.body.classList.add('printing-report'); print(); setTimeout(() => document.body.classList.remove('printing-report'), 500); return; }
     const name = `${T('Play report', 'Báo cáo chơi')} ${String(nm(p.name)).replace(/[^\p{L}\p{N} ]+/gu, '')} ${dayKey()}.pdf`;
-    const file = new File([reportPDF({ title: `${T('Play report', 'Báo cáo chơi')}: ${nm(p.name)}`, note: m.querySelector('.note')?.textContent || '',
+    await sharePDF(reportPDF({ title: `${T('Play report', 'Báo cáo chơi')}: ${nm(p.name)}`, note: m.querySelector('.note')?.textContent || '',
       week: week.map(x => ({ label: dayName(x.t), min: x.min })), total: `${T('This week', 'Tuần này')}: ${weekMin} ${T('minutes', 'phút')}, ${weekGames} ${T('games', 'trò chơi')}`,
       gamesTitle: T('Favourite games', 'Trò chơi yêu thích'), games: top.map(([id, n]) => `${GAMES[id].name()}: ${n}× · ${T('level', 'cấp')} ${(p.levels || {})[id] || 1}${(p.wins || {})[id] ? ` · ${(p.wins || {})[id]} ${T('wins', 'lần thắng')}` : ''}`),
-      collectedTitle: T('Collected', 'Đã sưu tầm'), collected: [...m.querySelectorAll('.rep-list li')].map(li => (li.textContent || '').trim()) })], name, { type: 'application/pdf' });
-    try { if (navigator.canShare?.({ files: [file] })) { await navigator.share({ files: [file], title: name }); return; } } catch (e) { if (e instanceof DOMException && e.name === 'AbortError') return; }
-    const a = document.createElement('a'); a.href = URL.createObjectURL(file); a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 60000);
+      collectedTitle: T('Collected', 'Đã sưu tầm'), collected: [...m.querySelectorAll('.rep-list li')].map(li => (li.textContent || '').trim()) }), name);
   };
   return m;
 }
 
-// an app started from the Home Screen (iOS only marks it with navigator.standalone; others with the display mode)
-const homeScreenApp = () => ('standalone' in navigator && navigator.standalone === true) || ['standalone', 'fullscreen'].some(d => matchMedia(`(display-mode: ${d})`).matches) && /iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent) && navigator.maxTouchPoints > 1;
 
 type ReportPage = { title: string; note: string; week: { label: string; min: number }[]; total: string; gamesTitle: string; games: string[]; collectedTitle: string; collected: string[] };
 // the report drawn on an A4 page (the device's own fonts, so Vietnamese prints right), as a one-page PDF holding that picture
@@ -93,21 +88,5 @@ export function reportPDF(r: ReportPage): Uint8Array<ArrayBuffer> {
     g.fillStyle = '#3b2a4f'; g.font = font(30); for (const t of list.length ? list : ['–']) y = wrap('• ' + t, 110, y, W - 220, 40) + 6;
     y += 30;
   }
-  const jpeg = Uint8Array.from(atob(c.toDataURL('image/jpeg', .9).split(',')[1]), ch => ch.charCodeAt(0));
-  return pdfOf(jpeg, W, H);
-}
-// a one-page A4 PDF showing one JPEG picture (the smallest valid file: catalogue, pages, page, picture, drawing)
-export function pdfOf(jpeg: Uint8Array, w: number, h: number): Uint8Array<ArrayBuffer> {
-  const enc = new TextEncoder(), parts: Uint8Array[] = [], offs: number[] = []; let len = 0;
-  const put = (b: Uint8Array | string) => { const u = typeof b === 'string' ? enc.encode(b) : b; parts.push(u); len += u.length; };
-  const draw = `q 595 0 0 842 0 0 cm /Im Do Q`;
-  put('%PDF-1.4\n');
-  const obj = (n: number, body: (string | Uint8Array)[]) => { offs[n] = len; put(`${n} 0 obj\n`); body.forEach(put); put('\nendobj\n'); };
-  obj(1, ['<< /Type /Catalog /Pages 2 0 R >>']);
-  obj(2, ['<< /Type /Pages /Kids [3 0 R] /Count 1 >>']);
-  obj(3, ['<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /XObject << /Im 4 0 R >> >> /Contents 5 0 R >>']);
-  obj(4, [`<< /Type /XObject /Subtype /Image /Width ${w} /Height ${h} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${jpeg.length} >>\nstream\n`, jpeg, '\nendstream']);
-  obj(5, [`<< /Length ${draw.length} >>\nstream\n${draw}\nendstream`]);
-  const xref = len; put(`xref\n0 6\n0000000000 65535 f \n${[1, 2, 3, 4, 5].map(n => String(offs[n]).padStart(10, '0') + ' 00000 n \n').join('')}trailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF\n`);
-  const out = new Uint8Array(len); let o = 0; for (const p of parts) { out.set(p, o); o += p.length; } return out;
+  return pdfOf(jpegOf(c, .9), W, H);
 }
