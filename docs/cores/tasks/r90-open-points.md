@@ -60,20 +60,20 @@ Show each part's plan before building.
 - **Auto play "stuck at" a spot:** #406, #407, #408, #409, #410, #426, #431, #440. Spots: Small to Big meadow
   (204, 15); village (193, -47) and (-2, -83); home (-8, 33). They did not reproduce on r89. If one is a world-position
   problem, put it on the board for World instead of moving anything.
-- **Quests auto play could not finish:** #427 and #361 (hang the lantern at the dinh), #365 (count the stone turtles at
-  Van Mieu with Co Tam), #339 (a folk game with Teo: the Play button covered).
-- **Spoken line not recorded:** #362, #363 (the Vietnamese line of "Lat la sen de tim den long").
+- **Quests auto play could not finish:** #427 and #361 (hang the lantern at the đình), #365 (count the stone turtles at
+  Văn Miếu with Cô Tam), #339 (a folk game with Tèo: the Play button covered).
+- **Spoken line not recorded:** #362, #363 (the Vietnamese line of "Lật lá sen để tìm đèn lồng").
 - **Freeze and slow reports:** #367, #370, #371, #373, #374, #394, #401 to #405, #411 to #414, #473 to #491, #493;
   also #341 and #36 (on hold). r89.1 stops counting a freeze while the page was hidden or put away. The ones left
   show "longest script 0 ms", so look at drawing (GPU) and big pictures, not scripts. Use each report's "last 30
   seconds" (Studio, Analytics, Tester reports) and group them by where they happened.
-- **Offscreen reports:** #376 to #399 (tester panel and HUD labels: Idea, Sound, Gui, Dong, Tu choi, NhaySpace, Ban doM
+- **Offscreen reports:** #376 to #399 (tester panel and HUD labels: Idea, Sound, Gửi, Đóng, Tự chơi, NhảySpace, Bản đồM
   and so on). r89.1 skips the scan while a text box is focused. Check whether the tester panel itself is cut off on
   small screens (#375 says the report screen is too small), and fix the panel or the detector
   (js/tester-detection.ts), whichever is wrong.
 - **The owner's own reports:** #375 (report screen too small), #372 (Retry queued reports does nothing), #369 (the gate
   blocks the view and does not fade), #368 (tram front view blocked by the windscreen), #355 (game restarts or goes
-  white while playing), #354 (riding stops at every bridge), #350 (An lung tung khong dung rules), #337 (already
+  white while playing), #354 (riding stops at every bridge), #350 (Ấn lung tung không đúng rules), #337 (already
   fixed-on-branch: confirm it).
 
 #### C. Things to know (no work unless the owner asks)
