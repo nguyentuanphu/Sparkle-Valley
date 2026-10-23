@@ -1,5 +1,5 @@
 {
-  "source": "d674c86616e3353df23d7c25ee683d047e6b980a",
+  "source": "6f5de0736a6d66eeed50ef0302cf666d7ba36c4f",
   "files": [
     {
       "file": "content/custom.json",
@@ -827,7 +827,7 @@
     },
     {
       "file": "js/howto-player.ts",
-      "hash": "486624dcb858a2c46b50d9197e7ccc1b41b5f734"
+      "hash": "baa363a05d86781eeefd769332ed98697a852b8f"
     },
     {
       "file": "js/howto-registry.ts",
