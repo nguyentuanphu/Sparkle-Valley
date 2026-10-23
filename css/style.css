@@ -13,8 +13,12 @@
 /* Fredoka has no Vietnamese letters, so Vietnamese mode uses the similar rounded Baloo 2 */
 html[lang=vi] { --font: 'Baloo 2', 'Segoe UI', system-ui, -apple-system, sans-serif; }
 * { box-sizing: border-box; }
-html, body { margin: 0; height: 100%; overflow: hidden; background: #0d1d22; color: var(--text); font-family: var(--font); font-weight: 600;
+html, body { margin: 0; height: 100%; overflow: hidden; background: transparent; color: var(--text); font-family: var(--font); font-weight: 600;
   -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; overscroll-behavior: none; touch-action: none; }
+/* (r90, owner 23 Oct AEDT: the white screen before the Welcome screen) until the 3D valley draws, the page shows a still of
+   it (the same as index.html's start screen and the iPhone launch pictures, tests/launch-images.mts) */
+html { background: #bfe3f2 url(../icons/launch/valley-portrait.jpg) center / cover no-repeat; }
+@media (orientation: landscape) { html { background-image: url(../icons/launch/valley-landscape.jpg); } }
 button { font-family: inherit; font-weight: 800; color: inherit; cursor: pointer; touch-action: manipulation; }
 button:focus-visible, input:focus-visible, select:focus-visible, label.btn:focus-within { outline: 3px solid var(--cyan); outline-offset: 3px; }
 [hidden] { display: none !important; }

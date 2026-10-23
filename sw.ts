@@ -21,7 +21,7 @@ const FILES = [
   'js/games/readingmenu.js', 'js/games/reading.js', 'js/content/reading.js', 'js/games/storyhelp.js', 'js/content/storyhelp.js', // (Play reading trial)
   'sounds/animals/cow.mp3', 'sounds/animals/sheep.mp3', 'sounds/animals/pig.mp3', 'sounds/animals/dog.mp3', 'sounds/animals/cat.mp3', // (owner, 17 Oct AEDT: real animal voices)
   'sounds/animals/duck.mp3', 'sounds/animals/hen.mp3', 'sounds/animals/horse.mp3', 'sounds/animals/frog.mp3', 'sounds/animals/owl.mp3',
-  'icons/icon-180.png', 'icons/icon-192.png', 'icons/icon-512.png'
+  'icons/icon-180.png', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/launch/valley-portrait.jpg', 'icons/launch/valley-landscape.jpg'
 ];
 // (Analytics & Infra, 10 Oct, owner: "can't even play offline when there is no internet") the newest copy when the
 // network answers quickly, otherwise the saved copy after a short wait: a connection that never answers (Wi-Fi with no
