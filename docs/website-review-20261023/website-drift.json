@@ -1,5 +1,5 @@
 {
-  "source": "225db7fe11c4233f25c47034132edae67aa91a31",
+  "source": "6f1dbe6085df3d5af0e1ec2599c09fbfeafb08b1",
   "reviewedSource": "225db7fe11c4233f25c47034132edae67aa91a31",
   "coverage": {
     "valley": 17,
@@ -8,7 +8,33 @@
     "family": 15,
     "festivals": 24
   },
-  "changed": [],
+  "changed": [
+    "js/art.js",
+    "js/games/animals2.ts",
+    "js/games/catalog.ts",
+    "js/games/crafts.ts",
+    "js/games/drawing2.ts",
+    "js/games/me2.ts",
+    "js/games/money2.ts",
+    "js/games/nature2.ts",
+    "js/games/outside.ts",
+    "js/games/places2.ts",
+    "js/games/reading2.ts",
+    "js/games/shapes2.ts",
+    "js/games/thinking2.ts",
+    "js/games/vietnam2.ts",
+    "js/games/words2.ts",
+    "js/ui-settings.ts",
+    "voices/areas.json",
+    "voices/manifest-en.json",
+    "voices/manifest-vi.json",
+    "voices/manifest.json",
+    "js/art.ts",
+    "voices/en/f/319bc922-10d43ac6.mp3",
+    "voices/en/m/319bc922-10d43ac6.mp3",
+    "voices/vi/f/819705d233833ddc.mp3",
+    "voices/vi/m/819705d233833ddc.mp3"
+  ],
   "coverageChanged": [],
-  "requiresEditorialReview": false
+  "requiresEditorialReview": true
 }

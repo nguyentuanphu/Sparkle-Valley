@@ -1,5 +1,5 @@
 {
-  "source": "225db7fe11c4233f25c47034132edae67aa91a31",
+  "source": "6f1dbe6085df3d5af0e1ec2599c09fbfeafb08b1",
   "festivals": [
     {
       "id": "tet",
@@ -1713,7 +1713,7 @@
         "Great Barrier Reef Cleaner",
         "Bảo Vệ Rạn San Hô"
       ],
-      "icon": "🐠",
+      "icon": "🪸",
       "origin": null
     },
     {
@@ -1785,7 +1785,7 @@
         "My Day",
         "Một Ngày Của Em"
       ],
-      "icon": "🌄",
+      "icon": "🌅",
       "origin": null
     },
     {
@@ -1812,7 +1812,7 @@
         "Little Chess",
         "Cờ Vua Nhỏ"
       ],
-      "icon": "👑",
+      "icon": "♟️",
       "origin": null
     },
     {
@@ -1821,7 +1821,7 @@
         "Chinese Chess Puzzles",
         "Cờ Tướng Nhỏ"
       ],
-      "icon": "🐘",
+      "icon": "🀄",
       "origin": null
     },
     {
@@ -1830,7 +1830,7 @@
         "Who Sits Where?",
         "Ai Ngồi Đâu?"
       ],
-      "icon": "👪",
+      "icon": "🪑",
       "origin": null
     },
     {
@@ -1839,7 +1839,7 @@
         "Water Pipes",
         "Nối Ống Nước"
       ],
-      "icon": "💧",
+      "icon": "🚰",
       "origin": null
     },
     {
@@ -2181,7 +2181,7 @@
         "Musical Chairs",
         "Ghế Âm Nhạc"
       ],
-      "icon": "🎵",
+      "icon": "🪑",
       "origin": null
     },
     {
@@ -2298,7 +2298,7 @@
         "At the Bank",
         "Ở Ngân Hàng"
       ],
-      "icon": "🏛️",
+      "icon": "🏦",
       "origin": null
     },
     {
@@ -2334,7 +2334,7 @@
         "Word Endings",
         "Vần Cuối"
       ],
-      "icon": "🔤",
+      "icon": "🔚",
       "origin": null
     },
     {
@@ -2361,7 +2361,7 @@
         "Signs in Town",
         "Biển Báo Trong Phố"
       ],
-      "icon": "🚦",
+      "icon": "🚸",
       "origin": null
     },
     {

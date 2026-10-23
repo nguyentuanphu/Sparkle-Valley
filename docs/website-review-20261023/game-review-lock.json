@@ -1,5 +1,5 @@
 {
-  "source": "225db7fe11c4233f25c47034132edae67aa91a31",
+  "source": "6f1dbe6085df3d5af0e1ec2599c09fbfeafb08b1",
   "files": [
     {
       "file": "content/custom.json",
@@ -230,8 +230,8 @@
       "hash": "3c0ce516c93dd09d072d08680449c8a1826dcec2"
     },
     {
-      "file": "js/art.js",
-      "hash": "7bb0cd5085527d37977449b79dd94bec95b44280"
+      "file": "js/art.ts",
+      "hash": "c79884ae4e3e6bc4a71cbd4f4a1681667ac98ac2"
     },
     {
       "file": "js/asia.js",
@@ -691,7 +691,7 @@
     },
     {
       "file": "js/games/animals2.ts",
-      "hash": "b23f7a6db21a918c2190d11d0b66fc50c615f871"
+      "hash": "852d7e6ad29173d85e64605d2ac48f7987a65762"
     },
     {
       "file": "js/games/asia.ts",
@@ -707,7 +707,7 @@
     },
     {
       "file": "js/games/catalog.ts",
-      "hash": "0e124cf3990b42d54531213e20ef347377ba8ffb"
+      "hash": "654200a416860bab6e33484200cf102cbbd63941"
     },
     {
       "file": "js/games/cities.ts",
@@ -715,7 +715,7 @@
     },
     {
       "file": "js/games/crafts.ts",
-      "hash": "0c193db90a344dc428959d58a5a0ae8278497c05"
+      "hash": "7d7d7a13be2de005a7ddf49ed4098df8a73f70a6"
     },
     {
       "file": "js/games/drawing.ts",
@@ -723,7 +723,7 @@
     },
     {
       "file": "js/games/drawing2.ts",
-      "hash": "b10967fae7c724800c311e904ed9cd9c562e0de8"
+      "hash": "f00c4e673d9ec1b0cd7c1ea3e822a54c86a7b571"
     },
     {
       "file": "js/games/drawshape.ts",
@@ -759,7 +759,7 @@
     },
     {
       "file": "js/games/me2.ts",
-      "hash": "8a5a40e19f8695e22ff3a34bbb59f50665b741e6"
+      "hash": "d6b7973794aabc0ed7bb41de4d13f1e120acfc97"
     },
     {
       "file": "js/games/money.ts",
@@ -767,7 +767,7 @@
     },
     {
       "file": "js/games/money2.ts",
-      "hash": "6bf0dafe94c52aa627ecfe3b03225d0598dd3619"
+      "hash": "5a54a5faafa1c70ee5a38c0875faff8d94dd11ae"
     },
     {
       "file": "js/games/moneylogic.ts",
@@ -787,7 +787,7 @@
     },
     {
       "file": "js/games/nature2.ts",
-      "hash": "7b3e5f5a5e40546bcf8ec4f37b0acfdf455a690f"
+      "hash": "033c86f10d65db7243558a27454f4a76e9b053af"
     },
     {
       "file": "js/games/numbers2.ts",
@@ -795,11 +795,11 @@
     },
     {
       "file": "js/games/outside.ts",
-      "hash": "3e461dfba6a3504672941f91f17fe227a35d4e46"
+      "hash": "9b2652c4f543fe2ff7f0660ad19478127e713c3f"
     },
     {
       "file": "js/games/places2.ts",
-      "hash": "b230e0b351af2881d70eca6e44d014beb59db6a9"
+      "hash": "269e535499d573a7a53ca4e298484781900e4271"
     },
     {
       "file": "js/games/playwatch.ts",
@@ -811,7 +811,7 @@
     },
     {
       "file": "js/games/reading2.ts",
-      "hash": "fd221ce6a3819c2cbb01f879d20846ed241a8719"
+      "hash": "697e52f47c2762876efdddfc30568222fa6589f0"
     },
     {
       "file": "js/games/readingmenu.ts",
@@ -823,7 +823,7 @@
     },
     {
       "file": "js/games/shapes2.ts",
-      "hash": "b7d4460931cda46f36e8a3144ee239dd01180eb9"
+      "hash": "19fbf1e3e8594d88b2a4e2a5dfb9e40c0a711ba3"
     },
     {
       "file": "js/games/storyhelp.ts",
@@ -843,7 +843,7 @@
     },
     {
       "file": "js/games/thinking2.ts",
-      "hash": "42a55b3e118e92198686966dc95547744b8988a7"
+      "hash": "da6e28f03a6d1827834d93a01070c29cc49bc47d"
     },
     {
       "file": "js/games/tienlen.ts",
@@ -859,11 +859,11 @@
     },
     {
       "file": "js/games/vietnam2.ts",
-      "hash": "6742a0cdda38a9ea394cb2844a81ce8d69d3b2fe"
+      "hash": "c203a3ee7beb028ff11607b7c14ac67f4b622018"
     },
     {
       "file": "js/games/words2.ts",
-      "hash": "b38c28bafbeb15948d0d3b6664af9ed95e363830"
+      "hash": "b135d953f633374fb665db5c3c5ba550c259b952"
     },
     {
       "file": "js/gather.js",
@@ -1251,7 +1251,7 @@
     },
     {
       "file": "js/ui-settings.ts",
-      "hash": "b19810255e1a2f60e521692feeddb7aaf9492dca"
+      "hash": "852942ad5d6be764ed70a7de12a7463ce98a9732"
     },
     {
       "file": "js/ui.ts",
@@ -1427,7 +1427,7 @@
     },
     {
       "file": "voices/areas.json",
-      "hash": "efaab9a2334a58de795a152a379c4488ae3a3fd4"
+      "hash": "3968cc6d489b07b8d869662bb9a5a6620a462e64"
     },
     {
       "file": "voices/en/f/00039191206c6c56.mp3",
@@ -6664,6 +6664,10 @@
     {
       "file": "voices/en/f/319b4b84043069d3.mp3",
       "hash": "7a94ba23fa4ef54fd99920f3c955a0e2be41cf9f"
+    },
+    {
+      "file": "voices/en/f/319bc922-10d43ac6.mp3",
+      "hash": "f491f603c06a778c5ddf45c02ebb1dd3ae06fcda"
     },
     {
       "file": "voices/en/f/31a0f65e1ae0a147.mp3",
@@ -33266,6 +33270,10 @@
       "hash": "f86bfb92bed36a29759107a45bab54755d001d7c"
     },
     {
+      "file": "voices/en/m/319bc922-10d43ac6.mp3",
+      "hash": "2123df5899b7744a70ef5d8e33b5fa713c1d1a9d"
+    },
+    {
       "file": "voices/en/m/31a0f65e1ae0a147.mp3",
       "hash": "d0b3266e0896c3d44bc28c282430b9eb7e514fda"
     },
@@ -54719,7 +54727,7 @@
     },
     {
       "file": "voices/manifest-en.json",
-      "hash": "ea5040e42773f94409c0175dba47b3d8124627ae"
+      "hash": "11647ca68646cc4af0390ce6b180b4524fc70e77"
     },
     {
       "file": "voices/manifest-hi.json",
@@ -54727,7 +54735,7 @@
     },
     {
       "file": "voices/manifest-vi.json",
-      "hash": "2119971998ebe9210079d91d096c25edceda062d"
+      "hash": "474ac879d0d8848b7191ca2b3e3c57677f0a6aeb"
     },
     {
       "file": "voices/manifest-zh.json",
@@ -54735,7 +54743,7 @@
     },
     {
       "file": "voices/manifest.json",
-      "hash": "1f7969dafb50579543e36cff61bd28ae2e0a8fb6"
+      "hash": "f4d47bb3fa4910edb22457615c45b500adbb4e78"
     },
     {
       "file": "voices/vi/f/000df9031a712f99.mp3",
@@ -67816,6 +67824,10 @@
     {
       "file": "voices/vi/f/819438e3-501bb87b.mp3",
       "hash": "ee003c93496c06391b7b140d1ffdc90d7e15c043"
+    },
+    {
+      "file": "voices/vi/f/819705d233833ddc.mp3",
+      "hash": "2dfadcf76cf546b32cd4ce997106437a1b9c305e"
     },
     {
       "file": "voices/vi/f/81a37ff4524e96e0.mp3",
@@ -94104,6 +94116,10 @@
     {
       "file": "voices/vi/m/819438e3-501bb87b.mp3",
       "hash": "fc037c35860bd880f37c680d607a23b4b69e0a18"
+    },
+    {
+      "file": "voices/vi/m/819705d233833ddc.mp3",
+      "hash": "2d7adbd2bed9c2857a06a9f9c720aaf6e496b62a"
     },
     {
       "file": "voices/vi/m/81a37ff4524e96e0.mp3",
