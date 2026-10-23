@@ -79,7 +79,7 @@ function fpAdd(F) { FOOTPRINTS.push(F); for (let i = Math.floor((F.x0 - F.pad) /
 // raft's line down the river (js/ferry.js)
 export const RIVERS = MAP.WATERS.filter(w => w.kind === 'river').map(w => ({ id: w.id, w: w.w || 1, tone: w.tone || null, pts: w.pts.map(p => p.slice()) }));   // (round T2: w = width against the main river's, tone = a tinted surface)
 // (round T2) small round lakes and ponds (Hồ Gươm in Hà Nội, the billabong by Uluru): { id, x, z, r }
-export const PONDS = MAP.WATERS.filter(w => w.kind === 'pond').map(w => { const [x, z] = w.at || MAP.anchorOf(w.place).map((v, i) => v + ((w.off || [0, 0])[i])); return { id: w.id, x, z, r: w.r, islet: w.islet || 0 }; });
+export const PONDS = MAP.WATERS.filter(w => w.kind === 'pond').map(w => { const [x, z] = w.at || MAP.anchorOf(w.place).map((v, i) => v + ((w.off || [0, 0])[i])); return { id: w.id, x, z, r: w.r, islet: w.islet || 0, depth: w.depth || 2.4 }; });
 // how far (x, z) is from the deep middle of the nearest pond (0 inside it), and which pond
 export function pondDist(x, z) { let best = 1e9; PD_NEAR.id = null; for (const P of PONDS) { const dc = dist2(x, z, P.x, P.z); if (dc < P.islet + .8) continue; const d = Math.max(0, dc - P.r * .62); if (d < best) { best = d; PD_NEAR.id = P.id; } } return best; }
 const PD_NEAR = { id: null };
@@ -277,7 +277,7 @@ export function heightAt(x, z) {
   const dr = riverDist(x, z);
   h = lerp(h, -2.6 - mtn * 2, 1 - smooth(3.5, 11, dr));
   // (round T2) ponds: a round hollow with a gentle shore (after the places' flat ground, so a pond by a city stays wet)
-  let dpd = 1e9; for (const P of PONDS) { if (Math.abs(x - P.x) > P.r + 8 || Math.abs(z - P.z) > P.r + 8) continue; const d = dist2(x, z, P.x, P.z); if (d > P.r + 8) continue; dpd = Math.min(dpd, d - P.r); h = lerp(h, Math.min(h, 1), 1 - smooth(P.r, P.r + 6, d)); h = lerp(h, -2.4, 1 - smooth(P.r * .55, P.r, d)); if (P.islet) h = lerp(h, WATER + .5, 1 - smooth(P.islet, P.islet + 1.6, d)); }
+  let dpd = 1e9; for (const P of PONDS) { if (Math.abs(x - P.x) > P.r + 8 || Math.abs(z - P.z) > P.r + 8) continue; const d = dist2(x, z, P.x, P.z); if (d > P.r + 8) continue; dpd = Math.min(dpd, d - P.r); h = lerp(h, Math.min(h, 1), 1 - smooth(P.r, P.r + 6, d)); h = lerp(h, -P.depth, 1 - smooth(P.r * .55, P.r, d)); /* (r89) a pond's own depth: Hồ Gươm is shallow enough to wade */ if (P.islet) h = lerp(h, WATER + .5, 1 - smooth(P.islet, P.islet + 1.6, d)); }
   // Raised banks either side of each bridge.
   if (dr > 7) for (const B of BRIDGES) { const K = B.bank || (B.bank = bridgeBox(B, B.a0 - 10, B.a1 + (B.bankOut || 16), -8, 8)); if (x <= K.x0 || x >= K.x1 || z <= K.z0 || z >= K.z1) continue; // (round T2: a quick box test first, 13 bridges now)
     if (levelAt(x, z) != null) continue;   // (Round U: a bank never reaches inside a village or city: places stay flat to their gates)
@@ -1080,9 +1080,12 @@ export function paintWater(size = 256) {
   const col = new Float32Array(size * size * 3);
   for (let j = 0; j < size; j++) for (let i = 0; i < size; i++) {
     const wx = -HALF + (i + .5) * step, wz = -HALF + (j + .5) * step, h = heightAt(wx, wz), deep = Math.max(0, WATER - h);
-    const cc = cols[which(wx, wz)] || base, dk = 1 - clamp(deep / 7, 0, 1) * .3, k = j * size + i;
+    const w = which(wx, wz), cc = cols[w] || base, dk = 1 - clamp(deep / 7, 0, 1) * .3, k = j * size + i;
     col[k * 3] = cc[0] * dk; col[k * 3 + 1] = cc[1] * dk; col[k * 3 + 2] = cc[2] * dk;
-    d[k * 4 + 3] = (.2 + .8 * (h >= WATER ? 1 : 1 - smooth(0, 1.5, deep))) * 255;   // alpha: how near the shore (the foam line)
+    // (r89, owner: "the white thing over the bridge") a shallow pond (Ho Guom, .8 m) would be foam all over with a fixed
+    // 1.5 m band, so a pond's band follows its own depth: only its edge is white
+    const P = PONDS.find(q => q.id === w), band = P ? Math.min(1.5, P.depth * .3) : 1.5;
+    d[k * 4 + 3] = (.2 + .8 * (h >= WATER ? 1 : 1 - smooth(0, band, deep))) * 255;   // alpha: how near the shore (the foam line)
   }
   // soften where two waters meet (a river into the sea, two channels joining): a small box blur of the colours, twice
   const tmp = new Float32Array(col.length), R = 2;

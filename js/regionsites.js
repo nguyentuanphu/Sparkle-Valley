@@ -75,14 +75,18 @@ export function createRegionSites(G) {
     const rot = id === 'thehuc' ? Math.PI / 2 : Math.atan2(c.x - x, c.z - z); // facing the city (the Thê Húc bridge reaches out across the lake)
     if (!bridge) { const m = new THREE.Mesh(merge(MODELS[model]()), mat); m.position.set(x, y - .05, z); m.rotation.y = rot; m.castShadow = m.receiveShadow = true; scene.add(m); outline(m, .025, '#4a3a3f');
           if (id === 'thehuc') {
+            m.userData.walk = true; // (r89) a walkway: the solid map leaves it out (a plank's tilted edge stood a little above the deck and counted as a wall); the temple keeps its collider
             world.colliders.push({ x: x + Math.cos(rot) * 8.2, z: z - Math.sin(rot) * 8.2, r: 1.9 }); // (only its temple, on the shore: the bridge reaches out over the water)
-            // walkable deck: 11 planks from local x = -7 to 7, arch y = .5 + sin(t*PI)*1.4, rotated by rot (PI/2)
-            const WATER = world.WATER;
-            for (let i = 0; i <= 10; i++) {
-              const t = i / 10, lx = -7 + t * 14, ly = .5 + Math.sin(t * Math.PI) * 1.4;
-              const wx = x + Math.cos(rot) * lx - Math.sin(rot) * 0, wz = z + Math.sin(rot) * lx + Math.cos(rot) * 0;
-              const wy = WATER + .05 + ly; // bridge base y + arch height
-              world.platforms.push({ x0: wx - .75, x1: wx + .75, z0: wz - 1, z1: wz + 1, y: wy });
+            // walkable deck: 11 planks from local x = -7 to 7, arch y = .5 + sin(t*PI)*1.4, turned with the model.
+            // (r89, owner's screenshot: "stop me from accessing it") the deck's height used world.WATER, which does not exist,
+            // so every plank's height was NaN and the child stopped at the first one; and a quarter turn swaps a plank's
+            // length and width. Three.js turns local (lx, 0) to (x + lx cos, z - lx sin).
+            const c = Math.abs(Math.cos(rot)), sn = Math.abs(Math.sin(rot));
+            // (the planks are 1.4 m apart and up to .43 m higher than the last: walked in thin slices, so each step is small)
+            for (let i = 0; i <= 28; i++) {
+              const t = i / 28, lx = -7 + t * 14, ly = .5 + Math.sin(t * Math.PI) * 1.4, hl = 14 / 28 / 2 + .05;
+              const wx = x + Math.cos(rot) * lx, wz = z - Math.sin(rot) * lx, ex = c * hl + sn * 1, ez = sn * hl + c * 1;
+              world.platforms.push({ x0: wx - ex, x1: wx + ex, z0: wz - ez, z1: wz + ez, y: y - .05 + ly + .1 }); // (the deck's top there)
             }
           } else world.colliders.push({ x, z, r: 6 }); }
     // the ℹ️ sign stands on the side facing the city, outside the model
