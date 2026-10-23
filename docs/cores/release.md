@@ -39,6 +39,7 @@ round); the full suite green before a report; times in AEST; no keys or personal
 All of them once per release (`node suite.mjs`), plus `node suite.mjs --changed` after every merge (it always includes `types unit arch rules`).
 
 ## Owner's decisions
+- 23 October 2026 AEDT, about 5:20 pm (pop-up): **"Yes, deploy" for r89**; pull request #492 merged into main as `47f63ce9`.
 - 23 October 2026 AEDT (pop-up): **certificate card gets Print or save as PDF in r89** (it only saved a picture). The website entry stays in the in-game Settings (Quick Settings), not in the protected Grown-ups settings.
 - 23 October 2026 AEDT (pop-up): **version r89** confirmed for this release. Same day, the owner's iPhone screenshots: Print or save as PDF did nothing (the Home Screen app now makes a one-page PDF and shares or downloads it), the white shapes over Thê Húc bridge stopped the child (the deck is walkable, the foam only marks a pond's edge) and Hồ Gươm was small and too deep (now wider and .8 m, wading without swimming).
 - 23 October 2026 AEDT (pop-ups): **one release for everything**: r89 waits for the website chat's branch (it pushes and the owner says so), then Release merges it, runs the full suite, fixes what is red and asks one "yes, deploy". **Ten drawing games: go** (brief `tasks/drawing-games-r89.md`), finished lanterns and cards kept in the child's Album on the device. **iPhone white screen**: launch pictures plus the report robot's 504 fix, so the device's own reports show the cause.
