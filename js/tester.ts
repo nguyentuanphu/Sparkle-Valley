@@ -13,7 +13,7 @@
 // before "I accept", and "Stop being a tester" (Settings) stops everything at once.
 import { T, nm } from './i18n.js';
 import { settings, profiles, farm } from './state.js';
-import { BUILD } from './build.js';
+import { BUILD, SHOWN } from './build.js';
 import { el, esc } from './util.js';
 import { pic } from './art.js';
 import { modal, holdButton } from './popups.js';
@@ -322,7 +322,7 @@ function addUI() {
   // (each player's HUD gets the mark under its clock and, at the ladybird level, the ladybird with the zoom buttons; also
   // the HUDs made after this: the game starts after the title screen)
   const ensure = () => (G.huds || []).forEach((hud, i) => {
-    const ck = hud.q && hud.q('.zoom'); if (ck && !ck.querySelector('.testermark')) { const mk = el('span', 'testermark', `${pic('🐞')}<span>${T('Tester', 'Người thử')} · ${BUILD}</span>`); mk.setAttribute('aria-hidden', 'true'); ck.appendChild(mk); offs.push(() => mk.remove()); }
+    const ck = hud.q && hud.q('.zoom'); if (ck && !ck.querySelector('.testermark')) { const mk = el('span', 'testermark', `${pic('🐞')}<span>${T('Tester', 'Người thử')} · ${SHOWN}</span>`); mk.setAttribute('aria-hidden', 'true'); ck.appendChild(mk); offs.push(() => mk.remove()); }
     if (level !== 'ladybird') return;
     const z = hud.q && hud.q('.zoomer'); if (!z || z.querySelector('.z-lb')) return;
     const b = el('button', 'z-lb', `${pic('🐞')}<i class="lb-n" hidden></i><i class="lb-ok" hidden>✓</i><i class="lb-new" hidden></i><kbd class="kb">L</kbd>`); b.setAttribute('aria-label', T('Report a problem (hold: quick report)', 'Báo lỗi (giữ: báo nhanh)'));
@@ -525,7 +525,7 @@ export function settingsRows(box, redraw) {
   // reports as three chips, three big tiles, and "Stop being a tester" held down on its own at the bottom
   const tile = (k, ic, en, vi, sub = '') => `<button class="tst-tile" data-t="${k}"><span class="tst-ic">${pic(ic)}</span><b>${T(en, vi)}</b>${sub ? `<small>${sub}</small>` : ''}</button>`;
   box.innerHTML = `<div class="qs-sec qs-tester">${on ? `
-    <div class="tst-head"><span class="tst-lb">${pic('🐞')}</span><div><b>${T('You are a tester', 'Con là người thử')}</b><small>${esc(BUILD)}${me() ? ' · ' + esc(easyName(me(), settings.lang)) : ''}</small></div></div>
+    <div class="tst-head"><span class="tst-lb">${pic('🐞')}</span><div><b>${T('You are a tester', 'Con là người thử')}</b><small>${esc(SHOWN)}${me() ? ' · ' + esc(easyName(me(), settings.lang)) : ''}</small></div></div>
     <div class="tst-stats"><span class="tst-chip"><b>${st.reports || 0}</b>${T('sent', 'đã gửi')}</span><span class="tst-chip ok"><b>${st.helped || 0}</b>${T('helped fix', 'giúp sửa')}</span>${q ? `<span class="tst-chip wait"><b>${q}</b>${T('waiting to send', 'chờ gửi')}</span>` : ''}</div>
     <div class="tst-tiles">${tile('mine', '📋', 'My reports', 'Báo cáo của tôi')}${tile('ap', '🤖', 'Auto play', 'Tự chơi', T('Plays the game by itself to find problems', 'Tự chơi game để tìm lỗi'))}${G.testerRewards ? tile('corner', '🏆', "Tester's Corner", 'Góc người thử', T('Badges and stickers', 'Huy hiệu và nhãn dán')) : ''}</div>
     <button class="btn tst-stop hold" data-hold="stop"><span class="ring"></span>${T('Hold to stop being a tester', 'Giữ để thôi làm người thử')}</button>

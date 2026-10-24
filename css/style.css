@@ -664,6 +664,12 @@ button { color: var(--text); }
   background: linear-gradient(160deg, color-mix(in srgb, var(--hc) 75%, #fff), var(--hc)); box-shadow: 0 5px 0 color-mix(in srgb, var(--hc) 70%, #000), 0 10px 20px color-mix(in srgb, var(--hc) 35%, transparent); }
 .hplay:active { transform: translateY(4px); box-shadow: 0 1px 0 color-mix(in srgb, var(--hc) 70%, #000); }
 .hplay .hi { font-size: 52px; line-height: 1.1; filter: drop-shadow(0 3px 2px rgba(0, 0, 0, .2)); }
+/* (r90, owner 24 Oct AEDT) the games still to unlock fold into one padlock tile, the ones held in Studio into "Coming soon" */
+.hcard.locked .hplay { opacity: .6; }
+.hcard.hfold .hplay, .hcard.hsoon .hplay { outline: 3px dashed rgba(255, 255, 255, .85); outline-offset: -8px; }
+.hcard.hsoon .hplay { color: #3b2a4f; } .hcard.hsoon .hplay b, .hcard.hfold .hplay b { text-shadow: none; }
+.talecard.locked { opacity: .6; }
+.talecard.talefold, .talecard.talesoon { background: linear-gradient(160deg, #f1ebff, #ddd0ff); box-shadow: 0 4px 0 #a98ee8; outline: 3px dashed #fff; outline-offset: -7px; }
 .hplay b { font-size: 15px; text-shadow: 0 2px 0 rgba(0, 0, 0, .15); line-height: 1.15; text-align: center; } .hplay small { font-size: 11px; letter-spacing: 1px; }
 .hgo { position: absolute; top: -6px; right: -6px; width: 42px; height: 42px; border-radius: 50%; border: 0; background: #fff; box-shadow: var(--shadow); font-size: 20px; }
 

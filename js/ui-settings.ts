@@ -8,7 +8,8 @@ import { el } from './util.js';
 import { events } from './core/events.js';
 
 import { T, applyLang, nm, NPC_NAMES, defaultName } from './i18n.js';
-import { settings, saveSettings, profiles, exportBackup, importBackup, backupAge, farm, resetFarm, saveFarm, MAX_KIDS } from './state.js';
+import { settings, saveSettings, profiles, saveProfiles, normalizeProfile, exportBackup, importBackup, backupAge, farm, resetFarm, saveFarm, MAX_KIDS, getSnapshot } from './state.js';
+import { createSaveCopy, readSaveCopy } from './content/savecopy.js';
 import { say, voicePack, voiceDiag, allowMobilePack, voiceMisses, clearVoiceMisses, voicesFor, onVoices, hasVietnamese, FAMILY_PHRASES, previewPackVoice } from './voice.js';
 
 import { SFX, Music } from './audio.js';
@@ -24,7 +25,7 @@ import { openReport } from './report.js';
 import { extrasHTML, bindExtras, privacyHTML, netListHTML } from './extras.js';
 
 import { installButton } from './install.js';
-import { BUILD } from './build.js';
+import { SHOWN } from './build.js';
 import { easyName } from './content/devname.js';
 import { clipCountFor, setSpeaker, sayDevice } from './voice.js';
 
@@ -146,7 +147,7 @@ export function openGrownups(after: (() => void) | undefined = undefined) {
     const vEn = voicesFor('en'), vVi = voicesFor('vi');
     card.innerHTML = `
       <button class="x" aria-label="${T('Close', 'Đóng')}">✕</button>
-      <h2>${T('Grown-ups', 'Phụ huynh')} <small class="buildtag">${T('Build', 'Bản')} ${BUILD}</small></h2>
+      <h2>${T('Grown-ups', 'Phụ huynh')} <small class="buildtag">${T('Version', 'Phiên bản')} ${SHOWN}</small></h2>
       <div class="grownups-body"><div class="g-install"></div>
       ${privacyHTML()}
       ${familyTrialOn() ? familyDevicesHTML() : ''}
@@ -256,6 +257,9 @@ export function openGrownups(after: (() => void) | undefined = undefined) {
       <p class="note">${T('Progress saves automatically on this device. To keep a copy online, tap Save backup and choose Google Drive, or “Save to Files” → iCloud Drive on iPhone and iPad. To bring it back (or onto a new device), tap Open backup and pick the file from Drive or iCloud.', 'Tiến trình tự động lưu trên máy này. Để giữ một bản trên mạng, bấm Lưu bản sao rồi chọn Google Drive, hoặc “Lưu vào Tệp” → iCloud Drive trên iPhone và iPad. Để lấy lại (hoặc chuyển sang máy mới), bấm Mở bản sao và chọn tệp trong Drive hoặc iCloud.')}</p>
       <p class="note backup-when${backupAge() > 7 ? ' old' : ''}">${settings.lastBackup ? T('Last backup: ', 'Lần sao lưu gần nhất: ') + new Date(settings.lastBackup).toLocaleDateString(settings.lang === 'vi' ? 'vi-VN' : 'en-AU') + (backupAge() > 7 ? T(' (over a week ago)', ' (hơn một tuần trước)') : '') : T('No backup saved yet.', 'Chưa có bản sao lưu nào.')}</p>
       <div class="actions"><button class="btn" id="gExp">☁️ ${T('Save backup', 'Lưu bản sao')}</button><label class="btn" for="gImp">📂 ${T('Open backup', 'Mở bản sao')}</label><input type="file" id="gImp" accept=".txt,.json,text/plain,application/json" class="vh"></div>
+      <h3>💾 ${T('Save a copy (Files / iCloud Drive)', 'Lưu một bản (Tệp / iCloud Drive)')}</h3>
+      <p class="note">${T('Save a copy of your children’s progress to iCloud Drive, Google Drive or Files. Loading a copy checks the file and confirms with you before replacing anything.', 'Lưu một bản tiến trình vào iCloud Drive, Google Drive hoặc Tệp. Mở bản sao sẽ kiểm tra tệp và hỏi bạn trước khi thay thế.')}</p>
+      <div class="actions"><button class="btn" id="gSaveCopy">📤 ${T('Save a copy', 'Lưu một bản')}</button><label class="btn" for="gLoadCopy">📥 ${T('Load a copy', 'Mở bản đã lưu')}</label><input type="file" id="gLoadCopy" accept=".svsave,.json,application/json" class="vh"></div>
       <p class="note">${T('The file stays in your own Drive or iCloud: Sparkle Valley has no server and never sees it.', 'Tệp nằm trong Drive hoặc iCloud của bạn: Thung Lũng Lấp Lánh không có máy chủ và không bao giờ xem tệp này.')}</p>
       
       </div></details>
@@ -347,6 +351,58 @@ export function openGrownups(after: (() => void) | undefined = undefined) {
     if (window.__sv && window.__sv.parents) window.__sv.parents.bindGrownups(card, () => { const y = m.scrollTop; draw(); m.scrollTop = y; }, toast); // (round S)
     card.querySelector('#gFarm').onclick = () => { if (confirm(T('Start the farm over? Players and stickers are kept.', 'Làm lại nông trại? Người chơi và hình dán được giữ lại.'))) { resetFarm(); window.__sv && window.__sv.farm && (window.__sv.farm.syncAnimals(), window.__sv.farm.syncPets()); toast(T('A fresh new farm!', 'Nông trại mới tinh!')); } };
     card.querySelector('#gImp').onchange = async e => { const f = e.target.files[0]; if (!f) return; try { await importBackup(f); toast(T('Backup loaded!', 'Đã mở bản sao!')); draw(); after && after(); } catch (err) { toast(T('That file is not a Sparkle Valley backup.', 'Tệp này không phải bản sao của Thung Lũng Lấp Lánh.')); } };
+    card.querySelector('#gSaveCopy').onclick = async () => {
+      const text = JSON.stringify(createSaveCopy(getSnapshot()), null, 2);
+      const name = 'sparkle-valley-' + new Date().toISOString().slice(0, 10) + '.svsave';
+      const file = new File([text], name, { type: 'application/json' });
+      try {
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+          await navigator.share({ files: [file], title: name });
+          toast(T('Copy saved!', 'Đã lưu bản sao!'));
+          return;
+        }
+      } catch (e) {
+        if (e && e.name === 'AbortError') return;
+      }
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(new Blob([text], { type: 'application/json' }));
+      a.download = name;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+      toast(T('Copy downloaded!', 'Đã tải bản sao!'));
+    };
+    card.querySelector('#gLoadCopy').onchange = async e => {
+      const f = e.target.files && e.target.files[0];
+      if (!f) return;
+      try {
+        const text = await f.text();
+        const copy = readSaveCopy(text);
+        const dateStr = new Date(copy.saved).toLocaleDateString(settings.lang === 'vi' ? 'vi-VN' : 'en-AU');
+        const names = copy.profiles.map(p => nm(p.name || '')).filter(Boolean).join(', ') || T('Unnamed players', 'Người chơi chưa đặt tên');
+        const confirmMsg = T(
+          `Load save copy from ${dateStr} for: ${names}?\nThis will replace the progress on this device.`,
+          `Mở bản sao lưu ngày ${dateStr} của: ${names}?\nThao tác này sẽ thay thế tiến trình hiện tại trên máy này.`
+        );
+        if (confirm(confirmMsg)) {
+          profiles.splice(0, profiles.length, ...copy.profiles.map(normalizeProfile));
+          Object.keys(farm).forEach(key => delete farm[key]);
+          Object.assign(farm, copy.farm);
+          Object.assign(settings, copy.settings);
+          if (copy.device) localStorage.setItem('sv2_playerid', copy.device);
+          else localStorage.removeItem('sv2_playerid');
+          saveProfiles(true);
+          saveSettings();
+          saveFarm();
+          toast(T('Copy loaded successfully!', 'Đã mở bản sao thành công!'));
+          draw();
+          after && after();
+        }
+      } catch (err) {
+        alert(T('Could not read this file. It is not a valid Sparkle Valley save copy.', 'Không thể đọc tệp này. Tệp không phải bản sao lưu hợp lệ của Thung Lũng Lấp Lánh.'));
+      }
+    };
   };
   draw();
   const offVoices = onVoices(() => { if (document.body.contains(m)) draw(); });
@@ -428,3 +484,5 @@ export function openRecorder(after) {
 
 // ---------- Games hub ----------
 // the traditional games Lotus Village's hội làng runs on its time table (js/folkshow.js); unchanged in round R
+
+

@@ -28,12 +28,15 @@ export async function open(browser, { w = 1180, h = 820, lang = 'en', mode = 'so
   // (r89.1 launch schedule, owner 23 Oct AEDT) content/custom.json "releases" gives some features a start date in the
   // coming weeks, hidden until then from a child who never used them. The checks play as such children, so each check
   // plays as after every batch has started: a rule whose start is still to come is left out, and the feature is on by its
-  // own default and switched by CUSTOM.features as before the schedule. The rollout check, which checks the schedule
-  // itself, passes schedule: true and gets the file as shipped
+  // own default and switched by CUSTOM.features as before the schedule; the second set of games and stories is switched
+  // on. The rollout check, which checks the schedule itself, passes schedule: true and gets the file as shipped
   if (!schedule) await ctx.route('**/content/custom.json', async r => {
     const res = await r.fetch(); let j; try { j = await res.json(); } catch (e) { return r.fulfill({ response: res }); }
     const today = new Date().toISOString().slice(0, 10);
     for (const [id, rule] of Object.entries(j.releases || {})) if (rule && typeof rule.start === 'string' && rule.start > today) delete j.releases[id];
+    // (r90, owner 24 Oct AEDT) the second set of games and stories is held in Studio until the owner releases it; the
+    // checks play as after that release (the hold itself is checked by "secondset")
+    j.releases = { ...(j.releases || {}), newGames: { on: true }, newStories: { on: true } };
     await r.fulfill({ response: res, json: j });
   });
   if (route) await route(ctx); // (marketing films) change what the page loads

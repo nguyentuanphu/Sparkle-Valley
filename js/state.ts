@@ -154,7 +154,7 @@ export function normalizeProfile(p: Record<string, any>): Profile {
   const d = {
     hearts: 3, staminaMax: 1, orbs: 0, leafies: {}, shrines: {}, towers: {}, discovered: {},
     inv: { apple: 3, rice: 2 }, owned: { hats: ['none'], gliders: [0] },
-    stickers: [], levels: {}, wins: {}, quests: {}, glider: false, album: [],
+    stickers: [], levels: {}, wins: {}, quests: {}, tales: {}, taleReads: {}, glider: false, album: [],
     pos: null, dishes: {}, stats: { games: 0, steps: 0 }
   };
   const o = Object.assign({} as Profile, d, p); // (filled in by the defaults and the save just below)
@@ -163,7 +163,7 @@ export function normalizeProfile(p: Record<string, any>): Profile {
   // older saves stored a fixed outfit; turn it into style + colour
   const L = o.look = Object.assign({ style: 'shirt', color: '#3b6fe0', hat: 'none', back: 'none', hair: HAIR[0], hairStyle: 'short', skin: SKIN[1], glider: 0 }, p.look || {});
   if (L.outfit) { L.style = { tunic: 'tunic', aodai: 'aodai', dress: 'dress', overalls: 'overalls', hoodie: 'hoodie', sunny: 'dress' }[L.outfit] || 'shirt'; L.color = { tunic: '#3d7fd6', aodai: '#e8435a', dress: '#ff7eb8', overalls: '#5bbf6a', hoodie: '#9a6bff', sunny: '#ffb52e' }[L.outfit] || L.color; delete L.outfit; }
-  for (const k of ['leafies', 'shrines', 'towers', 'discovered', 'inv', 'levels', 'wins', 'quests', 'dishes', 'stats']) o[k] = Object.assign({}, d[k], p[k] || {});
+  for (const k of ['leafies', 'shrines', 'towers', 'discovered', 'inv', 'levels', 'wins', 'quests', 'dishes', 'stats', 'tales', 'taleReads']) o[k] = Object.assign({}, d[k], p[k] || {});
   o.owned = Object.assign({ hats: ['none'], gliders: [0] }, p.owned || {});
   if (!o.owned.hats.includes(o.look.hat)) o.owned.hats.push(o.look.hat);
   // (r79, owner 16 Oct: "boy wears boys clothes") clothes of the other set come off and are wrapped as gift boxes; things
@@ -171,6 +171,10 @@ export function normalizeProfile(p: Record<string, any>): Profile {
   sortClothes(o);
   if (!Array.isArray(o.stickers)) o.stickers = [];
   if (!Array.isArray(o.album)) o.album = [];
+    // (r90, owner 23 Oct) migration: treat existing profile.tales[id] === true as 1 read
+  for (const [tid, val] of Object.entries(o.tales)) {
+    if (val && (o.taleReads[tid] == null || o.taleReads[tid] === 0)) o.taleReads[tid] = 1;
+  }
   o.learn = normalizeLearn(p.learn); // (r79 learning, chat 2) what each child missed most, games that showed the hand
   return o;
 }
@@ -262,3 +266,5 @@ export function normalizeLearn(v) {
   const seen = {}; for (const [g, n] of Object.entries(obj(o.seen))) if (n) seen[g] = 1;
   return { v: 1, miss, seen };
 }
+
+export const getSnapshot = () => snapshot();

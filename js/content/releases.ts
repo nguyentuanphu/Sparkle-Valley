@@ -7,6 +7,12 @@ import { FESTCAL } from './festcal.js';
 export type Release = { id: string, en: string, vi: string, group: string, def: boolean, icon?: string, game?: string };
 export const RELEASES: Release[] = [
   { id: 'autoplay', en: 'Auto play check (for grown-ups testing: a small window that plays everything; every device, or only the ticked ones)', vi: 'Tự chơi để kiểm tra (cho người lớn thử game: một cửa sổ nhỏ tự chơi mọi thứ; mọi máy, hoặc chỉ các máy được chọn)', group: 'tools', def: false },
+  // (r90, owner 24 Oct AEDT: "hold them off until I want to release; switched off it should show as coming soon") the
+  // second set of games and of stories (js/content/secondset.ts): off until the owner switches them on
+  { id: 'newGames', en: 'New games (the second set, in every area): off shows "Coming soon" in the Play menu; on, each area\'s new games unlock after its first games are finished 3 times', vi: 'Trò chơi mới (bộ thứ hai, ở mọi khu): tắt thì hiện "Sắp ra mắt" trong Vui chơi; bật thì trò mới của mỗi khu mở sau khi chơi xong các trò đầu 3 lần', group: 'kids', def: false },
+  { id: 'newStories', en: 'New stories (the second set, on every shelf): off shows "Coming soon" on the story shelves; on, each shelf\'s new stories unlock after its first stories are finished 3 times', vi: 'Truyện mới (bộ thứ hai, ở mọi kệ): tắt thì hiện "Sắp ra mắt" trên kệ truyện; bật thì truyện mới của mỗi kệ mở sau khi đọc xong các truyện đầu 3 lần', group: 'kids', def: false },
+  // (r90, owner 23 Oct) unlock all games and stories
+  { id: 'unlockAll', en: 'Unlock all games and stories: opens every game and story without needing 3 finishes (for testers and auto play; every device, or only the ticked ones)', vi: 'Mở tất cả trò chơi và truyện: mở mọi trò chơi và truyện mà không cần chơi xong 3 lần (cho người thử và tự chơi; mọi máy, hoặc chỉ các máy được chọn)', group: 'tools', def: false },
   { id: 'tester', en: 'Testers (devices that report problems by themselves, with the ladybird; every device, or only the ticked ones)', vi: 'Người thử (máy tự báo lỗi, có con bọ rùa; mọi máy, hoặc chỉ các máy được chọn)', group: 'tools', def: false },
   { id: 'traffic', en: 'Traffic on the roads', vi: 'Xe cộ trên đường', group: 'world', def: true },
   { id: 'cityVehicles', en: 'Vehicles in the cities (parked bikes and cars, tram, xích lô, Hồ Gươm cart)', vi: 'Xe trong thành phố (xe đậu, tàu điện, xích lô, xe điện Hồ Gươm)', group: 'world', def: true },

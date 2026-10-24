@@ -941,14 +941,19 @@ await check('ownerstudiofailures', async () => studioRepairCheck(b));
 await check('ground', async () => {
   // every building on dry, level ground (not over the river or the lake), no road floating, buried or in water,
   // and the build number in the game matches the service worker's version
+  const T0 = await open(b, { w: 900, h: 700, play: false });
+  const title = await T0.page.waitForSelector('.tt-build', { state: 'attached', timeout: 30000 }).then(e => e.textContent()).catch(() => ''); await T0.ctx.close();
   const P = await open(b, { w: 900, h: 700 }); await clear(P.page);
   const r = await groundAudit(P.page);
-  const build = await P.page.evaluate(async () => (await import('/js/build.js')).BUILD);
+  const { build, shown } = await P.page.evaluate(async () => { const m = await import('/js/build.js'); return { build: m.BUILD, shown: m.SHOWN }; });
   const sw = fs.readFileSync(new globalThis.URL('../sw.js', import.meta.url), 'utf8'), ver = /VERSION = '([^']+)'/.exec(sw)[1];
   await P.ctx.close();
   ok(!r.bad.length && !r.roadBad.length, 'problems: ' + JSON.stringify([...r.bad, ...r.roadBad].slice(0, 6)));
   ok(ver.endsWith('-' + build), `build ${build} does not match sw.js VERSION ${ver}`);
-  return `${r.buildings} buildings and ${r.roads} roads checked, build ${build}`;
+  // (owner, 24 Oct AEDT) families see the public number (v1, v1.1 ...), never the round count
+  ok(/^v\d+(\.\d+)*$/.test(shown) && /^r\d+(\.\d+)?$/.test(build), `SHOWN ${shown} must be v and a number, BUILD ${build} r and a number`);
+  ok(title.trim() === shown, `the title screen shows "${title}", not the public number ${shown}`);
+  return `${r.buildings} buildings and ${r.roads} roads checked, build ${build}, shown as ${shown}`;
 });
 
 await check('resume', async () => {
@@ -1366,7 +1371,7 @@ await check('tester', async () => {
     const before = await P.page.evaluate(() => (JSON.parse(localStorage.getItem('sv2_tester_out') || '[]')).length + document.querySelectorAll('.testermark, .z-lb').length);
     if (before || got.length) out.push(lang + ': something was kept or sent before "I accept": ' + JSON.stringify({ before, got: got.length }));
     await P.page.click('.tagree .tg-yes'); await P.page.waitForSelector('.testermark', { timeout: 8000 }).catch(() => { }); await P.page.waitForTimeout(1500);
-    const on = await P.page.evaluate(async () => ({ mark: (document.querySelector('.testermark') || {}).textContent || '', lb: document.querySelectorAll('.hud .z-lb').length, build: (await import('/js/build.js')).BUILD, lbSize: (r => r && Math.min(r.width, r.height))(document.querySelector('.hud .z-lb') && document.querySelector('.hud .z-lb').getBoundingClientRect()) }));
+    const on = await P.page.evaluate(async () => ({ mark: (document.querySelector('.testermark') || {}).textContent || '', lb: document.querySelectorAll('.hud .z-lb').length, build: (await import('/js/build.js')).SHOWN, lbSize: (r => r && Math.min(r.width, r.height))(document.querySelector('.hud .z-lb') && document.querySelector('.hud .z-lb').getBoundingClientRect()) }));
     if (!on.mark.includes(on.build) || on.lb !== 1 || !(on.lbSize >= 44)) out.push(lang + ': after accepting, no tester mark with the version or no ladybird (44 px): ' + JSON.stringify(on));
     if (!got.some(x => x && x.accepted === true)) out.push(lang + ': the acceptance was not told');
     // Settings → Stop being a tester
@@ -3314,6 +3319,19 @@ await check('simple', async () => {
   await P.page.waitForSelector('.simple-screen:not([hidden]) .sp-catcard, .simple-screen:not([hidden]) .sp-stop', { timeout: 20000 });
   await P.page.evaluate(() => document.querySelectorAll('.dialog').forEach(d => d.remove()));
   const r = { start: true };
+  // (owner, 24 Oct AEDT) Home opens the family website floating over this screen, not a new tab (from the Home Screen app
+  // that started the whole game again); its Play button reads "Back to game" and closes it: the Simple screen is still here
+  r.home = await P.page.evaluate(async () => {
+    const wait = ms => new Promise(res => setTimeout(res, ms)), tabs = [], wo = window.open; window.open = (...a) => { tabs.push(String(a[0])); return null; };
+    try {
+      document.querySelector('.simple-screen .sp-home')?.click();
+      let frame = null, label = null;
+      for (let k = 0; k < 80 && !label?.textContent?.trim(); k++) { await wait(250); frame = document.querySelector('.modal.website iframe'); label = frame?.contentDocument?.querySelector('.play-label'); }
+      const text = label ? label.textContent.trim() : '', embed = !!frame && /embed=1/.test(frame.getAttribute('src') || '');
+      frame?.contentDocument?.querySelector('[data-action=play]')?.click(); await wait(800);
+      return { tabs, embed, text, closed: !document.querySelector('.modal.website'), still: !!document.querySelector('.simple-screen:not([hidden])') };
+    } finally { window.open = wo; }
+  });
   // (Round V, owner 13 Oct: "one screen and scroll down, each has a title then games in roads with them, similar to the
   // Khám phá tab"; replaces Round U's cards) every section of the tab on one page: its title, then its own road; the page scrolls
   r.groupsFirst = await P.page.evaluate(() => { const v = __sv.simple.view, back = document.querySelector('.sp-back'), sc = document.querySelector('.sp-scroll'); return v.cat === null && v.cats.length > 3 && v.secs === v.cats.length && v.stops.length > 10 && back.hidden && document.querySelectorAll('.sp-discover').length === 1 && sc.scrollHeight > sc.clientHeight * 2; });
@@ -3349,7 +3367,8 @@ await check('simple', async () => {
   const S = await open(b, { w: 1280, h: 800, mode: 'split', screen: null }); await S.page.waitForTimeout(1500);
   r.split = await S.page.evaluate(() => ({ open: __sv.simple.open, dock: [...document.querySelectorAll('.simplesw')].some(d => !d.hidden) })); await S.ctx.close();
   ok(r.groupsFirst && r.section.cat && r.section.stops >= 1 && r.section.heads === 1 && r.section.back && r.backToCards && r.talesCards && !r.flash && r.game && r.back && r.tale && !r.valley.open && r.valley.screen === 'valley' && r.valley.dock && !r.valley.paused && r.reopen && r.wide.wide && r.wide.rail && r.wide.sideways && r.wide.inView && r.wide.big && !r.big && !r.split.open && !r.split.dock && !errs.length, JSON.stringify(Object.assign(r, { errs })));
-  return 'under 5 starts on one page of sections, each a title and its own road, scrolling down (like Khám phá); a game and a story each two taps away, the road comes back after; Valley remembered; the “Big pictures” switch reopens it; on its side a rail and a sideways path; big kid and two players start in the valley';
+  ok(!r.home.tabs.length && r.home.embed && /Back to game/.test(r.home.text) && r.home.closed && r.home.still, 'Home: ' + JSON.stringify(r.home));
+  return 'Home floats the website over this screen and Back to game closes it; under 5 starts on one page of sections, each a title and its own road, scrolling down (like Khám phá); a game and a story each two taps away, the road comes back after; Valley remembered; the “Big pictures” switch reopens it; on its side a rail and a sideways path; big kid and two players start in the valley';
 });
 
 await check('adventure', async () => {
@@ -4400,6 +4419,38 @@ await check('talk', async () => {
   }
   ok(!out.length, out.join(' | '));
   return 'every person in the valley answers a tap; the villagers without their own words tell a fact or a saying of their region, in English or Vietnamese; a child whose character is rebuilt gets no "Say hello" and no job picture';
+});
+
+await check('secondset', async () => {
+  // (r90, owner 24 Oct AEDT) the second set of games and stories: held in Studio (New games / New stories off) it shows as
+  // one "Coming soon" tile and can't be opened anywhere (the Simple screen and the story list leave it out); switched on,
+  // the games still to unlock fold into one padlock tile that one tap opens, and the same on the story shelves
+  const P = await open(b, { w: 820, h: 1180 }); await clear(P.page);
+  const r = await P.page.evaluate(async () => {
+    const C = (await import('/js/custom.js')).CUSTOM, U = await import('/js/content/unlocks.js'), A = await import('/js/content/activities.js'), F = await import('/js/games/frame.js');
+    const p = __sv.heroes[0].profile, newIds = Object.values(U.SECOND_SET_GAMES).flat(), wait = ms => new Promise(r => setTimeout(r, ms));
+    const shut = async () => { document.querySelectorAll('.modal.hub .x').forEach(x => x.click()); await wait(300); };
+    const hub = async tab => { await shut(); __sv.openGamesHub(0); await wait(400); document.querySelector(`.hubtabs [data-tab="${tab}"]`)?.click(); await wait(300); return document.querySelector('.hubbody'); };
+    const plays = root => [...root.querySelectorAll('[data-play]')].map(b => b.dataset.play);
+    const out = {};
+    C.releases = { ...(C.releases || {}), newGames: { on: false }, newStories: { on: false } };
+    let body = await hub('learn');
+    out.offSoon = !!body.querySelector('[data-soon="game"]'); out.offNoNew = !plays(body).some(id => newIds.includes(id)); out.offNoFold = !body.querySelector('[data-fold]');
+    out.offSimple = !A.gamesIn(F.GAMES, 'numbers', false).some(g => newIds.includes(g.id)); out.offTales = !__sv.TALES.some(t => Object.values(U.SECOND_SET_TALES).flat().includes(t.id));
+    out.offShut = !U.isOpen({ unlockAll: true }, 'numline', 'game', 'numbers');
+    body = await hub('tales'); out.offTaleSoon = !!body.querySelector('[data-soon="tale"]');
+    C.releases.newGames = { on: true }; C.releases.newStories = { on: true }; p.unlockAll = false; p.admin = false;
+    body = await hub('learn');
+    const fold = body.querySelector('[data-fold]'); out.onFold = !!fold; out.onHidden = !body.querySelector('.hcard.locked'); out.onNoSoon = !body.querySelector('[data-soon="game"]');
+    fold?.click(); await wait(300); body = document.querySelector('.hubbody'); out.onShown = body.querySelectorAll('.hcard.locked').length;
+    body = await hub('tales'); const tf = body.querySelector('[data-fold-tale]'); out.taleFold = !!tf; tf?.click(); await wait(300); out.taleShown = document.querySelectorAll('.hubbody .talecard.locked').length;
+    await shut();
+    return out;
+  });
+  await P.ctx.close();
+  const bad = Object.entries(r).filter(([k, v]) => k === 'onShown' || k === 'taleShown' ? !(v > 0) : !v).map(([k]) => k);
+  ok(!bad.length, 'failed: ' + bad.join(', ') + ' ' + JSON.stringify(r));
+  return `held: one Coming soon tile (games and stories), no new game in the menu, the Simple screen or the story list, none can be opened; on: the games to unlock fold into one padlock tile (${r.onShown} shown on a tap), the stories too (${r.taleShown})`;
 });
 
 await check('rollout', async () => {
@@ -7220,7 +7271,7 @@ await check('swupdate', async () => {
     // (3) the start screens: B takes over by itself and the page reloads into it
     await P.page.waitForFunction(() => !window.__same, null, { timeout: 120000 }).catch(() => { });
     await active('b'); await P.page.waitForSelector('.screen.title', { timeout: 60000 });
-    const refetched = Object.keys(before).filter(u => u.startsWith('/js/') && u !== '/js/main.js' && u !== '/js/build.js' && (asked[u] || 0) > before[u] && before[u] >= 1 && !/launch|custom|sw\.js/.test(u)).length;
+    const again2 = Object.keys(before).filter(u => u.startsWith('/js/') && u !== '/js/main.js' && u !== '/js/build.js' && (asked[u] || 0) > before[u] && before[u] >= 1 && !/launch|custom|sw\.js/.test(u)), refetched = again2.length;
     const second = await build(), reloaded = await P.page.evaluate(() => !window.__same);
     const keys = await P.page.evaluate(() => caches.keys());
     // (4) playing: C takes over without a reload; the notice offers it
@@ -7232,7 +7283,7 @@ await check('swupdate', async () => {
     const n0 = asked['/sw.js'] || 0; await P.page.evaluate(() => { window.svUpdateGap = 0; document.dispatchEvent(new Event('visibilitychange')); }); await P.page.waitForTimeout(1500);
     const asks = (asked['/sw.js'] || 0) - n0;
     const errs = P.errors.filter(e => !/Failed to fetch|NetworkError|aborted|500/i.test(e)); await P.ctx.close();
-    const r = { first, partial, refetched, second, reloaded, keys, playing, third, asks, errs };
+    const r = { first, partial, refetched, again: again2.slice(0, 6), second, reloaded, keys, playing, third, asks, errs };
     ok(first === 'swa', 'version A: ' + JSON.stringify(r));
     ok(partial > 0 && refetched === 0, 'an update stopped part way keeps what it saved and fetches only the rest: ' + JSON.stringify(r));
     ok(second === 'swb' && reloaded && keys.includes('sv-2099-swtest-a'), 'the new version, not the older copy kept beside it, on the start screens with no tap: ' + JSON.stringify(r));

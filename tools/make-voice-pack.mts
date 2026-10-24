@@ -279,6 +279,9 @@ async function azure() {
   const voices: Record<string, Record<string, { id: string, name: string }>> = {}; for (const [L, slots] of Object.entries(CAST)) { voices[L] = {}; for (const sl of slots) voices[L][sl] = { id: arg(`voice-${L}-${sl}`, AZ_VOICES[L][sl]), name: arg(`voice-${L}-${sl}`, AZ_VOICES[L][sl]) }; }
   console.log('Voices:'); for (const [L, v] of Object.entries(voices)) console.log(`  ${LANG_NAME[L]}: ` + Object.entries(v).map(([sl, x]) => `${sl === 'f' ? 'woman' : 'man'} ${x.id}`).join(', '));
   const xml = t => t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  // (owner, 24 Oct AEDT: "the goat goes baa baa but the voice reads bee ay ay") animal sounds a voice would spell out as
+  // letters are said as they sound; the caption keeps the written word
+  const sounds = (t, lang) => lang === 'en' ? t.replace(/\b(Baa+|BAA+|baa+)\b/g, w => `<sub alias="bah">${w}</sub>`) : t;
   const LOCALE = { en: 'en-AU', vi: 'vi-VN', zh: 'zh-CN', hi: 'hi-IN' };
   const man = { version: 2, engine: 'azure', made: new Date().toISOString().slice(0, 10), cast: CAST, voices, lines: {}, other: otherOf(list), tpl: TPL, areas: 1 };
   const save = () => saveManifest(man);
@@ -291,7 +294,7 @@ async function azure() {
     const wait = next - Date.now(); next = Math.max(next, Date.now()) + gap; if (wait > 0) await new Promise(r => setTimeout(r, wait));
     const v = voices[j.lang][slot].id;
     // (round R) Vietnamese names and dishes inside an English line are said by the Vietnamese voice of the same man or woman
-    const ssml = readingSsml(j, v) || (j.lang === 'en' && mixed(j.text) ? mixedSsml(viRuns(j.text), v, voices.vi[slot].id) : `<speak version='1.0' xml:lang='${LOCALE[j.lang]}'><voice name='${v}'>${xml(j.text)}</voice></speak>`); // (Play reading trial: readingSsml)
+    const ssml = readingSsml(j, v) || (j.lang === 'en' && mixed(j.text) ? mixedSsml(viRuns(j.text), v, voices.vi[slot].id) : `<speak version='1.0' xml:lang='${LOCALE[j.lang]}'><voice name='${v}'>${sounds(xml(j.text), j.lang)}</voice></speak>`); // (Play reading trial: readingSsml)
     for (let attempt = 0; ; attempt++) {
       let r;
       // a dropped connection (socket closed, timeout) is tried again, like a busy server, instead of stopping the run

@@ -1,3 +1,4 @@
+import { isOpen, isHeld, progressOf, secondSetOf } from './content/unlocks.js';
 // Screens and pop-ups: title, who's playing, grown-ups settings, photo editor, NPC dialogue,
 // the Sparkle Pad (map, backpack, adventure log, album, camera), cooking, shop and online play.
 import { AREAS, gamesIn, withSitePlaces } from './content/activities.js';
@@ -40,7 +41,7 @@ import { snackOf, eatSnack } from './snacks.js';
 import { saveToDevice, savesByShare } from './photos.js';
 
 import { installButton } from './install.js';
-import { BUILD } from './build.js';
+import { SHOWN } from './build.js';
 
 import { VOICE_STYLES, hush, sayIn } from './voice.js';
 import { LEARN } from './words2.js';
@@ -117,7 +118,7 @@ export function showTitle(onStart) {
     </div>
     <button class="press"><span class="tt-play">▶</span><span class="tt-press" elementtiming="title"></span></button>
     <div class="tt-panel"><div class="title-foot"></div><div class="title-learn"></div></div>
-    <div class="tt-build" aria-hidden="true">${BUILD}</div>`);
+    <div class="tt-build" aria-hidden="true">${SHOWN}</div>`);
   document.body.appendChild(s);
   const redraw = () => {
     // (r78, owner: windows stay still) the title's words hold both languages, the other one invisible, so switching
@@ -253,7 +254,7 @@ export function openQuick(game, i) {
   const row = (k, icon, label, on, hint = '') => `<button class="qrow qset ${on ? 'on' : ''}" data-k="${k}" aria-pressed="${on}"><span class="qi">${icon}</span><b>${label}${hint ? `<small>${hint}</small>` : ''}</b><i class="qsw"></i></button>`;
   const draw = () => {
     const s = settings, view = (hero && hero.view) || 'follow';
-    card.innerHTML = `<div class="qs-head">${p ? `<img class="qs-av" src="${avatarURL(p)}" alt="">` : ''}<div class="qs-title"><h2>${T('Settings', 'Cài đặt')}</h2>${p ? `<small>${esc(nm(p.name || ''))}</small>` : ''}<small class="buildtag">${T('Build', 'Bản')} ${BUILD}</small></div><button class="x" aria-label="${T('Close', 'Đóng')}">✕</button></div>
+    card.innerHTML = `<div class="qs-head">${p ? `<img class="qs-av" src="${avatarURL(p)}" alt="">` : ''}<div class="qs-title"><h2>${T('Settings', 'Cài đặt')}</h2>${p ? `<small>${esc(nm(p.name || ''))}</small>` : ''}<small class="buildtag">${T('Version', 'Phiên bản')} ${SHOWN}</small></div><button class="x" aria-label="${T('Close', 'Đóng')}">✕</button></div>
       <div class="qs-sec"><h4>🌏 ${T('Language', 'Ngôn ngữ')}</h4>${flagBtns()}</div>
       <div class="qs-sec"><h4>🔊 ${T('Sound', 'Âm thanh')}</h4>
         ${row('music', '🎵', T('Music', 'Nhạc'), s.music)}${row('sound', '🔔', T('Sounds', 'Tiếng động'), s.sound)}${row('voice', '🗣️', T('Talking', 'Giọng nói'), s.voice)}
@@ -989,7 +990,7 @@ export function nextGameAfter(id) {
   return null;
 }
 const HUB_COLORS = ['#ff7eb8', '#ffb52e', '#5fd39a', '#3cc7e8', '#9a6bff', '#ff8a5a'];
-const openGamesHubProperties: { last?: string; scroll?: number } = {};
+const openGamesHubProperties: { last?: string; scroll?: number; unfolded: Set<string> } = { unfolded: new Set() };
 export const openGamesHub = Object.assign(function (game, i, onClose) {
   const p = game.heroes[i].profile;
   const m = modal('hub', ''), card = m.querySelector('.card');
@@ -999,10 +1000,20 @@ export const openGamesHub = Object.assign(function (game, i, onClose) {
   const SECS = hubSections();
   const tabs = [...SECS, ...(game.taleShelfHTML ? [{ key: 'tales', icon: '📖', short: () => T('Stories', 'Truyện') }] : []), ...(game.openSongs ? [{ key: 'songs', icon: '🎵', short: () => T('Songs', 'Bài hát') }] : []), ...(game.festivals ? [{ key: 'fest', icon: '📅', short: () => T('Festivals', 'Lễ hội') }] : [])];
   let cur = tabs.find(t => t.key === openGamesHub.last) ? openGamesHub.last : 'learn';
-  const card2 = sec => `<div class="hubgrid">${sec.games.filter(id => GAMES[id]).map((id, k) => {
+  // (r90, owner 24 Oct AEDT) a card per game a child can play; the games still to unlock fold into one padlock tile
+  // (one tap shows them), and the new games held back in Studio (New games off) into one "Coming soon" tile
+  const gameCard = (id, k, key, open) => {
       const g = GAMES[id], lv = p.levels[id] || 1;
-      return `<div class="hcard" style="--hc:${HUB_COLORS[(k + sec.key.length) % HUB_COLORS.length]}"><button class="hplay" data-play="${id}"><span class="hi">${pic(g.icon)}</span><b>${esc(g.name())}</b><small>${'⭐'.repeat(lv)}${'☆'.repeat(5 - lv)}</small></button><button class="hgo" data-go="${id}" aria-label="${T('Go there', 'Đi đến đó')}">📍</button><button class="hhow" data-how="${id}" aria-label="${T('How to play', 'Cách chơi')}">📺</button>${g.origin ? `<span class="hflag">${originFlags(g.origin)}</span>` : ''}</div>`;
-    }).join('')}</div>`;
+      return `<div class="hcard ${open ? "" : "locked"}" style="--hc:${HUB_COLORS[(k + key.length) % HUB_COLORS.length]}"><button class="hplay" data-play="${id}" ${open ? "" : "disabled"}><span class="hi">${pic(open ? g.icon : '\u{1F512}')}</span><b>${esc(g.name())}</b><small>${'⭐'.repeat(lv)}${'☆'.repeat(5 - lv)}</small></button><button class="hgo" data-go="${id}" aria-label="${T('Go there', 'Đi đến đó')}">📍</button><button class="hhow" data-how="${id}" aria-label="${T('How to play', 'Cách chơi')}">📺</button>${g.origin ? `<span class="hflag">${originFlags(g.origin)}</span>` : ''}</div>`;
+  };
+  const card2 = sec => {
+    const area = sec.area || sec.key, ids = sec.games.filter(id => GAMES[id]);
+    const open = ids.filter(id => isOpen(p, id, 'game', area)), locked = ids.filter(id => !open.includes(id));
+    const held = secondSetOf('game', area).filter(id => GAMES[id] && isHeld(id, 'game')).length, shown = openGamesHub.unfolded.has(area);
+    const lockTile = locked.length ? `<div class="hcard hfold" style="--hc:#b9a6e8"><button class="hplay" data-fold="${area}" aria-expanded="${shown}"><span class="hi">${pic('\u{1F512}')}</span><b>${shown ? T('Hide', 'Thu gọn') : T(`${locked.length} more to unlock`, `Còn ${locked.length} trò để mở`)}</b><small>${shown ? '' : T('Tap to see', 'Chạm để xem')} ${progressOf(p, 'game', area).done}/3</small></button></div>` : '';
+    const soonTile = held ? `<div class="hcard hsoon" style="--hc:#9ad0ff"><button class="hplay" data-soon="game"><span class="hi">${pic('\u{1F51C}')}</span><b>${T('Coming soon', 'Sắp ra mắt')}</b><small>${T(`${held} new games`, `${held} trò mới`)}</small></button></div>` : '';
+    return `<div class="hubgrid">${open.map((id, k) => gameCard(id, k, sec.key, true)).join('')}${lockTile}${shown ? locked.map((id, k) => gameCard(id, k + open.length, sec.key, false)).join('') : ''}${soonTile}</div>`;
+  };
   const body = key => {
     if (key === 'fest') return `<h3>📅 ${T('Festival calendar', 'Lịch lễ hội')}</h3>${festCalendarHTML(game)}`;
     if (key === 'tales') return `<h3>📖 ${T('Fairy tales', 'Truyện cổ tích')}</h3><p class="sub">${T('Tap a story: you fly to Grandma Storyteller and she reads it to you.', 'Chạm vào truyện: con bay đến chỗ Bà Kể Chuyện và bà kể cho con nghe.')}</p><div class="talelib">${game.taleShelfHTML(p)}</div>`;
@@ -1011,7 +1022,7 @@ export const openGamesHub = Object.assign(function (game, i, onClose) {
       const fam = familySongs().length, groups = SONG_GROUPS.filter(g => g.key === 'family' ? fam : SONG_LIST.some(s => s.group === g.key && Music.has(s.key)));
       return `<h3>🎵 ${T('Songs: tap to listen', 'Bài hát: chạm để nghe')}</h3><div class="festrow songrow">${groups.map(g => `<button class="festbtn" data-songs="${g.key}"><span>${pic(g.icon)}</span><b>${esc(g.name())}</b></button>`).join('')}</div>`;
     }
-    const sec = SECS.find(x => x.key === key) || SECS[0]; return `<h3>${sec.icon} ${esc(sec.title())}</h3>${sec.groups.map(g => `${sec.groups.length > 1 ? `<h4 class="hubarea">${pic(g.area.icon)} ${esc(g.area.name())}</h4>` : ''}${card2({ key: sec.key + g.area.key, games: g.games })}`).join('')}`;
+    const sec = SECS.find(x => x.key === key) || SECS[0]; return `<h3>${sec.icon} ${esc(sec.title())}</h3>${sec.groups.map(g => `${sec.groups.length > 1 ? `<h4 class="hubarea">${pic(g.area.icon)} ${esc(g.area.name())}</h4>` : ''}${card2({ key: sec.key + g.area.key, area: g.area.key, games: g.games })}`).join('')}`;
   };
   card.innerHTML = `<button class="x" aria-label="${T('Close', 'Đóng')}">✕</button><h2>🎮 ${T('Play', 'Vui chơi')}</h2>
     <div class="hubtabs" role="tablist">${tabs.map(t => `<button role="tab" data-tab="${t.key}"><span>${pic(t.icon)}</span><small>${esc(t.short())}</small></button>`).join('')}</div>
@@ -1025,7 +1036,10 @@ export const openGamesHub = Object.assign(function (game, i, onClose) {
   card.querySelector('.x').onclick = close;
   const bind = root => {
     root.querySelectorAll('[data-tale]').forEach(b => b.onclick = () => { close(); game.readTale(i, b.dataset.tale); });
+    if (game.bindTaleShelf) game.bindTaleShelf(root, () => { openGamesHub.scroll = root.scrollTop; draw(); });
     root.querySelectorAll('[data-songs]').forEach(b => b.onclick = () => { SFX.tap(); close(); game.openSongs(b.dataset.songs); });
+    root.querySelectorAll('[data-fold]').forEach(b => b.onclick = () => { SFX.tap(); const k = b.dataset.fold; if (openGamesHub.unfolded.has(k)) openGamesHub.unfolded.delete(k); else { openGamesHub.unfolded.add(k); say('Finish the games above 3 times each to unlock these.', 'Chơi xong mỗi trò ở trên 3 lần để mở những trò này nhé.'); } openGamesHub.scroll = root.scrollTop; draw(); });
+    root.querySelectorAll('[data-soon]').forEach(b => b.onclick = () => { SFX.tap(); say('New games are coming soon!', 'Trò chơi mới sắp ra mắt rồi!'); });
     root.querySelectorAll('[data-play]').forEach(b => b.onclick = () => { const id = b.dataset.play; close(); openGamesHub.scroll = root.scrollTop; game.meetAndPlay(i, id, 'hub'); });
     root.querySelectorAll('[data-go]').forEach(b => b.onclick = () => { close(); game.goToGame(i, b.dataset.go); });
     root.querySelectorAll('[data-how]').forEach(b => b.onclick = () => { const id = b.dataset.how; openHowTo(id, { onPlay: () => { close(); game.playGame(i, id, 'hub'); } }); });

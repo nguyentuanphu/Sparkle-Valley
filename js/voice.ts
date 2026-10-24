@@ -74,8 +74,10 @@ function speakerVoice(lang, kind) {
   // keep the grown-up's chosen voice for the main narrator-like characters, share the rest out
   return pool.find(v => v.name === want && kind.seed % 2 === 0) || pool[kind.seed % pool.length];
 }
+// (owner, 24 Oct AEDT) an animal sound the device's voice would spell out as letters ("bee ay ay") is said as it sounds
+const SAID = (text, lang) => lang === 'en' ? String(text).replace(/\b[Bb]aa+\b/g, 'bah') : text;
 function utter(text, lang) {
-  const u = new SpeechSynthesisUtterance(text);
+  const u = new SpeechSynthesisUtterance(SAID(text, lang));
   const kind = speakerKind();
   const v = speakerVoice(lang, kind) || voiceFor(lang);
   if (v) { u.voice = v; u.lang = v.lang; } else u.lang = { vi: 'vi-VN', zh: 'zh-CN', hi: 'hi-IN' }[lang] || 'en-AU';

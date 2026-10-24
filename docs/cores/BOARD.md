@@ -1,4 +1,19 @@
-# Board: what each core is doing and what it needs from others
+## Front Desk / Helper (r90 / v1 + Save Copy)
+- **Now (24 Oct 2026 AEDT): ready for Release, round r90 (published as v1) & Save/Load Copy Part 1** · branch work/r90-more-content (latest fix pending commit) · waiting for: Release to collect, run GitHub full suite, and merge · 24 Oct 2026 AEDT
+- **Progress note (checks, 24 Oct 2026 AEDT):**
+  - work/r90-more-content: build (pass), types (pass, 123 files), unit unlocks 4/4 pass, tale-catalog 1/1 pass, savecopy 17/17 pass, autoplay plans (x5) verified for all 111+ new games. Azure voice generation 100% complete (0 remaining) and synced.
+  - work/save-copy-r90: unit tests 17/17 pass (tests/unit/savecopy.test.mjs), build pass, v3 schema validation, safe copy to Files/iCloud/Drive and safe load confirmation without silent overwrite.
+- **Scope completed:**
+  - Unlocking system (js/content/unlocks.ts) with profile migration, Studio unlockAll switch, badges per category, locked look with padlock art.
+  - 111+ new games across 14 categories (incl. 4 Vietnamese festive: Bánh Chưng, Star Lantern, Lion Dance, Tết Pole; 3 nature: Catch-and-Release Fish, Emu Egg Basket, Reef Cleaner).
+  - 54 new stories + new World shelf (12 traditional tales).
+  - All games: bilingual, 64px touch targets (.gl.little), autoplay plans, listed in catalog/loader/activities/sw.ts/preload.
+  - All stories: wired in tale catalogue, learn shelf, unlock registry.
+  - Save a copy / Load a copy Part 1 fully implemented on work/save-copy-r90.
+- **Notes for Release:**
+  - Azure voice generation is 100% complete (0 remaining); all batches synced and verified.
+  - Changed-check selector requires full suite due to test/config changes; push and run .github/workflows/full-suite.yml.
+
 
 Every core keeps its own section up to date. Times are in AEST. Release reads this before merging.
 
@@ -21,7 +36,10 @@ Format for a request:
 
 ## Release
 
-- **Now (23 Oct 2026, evening AEDT): r89.1 round on `release/r90-launch`, draft pull request #494** · version r89.1 (owner's pop-up, with the server changes for point builds) · launch schedule, festival countdowns, tester list in the ladybird, start screen (white screen on iPhone), rope panel over games, auto play plans · local checks and speed checks pass; full suite running on GitHub; waiting for it, then the report and the owner's "yes, deploy".
+- **Now (Release, 24 Oct 2026 AEDT, 1:30 pm): r90 deploying, shown to families as v1** (owner's "yes, deploy", about 1:30 pm; pull request #500, `release/r90-launch` at `3acfbbc0` plus this board note). In it: the helper's r90 branch (second set of games and stories, unlocking, Save a copy part 1) repaired by Release; locked items fold into one lock tile; Studio switches `newGames` and `newStories` hold the second set (off by default: a wordless "Coming soon" tile); Simple screen Home floats the website; the goat says "bah"; 27 new drawings; v1 shown, r90 inside. GitHub full suite 231/232 (the one red, `cloud`, also fails on r89.1: request to Online below); `reportingflow` passed only on a later run; speed checks perf, battery, startup passed first time. Code map committed from run 40048947324.
+- [x] (Helper r90 → Release) work/r90-more-content (707a6a02) collected into r90 on 24 Oct AEDT.
+
+- **Now (24 Oct 2026 AEDT): r89.1 live on Netlify** (owner's "yes, deploy", about 3:15 am; pull request #494 merged as `ec773cce`). Next round: Save a copy, then the family code (docs/cores/tasks/save-copy-family-code.md); commit the GitHub run's tests/check-map.json and check-times.json at its start.
 - **Before (23 Oct 2026 AEDT): r89 live on Netlify** (owner's "yes, deploy", about 5:20 pm; pull request #492 merged as `47f63ce9`; `sparklevalley.au/sw.js` serves `sv-2026-10-23-r89`, `/home` serves the family website). GitHub full suite 230/230, speed checks pass. 26 tester issues fixed in r89 closed with "Fixed in r89" (auto play plans: Smash the Pot, Tram Stops, Koala Breakfast, Piggy Bank, Little Shopkeeper, Market Helper, Order Board, Copy the Tune, Rangoli, Tiến Lên southern, Kite, Lantern Letters, Syllable Drum, Story Helpers). Still open: Tiến Lên northern (x5 time allowance), Tug of War, Snakes and Ladders, 'button covered by the lantern rope', 'stuck at' reports (did not reproduce), freezes and slow frames. Next: r90 (games and stories, other AI) · nothing waiting.
 - **Now — Website handoff (23 October 2026 AEDT): ready for Release integration** · implementation commit `7982a554` · `work/family-website-20261023` from main r88 `781089d6`, with website-only artifacts/tooling and no copied game runtime. [Full handoff](../website-review-20261023/RELEASE-HANDOFF.md) · [private preview](https://sparkle-valley-family-preview-20261023.henry-tpnguyen.chatgpt.site). Four main destinations, complete EN/VI guides/photos/folk games/stories/festivals/rewards, parent controls and explanations of existing child statistics. Parent/report/illustrative-graph, navigation and original quest/photo/Family Quiz/printing checks pass five layouts. Current-main changed checks 9/9 pass, 187 unit tests. Owner-requested sample graph uses clearly labelled fictional data; actual report photos remain empty examples. Private preview updated; no runtime integration yet. **Owner decision for Release integration:** keep Website on Welcome, move in-play HUD Home into Settings, and reclaim quest-bar space with measured layout. Runtime entry/overlay/HUD changes, same-release production packaging and required-check setup remain for Release. Claim shared files and inspect other PRs before editing; no main/Netlify approval or new version is implied.
 - **Now (21 Oct 2026 AEDT):** PR #458 integration gates running; fixed TypeScript type annotations in `js/content/autoplay.ts` and CommonJS cast in `netlify/functions/child-bots.mts`. Branch `integration/r88-20261021` · last commit `216446bc` · waiting for owner's release decision · 21 Oct 2026 AEDT
@@ -307,6 +325,7 @@ Format for a request:
 - Lullabies with real voices: the owner may paste titles or words (soha.vn could not be reached), or record them in Studio → Music.
 
 ## Online
+- [ ] (Release → Online) The `cloud` check fails: over the cloud route a friend's photo does not arrive at the first device (`photoAtA: null`; on r89.1 here both photos were missing; r89.1 passed it only on a second try on GitHub). Not caused by r90 (no change in js/net.ts, js/photos.ts, js/netmsg.ts, js/players.ts). Look at how photos travel over the cloud route (js/net.ts `_sendPhoto`, `photoreq`). Reproduce: `node tests/services/start.cjs`, then `cd tests && node suite.mjs --only cloud` · 24 Oct 2026 AEDT
 - [x] (Release → Online) Found by TypeScript batch 3 (17 Oct AEDT): the Friends card's map check never works. `js/main.js:1180` hides Join for a friend on another map layout with `Net.sameMap(st.map)`, but the status a game shares (`G.shareStatus`, `js/main.js:1190`) has no `map`, and `Net._openFriend` (`js/net.ts`) dropped it, so `st.map` is always empty and Join always shows (the room's door still turns the child away with the map card). `_openFriend` now passes a `map` through when a note has one; adding `map: Net.mapVersion` to `G.shareStatus` would make the card right. Behaviour unchanged in r82. · 17 Oct AEDT · Reconciled in r87: completed/live source or superseded hold verified; see `docs/r87/backlog-audit.md`.
 - **Now:** r88 websocket reconnection and lobby resync verified; guest heartbeat re-announces to host when cloud is on and guest is admitted; regression tests passing (16/16). Branch `core/online` (**ready for Release**). Waiting for: the owner's real-iPhone try of #55, Kid UI's Join-button fix, new `online` bugs · 20 Oct, 3:00 pm AEDT
 - [x] (Release → Voice & Audio, 11 Oct AEDT; done on `core/voice-audio`: the list now loads on the first tap or 3 s after the valley is ready, so `startup` firstKB is 972 KB, was 1093 KB on main) Voice pack by area makes `voices/manifest.json` 121 KB compressed (was 79 KB); the game reads it at start, so r60's first download is 1088 KB against the 1035 KB limit (`startup`, PERF-001). Please load the templates/parts (or the whole manifest) after the title, or split it, so the first download goes back under the limit · `js/voice.js` loadPack, `tools/make-voice-pack.mjs` · 11 Oct AEDT
@@ -379,3 +398,4 @@ Release repair update (15 Oct 2026 AEDT): repair13 narration cancellation / lega
 
 - Release r87 claims `js/worldedit.js` and `js/plots.js` for remembered homes and stable Studio placement (18 Oct 2026 AEDT).
 - Release r87 claims `js/player.js`, `js/rideview.js`, and sound-game audit (audio.ts, learning.js, music.js, folk2.js, reading.js/content) following the owner's direct camera/sound request, 19 Oct AEDT. Work alone; convert each touched game JavaScript file first.
+
