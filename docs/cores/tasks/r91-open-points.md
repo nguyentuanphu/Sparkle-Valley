@@ -17,10 +17,13 @@ file); keep the CLAUDE.md "Helper chats" rules.
   rename anything a player, parent or Studio sees.
 - **Where the notes live:** `docs/README.md` is the start-here index. Finished round reports moved to `docs/history/`,
   the ads guide to `docs/guides/`. Nothing was deleted.
-- **The version:** r90 is live (24 Oct 2026, about 1:45 pm AEDT), **shown to families as "v1"**. `js/build.ts` has two
-  numbers: `BUILD` (r90: Studio, bug reports, servers and checks count by it) and `SHOWN` (v1: the title screen,
-  Settings, Grown-ups, the tester mark and the website show it). The next round is r91 inside, shown as v1.1. **Only
-  Release changes either number**; you never touch `sw.ts` VERSION, `js/build.ts` or `studio/version.json`.
+- **The version (owner, 24 Oct 2026 AEDT): v numbers everywhere, from this round.** r90 is live (24 Oct 2026, about
+  1:45 pm AEDT), shown to families as "v1". From now on every build is v, the major number, a point and two digits:
+  this round is **v1.01**, then v1.02 ... v1.99; a big upgrade starts v2.00. There are no more "r" numbers, inside or
+  on screen: `js/build.ts` `BUILD` is `v1.01` (and `SHOWN` is the same), `sw.ts` VERSION ends `-v1.01`,
+  `studio/version.json` says `v1.01`. `netlify/lib/build-number.mts` holds the rule for the website server, Studio and
+  the checks; old devices and reports still say r83, r89.1, r90: they are read correctly and sort before every v build.
+  **Only Release changes the version**; you never touch `sw.ts` VERSION, `js/build.ts` or `studio/version.json`.
 - **The second set of games and stories** is held by two Studio switches, `newGames` and `newStories`, off by default
   (menus then show a wordless "Coming soon" tile). The test harness turns them on; `schedule: true` in `open()` keeps
   the real defaults.
@@ -51,7 +54,7 @@ file); keep the CLAUDE.md "Helper chats" rules.
   request stays a draft.
 - **When done:** "ready for Release" on your board line (branch, last commit, assumed choices); every check with pass,
   fail or skipped (commit id, date AEDT) in your core file's progress notes; the owner's decisions under "Owner's
-  decisions". Do not close GitHub issues: Release closes them with "Fixed in v1.1" once the round is live.
+  decisions". Do not close GitHub issues: Release closes them with "Fixed in v1.01" once the round is live.
 
 ### The work, in this order
 
