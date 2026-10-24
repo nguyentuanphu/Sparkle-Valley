@@ -91,7 +91,7 @@ Owner: "the back up save and load seem like they are the same, use the newer one
   (`sparkle-valley-backup-<date>.txt`, `{app:'sparkle-valley', v:2, profiles, farm, settings}`), with the same check
   and the same "replace?" question. Add a unit test for it.
 - The "last backup" date and the 7-day reminder (`settings.lastBackup`, `backupAge()`) now follow "Save a copy".
-- The section headings and buttons there use raw emoji (☁️ 💾 📤 📥): use our drawings (`pic()`).
+- The section headings and buttons there use raw emoji (cloud, disk, outbox and inbox pictures): use our drawings (`pic()`).
 
 #### 4. Simple screen: Home next to the top buttons (owner, 24 Oct AEDT)
 Owner: "in the simple screen the home webpage should be moved next to speaker, sound and parent setting".

@@ -36,6 +36,8 @@ Format for a request:
 
 ## Release
 
+- **Now (Release, 24 Oct 2026 AEDT):** collecting v1.01 on `release/r91` / draft PR #506; helper `work/r91-front-desk` (`60645b8d`) merged cleanly. Reviewing ladybird fixes, floating controls and legacy Save a copy; Simple screen placement/unlocks, cloud photos, family code and most tester-issue replay are not in the helper diff. Changed selector requires GitHub full suite; current baseline has docs-emoji failure and cloud photo investigation outstanding. No deployment authorized.
+
 - **Now (Release, 24 Oct 2026 AEDT, 1:45 pm): r90 live, shown to families as v1** (owner's "yes, deploy", about 1:30 pm; pull request #500 merged as `ef330bc0`; sparklevalley.au and sparklevalley.netlify.app serve `sv-2026-10-24-r90`, checked 1:45 pm; `release/r90-launch` at `3acfbbc0` plus this board note). In it: the helper's r90 branch (second set of games and stories, unlocking, Save a copy part 1) repaired by Release; locked items fold into one lock tile; Studio switches `newGames` and `newStories` hold the second set (off by default: a wordless "Coming soon" tile); Simple screen Home floats the website; the goat says "bah"; 27 new drawings; v1 shown, r90 inside. GitHub full suite 231/232 (the one red, `cloud`, also fails on r89.1: request to Online below); `reportingflow` passed only on a later run; speed checks perf, battery, startup passed first time. Code map committed from run 40048947324.
 - [x] (Helper r90 → Release) work/r90-more-content (707a6a02) collected into r90 on 24 Oct AEDT.
 
