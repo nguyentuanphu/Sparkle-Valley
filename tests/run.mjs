@@ -1557,8 +1557,8 @@ await check('testerrewards', async () => {
     await P.page.locator('.testing-fixed [data-fok="1"]').click();
     const coinsOnce=await P.page.evaluate(async()=>{await (await import('/js/tester.js')).refresh();return (await import('/js/state.js')).farm.coins});
     await P.page.waitForTimeout(600);
-    const afterCheck=await P.page.evaluate(async()=>({coins:(await import('/js/state.js')).farm.coins,badgeHidden:document.querySelector('.z-lb .lb-ok')?.hidden}));
-    if(afterCheck.coins!==coinsOnce||!afterCheck.badgeHidden)out.push(name+': answered fix repeated '+JSON.stringify(afterCheck));
+    const afterCheck=await P.page.evaluate(async()=>({coins:(await import('/js/state.js')).farm.coins,badgeHidden:document.querySelector('.z-lb .lb-ok')?.hidden,fixedCount:document.querySelector('[data-test-tab=fixed]')?.textContent}));
+    if(afterCheck.coins!==coinsOnce||!afterCheck.badgeHidden||!/\(0\)/.test(afterCheck.fixedCount))out.push(name+': answered fix repeated '+JSON.stringify(afterCheck));
     // the Tester's Corner and the badge drawn on the shirt
     await clear(P.page); await P.page.evaluate(() => __sv.testerRewards.corner()); await P.page.waitForSelector('.tcorner .tc-badge.on', { timeout: 5000 }).catch(() => { });
     const c = await P.page.evaluate(() => { const card = document.querySelector('.tcorner .card'), r = card && card.getBoundingClientRect(); return { on: document.querySelectorAll('.tcorner .tc-badge.on').length, st: document.querySelectorAll('.tcorner .tc-st.on').length, fixed: document.querySelectorAll('.tcorner .tm-row').length, wide: card ? card.scrollWidth <= card.clientWidth + 2 && r.right <= innerWidth + 1 : false }; });

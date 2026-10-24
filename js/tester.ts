@@ -403,6 +403,8 @@ export async function openPanel(i = 0, initialTab = 'tester') {
   const close = () => { G.autoplay?.detach?.(); m.close(); G.paused = was; };
   card.querySelector<HTMLButtonElement>('.x').onclick = close;
   const selectTab = tab => {
+    const fixedTab = tabs.querySelector('[data-test-tab="fixed"]');
+    if (fixedTab) fixedTab.textContent = T('Fixed', 'Đã sửa') + ' (' + fixedToSee().length + ')';
     reportBody.hidden=tab!=='tester'; autoBody.hidden=tab!=='autoplay'; fixedBody.hidden=tab!=='fixed'; reportActions.hidden=tab!=='tester';
     head.querySelector('h2').textContent=tab==='tester'?T('Report a problem','Báo lỗi'):tab==='fixed'?T('Fixed, please check','Đã sửa, con thử lại nhé'):T('Auto play','Tự chơi');
     tabs.querySelectorAll('button').forEach(b=>{const on=b.dataset.testTab===tab;b.classList.toggle('primary',on);b.setAttribute('aria-selected',String(on));b.tabIndex=on?0:-1;b.id='testing-tab-'+b.dataset.testTab;const target=b.dataset.testTab==='tester'?reportBody:b.dataset.testTab==='fixed'?fixedBody:autoBody;b.setAttribute('aria-controls',target.id);target.setAttribute('aria-labelledby',b.id);});
