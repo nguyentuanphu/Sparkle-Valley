@@ -7266,7 +7266,7 @@ await check('swupdate', async () => {
     // (3) the start screens: B takes over by itself and the page reloads into it
     await P.page.waitForFunction(() => !window.__same, null, { timeout: 120000 }).catch(() => { });
     await active('b'); await P.page.waitForSelector('.screen.title', { timeout: 60000 });
-    const refetched = Object.keys(before).filter(u => u.startsWith('/js/') && u !== '/js/main.js' && u !== '/js/build.js' && (asked[u] || 0) > before[u] && before[u] >= 1 && !/launch|custom|sw\.js/.test(u)).length;
+    const again2 = Object.keys(before).filter(u => u.startsWith('/js/') && u !== '/js/main.js' && u !== '/js/build.js' && (asked[u] || 0) > before[u] && before[u] >= 1 && !/launch|custom|sw\.js/.test(u)), refetched = again2.length;
     const second = await build(), reloaded = await P.page.evaluate(() => !window.__same);
     const keys = await P.page.evaluate(() => caches.keys());
     // (4) playing: C takes over without a reload; the notice offers it
@@ -7278,7 +7278,7 @@ await check('swupdate', async () => {
     const n0 = asked['/sw.js'] || 0; await P.page.evaluate(() => { window.svUpdateGap = 0; document.dispatchEvent(new Event('visibilitychange')); }); await P.page.waitForTimeout(1500);
     const asks = (asked['/sw.js'] || 0) - n0;
     const errs = P.errors.filter(e => !/Failed to fetch|NetworkError|aborted|500/i.test(e)); await P.ctx.close();
-    const r = { first, partial, refetched, second, reloaded, keys, playing, third, asks, errs };
+    const r = { first, partial, refetched, again: again2.slice(0, 6), second, reloaded, keys, playing, third, asks, errs };
     ok(first === 'swa', 'version A: ' + JSON.stringify(r));
     ok(partial > 0 && refetched === 0, 'an update stopped part way keeps what it saved and fetches only the rest: ' + JSON.stringify(r));
     ok(second === 'swb' && reloaded && keys.includes('sv-2099-swtest-a'), 'the new version, not the older copy kept beside it, on the start screens with no tap: ' + JSON.stringify(r));
