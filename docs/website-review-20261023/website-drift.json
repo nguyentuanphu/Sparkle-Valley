@@ -1,6 +1,6 @@
 {
-  "source": "acb07cee0cf7fa7b7cddaa487a355c01f9557e2c",
-  "reviewedSource": "d3bfaac1780a6a01b8801ea148aa0fd82a3343e1",
+  "source": "834476ab45b25887f1b4ff808e1cf269310e4150",
+  "reviewedSource": "834476ab45b25887f1b4ff808e1cf269310e4150",
   "coverage": {
     "valley": 17,
     "lantern": 24,
@@ -8,17 +8,7 @@
     "family": 15,
     "festivals": 24
   },
-  "changed": [
-    "js/build.ts",
-    "js/games/catalog.ts",
-    "js/games/music2.ts",
-    "js/games/readingmenu.ts",
-    "js/tester.ts",
-    "js/ui-settings.ts",
-    "js/ui.ts",
-    "studio/version.json",
-    "sw.ts"
-  ],
+  "changed": [],
   "coverageChanged": [],
-  "requiresEditorialReview": true
+  "requiresEditorialReview": false
 }
