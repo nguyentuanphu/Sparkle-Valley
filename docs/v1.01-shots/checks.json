@@ -1,0 +1,302 @@
+[
+  {
+    "name": "phone-en",
+    "quick": {
+      "scroll": 1381,
+      "xTop": 22,
+      "xBottom": 86,
+      "headBottom": -1269,
+      "closeVisible": true
+    },
+    "backup": {
+      "save": true,
+      "load": true,
+      "old": false,
+      "done": true
+    },
+    "targets": [
+      {
+        "text": "All fixed",
+        "width": 99,
+        "height": 64
+      },
+      {
+        "text": "Yes, fixed",
+        "width": 108,
+        "height": 64
+      },
+      {
+        "text": "Still wrong",
+        "width": 116,
+        "height": 64
+      },
+      {
+        "text": "Yes, fixed",
+        "width": 108,
+        "height": 64
+      },
+      {
+        "text": "Still wrong",
+        "width": 116,
+        "height": 64
+      }
+    ],
+    "simple": {
+      "homeTop": true,
+      "width": 64,
+      "height": 64,
+      "overflow": false
+    },
+    "errors": []
+  },
+  {
+    "name": "phone-vi",
+    "quick": {
+      "scroll": 1425,
+      "xTop": 22,
+      "xBottom": 86,
+      "headBottom": -1302,
+      "closeVisible": true
+    },
+    "backup": {
+      "save": true,
+      "load": true,
+      "old": false,
+      "done": true
+    },
+    "targets": [
+      {
+        "text": "Tất cả đã hết lỗi",
+        "width": 150,
+        "height": 64
+      },
+      {
+        "text": "Đã hết lỗi",
+        "width": 105,
+        "height": 64
+      },
+      {
+        "text": "Vẫn còn lỗi",
+        "width": 115,
+        "height": 64
+      },
+      {
+        "text": "Đã hết lỗi",
+        "width": 105,
+        "height": 64
+      },
+      {
+        "text": "Vẫn còn lỗi",
+        "width": 115,
+        "height": 64
+      }
+    ],
+    "simple": {
+      "homeTop": true,
+      "width": 64,
+      "height": 64,
+      "overflow": false
+    },
+    "errors": []
+  },
+  {
+    "name": "tablet-en",
+    "quick": {
+      "scroll": 865,
+      "xTop": 22,
+      "xBottom": 86,
+      "headBottom": -753,
+      "closeVisible": true
+    },
+    "backup": {
+      "save": true,
+      "load": true,
+      "old": false,
+      "done": true
+    },
+    "targets": [
+      {
+        "text": "All fixed",
+        "width": 99,
+        "height": 64
+      },
+      {
+        "text": "Yes, fixed",
+        "width": 108,
+        "height": 64
+      },
+      {
+        "text": "Still wrong",
+        "width": 116,
+        "height": 64
+      },
+      {
+        "text": "Yes, fixed",
+        "width": 108,
+        "height": 64
+      },
+      {
+        "text": "Still wrong",
+        "width": 116,
+        "height": 64
+      }
+    ],
+    "simple": {
+      "homeTop": true,
+      "width": 64,
+      "height": 64,
+      "overflow": false
+    },
+    "errors": []
+  },
+  {
+    "name": "tablet-vi",
+    "quick": {
+      "scroll": 885,
+      "xTop": 22,
+      "xBottom": 86,
+      "headBottom": -762,
+      "closeVisible": true
+    },
+    "backup": {
+      "save": true,
+      "load": true,
+      "old": false,
+      "done": true
+    },
+    "targets": [
+      {
+        "text": "Tất cả đã hết lỗi",
+        "width": 150,
+        "height": 64
+      },
+      {
+        "text": "Đã hết lỗi",
+        "width": 105,
+        "height": 64
+      },
+      {
+        "text": "Vẫn còn lỗi",
+        "width": 115,
+        "height": 64
+      },
+      {
+        "text": "Đã hết lỗi",
+        "width": 105,
+        "height": 64
+      },
+      {
+        "text": "Vẫn còn lỗi",
+        "width": 115,
+        "height": 64
+      }
+    ],
+    "simple": {
+      "homeTop": true,
+      "width": 64,
+      "height": 64,
+      "overflow": false
+    },
+    "errors": []
+  },
+  {
+    "name": "computer-en",
+    "quick": {
+      "scroll": 1245,
+      "xTop": 22,
+      "xBottom": 86,
+      "headBottom": -1133,
+      "closeVisible": true
+    },
+    "backup": {
+      "save": true,
+      "load": true,
+      "old": false,
+      "done": true
+    },
+    "targets": [
+      {
+        "text": "All fixed",
+        "width": 99,
+        "height": 64
+      },
+      {
+        "text": "Yes, fixed",
+        "width": 108,
+        "height": 64
+      },
+      {
+        "text": "Still wrong",
+        "width": 116,
+        "height": 64
+      },
+      {
+        "text": "Yes, fixed",
+        "width": 108,
+        "height": 64
+      },
+      {
+        "text": "Still wrong",
+        "width": 116,
+        "height": 64
+      }
+    ],
+    "simple": {
+      "homeTop": true,
+      "width": 64,
+      "height": 64,
+      "overflow": false
+    },
+    "errors": []
+  },
+  {
+    "name": "computer-vi",
+    "quick": {
+      "scroll": 1265,
+      "xTop": 22,
+      "xBottom": 86,
+      "headBottom": -1142,
+      "closeVisible": true
+    },
+    "backup": {
+      "save": true,
+      "load": true,
+      "old": false,
+      "done": true
+    },
+    "targets": [
+      {
+        "text": "Tất cả đã hết lỗi",
+        "width": 150,
+        "height": 64
+      },
+      {
+        "text": "Đã hết lỗi",
+        "width": 105,
+        "height": 64
+      },
+      {
+        "text": "Vẫn còn lỗi",
+        "width": 115,
+        "height": 64
+      },
+      {
+        "text": "Đã hết lỗi",
+        "width": 105,
+        "height": 64
+      },
+      {
+        "text": "Vẫn còn lỗi",
+        "width": 115,
+        "height": 64
+      }
+    ],
+    "simple": {
+      "homeTop": true,
+      "width": 64,
+      "height": 64,
+      "overflow": false
+    },
+    "errors": []
+  }
+]

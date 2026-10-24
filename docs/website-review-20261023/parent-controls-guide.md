@@ -1,6 +1,6 @@
 # Parent settings and child play reports
 
-Source: 700715e439861e1bf41080571bce8c760ec36412. Reviewed 23 October 2026 AEDT. Existing game controls, not a new statistics backend.
+Source: e8887bb57c65ccb4297c3b4295e70b7d26118bd7. Reviewed 23 October 2026 AEDT. Existing game controls, not a new statistics backend.
 
 ## Reach the report
 
@@ -22,7 +22,7 @@ Grown-ups → Language; Sound and voices / Phụ huynh → Ngôn ngữ; Âm than
 
 Choose English or Vietnamese, learning-language options, captions and bilingual voice. Control talking, music, effects and tap sounds separately; choose supported voice styles and recordings. / Chọn tiếng Anh hoặc tiếng Việt, ngôn ngữ học, phụ đề và giọng song ngữ. Điều chỉnh riêng lời nói, nhạc, hiệu ứng, tiếng bấm; chọn kiểu giọng và bản ghi được hỗ trợ.
 
-Listen together first. Bilingual voice can repeat guidance in the other language; turn captions on to follow the words. / Cùng nghe thử trước. Giọng song ngữ có thể nói lại hướng dẫn bằng ngôn ngữ kia; bật phụ đề để theo dõi chữ.
+Listen together first. Female recordings are the default; preview Woman or Man and optionally enable male recordings. Offline-pack downloads continue after Save & close while the game stays open. You choose whether full automatic downloads may use mobile data. Bilingual voice can repeat guidance in the other language; turn captions on to follow the words. / Cùng nghe thử trước. Giọng nữ là mặc định; nghe thử Giọng nữ hoặc Giọng nam và bật bản ghi giọng nam nếu muốn. Gói ngoại tuyến tiếp tục tải sau khi Lưu và đóng khi trò chơi còn mở. Bạn chọn có cho phép tự tải đầy đủ bằng dữ liệu di động hay không. Giọng song ngữ có thể nói lại hướng dẫn bằng ngôn ngữ kia; bật phụ đề để theo dõi chữ.
 
 ## Set a daily rest reminder / Đặt giờ nhắc nghỉ hằng ngày
 

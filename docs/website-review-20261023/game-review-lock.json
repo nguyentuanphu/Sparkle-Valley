@@ -1,5 +1,5 @@
 {
-  "source": "700715e439861e1bf41080571bce8c760ec36412",
+  "source": "e8887bb57c65ccb4297c3b4295e70b7d26118bd7",
   "files": [
     {
       "file": "content/custom.json",
@@ -15,7 +15,7 @@
     },
     {
       "file": "css/style.css",
-      "hash": "a847e2922141faf1b54e722456d3cfd45c60369e"
+      "hash": "87c6dfa848e834055c5eb2276e07fb84e67f4c55"
     },
     {
       "file": "fonts/Baloo2-latin-600.woff2",
@@ -1227,7 +1227,7 @@
     },
     {
       "file": "js/tester.ts",
-      "hash": "10f4e2f50665a5304b0d6e67b69b3c8a8ce70b0b"
+      "hash": "03b6e22a0de40069c346f7157f010a7fd57c7cd2"
     },
     {
       "file": "js/testergate.js",
@@ -1255,11 +1255,11 @@
     },
     {
       "file": "js/ui-settings.ts",
-      "hash": "a897030c30b660afd7418ef3daebdee99e4d7987"
+      "hash": "de59e4d1e712a9b602ef7c6633b9b5771c396b25"
     },
     {
       "file": "js/ui.ts",
-      "hash": "c984e537acbde710d3be15225b6071e862f99f42"
+      "hash": "d934178b44bfff4a3bc996ff910c7205f9476438"
     },
     {
       "file": "js/util.js",

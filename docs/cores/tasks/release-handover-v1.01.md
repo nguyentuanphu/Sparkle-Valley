@@ -1,3 +1,5 @@
+> **Latest takeover (owner requested stop/upload):** [release-takeover-v1.01-20261024.md](release-takeover-v1.01-20261024.md). Read it for actual progress; the original instructions below remain context.
+
 # Release handover: round v1.01 (24 Oct 2026 AEDT)
 
 The Release chat that shipped r90 (v1) hands round v1.01 to a new Release chat. Paste the prompt below.
