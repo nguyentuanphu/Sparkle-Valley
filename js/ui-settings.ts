@@ -10,6 +10,7 @@ import { events } from './core/events.js';
 import { T, applyLang, nm, NPC_NAMES, defaultName } from './i18n.js';
 import { settings, saveSettings, profiles, saveProfiles, normalizeProfile, exportBackup, importBackup, backupAge, farm, resetFarm, saveFarm, MAX_KIDS, getSnapshot } from './state.js';
 import { createSaveCopy, readSaveCopyOrLegacy } from './content/savecopy.js';
+import { FAMILY_CODE_PRIVACY, makeFamilyCode, normalizeFamilyCode, familyName, familyQrSvg } from './content/familycode.js';
 import { say, voicePack, voiceDiag, allowMobilePack, voiceMisses, clearVoiceMisses, voicesFor, onVoices, hasVietnamese, FAMILY_PHRASES, previewPackVoice, resumePackDownload } from './voice.js';
 
 import { SFX, Music } from './audio.js';
@@ -250,6 +251,23 @@ export function openGrownups(after: (() => void) | undefined = undefined) {
       <details class="gsec" data-sec="data" ${gOpen.has('data') ? 'open' : ''}><summary><span class="gi">📊</span><b>${T('Analytics and backup', 'Phân tích và sao lưu')}</b></summary><div class="gbody">
       <div class="field"><label>📊 ${T('Analytics', 'Phân tích')}</label><div class="seg cnt"><button data-c="1" class="${settings.countPlayers !== false ? 'on' : ''}">${T('On', 'Bật')}</button><button data-c="0" class="${settings.countPlayers === false ? 'on' : ''}">${T('Off', 'Tắt')}</button></div></div>
       <p class="note devid">📱 ${T('This device\'s name', 'Tên máy này')}: <b>${esc(easyName(myDeviceId(), settings.lang))}</b> · ${esc(profiles.map(p => p.name).filter(Boolean).join(', ') || T('no players yet', 'chưa có người chơi'))} · <small>${esc(myDeviceId() || '–')}</small></p>
+      <h3>${pic('👨‍👩‍👧')} ${T('Family code', 'Mã gia đình')}</h3>
+      <p class="note fam-privacy">${esc(T(FAMILY_CODE_PRIVACY.en, FAMILY_CODE_PRIVACY.vi))}</p>
+      <div class="fam-code-box" id="gFamCodeBox">
+        ${normalizeFamilyCode(settings.familyCode) ? `<div class="fam-code-linked">
+          <div class="fam-code-meta">
+            <div class="fam-code-name">${T('Family', 'Gia đình')}: <b class="fam-name-val">${esc(familyName(settings.familyCode, settings.lang))}</b></div>
+            <div class="fam-code-line">${T('Family code', 'Mã gia đình')}: <b class="fam-code-val">${esc(normalizeFamilyCode(settings.familyCode))}</b></div>
+            <p class="note">${T('Enter this code or scan the QR code on your family’s other phone, tablet or computer.', 'Nhập mã này hoặc quét mã QR trên điện thoại, máy tính bảng hoặc máy tính khác của gia đình.')}</p>
+            <div class="actions"><button class="btn" id="gFamCodeCopy">${T('Copy code', 'Sao chép mã')}</button><button class="btn danger" id="gFamCodeLeave">${T('Leave the family', 'Rời gia đình')}</button></div>
+          </div>
+          <div class="fam-code-qr">${familyQrSvg(settings.familyCode)}</div>
+        </div>` : `<div class="fam-code-join">
+          <div class="actions"><button class="btn primary" id="gFamCodeMake">${T('Make a family code', 'Tạo mã gia đình')}</button></div>
+          <div class="vrow fam-join-row"><input type="text" id="gFamCodeIn" placeholder="XXXX-XXXX" maxlength="19" autocomplete="off" autocapitalize="characters" spellcheck="false" aria-label="${T('Family code', 'Mã gia đình')}"><button class="btn" id="gFamCodeJoin">${T('Join with a code', 'Nhập mã gia đình')}</button></div>
+          <p class="note fam-code-msg" id="gFamCodeMsg" hidden></p>
+        </div>`}
+      </div>
       <h3>${pic('💾')} ${T('Save a copy (Files / iCloud Drive)', 'Lưu một bản (Tệp / iCloud Drive)')}</h3>
       <p class="note">${T('Save a copy of your children’s progress to iCloud Drive, Google Drive or Files. Loading a copy checks the file and confirms with you before replacing anything.', 'Lưu một bản tiến trình vào iCloud Drive, Google Drive hoặc Tệp. Mở bản sao sẽ kiểm tra tệp và hỏi bạn trước khi thay thế.')}</p>
       <p class="note backup-when${backupAge() > 7 ? ' old' : ''}">${settings.lastBackup ? T('Last backup: ', 'Lần sao lưu gần nhất: ') + new Date(settings.lastBackup).toLocaleDateString(settings.lang === 'vi' ? 'vi-VN' : 'en-AU') + (backupAge() > 7 ? T(' (over a week ago)', ' (hơn một tuần trước)') : '') : T('No backup saved yet.', 'Chưa có bản sao lưu nào.')}</p>
@@ -343,6 +361,49 @@ export function openGrownups(after: (() => void) | undefined = undefined) {
     bindExtras(card, () => { const y = m.scrollTop; draw(); m.scrollTop = y; }, toast);
     if (window.__sv && window.__sv.parents) window.__sv.parents.bindGrownups(card, () => { const y = m.scrollTop; draw(); m.scrollTop = y; }, toast); // (round S)
     card.querySelector('#gFarm').onclick = () => { if (confirm(T('Start the farm over? Players and stickers are kept.', 'Làm lại nông trại? Người chơi và hình dán được giữ lại.'))) { resetFarm(); window.__sv && window.__sv.farm && (window.__sv.farm.syncAnimals(), window.__sv.farm.syncPets()); toast(T('A fresh new farm!', 'Nông trại mới tinh!')); } };
+    const syncFamTelemetry = () => { import('./players.js').then(M => M.noteFamilyCode && M.noteFamilyCode()).catch(() => {}); };
+    const redrawKeepScroll = () => { const y = m.scrollTop; draw(); m.scrollTop = y; };
+    const famMake = card.querySelector('#gFamCodeMake');
+    if (famMake) famMake.onclick = () => {
+      settings.familyCode = makeFamilyCode();
+      saveSettings();
+      syncFamTelemetry();
+      SFX.chime && SFX.chime();
+      toast(T('Family code created!', 'Đã tạo mã gia đình!'));
+      redrawKeepScroll();
+    };
+    const famJoin = card.querySelector('#gFamCodeJoin'), famIn = card.querySelector('#gFamCodeIn'), famMsg = card.querySelector('#gFamCodeMsg');
+    if (famJoin instanceof HTMLElement && famIn instanceof HTMLInputElement) {
+      const doJoin = () => {
+        const code = normalizeFamilyCode(famIn.value);
+        if (!code) {
+          if (famMsg instanceof HTMLElement) { famMsg.hidden = false; famMsg.textContent = T('Enter an 8-character family code (letters and numbers, like K7M4-P9Q2).', 'Hãy nhập mã gia đình gồm 8 ký tự chữ và số (ví dụ K7M4-P9Q2).'); }
+          return;
+        }
+        settings.familyCode = code;
+        saveSettings();
+        syncFamTelemetry();
+        SFX.chime && SFX.chime();
+        toast(T('Joined family!', 'Đã tham gia gia đình!'));
+        redrawKeepScroll();
+      };
+      famJoin.onclick = doJoin;
+      famIn.onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); doJoin(); } };
+    }
+    const famCopy = card.querySelector('#gFamCodeCopy');
+    if (famCopy) famCopy.onclick = () => {
+      const code = normalizeFamilyCode(settings.familyCode);
+      if (code && navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(code).catch(() => {});
+      toast(T('Family code copied!', 'Đã sao chép mã gia đình!'));
+    };
+    const famLeave = card.querySelector('#gFamCodeLeave');
+    if (famLeave) famLeave.onclick = () => {
+      settings.familyCode = '';
+      saveSettings();
+      syncFamTelemetry();
+      toast(T('Left the family.', 'Đã rời gia đình.'));
+      redrawKeepScroll();
+    };
     card.querySelector('#gSaveCopy').onclick = async () => {
       const text = JSON.stringify(createSaveCopy(getSnapshot()), null, 2);
       const name = 'sparkle-valley-' + new Date().toISOString().slice(0, 10) + '.svsave';
@@ -381,12 +442,15 @@ export function openGrownups(after: (() => void) | undefined = undefined) {
           profiles.splice(0, profiles.length, ...copy.profiles.map(normalizeProfile));
           Object.keys(farm).forEach(key => delete farm[key]);
           Object.assign(farm, copy.farm);
+          settings.familyCode = normalizeFamilyCode(copy.settings.familyCode);
           Object.assign(settings, copy.settings);
+          if (settings.familyCode) settings.familyCode = normalizeFamilyCode(settings.familyCode);
           if (copy.device) localStorage.setItem('sv2_playerid', copy.device);
           // An older copy has no device id; keep this device’s existing identity.
           saveProfiles(true);
           saveSettings();
           saveFarm();
+          syncFamTelemetry();
           toast(T('Copy loaded successfully!', 'Đã mở bản sao thành công!'));
           draw();
           after && after();

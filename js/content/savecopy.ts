@@ -1,3 +1,5 @@
+import { normalizeFamilyCode } from './familycode.js';
+
 export const COPY_VERSION = 3;
 export const MAX_COPY_BYTES = 32 * 1024 * 1024;
 
@@ -60,12 +62,18 @@ function validateCopy(data: unknown, version: 2 | 3): SaveCopy {
   }
   if (new Set(profiles.map(profile => profile.id)).size !== profiles.length) throw new Error('invalid profile');
   if (!validFarm(data.farm)) throw new Error('invalid farm');
+  const cleanSettings = Object.fromEntries(Object.entries(data.settings).filter(([key]) => !isSensitiveSetting(key)));
+  if (cleanSettings.familyCode !== undefined && cleanSettings.familyCode !== '') {
+    const normCode = normalizeFamilyCode(cleanSettings.familyCode);
+    if (!normCode) throw new Error('invalid family code');
+    cleanSettings.familyCode = normCode;
+  }
   return {
     app: 'sparkle-valley',
     v: COPY_VERSION,
     saved: data.saved,
     device: typeof data.device === 'string' ? data.device : '',
-    settings: Object.fromEntries(Object.entries(data.settings).filter(([key]) => !isSensitiveSetting(key))),
+    settings: cleanSettings,
     profiles,
     farm: data.farm
   };

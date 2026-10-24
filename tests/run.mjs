@@ -541,6 +541,8 @@ await check('phone', async () => {
           if (/^(x|th-x|ht-x|gl-x|dch|ht-play|th-next|gl-next)$/.test(btn.className.split(' ')[0]) && (b.left < -1 || b.right > W + 1 || b.top < -1 || b.bottom > H + 1)) out.push(`button "${(btn.textContent || btn.getAttribute('aria-label') || btn.className).trim().slice(0, 20)}" off screen (${[b.left, b.top, b.right, b.bottom].map(Math.round)} in ${W}×${H}; on top: ${[...document.querySelectorAll('.dialog, .modal, .reward, .hub, .pad, .gl, .theatre, .songs')].map(e => e.className.split(' ').slice(0, 2).join('.')).join(',')})`); }
         for (const t of document.querySelectorAll('.pad-tabs small')) { const lh = parseFloat(getComputedStyle(t).lineHeight) || 13; if (t.getClientRects().length && t.getBoundingClientRect().height > lh * 1.6 + 2) out.push(`tab name "${t.firstChild && t.firstChild.textContent}" broken over lines`); }
         const md = document.querySelector('.modal'); if (md && /blur/.test(getComputedStyle(md).backdropFilter || '')) out.push('the window blurs the game behind it');
+        const vs = [...document.querySelectorAll('.qsettings .seg.vstyle button')].map(b => b.getBoundingClientRect()).filter(b => b.width > 0);
+        if (vs.length === 3 && (Math.max(...vs.map(b => b.top)) - Math.min(...vs.map(b => b.top)) > 4 || vs.some(b => b.height < 44))) out.push('voice style buttons wrapped or under 44px (' + JSON.stringify(vs.map(b => [Math.round(b.top), Math.round(b.height)])) + ')');
         return out;
       });
       r.forEach(x => bad.push(`${name} (${tag}): ${x}`));
@@ -3436,14 +3438,21 @@ await check('adventure', async () => {
     return { missing: ids.filter(i => !A.GAME_INFO[i]), extra: keys.filter(k => !GAMES[k] && k !== 'familyquiz') /* Family Quiz is there only once the family has written questions in Studio */, badArea: keys.filter(k => !A.AREAS.some(a => a.key === A.GAME_INFO[k][0])), games: ids.length }; });
   // every under-5 section on the one page: its title (drawn picture and name) and its road of drawn pictures
   r.walk = await P.page.evaluate(async () => {
-    const { GAMES } = await import('/js/games/registry.js'), A = await import('/js/content/activities.js'), out = { notDrawn: [], tooBig: [] };
-    __sv.simple.openGroup('games', null); const v = __sv.simple.view, cats = v.cats, stops = v.stops.slice(), heads = document.querySelectorAll('.sp-sec .sp-sectitle').length;
+    const { GAMES } = await import('/js/games/registry.js'), A = await import('/js/content/activities.js'), U = await import('/js/content/unlocks.js'), out = { notDrawn: [], tooBig: [] };
+    const p = __sv.heroes[0].profile;
+    __sv.simple.openGroup('games', null);
+    const openWant = Object.keys(GAMES).filter(id => A.gameInfo(id).ageMin < 5 && U.isOpen(p, id, 'game', A.gameInfo(id).area));
+    const initialStops = __sv.simple.view.stops.filter(id => id !== 'songs');
+    if (openWant.some(id => !initialStops.includes(id)) || initialStops.some(id => !openWant.includes(id))) out.notDrawn.push('unlocks ' + initialStops.length + '/' + openWant.length);
+    p.unlockAll = true; __sv.simple.openGroup('games', null);
+    const v = __sv.simple.view, cats = v.cats, stops = v.stops.slice(), heads = document.querySelectorAll('.sp-sec .sp-sectitle').length;
     const secCats = [...document.querySelectorAll('.sp-sec')].map(x => x.dataset.cat);
     document.querySelectorAll('.sp-sectitle .sp-hpic, .sp-stop .sp-pic').forEach(p => { if (!p.querySelector('.art')) out.notDrawn.push((p.closest('[aria-label]') || p.parentElement).getAttribute('aria-label') || p.parentElement.textContent); });
     if (JSON.stringify(secCats) !== JSON.stringify(cats)) out.notDrawn.push('sections ' + secCats.join(','));
     out.tooBig.push(...stops.filter(id => id !== 'songs' && A.gameInfo(id).ageMin >= 5));
     const want = Object.keys(GAMES).filter(id => A.gameInfo(id).ageMin < 5);
     const order = A.AREAS.map(a => a.key).filter(k => cats.includes(k));
+    delete p.unlockAll; __sv.simple.openGroup('games', null);
     return { cats: cats.length, inOrder: JSON.stringify(order) === JSON.stringify(cats), heads, missed: want.filter(id => !stops.includes(id)), notDrawn: out.notDrawn, tooBig: out.tooBig, stops: stops.length };
   });
   // places: China and India (asia) always come last
@@ -3474,7 +3483,7 @@ await check('adventure', async () => {
   const errs = P.errors; await P.ctx.close();
   // a big kid: the first tap shows, the second plays; ✨ on a game that came after the last look; search finds "Đập Niêu" without accents
   const B = await open(b, { w: 390, h: 844, touch: true, screen: 'simple' });
-  await B.page.evaluate(() => { const p = __sv.heroes[0].profile; p.age = 'big'; p.seenActs = undefined; __sv.simple.hide(); __sv.simple.show(); p.seenActs = p.seenActs.filter(x => x !== 'game:bunny'); __sv.simple.hide(); __sv.simple.show('games'); __sv.simple.openGroup('games', 'animals'); document.querySelectorAll('.dialog').forEach(d => d.remove()); });
+  await B.page.evaluate(() => { const p = __sv.heroes[0].profile; p.age = 'big'; p.unlockAll = true; p.seenActs = undefined; __sv.simple.hide(); __sv.simple.show(); p.seenActs = p.seenActs.filter(x => x !== 'game:bunny'); __sv.simple.hide(); __sv.simple.show('games'); __sv.simple.openGroup('games', 'animals'); document.querySelectorAll('.dialog').forEach(d => d.remove()); });
   r.big = await B.page.evaluate(() => ({ stops: __sv.simple.view.stops.length, newOn: [...document.querySelectorAll('.sp-stop')].filter(s => s.querySelector('.sp-new')).map(s => s.getAttribute('aria-label')), dots: document.querySelectorAll('.sp-level').length === 0 })); // stars only: no difficulty dots (owner)
   await B.page.locator('.sp-stop:not(.grp)').first().click(); await B.page.waitForTimeout(700);
   r.big.firstTap = await B.page.evaluate(() => ({ game: !!document.querySelector('.gl'), sel: !!document.querySelector('.sp-stop.sel .sp-play') }));
@@ -3701,11 +3710,22 @@ await check('grownupsui', async () => {
     // (round R privacy, 9 Oct) no voice engine or voice key any more; the privacy notice is its own small block at the top
     const eng = document.querySelector('.grownups details.xeng, .grownups #xKey, .grownups #xTts, .grownups #xClone'), credits = !!document.querySelector('.grownups #crName');
     const priv = document.querySelector('.grownups details.g-priv'), firstSec = document.querySelector('.grownups details.gsec');
-    return { act: [a.left, a.top, a.right, a.bottom].map(Math.round), moves: Math.round(mv.top), w: innerWidth, cap: c ? [Math.round(c.top), Math.round(c.bottom)] : null, secs, open, engine: !!eng, privacy: priv ? priv.querySelectorAll('li').length : 0, privFirst: !!(priv && firstSec && priv.compareDocumentPosition(firstSec) & Node.DOCUMENT_POSITION_FOLLOWING), privTap: priv ? Math.round(priv.querySelector('summary').getBoundingClientRect().height) : 0, credits };
+    const privLines = priv ? priv.querySelectorAll('li').length : 0;
+    const privFirst = !!(priv && firstSec && priv.compareDocumentPosition(firstSec) & Node.DOCUMENT_POSITION_FOLLOWING);
+    const privTap = priv ? Math.round(priv.querySelector('summary').getBoundingClientRect().height) : 0;
+    const dataSec = document.querySelector('.grownups details.gsec[data-sec="data"]'); if (dataSec) dataSec.open = true; await wait(100);
+    const famPriv = document.querySelector('.grownups .fam-privacy')?.textContent || '';
+    document.querySelector('#gFamCodeMake')?.click(); await wait(150);
+    const madeCode = document.querySelector('.grownups .fam-code-val')?.textContent || '', hasQr = !!document.querySelector('.grownups svg.fam-qr');
+    document.querySelector('#gFamCodeLeave')?.click(); await wait(150);
+    const famIn = document.querySelector('#gFamCodeIn'); if (famIn) { famIn.value = 'k7m4 p9q2'; document.querySelector('#gFamCodeJoin')?.click(); await wait(150); }
+    const joinedCode = document.querySelector('.grownups .fam-code-val')?.textContent || '';
+    document.querySelector('#gFamCodeLeave')?.click(); await wait(100);
+    return { act: [a.left, a.top, a.right, a.bottom].map(Math.round), moves: Math.round(mv.top), w: innerWidth, cap: c ? [Math.round(c.top), Math.round(c.bottom)] : null, secs, open, engine: !!eng, privacy: privLines, privFirst, privTap, credits, famPriv, madeCode, hasQr, joinedCode };
   });
   const errs = P.errors; await P.ctx.close();
   ok(r.act[0] > r.w / 2 - 40 && r.act[3] <= r.moves + 2 && r.cap && r.cap[0] < 260, 'phone layout: ' + JSON.stringify(r));
-  ok(r.secs.length >= 8 && r.secs.includes('sound') && r.secs.includes('online') && r.open.join() === 'players' && !r.engine && r.privacy === 6 && r.privFirst && r.privTap >= 44 && !r.credits && !errs.length, 'grown-ups: ' + JSON.stringify(Object.assign(r, { errs })));
+  ok(r.secs.length >= 8 && r.secs.includes('sound') && r.secs.includes('online') && r.open.join() === 'players' && !r.engine && r.privacy === 6 && r.privFirst && r.privTap >= 44 && !r.credits && /không chia sẻ tiến trình hay ảnh/.test(r.famPriv) && /^[A-Z0-9]{4}-[A-Z0-9]{4}$/.test(r.madeCode) && r.hasQr && r.joinedCode === 'K7M4-P9Q2' && !errs.length, 'grown-ups: ' + JSON.stringify(Object.assign(r, { errs })));
   return `action button on the right above Jump/Run (${r.act.join(',')}), words at the top (${r.cap.join('–')} px); Grown-ups: ${r.secs.length} groups (${r.secs.join(', ')}), the privacy notice first (${r.privacy} lines), no voice engine or voice key, no credits editor`;
 });
 
@@ -6556,21 +6576,21 @@ await check('dailyadventure', async () => {
     ok(!miss.length, `${tag}: spots not in the valley: ${miss.join(', ')}`);
     await P.page.evaluate(age => { __sv.heroes[0].profile.age = age; __sv.adventure.force(0, 'house'); }, age);
     await P.page.waitForTimeout(600);
-    // HUD-4: the goal card shows the step, 3 dots and hear-again; a tap opens the window
-    const card = await P.page.evaluate(() => { const c = document.querySelector('.hud .advcard'); if (!c || c.hidden) return null; const r = c.getBoundingClientRect(), hear = c.querySelector('.adv-hear').getBoundingClientRect();
-      return { text: c.querySelector('.adv-text').textContent, dots: c.querySelectorAll('.adv-dots i').length, now: c.querySelectorAll('.adv-dots i.now').length, hear: Math.min(hear.width, hear.height), right: r.right, quest: getComputedStyle(document.querySelector('.hud .q-say')).display }; });
-    ok(card && card.dots === 3 && card.now === 1 && card.hear >= 44 && card.right <= w + 1 && card.quest !== 'none', `${tag}: goal card under the goal row, which stays (owner, 17 Oct AEDT: "show both") ${JSON.stringify(card)}`);
+    // HUD-4: the goal card shows the step, 3 dots, Go walk button and hear-again; a tap opens the window
+    const card = await P.page.evaluate(() => { const c = document.querySelector('.hud .advcard'); if (!c || c.hidden) return null; const r = c.getBoundingClientRect(), hear = c.querySelector('.adv-hear').getBoundingClientRect(), walk = c.querySelector('.adv-walk').getBoundingClientRect();
+      return { text: c.querySelector('.adv-text').textContent, dots: c.querySelectorAll('.adv-dots i').length, now: c.querySelectorAll('.adv-dots i.now').length, hear: Math.min(hear.width, hear.height), walk: Math.min(walk.width, walk.height), right: r.right, quest: getComputedStyle(document.querySelector('.hud .q-say')).display }; });
+    ok(card && card.dots === 3 && card.now === 1 && card.hear >= 44 && card.walk >= 44 && card.right <= w + 1 && card.quest !== 'none', `${tag}: goal card under the goal row, which stays (owner, 17 Oct AEDT: "show both") ${JSON.stringify(card)}`);
     ok(lang === 'vi' ? /Phố Hai Quê/.test(card.text) : /Two Homes Street/.test(card.text), `${tag}: the step in the language (${card.text})`);
     await P.page.click('.hud .advcard .adv-open'); await P.page.waitForTimeout(500);
     const win = await P.page.evaluate(() => { const m = document.querySelector('.modal.advwin'); if (!m) return null; const R = e => e.getBoundingClientRect();
-      const go = m.querySelector('.adv-go'), x = m.querySelector('.x');
-      return { steps: m.querySelectorAll('.adv-step').length, stamps: m.querySelectorAll('.adv-stamp').length, chest: !!m.querySelector('.adv-chestrow .adv-rew'), mains: m.querySelectorAll('.adv-go').length, go: R(go).height, x: R(x).width, goBottom: R(go).bottom, wide: [...m.querySelectorAll('*')].some(e => R(e).right > innerWidth + 1), txt: m.innerText }; });
-    ok(win && win.steps === 3 && win.stamps === 7 && win.chest && win.mains === 1, `${tag}: window ${JSON.stringify(win && { ...win, txt: '' })}`);
+      const go = m.querySelector('.adv-go'), x = m.querySelector('.x'), stepGo = m.querySelector('.adv-step.now .adv-step-go');
+      return { steps: m.querySelectorAll('.adv-step').length, stamps: m.querySelectorAll('.adv-stamp').length, chest: !!m.querySelector('.adv-chestrow .adv-rew'), mains: m.querySelectorAll('.adv-go').length, stepGo: stepGo ? Math.min(R(stepGo).width, R(stepGo).height) : 0, go: R(go).height, x: R(x).width, goBottom: R(go).bottom, wide: [...m.querySelectorAll('*')].some(e => R(e).right > innerWidth + 1), txt: m.innerText }; });
+    ok(win && win.steps === 3 && win.stamps === 7 && win.chest && win.mains === 1 && win.stepGo >= 44, `${tag}: window ${JSON.stringify(win && { ...win, txt: '' })}`);
     ok(win.go >= 64 && win.x >= 56 && win.goBottom <= h + 1 && !win.wide, `${tag}: big buttons, all on screen (${win.go}, ${win.x}, ${win.goBottom})`);
     ok(lang === 'vi' ? win.txt.includes('Phiêu lưu hôm nay') && !win.txt.includes("Today's adventure") : win.txt.includes("Today's adventure"), `${tag}: the window in the language`);
     await P.page.screenshot({ path: `out/dailyadventure-window-${w}.png` });
     await P.page.click('.modal.advwin .adv-go'); await P.page.waitForTimeout(500);
-    ok(await P.page.evaluate(() => !document.querySelector('.modal.advwin') && __sv.adventure.trails.size === 1), `${tag}: Let's go closes the window and shows the way`);
+    ok(await P.page.evaluate(() => !document.querySelector('.modal.advwin') && __sv.adventure.trails.size === 1 && !!(__sv.heroes[0].goal || __sv.adventure.trails.get(__sv.heroes[0])?.walk)), `${tag}: Let's go closes the window, shows the way and starts walking`);
     // play it: walk in, find, give (big kids count first), the chest
     const coins0 = await P.page.evaluate(async () => { const S = await import('/js/state.js'); return S.farm.coins; });
     await P.page.evaluate(async () => { const G = __sv, h = G.heroes[0], V = (await import('/js/content/map.js')).anchorOf('town'); h.pos.x = V[0]; h.pos.z = V[1] + 4; h.pos.y = (await import('/js/world.js')).heightAt(h.pos.x, h.pos.z); });

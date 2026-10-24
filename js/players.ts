@@ -27,6 +27,7 @@ import { Net } from './net.js';
 import { voiceMisses } from './voice.js';
 import { events } from './core/events.js';
 import { id as makeId } from './core/ids.js';
+import { familyHash } from './content/familycode.js';
 
 const KEY = 'sv2_playerid', OUT = 'sv2_hello_out', SENT = 'sv2_voicesent', EVERY = 10 * 60e3;
 const BOT_OUT = 'sv2_bot_telemetry';
@@ -46,7 +47,9 @@ const installed = () => matchMedia('(display-mode: standalone)').matches || navi
 const today = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; }; // the child's own day
 
 // the outbox: { days: { 'YYYY-MM-DD': { m, g: {game: n}, t, o } }, pending?: { h, days[], v[] } }, kept on the device until the website has it
-const readOut = () => { try { const o = JSON.parse(localStorage.getItem(outKey()) || '{}'); return o && o.days ? o : { days: {} }; } catch (e) { return { days: {} }; } };
+type OutDay = { d?: string; build?: string; m: number; g: Record<string, number>; t: number; o: number; fc?: number; h?: Record<number, number>; c?: Record<string, { n: string; a: string; m: number; g: Record<string, number[]>; p: Record<string, number>; t: number; sm: number }>; e?: Record<string, number>; s?: Record<string, number>; q?: Record<string, number>; f?: number[]; st?: (number | string)[][]; b?: number[] };
+type Outbox = { days: Record<string, OutDay>; pending?: { h: string; days: (OutDay & { d: string; build: string })[]; v: string[][] } };
+const readOut = (): Outbox => { try { const o = JSON.parse(localStorage.getItem(outKey()) || '{}'); return o && o.days ? o : { days: {} }; } catch (e) { return { days: {} }; } };
 // (r80, owner 17 Oct AEDT: devices offline for a long time) the last 30 days played are kept until sent (was 14: a
 // device away for 3 weeks lost its first week), as many as the website takes (netlify/lib/hello-clean.mts, 30 days);
 // they go in batches of 42 (flush)
@@ -73,9 +76,12 @@ export function watchHero(h, pad, dt, area) {
 }
 
 // something to count: a game started (its id) or a story opened
-export function countPlay(what, gameId) {
+export function countPlay(what, gameId = '') {
   if (what === 'game' && /^[\w-]{1,32}$/.test(gameId || '')) bump(d => { d.g[gameId] = (d.g[gameId] || 0) + 1; });
   if (what === 'tale') bump(d => { d.t++; });
+}
+export function noteFamilyCode() { bump(d => { d.fc = 1; }); flush(false);
+// family code updated: send the new digest (or empty on leave) on the next hello
 }
 // lines said with the machine voice that this device has not reported yet (the game's own words only)
 function newMisses() {
@@ -91,7 +97,7 @@ export async function flush(closing) {
   if (sending || settings.countPlayers === false || !onSite()) return false;
   const o = readOut();
   if (!o.pending) {
-    const days = Object.entries(o.days).filter(([, d]) => d.m || d.t || d.o || Object.keys(d.g||{}).length || Object.keys(d.e || {}).length || (d.st || []).length).map(([d, x]) => ({ d:d.slice(0,10), build:x.build||'?', m: x.m, g: x.g, t: x.t, o: x.o, h: x.h || {}, c: x.c || {}, e: x.e || {}, s: x.s || {}, q: x.q || {}, f: x.f || [0, 0, 0], st: x.st || [], b: x.b || [0, 0, 0, 0, 0, 0, 0, 0, 0, 0] })).slice(0,42);
+    const days = Object.entries(o.days).filter(([, d]) => d.m || d.t || d.o || d.fc || Object.keys(d.g||{}).length || Object.keys(d.e || {}).length || (d.st || []).length).map(([d, x]) => ({ d:d.slice(0,10), build:x.build||'?', m: x.m, g: x.g, t: x.t, o: x.o, h: x.h || {}, c: x.c || {}, e: x.e || {}, s: x.s || {}, q: x.q || {}, f: x.f || [0, 0, 0], st: x.st || [], b: x.b || [0, 0, 0, 0, 0, 0, 0, 0, 0, 0] })).slice(0,42);
     if (!days.length) return false;
     const miss = newMisses();
     o.pending = { h: rnd(16), days, v: miss.out }; for(const d of days){delete o.days[d.d+'|'+d.build];if(d.build==='?')delete o.days[d.d];}writeOut(o);
@@ -99,7 +105,7 @@ export async function flush(closing) {
   if (navigator.onLine === false) return false; // waits for the 'online' event
   const me = id(); if (!me) return false;
   const bot = isBotEnv();
-  const P = o.pending, payload = { id: me, h: P.h, b: BUILD, sid:SESSION, started:SESSION_STARTED, l: settings.lang, k: (profiles || []).length, d: kind(), a: installed(), os: osOf(), br: browserOf(), sc: `${Math.round(screen.width)}x${Math.round(screen.height)}`, days: P.days.map(d=>({...d,build:d.build||'?'})), v: P.v };
+  const P = o.pending, payload: Record<string, unknown> = { id: me, h: P.h, b: BUILD, sid:SESSION, started:SESSION_STARTED, l: settings.lang, k: (profiles || []).length, d: kind(), a: installed(), os: osOf(), br: browserOf(), sc: `${Math.round(screen.width)}x${Math.round(screen.height)}`, fh: familyHash(settings.familyCode), days: P.days.map(d=>({...d,build:d.build||'?'})), v: P.v };
   if (bot) { payload.isRobot = true; payload.traffic = 'synthetic_bot'; }
   const body = JSON.stringify(payload);
   if (closing) { try { navigator.sendBeacon && navigator.sendBeacon('/api/hello', new Blob([body], { type: 'application/json' })); } catch (e) { } return false; } // confirmed by the next send
@@ -156,7 +162,7 @@ export function sendLive(on, G) {
   const me = id(); if (!me) return;
   const p = G && G.heroes && G.heroes[0] && G.heroes[0].profile, kid = p && settings.reportNames !== false ? String(p.name || '').trim().split(/\s+/)[0].slice(0, 20) : ''; // (audit: no name when names are off)
   const bot = isBotEnv();
-  const payload = { id: me, live: on ? 1 : 0, kid, sid:SESSION, b:BUILD, started:SESSION_STARTED };
+  const payload: Record<string, unknown> = { id: me, live: on ? 1 : 0, kid, sid:SESSION, b:BUILD, started:SESSION_STARTED };
   if (bot) { payload.isRobot = true; payload.traffic = 'synthetic_bot'; }
   const body = JSON.stringify(payload);
   try { if (!on && navigator.sendBeacon) { navigator.sendBeacon('/api/hello', new Blob([body], { type: 'application/json' })); return; } } catch (e) { }
@@ -168,7 +174,7 @@ export function sendLive(on, G) {
 function recordStart(G, tries = 0) {
   const bt = G && G.bootTimes;
   if (!bt || bt.shaders == null) { if (tries < 240) setTimeout(() => recordStart(G, tries + 1), 500); return; }
-  const steps = Object.entries(bt).filter(([k]) => k !== 'start').sort((a, b) => a[1] - b[1]);
+  const steps = Object.entries<number>(bt).filter(([k]) => k !== 'start').sort((a, b) => a[1] - b[1]);
   let slow = '', most = -1; steps.forEach(([k, v], i) => { const d = v - (i ? steps[i - 1][1] : 0); if (d > most) { most = d; slow = k; } });
   const row = [bt.start, bt.start + (bt.ready || 0), bt.start + bt.shaders, warmStart ? 1 : 0, /^[a-z]{1,16}$/.test(slow) ? slow : ''].map(v => typeof v === 'number' ? Math.round(v) : v);
   bump(d => { d.st = (d.st || []).concat([row]).slice(-6); });
@@ -213,7 +219,7 @@ export function startCounting(G) {
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') { flush(true); sendLive(false, G); } else { flush(false); sendLive(true, G); } });
   addEventListener('online', () => flush(false)); // the internet is back: send what waited
   // a story opened: the tale theatre appearing on the screen
-  new MutationObserver(ms => { for (const m of ms) for (const n of m.addedNodes) if (n.classList && n.classList.contains('theatre')) { countPlay('tale'); const p = G && G.heroes[0] && G.heroes[0].profile; if (p) bump(d => { kidOf(d, p).t++; }); } }).observe(document.body, { childList: true });
+  new MutationObserver(ms => { for (const m of ms) for (const n of m.addedNodes) if (n instanceof Element && n.classList.contains('theatre')) { countPlay('tale'); const p = G && G.heroes[0] && G.heroes[0].profile; if (p) bump(d => { kidOf(d, p).t++; }); } }).observe(document.body, { childList: true });
   // the first hello soon after starting (a child who plays two minutes still counts), and whatever waited from before
   setTimeout(() => { bump(d => { d.m = Math.max(d.m, 1); }); flush(false); }, 90e3);
   setTimeout(() => flush(false), 5000);

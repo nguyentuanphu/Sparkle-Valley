@@ -115,3 +115,10 @@ test("legacy v2 backup file is accepted by readSaveCopyOrLegacy", () => {
   assert.equal(parsed.profiles.length, 1);
   assert.equal(parsed.settings.lang, "vi");
 });
+
+test("familyCode in settings is normalized and preserved in save copies", () => {
+  const copy = createSaveCopy({ ...good, v: 2, settings: { lang: "en", familyCode: "k7m4 p9q2" } });
+  assert.equal(copy.settings.familyCode, "K7M4-P9Q2");
+  const bad = { ...good, settings: { lang: "en", familyCode: "not-a-code!" } };
+  assert.throws(() => readSaveCopy(JSON.stringify(bad)), /invalid family code/);
+});
