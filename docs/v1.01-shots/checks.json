@@ -2,42 +2,44 @@
   {
     "name": "phone-en",
     "quick": {
-      "scroll": 1381,
+      "scroll": 1297,
       "xTop": 22,
       "xBottom": 86,
-      "headBottom": -1269,
-      "closeVisible": true
+      "headBottom": -1185,
+      "closeVisible": true,
+      "vstyleRow": true
     },
     "backup": {
       "save": true,
       "load": true,
+      "familyCode": true,
       "old": false,
       "done": true
     },
     "targets": [
       {
         "text": "All fixed",
-        "width": 99,
+        "width": 97.203125,
         "height": 64
       },
       {
         "text": "Yes, fixed",
-        "width": 108,
+        "width": 105.84375,
         "height": 64
       },
       {
         "text": "Still wrong",
-        "width": 116,
+        "width": 113.578125,
         "height": 64
       },
       {
         "text": "Yes, fixed",
-        "width": 108,
+        "width": 105.84375,
         "height": 64
       },
       {
         "text": "Still wrong",
-        "width": 116,
+        "width": 113.578125,
         "height": 64
       }
     ],
@@ -52,42 +54,44 @@
   {
     "name": "phone-vi",
     "quick": {
-      "scroll": 1425,
+      "scroll": 1341,
       "xTop": 22,
       "xBottom": 86,
-      "headBottom": -1302,
-      "closeVisible": true
+      "headBottom": -1218,
+      "closeVisible": true,
+      "vstyleRow": true
     },
     "backup": {
       "save": true,
       "load": true,
+      "familyCode": true,
       "old": false,
       "done": true
     },
     "targets": [
       {
         "text": "Tất cả đã hết lỗi",
-        "width": 150,
+        "width": 150.390625,
         "height": 64
       },
       {
         "text": "Đã hết lỗi",
-        "width": 105,
+        "width": 105.234375,
         "height": 64
       },
       {
         "text": "Vẫn còn lỗi",
-        "width": 115,
+        "width": 115.296875,
         "height": 64
       },
       {
         "text": "Đã hết lỗi",
-        "width": 105,
+        "width": 105.234375,
         "height": 64
       },
       {
         "text": "Vẫn còn lỗi",
-        "width": 115,
+        "width": 115.296875,
         "height": 64
       }
     ],
@@ -102,42 +106,44 @@
   {
     "name": "tablet-en",
     "quick": {
-      "scroll": 865,
+      "scroll": 849,
       "xTop": 22,
       "xBottom": 86,
-      "headBottom": -753,
-      "closeVisible": true
+      "headBottom": -737,
+      "closeVisible": true,
+      "vstyleRow": true
     },
     "backup": {
       "save": true,
       "load": true,
+      "familyCode": true,
       "old": false,
       "done": true
     },
     "targets": [
       {
         "text": "All fixed",
-        "width": 99,
+        "width": 97.203125,
         "height": 64
       },
       {
         "text": "Yes, fixed",
-        "width": 108,
+        "width": 105.84375,
         "height": 64
       },
       {
         "text": "Still wrong",
-        "width": 116,
+        "width": 113.578125,
         "height": 64
       },
       {
         "text": "Yes, fixed",
-        "width": 108,
+        "width": 105.84375,
         "height": 64
       },
       {
         "text": "Still wrong",
-        "width": 116,
+        "width": 113.578125,
         "height": 64
       }
     ],
@@ -152,42 +158,44 @@
   {
     "name": "tablet-vi",
     "quick": {
-      "scroll": 885,
+      "scroll": 869,
       "xTop": 22,
       "xBottom": 86,
-      "headBottom": -762,
-      "closeVisible": true
+      "headBottom": -746,
+      "closeVisible": true,
+      "vstyleRow": true
     },
     "backup": {
       "save": true,
       "load": true,
+      "familyCode": true,
       "old": false,
       "done": true
     },
     "targets": [
       {
         "text": "Tất cả đã hết lỗi",
-        "width": 150,
+        "width": 150.390625,
         "height": 64
       },
       {
         "text": "Đã hết lỗi",
-        "width": 105,
+        "width": 105.234375,
         "height": 64
       },
       {
         "text": "Vẫn còn lỗi",
-        "width": 115,
+        "width": 115.296875,
         "height": 64
       },
       {
         "text": "Đã hết lỗi",
-        "width": 105,
+        "width": 105.234375,
         "height": 64
       },
       {
         "text": "Vẫn còn lỗi",
-        "width": 115,
+        "width": 115.296875,
         "height": 64
       }
     ],
@@ -202,42 +210,44 @@
   {
     "name": "computer-en",
     "quick": {
-      "scroll": 1245,
+      "scroll": 1229,
       "xTop": 22,
       "xBottom": 86,
-      "headBottom": -1133,
-      "closeVisible": true
+      "headBottom": -1117,
+      "closeVisible": true,
+      "vstyleRow": true
     },
     "backup": {
       "save": true,
       "load": true,
+      "familyCode": true,
       "old": false,
       "done": true
     },
     "targets": [
       {
         "text": "All fixed",
-        "width": 99,
+        "width": 97.203125,
         "height": 64
       },
       {
         "text": "Yes, fixed",
-        "width": 108,
+        "width": 105.84375,
         "height": 64
       },
       {
         "text": "Still wrong",
-        "width": 116,
+        "width": 113.578125,
         "height": 64
       },
       {
         "text": "Yes, fixed",
-        "width": 108,
+        "width": 105.84375,
         "height": 64
       },
       {
         "text": "Still wrong",
-        "width": 116,
+        "width": 113.578125,
         "height": 64
       }
     ],
@@ -252,42 +262,44 @@
   {
     "name": "computer-vi",
     "quick": {
-      "scroll": 1265,
+      "scroll": 1249,
       "xTop": 22,
       "xBottom": 86,
-      "headBottom": -1142,
-      "closeVisible": true
+      "headBottom": -1126,
+      "closeVisible": true,
+      "vstyleRow": true
     },
     "backup": {
       "save": true,
       "load": true,
+      "familyCode": true,
       "old": false,
       "done": true
     },
     "targets": [
       {
         "text": "Tất cả đã hết lỗi",
-        "width": 150,
+        "width": 150.390625,
         "height": 64
       },
       {
         "text": "Đã hết lỗi",
-        "width": 105,
+        "width": 105.234375,
         "height": 64
       },
       {
         "text": "Vẫn còn lỗi",
-        "width": 115,
+        "width": 115.296875,
         "height": 64
       },
       {
         "text": "Đã hết lỗi",
-        "width": 105,
+        "width": 105.234375,
         "height": 64
       },
       {
         "text": "Vẫn còn lỗi",
-        "width": 115,
+        "width": 115.296875,
         "height": 64
       }
     ],

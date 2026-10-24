@@ -1450,9 +1450,9 @@ await check('testerreport', async () => {
   if (!e || !/^data:image\/jpeg;base64,/.test(e.shot || '') || !(e.log && e.log.length) || !e.players.length || !e.players[0].name || !e.dev || !e.b) out.push('the error report has no picture, steps, players or device: ' + JSON.stringify(e && { shot: (e.shot || '').slice(0, 30), log: e.log && e.log.length, players: e.players, dev: e.dev, b: e.b }));
   await P.page.evaluate(() => __sv.playGame(0, 'no-such-game-for-the-tester-check'));
   if (!await wait(x => x && x.auto === 'noopen' && /no-such-game/.test(x.detail), 9000)) out.push('a game that did not open was not reported');
-  await P.page.waitForFunction(() => performance.now() > 0, null); await P.page.waitForTimeout(Math.max(0, 16000 - await P.page.evaluate(() => performance.now())));
+  await P.page.waitForFunction(() => window.__sv?.tester?.mountedAt && window.__sv.tester.mountedAt() > 0 && performance.now() - window.__sv.tester.mountedAt() > 15200, null, { timeout: 30000 });
   const earlierFreezes = got.filter(x => x && x.auto === 'freeze');
-  await P.page.evaluate(() => new Promise(r => requestAnimationFrame(() => { const t = performance.now(); while (performance.now() - t < 2600) { } r(); })));
+  await P.page.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => { const t = performance.now(); while (performance.now() - t < 2600) { } r(); }))));
   { const fz = await wait(x => x && x.auto === 'freeze' && !earlierFreezes.includes(x), 6000); if (!fz) out.push('a frozen screen was not reported');
     // (#261) the report says the game's own code ran long (this freeze is a 2.6 s script), not only that frames stopped
     else { const scripts = [...JSON.stringify(fz.log || []).matchAll(/longest script (\d+) ms/g)];

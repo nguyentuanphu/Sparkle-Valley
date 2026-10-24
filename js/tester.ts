@@ -41,7 +41,7 @@ type TesterGame = Pick<SvMain, 'heroes' | 'huds' | 'paused' | 'renderer' | 'regi
   autoplay?: { running(): boolean; attach?(body: HTMLElement, close: () => void): void; detach?(): void; stop?(): void; start?(items: unknown, speed: string): void; open?(): void };
   testerRewards?: { apply(status: TesterStatus): void; unmount(): void; corner(): void };
 };
-export type TesterApi = { level: string; openPanel: typeof openPanel; autoReport: typeof autoReport; refresh: typeof refresh; retest: typeof retest; nightly: typeof nightly; settings: typeof settingsRows; status(): TesterStatus | null; unmount(): void };
+export type TesterApi = { level: string; openPanel: typeof openPanel; autoReport: typeof autoReport; refresh: typeof refresh; retest: typeof retest; nightly: typeof nightly; settings: typeof settingsRows; status(): TesterStatus | null; mountedAt(): number; unmount(): void };
 type ReportPanel = HTMLElement & { close(): void; selectTab?(tab: string): void };
 declare global {
   interface Window { __svTesterURL?: string }
@@ -578,7 +578,7 @@ function stop() { live = false; offs.splice(0).forEach(f => { try { f(); } catch
 // js/testergate.js: this device is a tester at this level ('' = no longer)
 export function mountTester(game: TesterGame, lv: string) {
   G = game; level = lv;
-  G.tester = { level, openPanel, autoReport, refresh, retest, nightly, settings: settingsRows, status: () => status, unmount: () => { stop(); delete G.tester; } };
+  G.tester = { level, openPanel, autoReport, refresh, retest, nightly, settings: settingsRows, status: () => status, mountedAt: () => mounted, unmount: () => { stop(); delete G.tester; } };
   // (the agreement waits until a child is in the valley, not over the title screen)
   if (accepted()) start(); else if (!(get(KEY.acc, null) || {}).stopped) { const wait = setInterval(() => { if (!G.tester) return clearInterval(wait); if (G.heroes && G.heroes.length && !G.paused) { clearInterval(wait); setTimeout(agreement, 1200); } }, 500); }
 }

@@ -6,7 +6,9 @@
     "headingTop": 29,
     "footerTop": 766,
     "bodyBottom": 733,
-    "footerVisible": true
+    "footerVisible": true,
+    "familyCode": true,
+    "reportTitleClear": true
   },
   {
     "device": "phone",
@@ -15,7 +17,9 @@
     "headingTop": 29,
     "footerTop": 766,
     "bodyBottom": 733,
-    "footerVisible": true
+    "footerVisible": true,
+    "familyCode": true,
+    "reportTitleClear": true
   },
   {
     "device": "tablet",
@@ -24,7 +28,9 @@
     "headingTop": 155,
     "footerTop": 976,
     "bodyBottom": 943,
-    "footerVisible": true
+    "footerVisible": true,
+    "familyCode": true,
+    "reportTitleClear": true
   },
   {
     "device": "tablet",
@@ -33,7 +39,9 @@
     "headingTop": 155,
     "footerTop": 976,
     "bodyBottom": 943,
-    "footerVisible": true
+    "footerVisible": true,
+    "familyCode": true,
+    "reportTitleClear": true
   },
   {
     "device": "computer",
@@ -42,7 +50,9 @@
     "headingTop": 29,
     "footerTop": 722,
     "bodyBottom": 689,
-    "footerVisible": true
+    "footerVisible": true,
+    "familyCode": true,
+    "reportTitleClear": true
   },
   {
     "device": "computer",
@@ -51,6 +61,8 @@
     "headingTop": 29,
     "footerTop": 722,
     "bodyBottom": 689,
-    "footerVisible": true
+    "footerVisible": true,
+    "familyCode": true,
+    "reportTitleClear": true
   }
 ]
