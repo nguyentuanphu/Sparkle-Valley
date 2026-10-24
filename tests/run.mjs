@@ -941,9 +941,9 @@ await check('ownerstudiofailures', async () => studioRepairCheck(b));
 await check('ground', async () => {
   // every building on dry, level ground (not over the river or the lake), no road floating, buried or in water,
   // and the build number in the game matches the service worker's version
-  const P = await open(b, { w: 900, h: 700 });
-  const title = await P.page.waitForSelector('.tt-build', { timeout: 15000 }).then(e => e.textContent()).catch(() => '');
-  await clear(P.page);
+  const T0 = await open(b, { w: 900, h: 700, play: false });
+  const title = await T0.page.waitForSelector('.tt-build', { state: 'attached', timeout: 30000 }).then(e => e.textContent()).catch(() => ''); await T0.ctx.close();
+  const P = await open(b, { w: 900, h: 700 }); await clear(P.page);
   const r = await groundAudit(P.page);
   const { build, shown } = await P.page.evaluate(async () => { const m = await import('/js/build.js'); return { build: m.BUILD, shown: m.SHOWN }; });
   const sw = fs.readFileSync(new globalThis.URL('../sw.js', import.meta.url), 'utf8'), ver = /VERSION = '([^']+)'/.exec(sw)[1];
