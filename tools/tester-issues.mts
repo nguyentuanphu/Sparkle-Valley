@@ -13,7 +13,7 @@
 //   STUDIO_KEY=… GITHUB_TOKEN=… GITHUB_REPOSITORY=owner/repo node tools/tester-issues.mts [--site https://…] [--dry]
 const arg = k => { const i = process.argv.indexOf(k); return i > 0 ? process.argv[i + 1] : ''; };
 const SITE = (arg('--site') || process.env.SV_SITE || 'https://sparklevalley.au').replace(/\/$/, ''), KEY = process.env.STUDIO_KEY || '';
-const GH = process.env.GITHUB_TOKEN || '', REPO = process.env.GITHUB_REPOSITORY || 'nguyentuanphu/Sparkle-Valley', DRY = process.argv.includes('--dry');
+const GH = process.env.GITHUB_TOKEN || '', REPO = process.env.GITHUB_REPOSITORY || 'nguyentuanphu/tpn', DRY = process.argv.includes('--dry');
 
 // (#472) report text such as "tap: Send @45,375" mentioned real GitHub accounts; a zero-width space after every @ keeps
 // the text readable but never mentions anyone
