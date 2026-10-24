@@ -1,6 +1,6 @@
 {
-  "source": "d3bfaac1780a6a01b8801ea148aa0fd82a3343e1",
-  "reviewedSource": "dee820ee9c35e63c9c65eb1f941fa98d2b16fd85",
+  "source": "acb07cee0cf7fa7b7cddaa487a355c01f9557e2c",
+  "reviewedSource": "d3bfaac1780a6a01b8801ea148aa0fd82a3343e1",
   "coverage": {
     "valley": 17,
     "lantern": 24,
@@ -9,22 +9,15 @@
     "festivals": 24
   },
   "changed": [
-    "js/howto-data.ts",
-    "js/simple.js",
-    "js/voice.ts",
-    "voices/areas.json",
-    "voices/en/f/3078e492-30ee5f01.mp3",
-    "voices/en/f/48baf783-7e67c70a.mp3",
-    "voices/en/f/657babc71837ad6b.mp3",
-    "voices/en/m/3078e492-30ee5f01.mp3",
-    "voices/en/m/48baf783-7e67c70a.mp3",
-    "voices/en/m/657babc71837ad6b.mp3",
-    "voices/manifest-en.json",
-    "voices/manifest-vi.json",
-    "voices/manifest.json",
-    "js/simple.ts",
-    "voices/en/f/610c23c1-74b4e135.mp3",
-    "voices/en/m/610c23c1-74b4e135.mp3"
+    "js/build.ts",
+    "js/games/catalog.ts",
+    "js/games/music2.ts",
+    "js/games/readingmenu.ts",
+    "js/tester.ts",
+    "js/ui-settings.ts",
+    "js/ui.ts",
+    "studio/version.json",
+    "sw.ts"
   ],
   "coverageChanged": [],
   "requiresEditorialReview": true

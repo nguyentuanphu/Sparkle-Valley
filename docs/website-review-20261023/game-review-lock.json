@@ -1,5 +1,5 @@
 {
-  "source": "d3bfaac1780a6a01b8801ea148aa0fd82a3343e1",
+  "source": "acb07cee0cf7fa7b7cddaa487a355c01f9557e2c",
   "files": [
     {
       "file": "content/custom.json",
@@ -255,7 +255,7 @@
     },
     {
       "file": "js/build.ts",
-      "hash": "c0ef1ffad509ff4035853ca8360b147b270de505"
+      "hash": "eaf0cabcc3b43da2d8ff213863c0b15900b011c6"
     },
     {
       "file": "js/cartoon.js",
@@ -711,7 +711,7 @@
     },
     {
       "file": "js/games/catalog.ts",
-      "hash": "654200a416860bab6e33484200cf102cbbd63941"
+      "hash": "5de0301bcc69cbbd634b617bafe9146ea9d362c3"
     },
     {
       "file": "js/games/cities.ts",
@@ -787,7 +787,7 @@
     },
     {
       "file": "js/games/music2.ts",
-      "hash": "1e1e1c64a5a177c996689044c5b4b1b132db7d36"
+      "hash": "af98d0ff26a23e904d37bcf073cb9362d97ee88f"
     },
     {
       "file": "js/games/nature2.ts",
@@ -819,7 +819,7 @@
     },
     {
       "file": "js/games/readingmenu.ts",
-      "hash": "7b6c81327dfb8d1161c5c3bb8d1fd3f030ee60b8"
+      "hash": "fc265d681dcd8b5d4318137ef7de46dcd105148e"
     },
     {
       "file": "js/games/registry.ts",
@@ -1227,7 +1227,7 @@
     },
     {
       "file": "js/tester.ts",
-      "hash": "8644eeaa8bec6a7e23944cae5a329fe79b15099b"
+      "hash": "82d84bd80a503499dc72e34ca97908a9a2042b06"
     },
     {
       "file": "js/testergate.js",
@@ -1255,11 +1255,11 @@
     },
     {
       "file": "js/ui-settings.ts",
-      "hash": "852942ad5d6be764ed70a7de12a7463ce98a9732"
+      "hash": "b620d1d09d98e09008524cb7bf66999bd245e0dd"
     },
     {
       "file": "js/ui.ts",
-      "hash": "f8fcff54f57312116ae6c8bb2cc58de145fde80b"
+      "hash": "c984e537acbde710d3be15225b6071e862f99f42"
     },
     {
       "file": "js/util.js",
@@ -1399,11 +1399,11 @@
     },
     {
       "file": "studio/version.json",
-      "hash": "4c2f6c88cb2c8d254359a2c95d31395c97d0db41"
+      "hash": "a5dea50b1b13f5abfa073b31d875683ff70403b4"
     },
     {
       "file": "sw.ts",
-      "hash": "80419a490f7e483486b6c804abf887858440c510"
+      "hash": "ee54b05c22f857862719b5b9ebf5c5aadf4a3abd"
     },
     {
       "file": "vendor/RoomEnvironment.js",

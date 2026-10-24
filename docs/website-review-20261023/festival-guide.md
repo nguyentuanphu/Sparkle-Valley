@@ -1,6 +1,6 @@
 # Festivals, decorations and activities / Lễ hội, trang trí và hoạt động
 
-Reviewed 23 October 2026 AEDT. Source: [d3bfaac1780a6a01b8801ea148aa0fd82a3343e1](https://github.com/nguyentuanphu/Sparkle-Valley/tree/d3bfaac1780a6a01b8801ea148aa0fd82a3343e1). [Interactive festival directory](prototype.html#festivals) · [Folk games and parent learning guide](parent-guide.md) · [Quest Guide](quest-guide.md) · [Prizes and badges](rewards-guide.md)
+Reviewed 23 October 2026 AEDT. Source: [acb07cee0cf7fa7b7cddaa487a355c01f9557e2c](https://github.com/nguyentuanphu/Sparkle-Valley/tree/acb07cee0cf7fa7b7cddaa487a355c01f9557e2c). [Interactive festival directory](prototype.html#festivals) · [Folk games and parent learning guide](parent-guide.md) · [Quest Guide](quest-guide.md) · [Prizes and badges](rewards-guide.md)
 
 ## Join, watch or explore / Tham gia, xem hoặc khám phá
 
@@ -366,10 +366,10 @@ The website’s featured folk-game guide also explains Ô Ăn Quan and Đánh Ch
 
 The two decoration photographs are existing game screenshots of Tết in Lotus Village and Hội An from the project’s saved verification captures. They are not new r88/live-state captures. Artwork remains the game’s own drawings. This design preview does not schedule festivals, change gameplay or read child saves.
 
-- [js/content/festcal.js](https://github.com/nguyentuanphu/Sparkle-Valley/blob/d3bfaac1780a6a01b8801ea148aa0fd82a3343e1/js/content/festcal.js)
-- [js/festivals.js](https://github.com/nguyentuanphu/Sparkle-Valley/blob/d3bfaac1780a6a01b8801ea148aa0fd82a3343e1/js/festivals.js)
-- [js/festdecor.js](https://github.com/nguyentuanphu/Sparkle-Valley/blob/d3bfaac1780a6a01b8801ea148aa0fd82a3343e1/js/festdecor.js)
-- [js/festhunt.js](https://github.com/nguyentuanphu/Sparkle-Valley/blob/d3bfaac1780a6a01b8801ea148aa0fd82a3343e1/js/festhunt.js)
-- [js/lunar.js](https://github.com/nguyentuanphu/Sparkle-Valley/blob/d3bfaac1780a6a01b8801ea148aa0fd82a3343e1/js/lunar.js)
-- [js/ui.ts](https://github.com/nguyentuanphu/Sparkle-Valley/blob/d3bfaac1780a6a01b8801ea148aa0fd82a3343e1/js/ui.ts)
-- [js/games/catalog.ts](https://github.com/nguyentuanphu/Sparkle-Valley/blob/d3bfaac1780a6a01b8801ea148aa0fd82a3343e1/js/games/catalog.ts)
+- [js/content/festcal.js](https://github.com/nguyentuanphu/Sparkle-Valley/blob/acb07cee0cf7fa7b7cddaa487a355c01f9557e2c/js/content/festcal.js)
+- [js/festivals.js](https://github.com/nguyentuanphu/Sparkle-Valley/blob/acb07cee0cf7fa7b7cddaa487a355c01f9557e2c/js/festivals.js)
+- [js/festdecor.js](https://github.com/nguyentuanphu/Sparkle-Valley/blob/acb07cee0cf7fa7b7cddaa487a355c01f9557e2c/js/festdecor.js)
+- [js/festhunt.js](https://github.com/nguyentuanphu/Sparkle-Valley/blob/acb07cee0cf7fa7b7cddaa487a355c01f9557e2c/js/festhunt.js)
+- [js/lunar.js](https://github.com/nguyentuanphu/Sparkle-Valley/blob/acb07cee0cf7fa7b7cddaa487a355c01f9557e2c/js/lunar.js)
+- [js/ui.ts](https://github.com/nguyentuanphu/Sparkle-Valley/blob/acb07cee0cf7fa7b7cddaa487a355c01f9557e2c/js/ui.ts)
+- [js/games/catalog.ts](https://github.com/nguyentuanphu/Sparkle-Valley/blob/acb07cee0cf7fa7b7cddaa487a355c01f9557e2c/js/games/catalog.ts)

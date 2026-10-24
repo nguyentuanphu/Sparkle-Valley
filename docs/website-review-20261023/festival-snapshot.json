@@ -1,5 +1,5 @@
 {
-  "source": "d3bfaac1780a6a01b8801ea148aa0fd82a3343e1",
+  "source": "acb07cee0cf7fa7b7cddaa487a355c01f9557e2c",
   "festivals": [
     {
       "id": "tet",
@@ -2308,114 +2308,6 @@
         "Chia Đều"
       ],
       "icon": "🤝",
-      "origin": null
-    },
-    {
-      "id": "rd_blend",
-      "name": [
-        "Blend the Sounds",
-        "Ghép Âm"
-      ],
-      "icon": "🔤",
-      "origin": null
-    },
-    {
-      "id": "rd_hats",
-      "name": [
-        "Vowel Hats",
-        "Mũ Cho Chữ"
-      ],
-      "icon": "🎩",
-      "origin": null
-    },
-    {
-      "id": "rd_endings",
-      "name": [
-        "Word Endings",
-        "Vần Cuối"
-      ],
-      "icon": "🔚",
-      "origin": null
-    },
-    {
-      "id": "rd_compound",
-      "name": [
-        "Two Words Make One",
-        "Ghép Hai Từ"
-      ],
-      "icon": "🧩",
-      "origin": null
-    },
-    {
-      "id": "rd_labels",
-      "name": [
-        "Label the Picture",
-        "Gắn Tên Cho Tranh"
-      ],
-      "icon": "🏷️",
-      "origin": null
-    },
-    {
-      "id": "rd_signs",
-      "name": [
-        "Signs in Town",
-        "Biển Báo Trong Phố"
-      ],
-      "icon": "🚸",
-      "origin": null
-    },
-    {
-      "id": "rd_questions",
-      "name": [
-        "Who, What, Where",
-        "Ai, Gì, Ở Đâu"
-      ],
-      "icon": "❓",
-      "origin": null
-    },
-    {
-      "id": "rd_many",
-      "name": [
-        "One and Many",
-        "Một và Nhiều"
-      ],
-      "icon": "🔢",
-      "origin": null
-    },
-    {
-      "id": "rd_caps",
-      "name": [
-        "Big and Small Letters",
-        "Chữ Hoa Chữ Thường"
-      ],
-      "icon": "🔠",
-      "origin": null
-    },
-    {
-      "id": "rd_poem",
-      "name": [
-        "Read a Little Poem",
-        "Đọc Bài Thơ Nhỏ"
-      ],
-      "icon": "📜",
-      "origin": null
-    },
-    {
-      "id": "rd_missing",
-      "name": [
-        "Missing Letter",
-        "Điền Chữ Còn Thiếu"
-      ],
-      "icon": "🧩",
-      "origin": null
-    },
-    {
-      "id": "rd_book",
-      "name": [
-        "Make a Little Book",
-        "Làm Sách Nhỏ"
-      ],
-      "icon": "📖",
       "origin": null
     },
     {

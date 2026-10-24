@@ -62,10 +62,12 @@ html=html.replace('<!-- FESTIVAL-PAGE -->',festivals.directory);
 const gameCSS=readGame('css/style.css');
 const tokens=gameCSS.match(/:root\s*\{([\s\S]*?)\}/)?.[1];if(!tokens)throw Error('Missing shared game UI tokens');
 const buildText=readGame('js/build.ts'),version=buildText.match(/BUILD\s*=\s*['"]([^'"]+)/)?.[1];if(!version)throw Error('Missing game release');
+// (owner, 24 Oct AEDT) the page shows the public number families see in the game (SHOWN: v1), never the round count
+const shown=buildText.match(/SHOWN\s*=\s*['"]([^'"]+)/)?.[1];if(!shown)throw Error('Missing public version');
 html=html.replace('</style>',`:root{${tokens}}.website{color:var(--text)}.topic-intro h1,.journey-card h3,.menu-group summary{color:var(--text)}.pill.dark,.play{border-color:var(--cyan2)}html[lang=vi]{--font:'Baloo','Segoe UI',system-ui,sans-serif}.website{font-family:var(--font)}\n</style>`);
 const swSource=readGame('sw.ts'),studioVersion=JSON.parse(readGame('studio/version.json')).studio;if(!swSource.match(/\bVERSION\s*=\s*['"]([^'"]+)/)?.[1].endsWith('-'+version)||studioVersion!==version)throw Error('Game, offline cache and editor versions disagree');
 html=html.replace('</head>',`<meta name="sparkle-game-release" content="${version}"><meta name="sparkle-source-commit" content="${snapshot.source}"></head>`);
-html=html.replace('<div class="container home-page">',`<div class="container home-page"><p class="release-note" style="font-size:13px;color:#69566e;padding-top:18px" data-en="Game guide · ${version} · design preview" data-vi="Hướng dẫn trò chơi · ${version} · bản xem thiết kế"></p>`);
+html=html.replace('<div class="container home-page">',`<div class="container home-page"><p class="release-note" style="font-size:13px;color:#69566e;padding-top:18px" data-en="Game guide · ${shown} · design preview" data-vi="Hướng dẫn trò chơi · ${shown} · bản xem thiết kế"></p>`);
 html=html.replace('/*FONTS*/',fonts).replace('</style>',fs.readFileSync(path.join(here,'rewards.css'),'utf8')+fs.readFileSync(path.join(here,'festivals.css'),'utf8')+fs.readFileSync(path.join(here,'parent-controls.css'),'utf8')+'\n</style>');
 html=html.replace('class="example-day-detail"','class="example-day-detail" role="status" aria-live="polite"');
 html=html.replace('translate();route();',exampleReportScript+'\ntranslate();route();');
