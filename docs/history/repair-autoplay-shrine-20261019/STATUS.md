@@ -6,4 +6,4 @@ The baseline found 16 positions near the reported approach that goodSpot accepte
 
 The focused check passes in 79 s: no sampled footprint mismatches; autoplay starts outside the interaction range and wins through legal answers. Its trail uses the existing flight fallback, then walking. This result does not prove a complete walking route or clear the original whole-autoplay failure. That unchanged regression has not been rerun since the repair.
 
-Before/after JSON, images and the final check output are in evidence/. See the [pause handoff](../cores/tasks/r88-paused-handoff-20261019.md) for the complete pending list.
+Before/after JSON, images and the final check output are in evidence/. See the [pause handoff](../../cores/tasks/r88-paused-handoff-20261019.md) for the complete pending list.

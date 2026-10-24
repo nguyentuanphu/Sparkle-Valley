@@ -30,7 +30,7 @@ To make the pictures again (after the game's look changes):
 
 ```
 python3 -m http.server 8765 &
-SV_URL=http://localhost:8765/ CHROMIUM=/opt/pw-browsers/chromium node docs/ads-guide/capture.mjs
+SV_URL=http://localhost:8765/ CHROMIUM=/opt/pw-browsers/chromium node docs/guides/ads-guide/capture.mjs
 ```
 
 The script changes nothing in the repo's content: the browser hands the page the pretend ad. `BOARD`, `ANG` and `DIST`

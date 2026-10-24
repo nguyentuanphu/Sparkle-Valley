@@ -1,12 +1,12 @@
 // The ads picture guide (r65, Studio): real screenshots of the game with a pretend ad switched on, at phone and computer
 // sizes. Nothing in the repo is changed: the content pack and the ad's picture are handed to the page by the browser.
-// Run from the repo:  python3 -m http.server 8765 &  SV_URL=http://localhost:8765/ CHROMIUM=/opt/pw-browsers/chromium node docs/ads-guide/capture.mjs
-// It writes docs/ads-guide/*.jpg and studio/ui/ads-guide/*.jpg (the same pictures, shown on Studio's Ads page).
+// Run from the repo:  python3 -m http.server 8765 &  SV_URL=http://localhost:8765/ CHROMIUM=/opt/pw-browsers/chromium node docs/guides/ads-guide/capture.mjs
+// It writes docs/guides/ads-guide/*.jpg and studio/ui/ads-guide/*.jpg (the same pictures, shown on Studio's Ads page).
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { launch, open, clear } from '../../tests/harness.mjs';
-const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..'), OUT = [path.join(ROOT, 'docs/ads-guide'), path.join(ROOT, 'studio/ui/ads-guide')];
+import { launch, open, clear } from '../../../tests/harness.mjs';
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..'), OUT = [path.join(ROOT, 'docs/guides/ads-guide'), path.join(ROOT, 'studio/ui/ads-guide')];
 OUT.forEach(d => fs.mkdirSync(d, { recursive: true }));
 // which signboard and where to stand (chosen by looking: the one by Đà Nẵng's gate, seen from in front, 7 m away)
 const BOARD = +(process.env.BOARD || 1), ANG = +(process.env.ANG || 3.14), DIST = +(process.env.DIST || 7);
@@ -21,14 +21,14 @@ const pic = await (async () => { const p = await (await browser.newContext()).ne
     g.fillStyle = '#3b2a4f'; g.font = 'bold 86px sans-serif'; g.textAlign = 'center'; g.fillText('Little Lotus Books', 600, 140); g.font = '600 48px sans-serif'; g.fillText('Story time · Giờ kể chuyện', 600, 600);
     return c.toDataURL('image/jpeg', .85).split(',')[1]; });
   await p.context().close(); return Buffer.from(b64, 'base64'); })();
-fs.writeFileSync(path.join(ROOT, 'docs/ads-guide/sample-ad.jpg'), pic);
+fs.writeFileSync(path.join(ROOT, 'docs/guides/ads-guide/sample-ad.jpg'), pic);
 const withAd = async page => {
   await page.route('**/content/custom.json*', async rt => { let j = {}; try { const r = await rt.fetch(); j = await r.json(); } catch (e) { } j.ads = { enabled: true, perDay: 9, items: [AD] }; await rt.fulfill({ json: j }); });
   await page.route('**/content/ads/guide-sample.jpg', rt => rt.fulfill({ body: pic, contentType: 'image/jpeg' })); };
 const shot = async (page, name) => { for (const d of OUT) await page.screenshot({ path: path.join(d, name), type: 'jpeg', quality: 72 }); console.log('wrote', name); };
 for (const [kind, w, h, touch] of [['computer', 1280, 800, false], ['phone', 390, 780, true]].slice(0, process.env.ONLY ? 1 : 2)) {
   const { ctx, page } = await open(browser, { w, h, touch, fast: false, pre: null, url: undefined, play: false });
-  await withAd(page); await page.reload(); const H = await import('../../tests/harness.mjs'); await H.start(page);
+  await withAd(page); await page.reload(); const H = await import('../../../tests/harness.mjs'); await H.start(page);
   await clear(page);
   // 1. the signboard beside the road: stand in front of it
   const at = await page.evaluate(([n, ANG, DIST]) => { const G = window.__sv, boards = []; G.scene.traverse(o => { const m = o.material; if (m && m.map && m.map.image && /content\/ads\//.test(m.map.image.src || '') && o.position.z > 0 && !boards.includes(o.parent)) boards.push(o.parent); });

@@ -1,6 +1,6 @@
 // (T1b) phone, tablet and computer screenshots of the market rows: the child stands in the street, the camera looks at the row.
 // Run: cd tests && CHROMIUM=/opt/pw-browsers/chromium node ../docs/t1b/shots.mjs out/t1b-shots [yaw]
-import { launch, open } from '../../tests/harness.mjs';
+import { launch, open } from '../../../tests/harness.mjs';
 import fs from 'fs';
 const out = process.argv[2]; fs.mkdirSync(out, { recursive: true });
 const SIZES = [['phone', 390, 760, true], ['tablet', 820, 1180, true], ['computer', 1280, 800, false]];

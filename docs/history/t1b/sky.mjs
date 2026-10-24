@@ -1,4 +1,4 @@
-import { launch, open } from '../../tests/harness.mjs';
+import { launch, open } from '../../../tests/harness.mjs';
 import fs from 'fs';
 const out = process.argv[2]; fs.mkdirSync(out, { recursive: true });
 const b = await launch(); const { page } = await open(b, { w: 1000, h: 700, fast: false });

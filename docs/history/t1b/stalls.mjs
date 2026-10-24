@@ -1,6 +1,6 @@
 // (T1b) every STALL-001…004 problem js/validate.js finds, grouped by place, and the stalls it measured.
 // Run: cd tests && CHROMIUM=/opt/pw-browsers/chromium node ../docs/t1b/stalls.mjs [out.txt]
-import { launch, open } from '../../tests/harness.mjs';
+import { launch, open } from '../../../tests/harness.mjs';
 import fs from 'fs';
 const b = await launch(); const { page } = await open(b, { w: 1000, h: 700 });
 const r = await page.evaluate(async () => {

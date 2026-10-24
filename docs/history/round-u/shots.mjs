@@ -1,6 +1,6 @@
 // (Round U) phone, tablet and computer screenshots of the round's new things.
 // Run: cd tests && CHROMIUM=/opt/pw-browsers/chromium node ../docs/round-u/shots.mjs ../docs/round-u/shots
-import { launch, open } from '../../tests/harness.mjs';
+import { launch, open } from '../../../tests/harness.mjs';
 import fs from 'fs';
 const out = process.argv[2]; fs.mkdirSync(out, { recursive: true });
 const SIZES = [['phone', 390, 844, true], ['tablet', 820, 1180, true], ['computer', 1280, 800, false]];

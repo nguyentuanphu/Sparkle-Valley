@@ -2,6 +2,8 @@
 
 **The repository is TPN, the game is Sparkle Valley (owner, 24 Oct 2026 AEDT).** The repository is called `tpn` and its front notes (README, these headings) say TPN, so the project stays low-key on GitHub. The game inside it is **Sparkle Valley · Thung Lũng Lấp Lánh**: build it, name it and show it to players under that name everywhere (title screen, website, voices, Studio, store text). Only the front notes say TPN; the other docs keep "Sparkle Valley".
 
+**Where the notes live:** [docs/README.md](docs/README.md) lists where the rules, requirements, design, board and plans are; finished round reports are in `docs/history/` (owner, 24 Oct 2026 AEDT: tidied, nothing deleted).
+
 **Website consistency and layout (owner, 23 Oct 2026 AEDT):** read [the website/game contract](docs/website-review-20261023/WEBSITE-RULES.md) and [Release integration handoff](docs/website-review-20261023/RELEASE-HANDOFF.md) before changing website content, UI or packaging. Keep full bilingual detail and four main destinations; use the same game source/art/fonts/theme/release and review drift. Website belongs on Welcome and in Settings during play; removing HUD Home must also reclaim safe quest-bar space. Those runtime changes are pending Release, not already made by the website branch.
 
 **Owner-approved UI and future-feature rules (14 Oct 2026 AEDT):** read the section “Owner-approved interface and feature rules” in [the design handbook](docs/SO-TAY-THIET-KE.md) (UX-001–UX-010) before planning or changing a feature. Work order and implementation sequence: [owner UI audit](docs/cores/tasks/owner-ui-audit-20261014.md). Approval to write these rules does not deploy runtime changes.
