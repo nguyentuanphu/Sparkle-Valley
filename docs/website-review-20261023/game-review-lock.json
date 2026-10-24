@@ -1,5 +1,5 @@
 {
-  "source": "056ebc543c2eb44d844f98ce845add558472dde9",
+  "source": "700715e439861e1bf41080571bce8c760ec36412",
   "files": [
     {
       "file": "content/custom.json",
@@ -15,7 +15,7 @@
     },
     {
       "file": "css/style.css",
-      "hash": "3ffd84c8a4db4020cc3e664b15f8a6352bd693ad"
+      "hash": "a847e2922141faf1b54e722456d3cfd45c60369e"
     },
     {
       "file": "fonts/Baloo2-latin-600.woff2",
@@ -543,7 +543,7 @@
     },
     {
       "file": "js/content/savecopy.ts",
-      "hash": "38a530c4e8ea9e0cf5f8e8cf1ce9e4e6be54c0e0"
+      "hash": "42c3932e9d2b85344f75044a61382a96abbd3c33"
     },
     {
       "file": "js/content/secondset.ts",
@@ -638,8 +638,8 @@
       "hash": "14a1f82036725bd86858cbe5c613bd619cea5113"
     },
     {
-      "file": "js/extras.js",
-      "hash": "1ef2af03fcceca7bc22cc88809191586f4828ecd"
+      "file": "js/extras.ts",
+      "hash": "7eac17cc86b8882e065d314323bbd3c0a0bcfc6e"
     },
     {
       "file": "js/family-backup.ts",
@@ -999,7 +999,7 @@
     },
     {
       "file": "js/net.ts",
-      "hash": "5d8fb669ccd4eb73ddd729eafe625f86363c2caf"
+      "hash": "8f1189b2ee92cdd9d81933469fd2f0f51a9927ee"
     },
     {
       "file": "js/netgames.ts",
@@ -1155,7 +1155,7 @@
     },
     {
       "file": "js/simple.ts",
-      "hash": "5ffbb29457e0ff8f58369bb66235e1fad09a391e"
+      "hash": "b42ccf8943ca8eaf4d67d7a8c4b28ae3ee25cc54"
     },
     {
       "file": "js/snacks.js",
@@ -1223,11 +1223,11 @@
     },
     {
       "file": "js/tester-detection.ts",
-      "hash": "af44bd63397e1fd7fccd2f88ceaa2d04ddb3c170"
+      "hash": "c4cdbe4be93100a1ac95ee5000b9ab8bae8092ac"
     },
     {
       "file": "js/tester.ts",
-      "hash": "82d84bd80a503499dc72e34ca97908a9a2042b06"
+      "hash": "10f4e2f50665a5304b0d6e67b69b3c8a8ce70b0b"
     },
     {
       "file": "js/testergate.js",
@@ -1235,7 +1235,7 @@
     },
     {
       "file": "js/testerrewards.ts",
-      "hash": "284bbdaa3c23be2b9d6a54b4e8ef65fa2ce6bc4b"
+      "hash": "da2821b493e0c23805e36a0a1ab9fb30d0917a5f"
     },
     {
       "file": "js/town.js",
@@ -1255,7 +1255,7 @@
     },
     {
       "file": "js/ui-settings.ts",
-      "hash": "b620d1d09d98e09008524cb7bf66999bd245e0dd"
+      "hash": "a897030c30b660afd7418ef3daebdee99e4d7987"
     },
     {
       "file": "js/ui.ts",
@@ -1295,11 +1295,11 @@
     },
     {
       "file": "js/voice.ts",
-      "hash": "9b61788093457731ae2f306e78ef61b34a97669f"
+      "hash": "66e4166f144a380935cb04e921314174bb59e488"
     },
     {
       "file": "js/voicepack.ts",
-      "hash": "1042b198c070d86edf0a2182ccc52eb20b70466f"
+      "hash": "7c2ebb146f44ee0ef028d505cf2a9a2277d55899"
     },
     {
       "file": "js/wayfind.js",

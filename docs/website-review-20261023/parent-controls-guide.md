@@ -1,6 +1,6 @@
 # Parent settings and child play reports
 
-Source: 056ebc543c2eb44d844f98ce845add558472dde9. Reviewed 23 October 2026 AEDT. Existing game controls, not a new statistics backend.
+Source: 700715e439861e1bf41080571bce8c760ec36412. Reviewed 23 October 2026 AEDT. Existing game controls, not a new statistics backend.
 
 ## Reach the report
 
@@ -76,7 +76,7 @@ Read the reset explanation and keep a backup before a reset. The informational w
 
 Grown-ups → Analytics and backup / Phụ huynh → Phân tích và sao lưu
 
-Save a backup file to a location you choose, or open an existing backup to restore or move progress. The Analytics On/Off control is separate from the local Play report and controls the game’s usage reporting. / Lưu tệp sao lưu ở nơi bạn chọn, hoặc mở bản sao để khôi phục hay chuyển tiến trình. Nút Bật/Tắt Phân tích riêng với Báo cáo chơi trên máy và điều khiển việc gửi thống kê sử dụng của trò chơi.
+Use Save a copy to keep progress in Files, iCloud Drive or Google Drive. Load a copy also accepts older backup files and asks before replacing progress. The Analytics On/Off control is separate from the local Play report and controls the game’s usage reporting. / Dùng Lưu một bản để giữ tiến trình trong Tệp, iCloud Drive hoặc Google Drive. Mở bản đã lưu cũng nhận tệp sao lưu cũ và hỏi trước khi thay thế tiến trình. Nút Bật/Tắt Phân tích riêng với Báo cáo chơi trên máy và điều khiển việc gửi thống kê sử dụng của trò chơi.
 
 Choosing a Drive or iCloud location is a manual file-save action, not a promise of automatic cloud sync. Review any restore before replacing existing progress. / Chọn nơi lưu Drive hoặc iCloud là thao tác lưu tệp thủ công, không có nghĩa tự động đồng bộ đám mây. Kiểm tra trước khi khôi phục thay tiến trình đang có.
 
