@@ -27,13 +27,13 @@ import { RELEASES } from './content/releases.js';
 import { takeCopy, putCopyBack, hasCopy, dropCopy } from './keepcopy.js';
 import { revertOf } from './content/autoplay.js';
 import { easyName } from './content/devname.js';
-import { unreachableControl, activeReportPanel, observeGameOpen } from './tester-detection.js';
+import { unreachableControl, activeReportPanel, observeGameOpen, resizeDeliveryNotice, publicFixedVersion } from './tester-detection.js';
 import { readReportQueue, persistReportQueue } from './report-outbox.js';
 
 import type { SvMain } from './main.js';
 import type { ReportEntry } from './report-outbox.js';
 type Where = { area: string; place: string; game: string; window: string; x: number; z: number };
-type Problem = { k: string; title: string; status?: string; fixedIn?: string; n?: number; auto?: string; where?: Where };
+type Problem = { spoken?: boolean; k: string; title: string; status?: string; fixedIn?: string; n?: number; auto?: string; where?: Where };
 type TesterStatus = { open?: Problem[]; mine?: Problem[]; retest?: Problem[]; reports?: number; helped?: number; peeks?: string[] };
 type TesterGame = Pick<SvMain, 'heroes' | 'huds' | 'paused' | 'renderer' | 'regionOf'> & {
   playGame?: SvMain['playGame'] & { __tester?: boolean };
@@ -203,7 +203,7 @@ export async function autoReport(kind: string, detail: string, where?: Where, mo
 function watch() {
   const on = (t: EventTarget, k: string, f: EventListener, o: boolean | AddEventListenerOptions = false) => { t.addEventListener(k, f, o); offs.push(() => t.removeEventListener(k, f, o)); };
   // errors in the game's own code
-  const err = (msg: string, file = '', line: number | string = 0) => { if (/ResizeObserver loop/i.test(String(msg || ''))) return; const f = String(file || '').split('/').pop().split('?')[0]; if (f && !/\.m?js$/.test(f)) return; const s = `${String(msg || 'error').slice(0, 120)} @ ${f || '?'}:${line || 0}`; errors.push(s); if (errors.length > C.LIMITS.errors) errors.shift(); note('error', s); autoReport('error', s); };
+  const err = (msg: string, file = '', line: number | string = 0) => { if (resizeDeliveryNotice(String(msg || ''))) return; const f = String(file || '').split('/').pop().split('?')[0]; if (f && !/\.m?js$/.test(f)) return; const s = `${String(msg || 'error').slice(0, 120)} @ ${f || '?'}:${line || 0}`; errors.push(s); if (errors.length > C.LIMITS.errors) errors.shift(); note('error', s); autoReport('error', s); };
   on(window, 'error', (e: ErrorEvent) => err(e.message, e.filename, e.lineno));
   on(window, 'unhandledrejection', (e: PromiseRejectionEvent) => { const r = e.reason, m = /\/([\w.-]+\.m?js):(\d+)/.exec(String(r && r.stack || '')); err(r && r.message || String(r), m ? m[1] : 'promise.js', m ? m[2] : 0); });
   // taps, and windows that do not close
@@ -392,10 +392,10 @@ export async function openPanel(i = 0, initialTab = 'tester') {
   markNewsSeen(); card.querySelectorAll<HTMLButtonElement>('[data-try]').forEach(b => b.onclick = () => { m.close(); G.paused = was; G.playGame?.(i, b.dataset.try, 'tester'); });
   const full = card.querySelector<HTMLInputElement>('.tp-full');
   full.onchange = () => { selectedShot = full.checked ? pic0 : scenePic; card.querySelector<HTMLImageElement>('.tp-shot').src = selectedShot; };
-  const reportBody = el('div','testing-report'), autoBody = el('div','testing-auto'), fixedBody = el('div','testing-fixed'); fixedBody.id='testing-fixed'; fixedBody.setAttribute('role','tabpanel'); fixedBody.hidden=true;
+  const reportBody = el('div','testing-report'), autoBody = el('div','testing-auto'), fixedBody: HTMLDivElement = el('div','testing-fixed'); fixedBody.id='testing-fixed'; fixedBody.setAttribute('role','tabpanel'); fixedBody.hidden=true;
   const head = card.querySelector('.tp-head');
   [...card.children].filter(child => child !== head).forEach(child => reportBody.appendChild(child));
-  const tabs = el('div','testing-tabs', `<button class="btn" data-test-tab="tester" role="tab">${T('Tester','Người thử')}</button><button class="btn" data-test-tab="autoplay" role="tab">${T('Auto play','Tự chơi')}</button>${fixedToSee().length ? `<button class="btn" data-test-tab="fixed" role="tab">${T('Fixed', 'Đã sửa')} (${fixedToSee().length})</button>` : ''}`);
+  const tabs: HTMLDivElement = el('div','testing-tabs', `<button class="btn" data-test-tab="tester" role="tab">${T('Tester','Người thử')}</button><button class="btn" data-test-tab="autoplay" role="tab">${T('Auto play','Tự chơi')}</button>${fixedToSee().length ? `<button class="btn" data-test-tab="fixed" role="tab">${T('Fixed', 'Đã sửa')} (${fixedToSee().length})</button>` : ''}`);
   tabs.setAttribute('role','tablist'); reportBody.id='testing-report'; autoBody.id='testing-autoplay';
   reportBody.setAttribute('role','tabpanel'); autoBody.setAttribute('role','tabpanel'); autoBody.hidden=true;
   const reportActions=reportBody.querySelector('.tp-send').closest('.actions');reportActions.classList.add('testing-actions');
@@ -405,14 +405,14 @@ export async function openPanel(i = 0, initialTab = 'tester') {
   const selectTab = tab => {
     reportBody.hidden=tab!=='tester'; autoBody.hidden=tab!=='autoplay'; fixedBody.hidden=tab!=='fixed'; reportActions.hidden=tab!=='tester';
     head.querySelector('h2').textContent=tab==='tester'?T('Report a problem','Báo lỗi'):tab==='fixed'?T('Fixed, please check','Đã sửa, con thử lại nhé'):T('Auto play','Tự chơi');
-    tabs.querySelectorAll('button').forEach(b=>{const on=b.dataset.testTab===tab;b.classList.toggle('primary',on);b.setAttribute('aria-selected',String(on));b.tabIndex=on?0:-1;b.id='testing-tab-'+b.dataset.testTab;const target=b.dataset.testTab==='tester'?reportBody:autoBody;b.setAttribute('aria-controls',target.id);target.setAttribute('aria-labelledby',b.id);});
+    tabs.querySelectorAll('button').forEach(b=>{const on=b.dataset.testTab===tab;b.classList.toggle('primary',on);b.setAttribute('aria-selected',String(on));b.tabIndex=on?0:-1;b.id='testing-tab-'+b.dataset.testTab;const target=b.dataset.testTab==='tester'?reportBody:b.dataset.testTab==='fixed'?fixedBody:autoBody;b.setAttribute('aria-controls',target.id);target.setAttribute('aria-labelledby',b.id);});
     if (tab==='autoplay') {
       if (G.autoplay?.attach) G.autoplay.attach(autoBody,close);
       else autoBody.textContent=T('Auto play is not enabled on this device.','Tự chơi chưa được bật trên máy này.');
     }
     if (tab==='fixed') {
       const list = fixedToSee(), seen = get(KEY.seen, {});
-      fixedBody.innerHTML = `<div class="tm-head actions"><button class="btn primary tp-all-fixed">${T('All fixed', 'Tất cả đã hết lỗi')}</button></div><div class="tm-list">${list.length ? list.map(p => `<div class="tm-row s-fixed"><b>${esc(p.title)}</b><div class="actions"><button class="btn primary" data-fok='1' data-fk='${esc(p.k)}'>${T('Yes, fixed', 'Đã hết lỗi')}</button><button class="btn" data-fok='0' data-fk='${esc(p.k)}'>${T('Still wrong', 'Vẫn còn lỗi')}</button></div></div>`).join('') : `<p class="note">${T('Nothing waiting to be checked.', 'Không còn lỗi nào cần kiểm tra.')}</p>`}</div>`;
+      fixedBody.innerHTML = `<div class="tm-head actions"><button class="btn primary tp-all-fixed">${T('All fixed', 'Tất cả đã hết lỗi')}</button></div><div class="tm-list">${list.length ? list.map(p => `<div class="tm-row s-fixed"><b>${esc(p.title)}</b><small class="tm-coins">+${C.COINS.helped + (p.spoken ? C.COINS.spoken : 0)} ${pic('🪙')}</small><div class="actions"><button class="btn primary" data-fok='1' data-fk='${esc(p.k)}'>${T('Yes, fixed', 'Đã hết lỗi')}</button><button class="btn" data-fok='0' data-fk='${esc(p.k)}'>${T('Still wrong', 'Vẫn còn lỗi')}</button></div></div>`).join('') : `<p class="note">${T('Nothing waiting to be checked.', 'Không còn lỗi nào cần kiểm tra.')}</p>`}</div>`;
       fixedBody.querySelector<HTMLButtonElement>('.tp-all-fixed')?.addEventListener('click', () => {
         list.forEach(p => { seen[p.k] = 1; tell({ k: p.k, fixed: true }); });
         put(KEY.seen, seen); paintCount(); selectTab('tester');
@@ -425,7 +425,7 @@ export async function openPanel(i = 0, initialTab = 'tester') {
     }
   };
   tabs.querySelectorAll('button').forEach(b=>b.onclick=()=>selectTab(b.dataset.testTab));
-  tabs.onkeydown=e=>{if(['ArrowLeft','ArrowRight','Home','End'].includes(e.key)){e.preventDefault();const next=e.key==='Home'?'tester':e.key==='End'?'autoplay':reportBody.hidden?'tester':'autoplay';selectTab(next);tabs.querySelector(`[data-test-tab="${next}"]`).focus();}};
+  tabs.onkeydown=e=>{if(['ArrowLeft','ArrowRight','Home','End'].includes(e.key)){e.preventDefault();const buttons=[...tabs.querySelectorAll<HTMLButtonElement>('[data-test-tab]')],current=buttons.findIndex(b=>b.getAttribute('aria-selected')==='true');const n=e.key==='Home'?0:e.key==='End'?buttons.length-1:(current+(e.key==='ArrowRight'?1:-1)+buttons.length)%buttons.length;selectTab(buttons[n].dataset.testTab);buttons[n].focus();}};
   m.selectTab=selectTab;
   selectTab(initialTab);
   const retry = card.querySelector<HTMLButtonElement>('.tp-retry'), deliveryStatus = card.querySelector<HTMLElement>('.tp-delivery');
@@ -548,7 +548,7 @@ function showMine() {
   const list = ((status && status.mine) || []).slice().reverse(), waiting = queue();
   const m = modal('tpanel tmine', `<div class="tp-head"><span class="tp-lb">${pic('🐞')}</span><h2>${T('My reports', 'Báo cáo của tôi')}</h2><button class="x" aria-label="${T('Close', 'Đóng')}">✕</button></div>
     ${waiting.length ? `<p class="note">${T(`${waiting.length} waiting to send`, `${waiting.length} đang chờ gửi`)}</p>` : ''}
-    <div class="tm-list">${list.length ? list.map(p => `<div class="tm-row s-${esc(p.status)}"><b>${esc(p.title)}</b><small>${L(STATUS_WORDS[p.status] || ['', ''])}${p.fixedIn ? ' · ' + esc(p.fixedIn) : ''}</small></div>`).join('') : `<p class="note">${T('Nothing yet. Tap the ladybird when something looks wrong.', 'Chưa có gì. Chạm vào con bọ rùa khi thấy gì không ổn.')}</p>`}</div>`);
+    <div class="tm-list">${list.length ? list.map(p => `<div class="tm-row s-${esc(p.status)}"><b>${esc(p.title)}</b><small>${L(STATUS_WORDS[p.status] || ['', ''])}${publicFixedVersion(p.fixedIn) ? ' · ' + esc(publicFixedVersion(p.fixedIn)) : ''}</small></div>`).join('') : `<p class="note">${T('Nothing yet. Tap the ladybird when something looks wrong.', 'Chưa có gì. Chạm vào con bọ rùa khi thấy gì không ổn.')}</p>`}</div>`);
   m.querySelector('.x').onclick = () => m.close();
 }
 

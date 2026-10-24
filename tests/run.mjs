@@ -687,6 +687,46 @@ await check('voicepack', async () => {
   return `first open downloads with a small bar (${first.map(x => '"' + x + '"').slice(0, 2).join(' → ')} … "${first[first.length - 1]}"), the next open shows and downloads nothing, and files the phone lost are fetched again`;
 });
 
+await check('voicebackground', async () => {
+  // Owner, v1.01: male previews select the actual male file while female remains default.
+  // The explicit offline job keeps downloading after Save & close and Settings redraws.
+  const {lineHash}=await import('../js/packhash.js'), requests=[];
+  const preview={en:lineHash('en','Hello! Welcome to Sparkle Valley.'),vi:lineHash('vi','Xin chào! Chào mừng con đến Thung Lũng Lấp Lánh.')};
+  const P=await open(b,{w:390,h:844,touch:true,lang:'vi',settings:{autoPack:false,voice:false,voiceMale:false,packCell:true},route:async ctx=>{
+    await ctx.route('**/voices/manifest-*.json',async rt=>{const r=await rt.fetch(),j=await r.json(),keys=[...new Set([preview[j.language],...Object.keys(j.lines).slice(0,30)])].filter(k=>j.lines[k]);await rt.fulfill({json:{...j,lines:Object.fromEntries(keys.map(k=>[k,j.lines[k]])),langOf:Object.fromEntries(keys.map(k=>[k,j.language])),made:'background-test',signature:'background-'+j.language}})});
+    await ctx.route('**/voices/**/*.mp3',async rt=>{requests.push(rt.request().url());await new Promise(r=>setTimeout(r,350));await rt.fulfill({response:await rt.fetch()})});
+  }});
+  try{
+    await clear(P.page);
+    await P.page.evaluate(async()=>{const S=await import('/js/state.js');S.settings.voice=true;__sv.paused=true;const V=await import('/js/voice.js');V.hush();await V.previewPackVoice('f')});
+    const female=requests.some(u=>u.includes('/vi/f/'+preview.vi+'.mp3'));
+    const cut=requests.length;
+    await P.page.evaluate(async()=>{await (await import('/js/voice.js')).previewPackVoice('m')});
+    ok(female&&requests.slice(cut).some(u=>u.includes('/vi/m/'+preview.vi+'.mp3')),'female/male preview did not request distinct recordings: '+JSON.stringify(requests.slice(-6)));
+    ok(await P.page.evaluate(async()=>(await import('/js/state.js')).settings.voiceMale===false),'preview silently enabled male downloads');
+    await P.page.evaluate(async()=>(await import('/js/ui.js')).openGrownups());await P.page.waitForSelector('.grownups #gDone');
+    await P.page.evaluate(()=>document.querySelectorAll('.grownups details').forEach(d=>d.open=true));
+    await P.page.locator('#gVoiceMale').check();
+    await P.page.waitForSelector('.grownups #xPackSave');
+    await P.page.evaluate(()=>document.querySelectorAll('.grownups details').forEach(d=>d.open=true));
+    await P.page.locator('#xPackSave').click();
+    const before=await P.page.evaluate(async()=>(await (await caches.open('sv-voices')).keys()).filter(r=>/\.mp3$/.test(r.url)).length);
+    await P.page.locator('#gDone').click();
+    await P.page.waitForSelector('.grownups',{state:'detached'});
+    // Playwright 1.56 treats a returned Promise as truthy; poll asynchronous CacheStorage explicitly.
+    for(let attempt=0;attempt<240;attempt++){
+      const count=await P.page.evaluate(async()=>(await (await caches.open('sv-voices')).keys()).filter(r=>/\.mp3$/.test(r.url)).length);
+      if(count>before+6)break;
+      await P.page.waitForTimeout(250);
+    }
+    const result=await P.page.evaluate(async()=>({open:!!document.querySelector('.grownups'),male:(await import('/js/state.js')).settings.voiceMale,auto:(await import('/js/state.js')).settings.autoPack,progress:document.querySelector('.packbar')?.textContent,files:(await (await caches.open('sv-voices')).keys()).filter(r=>/\.mp3$/.test(r.url)).length}));
+    ok(!result.open&&result.male&&result.auto&&result.progress&&result.files>before+6,'settings close stopped background download/progress: '+JSON.stringify({before,result}));
+    await P.page.waitForFunction(()=>/✓/.test(document.querySelector('.packbar')?.textContent||''),null,{timeout:60000});
+    ok(!P.errors.length,P.errors.join(' | '));
+    return 'real female and male MP3 previews with male opt-in still off; opt-in and explicit offline download continue with shared progress after Save & close';
+  }finally{await P.ctx.unrouteAll({behavior:'ignoreErrors'});await P.ctx.close()}
+});
+
 await check('ownerwificard', async () => {
   const P=await open(b,{w:390,h:844,touch:true,settings:{autoPack:false,lang:'en',bilingual:false},pre:()=>{
     const c=new EventTarget();c.type='cellular';c.saveData=false;
@@ -1495,7 +1535,7 @@ await check('testernews', async () => {
 });
 
 await check('testerrewards', async () => {
-  // a problem the tester found is fixed: the tick on the ladybird, Ông Cú's thank-you with coins; reports that helped
+  // A fixed report gives quiet coins and a counted ladybird list, with no fix speech or pop-up; reports that helped
   // give the Bug Hunter badge on the shirt (seen by friends: it is in the look), tester gear, stickers and the week's star
   const out = [];
   for (const [w, h, touch, name] of [[390, 844, true, 'phone'], [820, 1180, true, 'tablet'], [1180, 760, false, 'computer']]) {
@@ -1507,8 +1547,18 @@ await check('testerrewards', async () => {
     const thank = await P.page.evaluate(() => (document.querySelector('.dialog') || {}).innerText || '');
     await P.page.evaluate(() => document.querySelectorAll('.dialog').forEach(d => d.click())); await P.page.waitForTimeout(800);
     const r = await P.page.evaluate(async () => { const S = await import('/js/state.js'), SH = await import('/js/content/shop.js'), p = S.profiles[0]; return { badge: p.look.badge, star: p.look.star, gear: ['sleuthhat', 'ladypack', 'sleuthcape'].map(id => SH.versionFor(id, SH.setOf(p.look))).filter(id => (p.owned.clothes || []).includes(id)), /* (r79) each child gets their own set's version */ stickers: p.testerStickers, coins: S.farm.coins, tick: !(document.querySelector('.z-lb .lb-ok') || { hidden: true }).hidden, starName: !!document.querySelector('.hud .pname.starname') }; });
-    if (!/fixed|đã được sửa/i.test(thank) || r.coins - coins0 < 25) out.push(name + ': no thank-you with coins: ' + JSON.stringify({ thank: thank.slice(0, 80), coins: r.coins - coins0 }));
+    if (/fixed|đã được sửa/i.test(thank) || r.coins - coins0 < 25) out.push(name + ': fix must grant quiet coins without thank-you speech: ' + JSON.stringify({ thank: thank.slice(0, 80), coins: r.coins - coins0 }));
     if (r.badge !== 'lb2' || !r.star || r.gear.length !== 3 || (r.stickers || []).length !== 5 || !r.tick || !r.starName) out.push(name + ': rewards ' + JSON.stringify(r));
+    // Owner-requested replacement for the removed fix dialog: verify the real ladybird list.
+    await clear(P.page); await P.page.evaluate(async()=>{await (await import('/js/tester.js')).openPanel(0,'fixed');});
+    await P.page.waitForSelector('.testing-fixed:not([hidden]) [data-fok="1"]');
+    const fixedList=await P.page.evaluate(()=>({rows:document.querySelectorAll('.testing-fixed [data-fok="1"]').length,coins:document.querySelector('.tm-coins')?.textContent,badge:document.querySelector('.z-lb .lb-ok')?.textContent,legacy:/\br67\b/.test(document.querySelector('.tpanel').textContent),popup:!!document.querySelector('.tfixed'),linked:document.querySelector('[data-test-tab="fixed"]')?.getAttribute('aria-controls')==='testing-fixed'}));
+    if(fixedList.rows!==1||!fixedList.coins?.includes('+25')||fixedList.badge!=='1'||fixedList.legacy||fixedList.popup||!fixedList.linked)out.push(name+': fixed list '+JSON.stringify(fixedList));
+    await P.page.locator('.testing-fixed [data-fok="1"]').click();
+    const coinsOnce=await P.page.evaluate(async()=>{await (await import('/js/tester.js')).refresh();return (await import('/js/state.js')).farm.coins});
+    await P.page.waitForTimeout(600);
+    const afterCheck=await P.page.evaluate(async()=>({coins:(await import('/js/state.js')).farm.coins,badgeHidden:document.querySelector('.z-lb .lb-ok')?.hidden}));
+    if(afterCheck.coins!==coinsOnce||!afterCheck.badgeHidden)out.push(name+': answered fix repeated '+JSON.stringify(afterCheck));
     // the Tester's Corner and the badge drawn on the shirt
     await clear(P.page); await P.page.evaluate(() => __sv.testerRewards.corner()); await P.page.waitForSelector('.tcorner .tc-badge.on', { timeout: 5000 }).catch(() => { });
     const c = await P.page.evaluate(() => { const card = document.querySelector('.tcorner .card'), r = card && card.getBoundingClientRect(); return { on: document.querySelectorAll('.tcorner .tc-badge.on').length, st: document.querySelectorAll('.tcorner .tc-st.on').length, fixed: document.querySelectorAll('.tcorner .tm-row').length, wide: card ? card.scrollWidth <= card.clientWidth + 2 && r.right <= innerWidth + 1 : false }; });
@@ -1518,7 +1568,7 @@ await check('testerrewards', async () => {
     const errs = P.errors; await P.ctx.close(); if (errs.length) out.push(name + ': ' + errs.slice(0, 2).join(' | '));
   }
   ok(!out.length, out.join(' | '));
-  return 'on phone, tablet and computer: the fixed tick, Ông Cú\'s thank-you with coins (more for a spoken note), the Silver Ladybird on the shirt (and in the look friends see), the tester hat, backpack and cape, five stickers, the week\'s star by the name, and the Tester\'s Corner';
+  return 'on phone, tablet and computer: counted fixed list and quiet coins (more for a spoken note), the Silver Ladybird on the shirt (and in the look friends see), the tester hat, backpack and cape, five stickers, the week\'s star by the name, and the Tester\'s Corner';
 });
 
 await check('festcal', async () => {
@@ -5568,7 +5618,7 @@ await check('cloud', async () => {
   const B = await open(b, { pre, w: 390, h: 760, lang: 'vi', touch: true, settings: { friendCode: 'BBBBB3', friendsOn: true, autoMeet: false, friends: [{ code: 'AAAAA2', name: 'Na' }] } });
   await pairKeys(A, B);
   // each player has a photo: it must reach the friend through the cloud too (locked with their pair key)
-  const photo = c => { const k = document.createElement('canvas'); k.width = k.height = 64; const g = k.getContext('2d'); g.fillStyle = c; g.fillRect(0, 0, 64, 64); __sv.heroes[0].profile.photo = k.toDataURL('image/jpeg', .8); };
+  const photo = c => { const k = document.createElement('canvas'); k.width = k.height = 64; const g = k.getContext('2d'); g.fillStyle = c; g.fillRect(0, 0, 64, 64); __sv.heroes[0].profile.photo = k.toDataURL('image/jpeg', .8); __sv.rebuildHero(0); };
   for (const [P, c] of [[A, '#ff0000'], [B, '#0000ff']]) { await clear(P.page); await P.page.evaluate(async c => { window.__Net = (await import('/js/net.js')).Net; }, c); await P.page.evaluate(photo, c); }
   const code = await A.page.evaluate(async () => __Net.host(__sv.sendHello()));
   await A.page.evaluate(async () => { const S = (await import('/js/world.js')).CITIES.find(c => c.id === 'saigon'); __sv.heroes[0].place(S.x, S.z); __sv.shareStatus(); });
@@ -5591,6 +5641,9 @@ await check('cloud', async () => {
   // photos arrived both ways (red at B, blue at A)
   const pix = P => P.page.evaluate(() => new Promise(r => { const p = Object.values(__Net.remotes)[0]?.photo; if (!p) return r(null); const im = new Image(); im.onload = () => { const k = document.createElement('canvas'); k.width = k.height = 8; const g = k.getContext('2d'); g.drawImage(im, 0, 0, 8, 8); r([...g.getImageData(4, 4, 1, 1).data].slice(0, 3)); }; im.src = p; }));
   const photoAtB = await pix(B), photoAtA = await pix(A);
+  // Each device must also retain its own photo after joining, including the rendered face texture.
+  const ownPhotos = await Promise.all([A,B].map(P=>P.page.evaluate(()=>{const h=__sv.heroes[0],c=h.av.faceMat.map.image,g=c.getContext('2d');return {saved:!!h.profile.photo,pixel:[...g.getImageData(c.width/2,c.height/2,1,1).data].slice(0,3)}})));
+  ok(ownPhotos[0].saved&&ownPhotos[0].pixel[0]>180&&ownPhotos[0].pixel[2]<80&&ownPhotos[1].saved&&ownPhotos[1].pixel[2]>180&&ownPhotos[1].pixel[0]<80,'own face missing after joining: '+JSON.stringify(ownPhotos));
   // a third friend comes in through the cloud: everyone must see everyone
   const C = await open(b, { pre, w: 600, h: 500, lang: 'en' }); await clear(C.page);
   await C.page.evaluate(async c => { window.__Net = (await import('/js/net.js')).Net; __Net.join(c, __sv.sendHello()); const S = (await import('/js/world.js')).CITIES.find(c => c.id === 'saigon'); __sv.heroes[0].place(S.x + 4, S.z - 6); }, code);

@@ -16,6 +16,7 @@ import { modal, dialog, reward, confetti } from './popups.js';
 import { say } from './voice.js';
 import { ITEM, adoptWorn, versionFor, setOf } from './content/shop.js';
 import * as C from './content/tester.js';
+import { publicFixedVersion } from './tester-detection.js';
 
 const KEY = 'sv2_tester_rw';
 const get = d => { try { return JSON.parse(localStorage.getItem(KEY) || 'null') || d; } catch (e) { return d; } };
@@ -80,7 +81,7 @@ export function corner() {
     <p class="note">${next ? T(`Reports that helped: ${helped}. ${next.at - helped} more for the ${next.en}.`, `Báo cáo đã giúp: ${helped}. Thêm ${next.at - helped} nữa để có ${next.vi}.`) : T(`Reports that helped: ${helped}. Every badge won!`, `Báo cáo đã giúp: ${helped}. Đã có mọi huy hiệu!`)}${st.star ? ' ' + T('This week\'s star tester!', 'Người thử ngôi sao của tuần!') : ''}</p>
     <h3>${T('Sticker album', 'Album hình dán')}</h3><div class="tc-stickers">${C.STICKER_KINDS.map(k => { const kd = C.KINDS.find(x => x.id === k); return `<div class="tc-st ${kinds.includes(k) ? 'on' : ''}">${pic(C.STICKER_ICON[k])}<small>${T(kd.en, kd.vi)}</small></div>`; }).join('')}</div>
     <h3>${T('Tester gear', 'Đồ của người thử')}</h3><div class="tc-gear">${C.GEAR.map(g => { const it = ITEM[g.id]; return `<div class="tc-g ${gear.includes(g.id) ? 'on' : ''}"><b>${esc(T(it.en, it.vi))}</b><small>${g.at === 'album' ? T('a full sticker page', 'đủ trang hình dán') : esc(T(C.BADGES.find(b => b.id === g.at).en, C.BADGES.find(b => b.id === g.at).vi))}</small></div>`; }).join('')}</div>
-    <h3>${T('Fixed thanks to you', 'Đã sửa nhờ con')}</h3><div class="tm-list">${fixed.length ? fixed.map(p => `<div class="tm-row s-fixed"><b>${esc(p.title)}</b><small>${esc(p.fixedIn || '')}</small></div>`).join('') : `<p class="note">${T('Nothing yet: keep looking!', 'Chưa có: tiếp tục tìm nhé!')}</p>`}</div>`);
+    <h3>${T('Fixed thanks to you', 'Đã sửa nhờ con')}</h3><div class="tm-list">${fixed.length ? fixed.map(p => `<div class="tm-row s-fixed"><b>${esc(p.title)}</b><small>${esc(publicFixedVersion(p.fixedIn))}</small></div>`).join('') : `<p class="note">${T('Nothing yet: keep looking!', 'Chưa có: tiếp tục tìm nhé!')}</p>`}</div>`);
   m.querySelector('.x').onclick = () => m.close();
   return m;
 }

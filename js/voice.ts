@@ -388,7 +388,7 @@ export const allowMobilePack = yes => voicePackMod().then(m => m.allowMobilePack
 // an English line with Vietnamese words has its own recording with both voices (js/packhash.js lineHash); an older pack
 // without it still plays its all-English recording
 const packKey = (lang, text) => { if (!PACK) return null; const h = lineHash(lang, text); if (PACK.lines[h]) return h; const o = packHash(lang, text); return PACK.lines[o] ? o : null; };
-let previewSlot = null;
+let previewSlot = null, previewRequest = 0;
 const packSlot = (lang, text) => {
   const has = PACK && PACK.lines[packKey(lang, text)];
   if (!has) return null;
@@ -399,16 +399,29 @@ const packSlot = (lang, text) => {
   return has.includes('f') ? 'f' : has[0];
 };
 export async function previewPackVoice(slot) {
+  const request = ++previewRequest;
   previewSlot = slot === 'm' ? 'm' : 'f';
-  try { await say('Hello! Welcome to Sparkle Valley.', 'Xin chào! Chào mừng con đến Thung Lũng Lấp Lánh.'); }
-  finally { previewSlot = null; }
+  // say() is fire-and-forget; clearing the slot after it selected the female default
+  // before the asynchronous manifest lookup could choose the requested recording.
+  try { await sayAsync('Hello! Welcome to Sparkle Valley.', 'Xin chào! Chào mừng con đến Thung Lũng Lấp Lánh.'); }
+  finally { if (request === previewRequest) previewSlot = null; }
 }
 // (round P, owner: "the 3 voice styles sound the same") the recordings play for almost every line, so the style changes
 // them too: Cute a little higher and quicker, Grandparent lower and slower (playing faster or slower moves the pitch)
 const STYLE_RATE = { natural: 1, cute: 1.13, grandpa: .88 };
 const packRate = slot => { const k = speakerKind(), st = STYLE_RATE[settings.voiceStyle] || 1; if (!k) return st; let r = k.old ? .9 : k.kid ? 1.1 : 1; if (k.gender === 'm' && slot === 'f') r *= .86; return r * st; };
 // Download every file of the pack so it plays with no internet (Grown-ups → "Save voices for offline")
-export const savePackOffline = progress => voicePackMod().then(m => m.savePackOffline(progress));
+export async function resumePackDownload() {
+  await waitPack();
+  const m = await voicePackMod();
+  if (PACK) m.startPack(PACK, packEmit, () => hereArea);
+  m.refreshPack();
+}
+export async function savePackOffline(progress?: (done: number, total: number) => void) {
+  settings.autoPack = true; saveSettings();
+  await resumePackDownload();
+  return (await voicePackMod()).savePackOffline(progress);
+}
 export const packUrl = (lang, text, slot) => `voices/${lang}/${slot}/${packKey(lang, text) || lineHash(lang, text)}.mp3`;
 async function playPack(lang, text, my) {
   if (my !== seq) return true;

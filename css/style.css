@@ -3217,3 +3217,11 @@ body.calm .sv2 .press::after { animation: none; display: none; }
 .tp-news-list { display: grid; gap: 6px; padding-bottom: 4px; }
 .tp-news-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 44px; }
 .tp-news-row span { display: grid; } .tp-news-row small { opacity: .75; }
+
+/* v1.01: Home joins the Simple screen sound/parent controls; all remain 64px. */
+.sp-top { flex-wrap:wrap; }
+.sp-tools { display:flex; align-items:center; gap:8px; margin-left:auto; flex-shrink:0; }
+.sp-tools > button { flex:none; width:64px; height:64px; min-width:64px; min-height:64px; }
+.sp-tools .sp-home { position:relative; display:grid; place-items:center; padding:0; border:0; border-radius:50%; background:#fff; box-shadow:0 4px 0 rgba(60,100,40,.3); }
+.sp-tools .sp-home .art { width:34px; height:34px; }
+.sp-tools .sp-home small { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); }

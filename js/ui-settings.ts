@@ -10,7 +10,7 @@ import { events } from './core/events.js';
 import { T, applyLang, nm, NPC_NAMES, defaultName } from './i18n.js';
 import { settings, saveSettings, profiles, saveProfiles, normalizeProfile, exportBackup, importBackup, backupAge, farm, resetFarm, saveFarm, MAX_KIDS, getSnapshot } from './state.js';
 import { createSaveCopy, readSaveCopyOrLegacy } from './content/savecopy.js';
-import { say, voicePack, voiceDiag, allowMobilePack, voiceMisses, clearVoiceMisses, voicesFor, onVoices, hasVietnamese, FAMILY_PHRASES, previewPackVoice } from './voice.js';
+import { say, voicePack, voiceDiag, allowMobilePack, voiceMisses, clearVoiceMisses, voicesFor, onVoices, hasVietnamese, FAMILY_PHRASES, previewPackVoice, resumePackDownload } from './voice.js';
 
 import { SFX, Music } from './audio.js';
 import { fmt, cur } from './money.js';
@@ -110,7 +110,7 @@ function packStatusHTML() {
   return `<p class="note">${P ? '✅ ' + T(`${n.toLocaleString()} lines recorded with natural voices. They always play first, even offline; the phone's voice reads only a line that has no recording.`, `${n.toLocaleString('vi-VN')} câu đã thu bằng giọng tự nhiên. Luôn được phát trước, kể cả khi không có mạng; giọng của máy chỉ đọc câu chưa có bản ghi.`) : '⚠️ ' + T('The recorded voices have not loaded yet (they need the internet once).', 'Giọng đã thu chưa tải được (cần có mạng một lần).')}</p>
     ${voiceDiag.lastMiss ? `<p class="note warn">⚠️ ${T('Last time a recording could not play here', 'Lần trước máy này không phát được bản ghi')} (${esc(voiceDiag.lastMiss)}). ${T('Tap anywhere on the screen once, check the side switch is not on silent, then press ▶ below.', 'Chạm vào màn hình một lần, kiểm tra nút gạt bên hông không ở chế độ im lặng, rồi bấm ▶ bên dưới.')}</p>` : ''}
     <div class="actions"><button class="btn" data-pv="f">▶ 👩 ${T('Woman', 'Giọng nữ')}</button><button class="btn" data-pv="m">▶ 👨 ${T('Man', 'Giọng nam')}</button></div>
-    <p class="note">${T('Women, girls and grandmas speak with the woman’s voice; men, boys and grandpas with the man’s.', 'Phụ nữ, bé gái và bà nói bằng giọng nữ; đàn ông, bé trai và ông nói bằng giọng nam.')}</p>
+    <p class="note">${T('Female voices are the default. Enable male recordings below for men, boys and grandpas. Downloads continue in the background while you play, even after Save & close.', 'Giọng nữ được dùng mặc định. Bật bản ghi giọng nam bên dưới cho đàn ông, bé trai và ông. Giọng đọc tiếp tục tải khi bạn chơi, kể cả sau khi Lưu và đóng.')}</p>
     <label class="tog"><input type="checkbox" id="gVoiceMale" ${settings.voiceMale === true ? 'checked' : ''}> ${T('Download and use optional male voice recordings (off by default: female voices are used for all characters)', 'Tải và sử dụng bản ghi giọng nam tùy chọn (tắt mặc định: dùng giọng nữ cho tất cả nhân vật)')}</label>
     ${P ? `<label class="tog"><input type="checkbox" id="gPackCell" ${settings.packCell === true ? 'checked' : ''}> ${T('Download the rest of the voices on mobile data too (on Wi-Fi they download by themselves)', 'Tải phần giọng đọc còn lại cả bằng dữ liệu di động (khi có Wi-Fi giọng đọc tự tải)')}</label>` : ''}
     ${miss.length ? `<details class="g-miss"><summary>📝 ${T(`${miss.length} lines on this device had no recording yet`, `${miss.length} câu trên máy này chưa có bản ghi`)}</summary>
@@ -126,13 +126,10 @@ function bindPackStatus(card, redraw) {
   const vm = card.querySelector('#gVoiceMale'); 
   if (vm) vm.onchange = async () => { 
     settings.voiceMale = vm.checked; 
+    if (vm.checked) settings.autoPack = true;
     saveSettings(); 
-    try {
-      const { startPack } = await import('./voicepack.js');
-      const P = voicePack();
-      if (P) startPack(P, () => {}, () => null);
-    } catch (e) {}
-    redraw(); 
+    await resumePackDownload();
+    if (card.isConnected) redraw();
   };
   // (round R item 12, Voice & Audio) the voice pack on mobile data: a grown-up's yes or no (js/voice.js allowMobilePack)
   const pc = card.querySelector('#gPackCell'); if (pc) pc.onchange = () => allowMobilePack(pc.checked);
@@ -353,7 +350,7 @@ export function openGrownups(after: (() => void) | undefined = undefined) {
       try {
         if (navigator.canShare && navigator.canShare({ files: [file] })) {
           await navigator.share({ files: [file], title: name });
-          settings.lastBackup = Date.now(); saveSettings(); settings.lastBackup = Date.now(); saveSettings(); toast(T('Copy saved!', 'Đã lưu bản sao!'));
+          settings.lastBackup = Date.now(); saveSettings(); toast(T('Copy saved!', 'Đã lưu bản sao!'));
           return;
         }
       } catch (e) {
@@ -366,7 +363,7 @@ export function openGrownups(after: (() => void) | undefined = undefined) {
       a.click();
       a.remove();
       setTimeout(() => URL.revokeObjectURL(a.href), 4000);
-      settings.lastBackup = Date.now(); saveSettings(); settings.lastBackup = Date.now(); saveSettings(); toast(T('Copy downloaded!', 'Đã tải bản sao!'));
+      settings.lastBackup = Date.now(); saveSettings(); toast(T('Copy downloaded!', 'Đã tải bản sao!'));
     };
     card.querySelector('#gLoadCopy').onchange = async e => {
       const f = e.target.files && e.target.files[0];
@@ -386,7 +383,7 @@ export function openGrownups(after: (() => void) | undefined = undefined) {
           Object.assign(farm, copy.farm);
           Object.assign(settings, copy.settings);
           if (copy.device) localStorage.setItem('sv2_playerid', copy.device);
-          else localStorage.removeItem('sv2_playerid');
+          // An older copy has no device id; keep this device’s existing identity.
           saveProfiles(true);
           saveSettings();
           saveFarm();
