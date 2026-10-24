@@ -1,4 +1,6 @@
-# Sparkle Valley · Thung Lũng Lấp Lánh — Handoff
+# TPN — Handoff
+
+The game in this repository is **Sparkle Valley · Thung Lũng Lấp Lánh**: it is built, named and shown to players under that name. "TPN" is only the repository's name.
 
 **Owner-approved UI and future-feature rules (14 Oct 2026 AEDT):** read the section “Owner-approved interface and feature rules” in [the design handbook](docs/SO-TAY-THIET-KE.md) (UX-001–UX-010) before planning or changing a feature. Work order and implementation sequence: [owner UI audit](docs/cores/tasks/owner-ui-audit-20261014.md). Approval to write these rules does not deploy runtime changes.
 
