@@ -951,7 +951,7 @@ await check('ground', async () => {
   ok(!r.bad.length && !r.roadBad.length, 'problems: ' + JSON.stringify([...r.bad, ...r.roadBad].slice(0, 6)));
   ok(ver.endsWith('-' + build), `build ${build} does not match sw.js VERSION ${ver}`);
   // (owner, 24 Oct AEDT) families see the public number (v1, v1.1 ...), never the round count
-  ok(/^v\d+(\.\d+)*$/.test(shown) && /^r\d+(\.\d+)?$/.test(build), `SHOWN ${shown} must be v and a number, BUILD ${build} r and a number`);
+  ok(/^v\d{1,2}\.\d{2}$/.test(build) && shown === build, `BUILD ${build} must be v, a number, a point and two digits (v1.01), and SHOWN ${shown} the same`);
   ok(title.trim() === shown, `the title screen shows "${title}", not the public number ${shown}`);
   return `${r.buildings} buildings and ${r.roads} roads checked, build ${build}, shown as ${shown}`;
 });

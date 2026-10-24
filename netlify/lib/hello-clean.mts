@@ -3,6 +3,7 @@
 // kept only as the text or number the rule allows (a list or object that merely looks like text is not kept as itself).
 // (owner repair round, 15 Oct AEDT: identity, build and version data are type-checked, `types` check.)
 // (synthetic bot isolation, 20 Oct AEDT): bots tag events with isRobot: true and traffic: 'synthetic_bot' and are routed to a separate store.
+import { isBuild } from './build-number.mts';
 
 export const ID = /^[a-z0-9]{10,24}$/, WORD = /^[\w-]{1,32}$/, KEY = /^[\w .:/()'#,@-]{1,140}$/, NAME = /^[\p{L}' -]{0,20}$/u, DAY = /^\d{4}-\d{2}-\d{2}$/;
 export const LINES = { hello: 10, device: 30, ip: 60, newPerDay: 200 }; // (round R privacy) missing lines taken at most
@@ -50,7 +51,7 @@ export function clean(input: unknown, now: number = Date.now()): Hello|null {
   // an older device sends one bucket for today
   const lo = day(now - 30 * 864e5), hi = day(now + 864e5), seen = new Set();
   // where a day was played: its own build (a release or '?'), or the device's build for an older device
-  const origin = (x: Loose) => typeof x.build === 'string' && (/^r\d{1,4}(\.\d{1,2})?$/.test(x.build) || x.build === '?') ? x.build : (b.sid ? '?' : WORD.test(txt(b.b)) ? txt(b.b) : '?');
+  const origin = (x: Loose) => typeof x.build === 'string' && (isBuild(x.build) || x.build === '?') ? x.build : (b.sid ? '?' : WORD.test(txt(b.b)) ? txt(b.b) : '?');
   const sent: unknown[] = Array.isArray(b.days) ? b.days : [{ d: day(now), m: b.m, g: b.g, t: b.t, o: b.o }];
   const days = sent.slice(0, 42).map(obj)
     .filter(x => { const d = txt(x.d); if (!DAY.test(d) || d < lo || d > hi) return false; const key = d + '|' + origin(x); if (seen.has(key)) return false; seen.add(key); return true; })

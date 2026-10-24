@@ -23,6 +23,7 @@
 //                  10 a hello, 30 a device a day, 60 a connection a day and 200 new lines a day, so nobody can flood
 //                  the inbox (and the Azure budget spent recording it)
 import { createHash } from 'crypto';
+import { isBuild, buildRank } from './build-number.mts';
 // what a device sends is checked in netlify/lib/hello-clean.mts (type-checked); the store below keeps only that
 import { ID, WORD, NAME, LINES, day, int, obj, counts, words, bat, batAdd, clean } from './hello-clean.mts';
 import type { KidDay, Start } from './hello-clean.mts';
@@ -56,7 +57,7 @@ export async function live(S, b, now = Date.now()) {
   const kid = NAME.test(String(b.kid || '')) ? String(b.kid || '').trim() : '';
   const key='live/'+b.id,old=await S.get(key,{type:'json'})||{},sessions: Record<string, Session>=old.sessions||{};
   const sid=/^[a-z0-9]{16}$/.test(b.sid||'')?b.sid:'legacy';
-  sessions[sid]={on:!!b.live,at:now,build:/^r\d{1,4}(\.\d{1,2})?$/.test(b.b||'')?b.b:'?'};
+  sessions[sid]={on:!!b.live,at:now,build:isBuild(b.b)?b.b:'?'};
   const kept=Object.fromEntries(Object.entries(sessions).filter(([,s])=>now-s.at<LIVE_MS).sort((a,b)=>b[1].at-a[1].at).slice(0,16));
   await S.setJSON(key,{on:Object.values(kept).some(s=>s.on),at:now,kid,sessions:kept});
   return true;
@@ -74,7 +75,7 @@ export async function hello(S, body, now = Date.now(), where: { city?: string, r
   // the device itself: what it is, roughly where, first and last seen (round L)
   { const k = 'info/' + d.id, o = (await S.get(k, { type: 'json' })) || { first: first };
     const loc = { city: place(where.city), region: place(where.region), country: place(where.country).toUpperCase().slice(0, 3) };
-    const rank=s=>/^r\d+(\.\d+)?$/.test(s||'')?+s.slice(1):-1;
+    const rank=buildRank;
     const current=d.started?d.started>=(o.sessionStarted||0):!o.sessionStarted||rank(d.build)>=rank(o.build);
     Object.assign(o, {last:today,first:first<(o.first||first)?first:(o.first||first)});
     if(current)Object.assign(o,{kind:d.kind,app:d.app,os:d.os,br:d.br,sc:d.sc||o.sc||'',build:d.build,lang:d.lang,kids:d.kids,sessionStarted:d.started||o.sessionStarted||0});
@@ -241,8 +242,8 @@ async function details(S, sums: DaySum[], now: number) {
   for (const [where, n] of problems.stuck) if (n >= 3) tips.push({ k: 'stuck', where, n });
   for (const [e, n, dv] of problems.errors.slice(0, 3)) tips.push({ k: 'error', e, n, dv });
   for (const d of devices) if (d.fps != null && d.fps < 25) tips.push({ k: 'slow', d: who(d), fps: d.fps });
-  const newest = Object.keys(count(d => d.build)).filter(b => /^r\d+(\.\d+)?$/.test(b)).sort((a, b) => +a.slice(1) - +b.slice(1)).pop();
-  for (const d of devices) if (d.days && newest && /^r\d+(\.\d+)?$/.test(d.build) && d.build !== newest) tips.push({ k: 'old', d: who(d), build: d.build, newest });
+  const newest = Object.keys(count(d => d.build)).filter(isBuild).sort((a, b) => buildRank(a) - buildRank(b)).pop();
+  for (const d of devices) if (d.days && newest && isBuild(d.build) && d.build !== newest) tips.push({ k: 'old', d: who(d), build: d.build, newest });
   const quiet = day(now - 7 * 864e5);
   for (const d of devices) if (d.last && d.last < quiet && d.days) tips.push({ k: 'quiet', d: who(d), last: d.last });
   for (const d of devices) for (const K of d.kids) if (K.age === 'little' && K.mins > 30 && K.simpleMins < K.mins * .2) tips.push({ k: 'simple', name: K.name, d: who(d) });

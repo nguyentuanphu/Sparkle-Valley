@@ -185,7 +185,7 @@ async function ghJ<T extends object>(p: string): Promise<Partial<T>> {
   const t = await r.text(); let j: Partial<T> = {}; try { j = JSON.parse(t); } catch (e) { }
   if (!r.ok) throw new Error(`GitHub ${r.status} while getting the newest game`); return j;
 }
-const folderBuild = () => { try { return (/VERSION = '[^']*?(r\d+)'/.exec(fs.readFileSync(G('sw.js'), 'utf8')) || [])[1] || '?'; } catch (e) { return '?'; } };
+const folderBuild = () => { try { return (/VERSION = 'sv-\d{4}-\d{2}-\d{2}-([^']+)'/.exec(fs.readFileSync(G('sw.js'), 'utf8')) || [])[1] || '?'; } catch (e) { return '?'; } };
 // (owner, 12 Oct: "if the game folder is not latest or not available then it will download the latest from github")
 // with no game folder at all, the newest game goes into a "SparkleValley" folder next to the exe
 const newGameDir = () => path.join(path.dirname(selfExe() || process.execPath), 'SparkleValley');
