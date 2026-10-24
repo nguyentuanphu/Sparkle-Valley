@@ -51,7 +51,7 @@ function validFarm(farm: unknown): farm is Record<string, unknown> {
 function validateCopy(data: unknown, version: 2 | 3): SaveCopy {
   if (!object(data) || !safeKeys(data) || data.app !== 'sparkle-valley' || data.v !== version ||
       !finiteNum(data.saved) || data.saved <= 0 || data.saved > Date.now() + 864e5 ||
-      typeof data.device !== 'string' || !/^(?:[a-z0-9]{12})?$/.test(data.device) ||
+      (version === COPY_VERSION ? (typeof data.device !== 'string' || !/^(?:[a-z0-9]{12})?$/.test(data.device)) : (data.device !== undefined && (typeof data.device !== 'string' || !/^(?:[a-z0-9]{12})?$/.test(data.device)))) ||
       !object(data.settings) || !object(data.farm) || !Array.isArray(data.profiles) || data.profiles.length > 6) throw new Error('invalid copy');
   const profiles: SaveProfile[] = [];
   for (const profile of data.profiles) {
@@ -64,7 +64,7 @@ function validateCopy(data: unknown, version: 2 | 3): SaveCopy {
     app: 'sparkle-valley',
     v: COPY_VERSION,
     saved: data.saved,
-    device: data.device,
+    device: typeof data.device === 'string' ? data.device : '',
     settings: Object.fromEntries(Object.entries(data.settings).filter(([key]) => !isSensitiveSetting(key))),
     profiles,
     farm: data.farm
@@ -80,4 +80,12 @@ export function readSaveCopy(text: string): SaveCopy {
   let data: unknown;
   try { data = JSON.parse(text); } catch { throw new Error('invalid JSON'); }
   return validateCopy(data, COPY_VERSION);
+}
+
+export function readSaveCopyOrLegacy(text: string): SaveCopy {
+  if (new TextEncoder().encode(text).length > MAX_COPY_BYTES) throw new Error('too large');
+  let data: unknown;
+  try { data = JSON.parse(text); } catch { throw new Error('invalid JSON'); }
+  if (!object(data)) throw new Error('invalid copy');
+  return validateCopy(data, data.v === 2 ? 2 : COPY_VERSION);
 }

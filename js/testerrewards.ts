@@ -62,12 +62,12 @@ export function apply(st) {
   });
 }
 // "You found this, and now it is fixed!": Ông Cú thanks the tester by name (the name is shown, not spoken), confetti, coins
+// (owner, 24 Oct AEDT: no Ông Cú thank-you speech or confetti for a fix, coins given quietly)
 async function thankNow(p) {
-  const kid = (G.heroes && G.heroes[0] && G.heroes[0].profile) || (profiles || [])[0], name = kid ? nm(kid.name || '') : '';
-  const [en, vi] = C.TESTER_LINES.fixed, coins = C.COINS.helped + (p.spoken ? C.COINS.spoken : 0);
-  confetti(); if (G.addCoins) G.addCoins(coins);
-  await dialog('Ông Cú', [[`${name ? name + ': ' : ''}${en} (${p.title} · +${coins} coins)`, `${name ? name + ': ' : ''}${vi} (${p.title} · +${coins} đồng)`, en, vi]]);
+  const coins = C.COINS.helped + (p.spoken ? C.COINS.spoken : 0);
+  if (G.addCoins) G.addCoins(coins);
 }
+
 export const thank = p => later(() => thankNow(p));
 
 // the Tester's Corner: badge and the next one, the sticker album, the gear, this week's star, and the board of problems
