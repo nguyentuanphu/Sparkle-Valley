@@ -1,6 +1,6 @@
 # Parent settings and child play reports
 
-Source: e8887bb57c65ccb4297c3b4295e70b7d26118bd7. Reviewed 23 October 2026 AEDT. Existing game controls, not a new statistics backend.
+Source: cf9099b183d502b8f146c808feebe7b758a81b91. Reviewed 23 October 2026 AEDT. Existing game controls, not a new statistics backend.
 
 ## Reach the report
 
@@ -36,7 +36,7 @@ Agree on a comfortable stopping point together. This is a game reminder on this 
 
 Grown-ups → Play time → Daily adventure / Phụ huynh → Giờ chơi → Phiêu lưu mỗi ngày
 
-Turn daily adventures on or off, choose when the next day starts and select Gentle or Tricky. For ages five and over, Tricky adds an optional bonus timer; under-fives do not have that timer. / Bật hoặc tắt phiêu lưu ngày, chọn lúc bắt đầu ngày mới và mức Nhẹ nhàng hoặc Thử thách. Từ năm tuổi, Thử thách có đồng hồ thưởng thêm; bé dưới năm tuổi không có đồng hồ đó.
+Turn daily adventures on or off, choose when the next day starts and select Gentle or Tricky. Children can also tap Go on Today’s Adventure for a sparkle trail and auto-walk guide to the current stop. For ages five and over, Tricky adds an optional bonus timer; under-fives do not have that timer. / Bật hoặc tắt phiêu lưu ngày, chọn lúc bắt đầu ngày mới và mức Nhẹ nhàng hoặc Thử thách. Bé cũng có thể bấm Đi trên Phiêu lưu hôm nay để có đường lấp lánh dẫn lối tới điểm hiện tại. Từ năm tuổi, Thử thách có đồng hồ thưởng thêm; bé dưới năm tuổi không có đồng hồ đó.
 
 The timer adds a possible bonus; it does not remove an earned reward. Choose the version your child enjoys. / Đồng hồ có thể tặng thêm thưởng; không lấy quà bé đã nhận. Chọn cách chơi bé thích.
 
@@ -76,9 +76,9 @@ Read the reset explanation and keep a backup before a reset. The informational w
 
 Grown-ups → Analytics and backup / Phụ huynh → Phân tích và sao lưu
 
-Use Save a copy to keep progress in Files, iCloud Drive or Google Drive. Load a copy also accepts older backup files and asks before replacing progress. The Analytics On/Off control is separate from the local Play report and controls the game’s usage reporting. / Dùng Lưu một bản để giữ tiến trình trong Tệp, iCloud Drive hoặc Google Drive. Mở bản đã lưu cũng nhận tệp sao lưu cũ và hỏi trước khi thay thế tiến trình. Nút Bật/Tắt Phân tích riêng với Báo cáo chơi trên máy và điều khiển việc gửi thống kê sử dụng của trò chơi.
+Use Save a copy to keep progress in Files, iCloud Drive or Google Drive. Load a copy also accepts older backup files and asks before replacing progress. Family code links your family’s devices for statistics only—no progress or photo sharing. The Analytics On/Off control is separate from the local Play report and controls the game’s usage reporting. / Dùng Lưu một bản để giữ tiến trình trong Tệp, iCloud Drive hoặc Google Drive. Mở bản đã lưu cũng nhận tệp sao lưu cũ và hỏi trước khi thay thế tiến trình. Mã gia đình liên kết thiết bị để thống kê gia đình—không chia sẻ tiến trình hay ảnh. Nút Bật/Tắt Phân tích riêng với Báo cáo chơi trên máy và điều khiển việc gửi thống kê sử dụng của trò chơi.
 
-Choosing a Drive or iCloud location is a manual file-save action, not a promise of automatic cloud sync. Review any restore before replacing existing progress. / Chọn nơi lưu Drive hoặc iCloud là thao tác lưu tệp thủ công, không có nghĩa tự động đồng bộ đám mây. Kiểm tra trước khi khôi phục thay tiến trình đang có.
+Choosing a Drive or iCloud location is a manual file-save action, not a promise of automatic cloud sync. Review any restore before replacing existing progress, and keep your family code private. / Chọn nơi lưu Drive hoặc iCloud là thao tác lưu tệp thủ công, không có nghĩa tự động đồng bộ đám mây. Kiểm tra trước khi khôi phục thay tiến trình đang có và giữ riêng mã gia đình.
 
 ## What the report means
 
