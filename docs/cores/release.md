@@ -51,6 +51,8 @@ round); the full suite green before a report; times in AEST; no keys or personal
 All of them once per release (`node suite.mjs`), plus `node suite.mjs --changed` after every merge (it always includes `types unit arch rules`).
 
 ## Owner's decisions
+- 24 October 2026 AEDT: owner approved the concise family-code privacy copy: EN “Link your family’s devices for statistics only—no progress or photo sharing. Keep your code private.” / VI “Liên kết thiết bị để thống kê gia đình—không chia sẻ tiến trình hay ảnh. Giữ riêng mã gia đình.” Record this wording and continue the active v1.01 Release checks. This is not deployment approval; family-code implementation is still pending. See [approved copy](tasks/family-code-privacy-wording-v1.01.md).
+
 - 24 October 2026 AEDT (owner, this Release session): collect `work/r91-front-desk` into `release/r91`, review the eight-item brief and prepare v1.01; GitHub full suite, sequential local speed checks, EN/VI phone/tablet/computer evidence and Netlify ZIP required. Confirm the version and ask the single “yes, deploy” after the report; no production approval yet. New voice requirement: female remains default; optional male preview must actually use male recordings; enabling optional male voices or explicitly downloading the pack must continue in the background after Save & close, with shared progress.
 
 - 24 October 2026 AEDT, afternoon (pop-ups): **v numbers everywhere, from r91 on**: v, the major number, a point and two digits (v1.01, v1.02 ... v1.99; a big upgrade starts v2.00). This round is v1.01 inside and on screen; `netlify/lib/build-number.mts` is the one rule (old r builds read and sort before v builds; r90 counts as v1.00). Replaces the earlier "r inside, v shown" choice.

@@ -1552,8 +1552,8 @@ await check('testerrewards', async () => {
     // Owner-requested replacement for the removed fix dialog: verify the real ladybird list.
     await clear(P.page); await P.page.evaluate(async()=>{await (await import('/js/tester.js')).openPanel(0,'fixed');});
     await P.page.waitForSelector('.testing-fixed:not([hidden]) [data-fok="1"]');
-    const fixedList=await P.page.evaluate(()=>({rows:document.querySelectorAll('.testing-fixed [data-fok="1"]').length,coins:document.querySelector('.tm-coins')?.textContent,badge:document.querySelector('.z-lb .lb-ok')?.textContent,legacy:/\br67\b/.test(document.querySelector('.tpanel').textContent),popup:!!document.querySelector('.tfixed'),linked:document.querySelector('[data-test-tab="fixed"]')?.getAttribute('aria-controls')==='testing-fixed'}));
-    if(fixedList.rows!==1||!fixedList.coins?.includes('+25')||fixedList.badge!=='1'||fixedList.legacy||fixedList.popup||!fixedList.linked)out.push(name+': fixed list '+JSON.stringify(fixedList));
+    const fixedList=await P.page.evaluate(()=>({targets64:[...document.querySelectorAll('.testing-fixed button')].every(b=>{const r=b.getBoundingClientRect();return r.height>=64&&r.width>=64}),rows:document.querySelectorAll('.testing-fixed [data-fok="1"]').length,coins:document.querySelector('.tm-coins')?.textContent,badge:document.querySelector('.z-lb .lb-ok')?.textContent,legacy:/\br67\b/.test(document.querySelector('.tpanel').textContent),popup:!!document.querySelector('.tfixed'),linked:document.querySelector('[data-test-tab="fixed"]')?.getAttribute('aria-controls')==='testing-fixed'}));
+    if(!fixedList.targets64||fixedList.rows!==1||!fixedList.coins?.includes('+25')||fixedList.badge!=='1'||fixedList.legacy||fixedList.popup||!fixedList.linked)out.push(name+': fixed list '+JSON.stringify(fixedList));
     await P.page.locator('.testing-fixed [data-fok="1"]').click();
     const coinsOnce=await P.page.evaluate(async()=>{await (await import('/js/tester.js')).refresh();return (await import('/js/state.js')).farm.coins});
     await P.page.waitForTimeout(600);

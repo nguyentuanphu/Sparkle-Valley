@@ -270,6 +270,9 @@ export function openQuick(game, i) {
       <button class="qs-site" id="qSite"><span>${WEBSITE_ICON}</span><b>${T('Website', 'Trang web')}</b><small>${T('Explore the game with your family: play stays just as it is', 'Cùng gia đình khám phá trò chơi: trò chơi vẫn giữ nguyên')}</small></button>
       <button class="grown qgrown"><span class="ring"></span>👨‍👩‍👧 ${T('Grown-ups settings', 'Cài đặt phụ huynh')}<small>${T('press and hold', 'nhấn giữ')}</small></button>
       <div class="actions floatbar"><button class="btn primary" id="qDone">${T('Done', 'Xong')}</button></div>`;
+    // Keep only Close outside the scrolling title row, so its sticky anchor spans the card.
+    const closeButton = card.querySelector('.qs-head .x');
+    if (closeButton) card.prepend(closeButton);
     bindLang(card, draw);
     if (game.tester) game.tester.settings(card.querySelector('#qTester'), draw); // (owner, 12 Oct) a tester device's Tester rows (js/tester.js)
     card.querySelector('.x').onclick = card.querySelector('#qDone').onclick = close;
