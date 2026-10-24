@@ -6511,6 +6511,7 @@ await check('feel', async () => {
   const notes = [];
   for (const [tag, w, h, touch] of [['computer', 1180, 760, false], ['phone', 390, 844, true]]) {
     const P = await open(b, { w, h, touch, settings: { sound: true, calm: false } });
+    await noWelcome(P.page); // (r83: Grandpa Owl's 7 s welcome sticker flies in midway on slower machines)
     const r = await P.page.evaluate(async () => {
       const A = await import('/js/audio.js'), S = await import('/js/state.js'), U = await import('/js/popups.js');
       let osc = 0; const make = AudioContext.prototype.createOscillator; AudioContext.prototype.createOscillator = function () { osc++; return make.call(this); };
